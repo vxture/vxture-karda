@@ -26,9 +26,10 @@ GitHub repo, environments, secrets, and platform registration all start empty.
 | `ALIYUN_ACR_NAMESPACE` repo variable (governance section 6: read from `vars`, never hardcoded) | `build.yml` registry preflight passes | done 2026-07-22 = `vx-foundation` |
 | Dependabot registry credential (`.github/dependabot.yml` `registries:` block) | npm update runs stop failing `private_source_authentication_failure` | done 2026-07-22 |
 | Platform-side registration **segment A** (directory row, tier seeding, `karda` production OIDC client, C2 credentials, C3 signing secret) | credentials issued and transported into repo secrets | sent 2026-07-22 (`80-liaison/20-2607222338`), awaiting reply |
-| Platform-side registration **segment B** (`product_webhooks` tailnet address, edge vhost target, `karda-beta` OIDC client) | vhost live; TD-001 closable | **blocked on the deploy host/port assignment** - an owner/infra decision, not a platform-line one |
-| Deploy Environments `beta` / `production` with `DEPLOY_*` (exact `DEPLOY_DIR`, mandatory `DEPLOY_KNOWN_HOSTS`) and a required reviewer on `production` | a `beta-*` tag deploys; a `v*.*.*` tag pauses for approval | blocked on the same host assignment |
-| Restore the standard's two-tier tag->env routing (inherited `deploy.yml` is prod-only) | `beta-*` tag routes to the `beta` environment | todo - TD-001, blocked on a beta target |
+| Platform-side registration **segment B** (edge vhost -> `vx-worker-02:3233`, `product_webhooks` delivery address, secret transport) | vhost live; `production` secrets complete | sent 2026-07-23 (`80-liaison/40-2607230036`), awaiting reply |
+| Deploy target allocation: worker-02, `/srv/md0/karda`, port 3233 | port free; edge conf and `.env.example` carry the real value | done 2026-07-23 (owner decision) |
+| `production` GitHub Environment + required reviewer + non-secret `DEPLOY_*` | a `v*.*.*` tag pauses for approval and resolves the right host | done 2026-07-23 - `DEPLOY_HOST`/`DEPLOY_USER`/`DEPLOY_PORT`/`DEPLOY_DIR` set; `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`, `ENV_FILE_BASE64`, `KARDA_DB_SVC_PASSWORD` need owner transport |
+| ~~Two-tier tag->env routing~~ | - | **not adopted** 2026-07-23 - production-only by owner decision; TD-001 reclassified from unfinished item to accepted standing deviation |
 
 ## Batch 2 - docs convention + karda product definition and design
 

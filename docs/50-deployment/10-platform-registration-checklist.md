@@ -14,9 +14,11 @@ Product code `karda`; names below are the concrete derived values.
 
 ## OIDC (customer realm)
 
-- [ ] Register the OIDC client pair: `karda` (prod) and `karda-beta` (beta) -
-      double client is canonical (back-channel logout is a single-URI hard
-      constraint). Realm = customer.
+- [ ] Register the production OIDC client `karda`. Realm = customer.
+      **A single client, not the canonical pair**: the double client exists
+      because back-channel logout is a single-URI hard constraint per tier, and
+      karda has one tier (production only, TD-001). Do NOT register
+      `karda-beta` - withdrawn in liaison letter `40-2607230036`.
 - [ ] Set each client's `redirect_uri`, `post_logout_redirect_uri`, and
       `back_channel_logout_uri` (prod host `karda.vxture.com`).
 - [ ] Set allowed scopes to `openid profile email phone` (retired product-code and
@@ -44,6 +46,6 @@ Product code `karda`; names below are the concrete derived values.
 ## Sequencing
 
 Karda inherits the platform-integration layer already built, so these rows are
-what stands between the inherited code and a live beta. Nothing here blocks the
+what stands between the inherited code and a live production stack. Nothing here blocks the
 GitHub bootstrap checklist (`20-github-bootstrap-checklist.md`), which can and
 should run first - the repo needs to exist before any secret can be placed in it.

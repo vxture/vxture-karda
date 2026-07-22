@@ -20,22 +20,34 @@ deliberately not carried over.
 
 | ID | Title | Opened | Status |
 |----|-------|--------|--------|
-| TD-001 | Deploy pipeline is prod-only; the standard's two-tier default (beta + production) is unmet | 2026-07-22 | open |
+| TD-001 | Production-only deploy tier; the standard's two-tier default (beta + production) is deliberately not adopted | 2026-07-22 | **accepted** 2026-07-23 - standing deviation, not a backlog item |
 
-## TD-001 - prod-only deploy pipeline
+## TD-001 - production-only deploy pipeline
 
 - **Clause deviated from**: `140-repo-governance-standard.md` section 4 - product
-  repos default to two tag->env tiers, `beta-*` -> beta and `v*.*.*` ->
+  repos **default** to two tag->env tiers, `beta-*` -> beta and `v*.*.*` ->
   production.
-- **Reason**: `deploy.yml` is inherited verbatim from `vxture-template`, which was
-  deliberately prod-only for its single demo instantiation. Karda has no beta
-  deploy target assigned (no host, no port, no `beta` GitHub Environment), so
-  there is nothing for a `beta-*` tag to route to. Authoring a beta branch of the
-  routing against an undecided target would be invention, not inheritance.
-- **Annotated at**: `.github/workflows/deploy.yml` header comment.
-- **Recovery condition**: the owner assigns karda a beta host/port. Then add the
-  `beta-*` tag trigger, the beta branch of the `detect-target-environment`
-  routing, the `beta` GitHub Environment (no reviewer gate), and its `DEPLOY_*`
-  secrets; close this entry.
-- **Report to platform line**: pending - goes out with the next liaison letter
-  (`docs/80-liaison/`). The taxonomy letter was docs-only and did not carry it.
+- **Reason**: owner decision 2026-07-23 - karda ships **production only** on
+  worker-02. No beta tier is provisioned, and arda's own beta stack (`/srv/md1`,
+  port 3231, `beta-arda.vxture.com`) is slated for teardown, so karda would be
+  building a tier the org is actively retiring.
+- **Status change**: this entry opened 2026-07-22 as an *unfinished* item
+  ("inherited prod-only, no beta target assigned yet"). It is now an *accepted
+  standing deviation* - the clause says "default", and the owner has chosen
+  otherwise with the tradeoff in view. It stays registered rather than closed
+  because a registered deviation is exactly what the discipline asks for; closing
+  it would erase the record that the default was consciously not taken.
+- **Tradeoff accepted**: no pre-production tier. A `v*.*.*` tag is the first time
+  code runs on a real host, so the required-reviewer gate on the `production`
+  environment carries the full weight of pre-deploy scrutiny, and rollback
+  (`rollback.yml`, pulls an immutable `sha-` tag) is the only recovery path.
+- **Annotated at**: `.github/workflows/deploy.yml` header comment - including a
+  warning not to add a `beta-*` trigger without reopening this decision, since a
+  tag prefix with no environment behind it fails confusingly.
+- **Reopen condition**: the owner decides karda needs a pre-production tier. That
+  requires a beta host/port allocation, the `beta-*` trigger and routing branch,
+  a `beta` GitHub Environment (no reviewer gate) with its own `DEPLOY_*`, and an
+  env-aware `stack_root`/`deploy_dir` (currently hardcoded to the production
+  `/srv/md0/karda`). `vxture-arda`'s `deploy.yml` is the reference implementation.
+- **Report to platform line**: carried by
+  `docs/80-liaison/40-2607230036-karda-platform-registration-b.md`.

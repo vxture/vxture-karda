@@ -1,14 +1,19 @@
 name: deploy
 
 # Tag-triggered production deploy. A v*.*.* tag builds the image and deploys the
-# production stack on the deploy host. The production GitHub Environment carries
-# a required-reviewer gate, so the deploy job pauses until approved.
+# production stack on worker-02 (in the tailnet, non-VPC -> GHCR primary with ACR
+# fallback), stack root /srv/md0/karda, published port 3233. The production
+# GitHub Environment carries a required-reviewer gate, so the deploy job pauses
+# until approved.
 #
-# DEVIATION (140-repo-governance-standard.md section 4): product repos default to
-# TWO tiers (beta-* -> beta, v*.*.* -> production). This workflow is inherited
-# prod-only from the template and karda has no beta target assigned yet. Tracked
-# as TD-001 in docs/60-operations/10-tech-debt.md; add the beta tag trigger and
-# routing once the owner assigns a beta host.
+# DECLARED DEVIATION (140-repo-governance-standard.md section 4): the standard's
+# default for a product repo is TWO tiers (beta-* -> beta, v*.*.* -> production).
+# Karda ships PRODUCTION ONLY by owner decision (2026-07-23) - no beta tier is
+# provisioned on worker-02, and arda's own beta is slated for teardown. This is a
+# deliberate standing deviation, not an unfinished one: registered as TD-001 in
+# docs/60-operations/10-tech-debt.md and reported to the platform line. Do not
+# add a beta-* trigger here without reopening that decision - a tag prefix with
+# no environment behind it deploys nothing and fails confusingly.
 on:
   push:
     tags:

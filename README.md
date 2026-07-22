@@ -17,10 +17,10 @@ reintroduce npm workspaces.
 
 | Thing | Value |
 |-------|-------|
-| OIDC clients | `karda` / `karda-beta` |
+| OIDC client | `karda` (production only - no beta tier, see TD-001) |
 | compose project / containers | `karda-app` / `karda-redis` / `karda-db` |
 | image name | `karda-app` |
-| database | `vxturebiz_karda_beta` / `vxturebiz_karda_prod` |
+| database | `vxturebiz_karda_prod` |
 | service role | `karda_svc` |
 | workspace package scope | `@karda/*` |
 | secrets | `KARDA_DB_SVC_PASSWORD`, `KARDA_PROVISION_WEBHOOK_SECRET`, `KARDA_WEBHOOK_BASE_URL` |

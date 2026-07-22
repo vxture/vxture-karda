@@ -11,4 +11,5 @@ Deployment and bootstrap material for this repo.
 The tag-to-env CD pipeline (deploy/build/rollback/db-init workflows and the
 `tailnet-ssh-connect` composite action) is inherited from the template and lives
 in `.github/`. It is authored but unexercised for karda: both checklists above
-must be worked through before the first `beta-*` tag.
+must be worked through before the first `v*.*.*` tag. Karda is production-only
+(TD-001), so there is no beta tier ahead of it.

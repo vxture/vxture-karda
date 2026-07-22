@@ -5,8 +5,9 @@ artifact(s) here; an operator installs them on the shared vxture public edge hos
 (which terminates TLS with the `*.vxture.com` wildcard cert and reverse-proxies
 over tailscale to the app on the deploy host).
 
-- `karda.vxture.com.conf` - prod vhost. Set `$upstream` to
-  `vx-worker-02:<APP_PUBLISH_PORT>` (this product's assigned port).
+- `karda.vxture.com.conf` - prod vhost, upstream `vx-worker-02:3233`
+  (karda's allocated port; arda holds 3230/3231, the vxtpl demo 3232).
+  This is the only vhost karda owns - production only, no beta counterpart.
 
 ## Install (operator, on the edge / vxture project repo)
 

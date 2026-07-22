@@ -29,9 +29,9 @@ repo - there is no placeholder left to substitute. Derived names, all of which
 are load-bearing contracts (renaming one breaks CD, DB access, or the platform
 registration):
 
-OIDC client pair `karda` / `karda-beta`; compose project and container prefix
+OIDC client `karda`; compose project and container prefix
 `karda-app` / `karda-redis` / `karda-db`; image name `karda-app`; database
-`vxturebiz_karda_beta` / `vxturebiz_karda_prod` with service role `karda_svc`;
+`vxturebiz_karda_prod` with service role `karda_svc`;
 workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 `KARDA_PROVISION_WEBHOOK_SECRET`, `KARDA_WEBHOOK_BASE_URL`; public host
 `karda.vxture.com`.
@@ -44,26 +44,34 @@ usage), the business-face DB baseline, the offline verification pages, and the
 tag-to-env deploy pipeline. All of that is offline Mock-green in the template and
 carries over unchanged.
 
-Not yet done for karda: GitHub bootstrap (repo creation, secret scanning, first
-push, first CI run, ruleset apply - see `docs/50-deployment/20-github-bootstrap-
-checklist.md`), platform-side registration (OIDC clients, secrets, edge vhost -
-see `10-platform-registration-checklist.md`), and the entire karda product domain.
+GitHub bootstrap is done (2026-07-22): repo public, `main` green, ruleset
+`19556856` active with the five required contexts. The deploy target is allocated
+(worker-02, `/srv/md0/karda`, port 3233) and the `production` environment carries
+its reviewer gate and non-secret `DEPLOY_*`.
+
+Still open: the secret material only the owner can transport (`DEPLOY_SSH_KEY`,
+`DEPLOY_KNOWN_HOSTS`, `ENV_FILE_BASE64`, `KARDA_DB_SVC_PASSWORD`), platform-side
+registration (OIDC client, C2/C3 credentials, edge vhost - letters `20` and `40`
+in `docs/80-liaison/`), and the entire karda product domain.
 `docs/70-workplan/00-index.md` is the live tracker.
 
 ## Branch model
 
 Single long-lived branch: `main` (trunk-based). Deploys are NOT tied to merges -
-they are triggered only by pushing a release tag, which also selects the
-environment (product repos default to two tiers):
+they are triggered only by pushing a release tag:
 
 - `main` - the only integration branch. All feature work merges here via PR.
   Merging to `main` does NOT deploy anything by itself.
-- `beta-YYYYMMDD.N` tag - deploys the beta stack. No approval gate.
-- `vX.Y.Z` tag - deploys the production stack. Gated by a required reviewer on
-  the `production` GitHub Environment - the deploy job pauses until approved.
+- `vX.Y.Z` tag - deploys the production stack on worker-02
+  (`/srv/md0/karda`, port 3233). Gated by a required reviewer on the
+  `production` GitHub Environment - the deploy job pauses until approved.
 
-`dev-*` and `varda-*` tags are platform-repo-only; product repos do not build
-develop/varda environments.
+**Karda is production-only** (owner decision 2026-07-23). The governance
+standard's default is two tiers, so this is a declared deviation, registered as
+TD-001 and reported to the platform line - not an unfinished item. Do NOT add a
+`beta-*` trigger without reopening that decision: a tag prefix with no
+environment behind it deploys nothing and fails confusingly. `dev-*` and
+`varda-*` tags are platform-repo-only in any case.
 
 Always branch off `origin/main`, never off a stale local branch.
 
@@ -97,8 +105,8 @@ ruleset is `docs/50-deployment/rebuild/main-ruleset.json`:
   review), require the five status checks below (strict / up-to-date with base),
   block deletion, block non-fast-forward, require linear history, squash-only.
 - `production` GitHub Environment: required reviewer - every `v*.*.*` tag deploy
-  pauses here until approved.
-- `beta` GitHub Environment: no reviewer gate.
+  pauses here until approved. It is the ONLY environment; with no beta tier
+  ahead of it, this gate carries the full weight of pre-deploy scrutiny.
 
 **Required checks (authoritative set of five):** `quality-gate` / `build` /
 `test-coverage` / `audit` / `gitleaks`. CI job names must produce exactly these
@@ -131,8 +139,8 @@ at that commit on `main`, it does not re-verify the gates.
 The tag-to-env deploy workflows (`deploy.yml`/`build.yml`/`rollback.yml`/
 `db-init.yml`) and the `tailnet-ssh-connect` composite action are inherited from
 the template, where they were exercised end-to-end against a live demo
-instantiation. For karda they are authored but unexercised until the GitHub and
-platform bootstrap checklists are done.
+instantiation. For karda they are authored but unexercised: the remaining
+blockers are the owner-transported secrets and the edge vhost.
 
 ## Secret hygiene (four layers)
 
