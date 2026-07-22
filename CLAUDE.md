@@ -167,16 +167,33 @@ do not copy another repo's named ignores.
 
 ## Docs taxonomy
 
-`docs/` follows the org docs taxonomy (`070-docs-taxonomy.md`): top-level decades
-`00-meta` / `10-standards` / `20-specs` / `30-design` / `40-implementation` /
-`50-deployment` / `60-operations` / `70-workplan` / `80-liaison` / `90-memory`;
-map in `docs/00-meta/00-index.md`. Numbered = formal, unnumbered = temporary
-(delete or number it), enforced by the docs numbering guardrail. Domain documents
-use the strict underscore family `{kind}_{domain}_{NNN}_{slug}` (`kind` in
-data/design/ops) - this repo's `check-docs-numbering.mjs` is tightened from the
-platform version and does NOT accept the arda hyphen variant. ADRs live in
-`docs/30-design/decisions/` with stable append-only IDs; the tech-debt register
-lives in `docs/60-operations/` (`TD-NNN`).
+`docs/` follows the org docs taxonomy (`070-docs-taxonomy.md`) for the shared
+skeleton: top-level decades `00-meta` / `10-standards` / `20-specs` / `30-design`
+/ `40-implementation` / `50-deployment` / `60-operations` / `70-workplan` /
+`80-liaison` / `90-memory`; map in `docs/00-meta/00-index.md`. Numbered = formal,
+unnumbered = temporary (delete or number it).
+
+**In-repo organization is delegated to this repo** (taxonomy section 3, owner
+2026-07-22). The local authority is `docs/00-meta/10-docs-convention.md`; read it
+before adding any document. The short version:
+
+- Local documents are `NN(N)-slug.md`. The platform repo's
+  `{kind}_{domain}_{NNN}_{slug}` domain family is **not legal here** - a
+  single-domain repo separates by directory and number band, so a domain prefix
+  is noise. A `product_*` / `data_*` / `design_*` reference in our docs always
+  points at a PLATFORM-repo document.
+- `30-design/` uses three digits with bands `1xx` design / `2xx` contracts and
+  schema / `3xx` implementation; every other directory uses two digits. Digit
+  count is uniform per directory or the lexical sort breaks.
+- Directories are numbered too, with exactly two named exceptions pinned by org
+  standards: `30-design/decisions/` and `50-deployment/rebuild/`.
+- `check-docs-numbering.mjs` enforces all of it (file names, directory names,
+  root-only README whitelist). It diverges from the platform implementation on
+  purpose - see the convention section 7.
+
+ADRs live in `docs/30-design/decisions/` with stable append-only IDs; the
+tech-debt register lives in `docs/60-operations/` (`TD-NNN`); runbooks are
+`NN-run-{slug}.md`.
 
 ## Rigid zone / blank zone
 

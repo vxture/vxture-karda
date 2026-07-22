@@ -27,19 +27,23 @@ GitHub repo, environments, secrets, and platform registration all start empty.
 | GitHub Environments `beta` / `production` with `DEPLOY_*` (exact `DEPLOY_DIR`) and a required reviewer on `production` | a `beta-*` tag deploys; a `v*.*.*` tag pauses for approval | todo |
 | Restore the standard's two-tier tag->env routing (inherited `deploy.yml` is prod-only) | `beta-*` tag routes to the `beta` environment | todo - TD-001, blocked on a beta target |
 
-## Batch 2 - karda product definition and design (next)
-
-Preliminary drafts are staged (git-ignored) in `temp/`: product definition, the
-knowledge model, the processing pipeline, retrieval tooling, the arda channel,
-and a user-dimension amendment. Nothing there is repo history. This batch turns
-them into numbered documents:
+## Batch 2 - docs convention + karda product definition and design
 
 | Item | Lands in | State |
 |------|----------|-------|
-| Product definition (what karda is, surfaces, business rules) | `docs/20-specs/` | todo |
-| Domain code registration for karda in the org taxonomy (section 5) | platform repo, then mirrored | todo |
-| Knowledge model / processing / retrieval / arda-channel design | `docs/30-design/` as `{kind}_{domain}_{NNN}_{slug}` | todo |
+| Repo docs convention (org taxonomy section 3 delegates in-repo organization) + guardrail rewrite (file names, directory names, README whitelist) | `docs/00-meta/10-docs-convention.md` | done 2026-07-22 |
+| Product definition (what karda is, surfaces, business rules) | `docs/20-specs/10-product-definition.md` | Draft v0.4 in repo |
+| Knowledge model / processing / retrieval / arda-channel design | `docs/30-design/{100,110,120,200}-*.md` | Draft v0.1 in repo |
+| Resolve the open decisions carried by those drafts (4 + 4 + 5 + Arda-side alignment) | the same documents | todo |
 | Decisions taken along the way | `docs/30-design/decisions/ADR-NNN-*` | todo |
+
+The org domain-code registration for `karda` (taxonomy section 5) landed on the
+platform side (branch `docs/register-karda-domain-code`). It governs karda
+documents that stay in the PLATFORM repo; it does not apply inside this repo.
+
+Still staged in the git-ignored `temp/`:
+`product_110_amendment_user-dimension.md` - a platform-repo document (it is a
+draft amendment to `product_110_sharing-isolation.md`), so it does not land here.
 
 ## Later
 

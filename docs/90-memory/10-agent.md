@@ -30,8 +30,14 @@ first, then mirror it here - do not invent a standard inside a product repo.
   `main` directly.
 - The five required CI checks are a stable contract: `quality-gate` / `build` /
   `test-coverage` / `audit` / `gitleaks`. Do not rename the jobs that produce them.
-- Docs: numbered = formal, unnumbered = temporary. `lint:docs-numbering --strict`
-  blocks unnumbered `.md`. Domain docs use `{kind}_{domain}_{NNN}_{slug}`.
+- Docs: numbered = formal, unnumbered = temporary. In-repo numbering is this
+  repo's own (org taxonomy section 3 delegates it) - read
+  `docs/00-meta/10-docs-convention.md` before adding a document. Local docs are
+  `NN(N)-slug.md`; the platform `{kind}_{domain}_{NNN}_` family is NOT legal
+  here, and such a reference in our text always means a platform-repo document.
+  `lint:docs-numbering --strict` blocks unnumbered files AND directories.
+- Draft design work is staged in the git-ignored `temp/`; it moves into `docs/`
+  under a number once reviewed, and is deleted from `temp/` in the same change.
 - Keep source, config, and root meta files ASCII-only.
 - See `CLAUDE.md` (repo root) for the full working agreement, and
   `docs/70-workplan/00-index.md` for the batch tracker.

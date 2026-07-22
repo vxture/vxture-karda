@@ -9,7 +9,7 @@ product repo.
 | Standard | Platform-repo path | Covers |
 |----------|--------------------|--------|
 | Repo governance | `docs/10-standards/140-repo-governance-standard.md` | branch model, ruleset, secret hygiene, SCA gate, data layer, guardrails |
-| Docs taxonomy | `docs/10-standards/070-docs-taxonomy.md` | docs numbering and identifiers |
+| Docs taxonomy | `docs/10-standards/070-docs-taxonomy.md` | docs numbering and identifiers. **Section 3 delegates in-repo organization to each product repo** - ours is `docs/00-meta/10-docs-convention.md`, the only standard-shaped document authored locally, and it exists because the org standard says it must |
 | Security | `docs/10-standards/150-security.md` | secret boundaries |
 | CI/CD optimization | `docs/10-standards/010-cicd-optimization-playbook.md` | CI speed-ups |
 | Container healthcheck | `docs/10-standards/020-container-healthcheck-standard.md` | liveness probe mechanics: zero-dependency route, bind `0.0.0.0`, probe params |

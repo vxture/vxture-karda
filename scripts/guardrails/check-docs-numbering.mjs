@@ -2,20 +2,24 @@
 /**
  * check-docs-numbering.mjs - docs/ numbering hard guardrail.
  *
- * Enforces the docs taxonomy meta-rule (070-docs-taxonomy.md): numbered = formal
- * (permanent), unnumbered = temporary (locate and delete). Walks every .md under
- * docs/; any file that is not an index, not whitelisted, and matches none of the
- * legal numbered shapes is a violation.
+ * Enforces the repo docs convention (docs/00-meta/10-docs-convention.md), which
+ * realizes the org taxonomy meta-rule (070-docs-taxonomy.md): numbered = formal
+ * (permanent), unnumbered = temporary (locate and delete).
  *
- * Template note: this is the platform check-docs-numbering.mjs TIGHTENED. The
- * domain-document pattern is restricted to the strict underscore family
- * `{kind}_{domain}_{NNN}_{slug}` with kind in {data,design,ops} and a
- * hyphen-free domain word. The platform version accepted a loose
- * `{prefix}(_{domain})?_{NNN}` with hyphens (arda's `arda-{sub}-NNN` legacy
- * variant); new product repos do NOT get that exemption.
+ * Product-repo note: org taxonomy section 3 (owner 2026-07-22) scopes the
+ * `{kind}_{domain}_{NNN}_{slug}` domain-document family to the vxture-platform
+ * repo ONLY - a single-domain product repo separates documents by directory and
+ * number band instead, and a domain prefix there is pure noise. That family is
+ * therefore NOT a legal shape here; a file carrying one is a violation.
+ *
+ * Three checks (see the convention, section 7):
+ *   1. file names   - NN(N)-slug.md, or the ADR-/TD- registers
+ *   2. directory names - NN(N)-name, or one of the org-pinned named exceptions
+ *   3. root-only README whitelist - a nested README.md cannot open an unnumbered
+ *      area (the platform version whitelists it by basename at any depth)
  *
  * Modes: default lists violations as a worklist (exit 0); `--strict` fails hard
- * (exit 1) for CI. New product repos run --strict from day one.
+ * (exit 1) for CI.
  */
 
 import { readdirSync, statSync } from "node:fs";
@@ -24,71 +28,82 @@ import { join, relative, basename } from "node:path";
 const DOCS_ROOT = "docs";
 const STRICT = process.argv.includes("--strict");
 
-// Root-level non-docs whitelist (config/entry files that live under docs/ but
-// are not taxonomy content). Kept minimal.
-const WHITELIST = new Set(["README.md"]);
+// Non-docs entry file, whitelisted at the docs/ root level ONLY.
+const ROOT_WHITELIST = new Set(["README.md"]);
 
-// Legal "numbered" shapes (any one qualifies):
+// Legal "numbered" file shapes (any one qualifies):
 //   00-index.md / NN(N)-slug.md   -- in-directory sequence (10-step gaps; 00 is
-//                                    the index; 2-3 digits, sort-safe)
-//   {kind}_{domain}_{NNN}_{slug}  -- domain/schema document, STRICT underscore
-//                                    family: kind in {data,design,ops}, domain
-//                                    is a hyphen-free canonical word, NNN is the
-//                                    three-digit band, slug may use hyphens
+//                                    the index; digit count is uniform per
+//                                    directory, see the convention section 3)
 //   ADR-NNN* / TD-NNN*            -- append-only type registers
-const NUMBERED = [
+const NUMBERED_FILE = [
   /^\d{2,3}-.+\.md$/u,
-  /^(data|design|ops)_[a-z][a-z0-9]*_\d{3}_[a-z0-9-]+\.md$/u,
   /^(ADR|TD)-\d{3}.*\.md$/u,
 ];
 
-function walk(dir) {
-  const out = [];
+// Legal directory shape, plus the closed set of org-pinned exceptions: these two
+// paths are fixed by the org standards (taxonomy section 4 pins ADRs at
+// 30-design/decisions/; the governance standard pins rebuild/main-ruleset.json),
+// so they cannot be renamed to carry a number. Adding to this set requires
+// amending docs/00-meta/10-docs-convention.md section 4 first.
+const NUMBERED_DIR = /^\d{2,3}-[a-z0-9-]+$/u;
+const DIR_EXCEPTIONS = new Set(["decisions", "rebuild"]);
+
+const fileViolations = [];
+const dirViolations = [];
+
+function walk(dir, depth) {
   for (const name of readdirSync(dir)) {
     const full = join(dir, name);
     if (statSync(full).isDirectory()) {
-      out.push(...walk(full));
+      if (!NUMBERED_DIR.test(name) && !DIR_EXCEPTIONS.has(name)) {
+        dirViolations.push(rel(full));
+      }
+      walk(full, depth + 1);
     } else if (name.endsWith(".md")) {
-      out.push(full);
+      const whitelisted = depth === 0 && ROOT_WHITELIST.has(name);
+      if (!whitelisted && !NUMBERED_FILE.some((re) => re.test(name))) {
+        fileViolations.push(rel(full));
+      }
     }
   }
-  return out;
 }
 
-function isNumbered(file) {
-  const name = basename(file);
-  if (WHITELIST.has(name)) return true;
-  return NUMBERED.some((re) => re.test(name));
+function rel(p) {
+  return relative(".", p).replaceAll("\\", "/");
 }
 
-let files;
 try {
-  files = walk(DOCS_ROOT);
+  walk(DOCS_ROOT, 0);
 } catch {
   console.log(`[docs-numbering] no ${DOCS_ROOT}/ - skip`);
   process.exit(0);
 }
 
-const violations = files
-  .filter((f) => !isNumbered(f))
-  .map((f) => relative(".", f).replaceAll("\\", "/"))
-  .sort();
-
-if (violations.length === 0) {
-  console.log(`[docs-numbering] OK - ${files.length} docs, all numbered.`);
+const total = fileViolations.length + dirViolations.length;
+if (total === 0) {
+  console.log("[docs-numbering] OK - files and directories all numbered.");
   process.exit(0);
 }
 
-console.log(
-  `[docs-numbering] ${violations.length} unnumbered .md (= temporary/to-delete or to-number; see docs/10-standards/00-index.md):`,
-);
-for (const v of violations) console.log(`  ${v}`);
+if (fileViolations.length > 0) {
+  console.log(
+    `[docs-numbering] ${fileViolations.length} unnumbered .md (= temporary/to-delete or to-number):`,
+  );
+  for (const v of fileViolations.sort()) console.log(`  ${v}`);
+}
+if (dirViolations.length > 0) {
+  console.log(`[docs-numbering] ${dirViolations.length} unnumbered directory:`);
+  for (const v of dirViolations.sort()) console.log(`  ${v}`);
+}
 
 if (STRICT) {
   console.error(
-    `\n[docs-numbering] STRICT: an unnumbered file is a violation - number it (NN- / {kind}_{domain}_{NNN}_ / ADR- / TD-) or delete it.`,
+    "\n[docs-numbering] STRICT: number it (files NN(N)-slug.md / ADR- / TD-; " +
+      "directories NN(N)-name) or delete it. Rules: docs/00-meta/10-docs-convention.md. " +
+      "Note {kind}_{domain}_{NNN}_ is platform-repo-only and is NOT legal here.",
   );
   process.exit(1);
 }
-console.log(`\n[docs-numbering] report mode (non-blocking). CI runs --strict.`);
+console.log("\n[docs-numbering] report mode (non-blocking). CI runs --strict.");
 process.exit(0);
