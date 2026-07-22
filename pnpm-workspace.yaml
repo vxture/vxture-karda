@@ -1,0 +1,5 @@
+# pnpm workspace roots. The app profile roots packages under portals/, per the
+# governance source-directory slots. Karda's own packages join these globs.
+packages:
+  - "portals/*"
+  - "portals/packages/*"
