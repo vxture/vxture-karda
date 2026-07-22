@@ -25,8 +25,9 @@ GitHub repo, environments, secrets, and platform registration all start empty.
 | GitHub bootstrap per `docs/50-deployment/20-github-bootstrap-checklist.md` (public repo, first-push `main`, one CI run, THEN apply `main-ruleset.json`) | five required checks green on `main`; ruleset active | **done 2026-07-22** - ruleset `19556856` active with all five contexts; `main` green at `40dd18d` |
 | `ALIYUN_ACR_NAMESPACE` repo variable (governance section 6: read from `vars`, never hardcoded) | `build.yml` registry preflight passes | done 2026-07-22 = `vx-foundation` |
 | Dependabot registry credential (`.github/dependabot.yml` `registries:` block) | npm update runs stop failing `private_source_authentication_failure` | done 2026-07-22 |
-| Platform-side registration per `docs/50-deployment/10-platform-registration-checklist.md` (OIDC clients `karda`/`karda-beta`, C2/C3 secrets, edge vhost `karda.vxture.com`) | credentials issued; vhost live | todo - needs a liaison letter |
-| GitHub Environments `beta` / `production` with `DEPLOY_*` (exact `DEPLOY_DIR`) and a required reviewer on `production` | a `beta-*` tag deploys; a `v*.*.*` tag pauses for approval | todo |
+| Platform-side registration **segment A** (directory row, tier seeding, `karda` production OIDC client, C2 credentials, C3 signing secret) | credentials issued and transported into repo secrets | sent 2026-07-22 (`80-liaison/20-2607222338`), awaiting reply |
+| Platform-side registration **segment B** (`product_webhooks` tailnet address, edge vhost target, `karda-beta` OIDC client) | vhost live; TD-001 closable | **blocked on the deploy host/port assignment** - an owner/infra decision, not a platform-line one |
+| Deploy Environments `beta` / `production` with `DEPLOY_*` (exact `DEPLOY_DIR`, mandatory `DEPLOY_KNOWN_HOSTS`) and a required reviewer on `production` | a `beta-*` tag deploys; a `v*.*.*` tag pauses for approval | blocked on the same host assignment |
 | Restore the standard's two-tier tag->env routing (inherited `deploy.yml` is prod-only) | `beta-*` tag routes to the `beta` environment | todo - TD-001, blocked on a beta target |
 
 ## Batch 2 - docs convention + karda product definition and design
@@ -38,8 +39,24 @@ GitHub repo, environments, secrets, and platform registration all start empty.
 | Re-align the convention and guardrail to 070 batch 5 (TD register to the newly pinned `10-tech-debt.md`, path-keyed `DIR_EXEMPTIONS`, sequence/keyed subdirectory model) | `docs/00-meta/10-docs-convention.md`, `scripts/guardrails/` | done 2026-07-22, zero deviations |
 | Product definition (what karda is, surfaces, business rules) | `docs/20-specs/10-product-definition.md` | Draft v0.4 in repo |
 | Knowledge model / processing / retrieval / arda-channel design | `docs/30-design/{100,110,120,200}-*.md` | Draft v0.1 in repo |
-| Resolve the open decisions carried by those drafts (4 + 4 + 5 + Arda-side alignment) | the same documents | todo |
+| Resolve the open decisions carried by those drafts | the same documents | 25 items open, split by who can decide - see below |
+| Arda-side alignment on the content channel (5 items; `200-arda-channel` stays v0.1 until answered) | `docs/30-design/200-arda-channel.md` | sent 2026-07-22 (`80-liaison/30-2607222338`), awaiting reply |
 | Decisions taken along the way | `docs/30-design/decisions/ADR-NNN-*` | todo |
+
+### Who can decide the 25 open items
+
+Sequencing follows from this split, not from document order: anything with an
+external round trip goes out first, because its clock only starts when the letter
+does. Karda-internal items compete for our working time, not for waiting time, so
+they run in parallel rather than after.
+
+| Decider | Items | Examples |
+|---------|-------|----------|
+| karda alone | ~11 | chunk defaults, `filterable` field ceiling, recall parameter baseline, tool-surface boundary |
+| arda line | 5 | all of `200-arda-channel` section 12 - **sent** |
+| platform / L0 | 4 | visible-set invalidation event contract (`product_310` defines it), private-library retention, instantiation metering, the Arda/Karda boundary ruling |
+| atlas line | 1 | parsing-model deployment affinity (batch interface + co-located workers) |
+| ontos line / L3 direction | 2 | graph instance ownership, first P-tier knowledge package selection |
 
 The org domain-code registration for `karda` (taxonomy section 5) landed on the
 platform side (branch `docs/register-karda-domain-code`). It governs karda
