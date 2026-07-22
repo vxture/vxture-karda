@@ -22,8 +22,10 @@ GitHub repo, environments, secrets, and platform registration all start empty.
 
 | Item | Acceptance | State |
 |------|-----------|-------|
-| GitHub bootstrap per `docs/50-deployment/20-github-bootstrap-checklist.md` (create public repo, secret scanning + push protection, first-push `main`, one CI run, THEN apply `main-ruleset.json`) | five required checks green on `main`; ruleset active | todo |
-| Platform-side registration per `docs/50-deployment/10-platform-registration-checklist.md` (OIDC clients `karda`/`karda-beta`, C2/C3 secrets, edge vhost `karda.vxture.com`) | credentials issued; vhost live | todo |
+| GitHub bootstrap per `docs/50-deployment/20-github-bootstrap-checklist.md` (public repo, first-push `main`, one CI run, THEN apply `main-ruleset.json`) | five required checks green on `main`; ruleset active | **done 2026-07-22** - ruleset `19556856` active with all five contexts; `main` green at `40dd18d` |
+| `ALIYUN_ACR_NAMESPACE` repo variable (governance section 6: read from `vars`, never hardcoded) | `build.yml` registry preflight passes | done 2026-07-22 = `vx-foundation` |
+| Dependabot registry credential (`.github/dependabot.yml` `registries:` block) | npm update runs stop failing `private_source_authentication_failure` | done 2026-07-22 |
+| Platform-side registration per `docs/50-deployment/10-platform-registration-checklist.md` (OIDC clients `karda`/`karda-beta`, C2/C3 secrets, edge vhost `karda.vxture.com`) | credentials issued; vhost live | todo - needs a liaison letter |
 | GitHub Environments `beta` / `production` with `DEPLOY_*` (exact `DEPLOY_DIR`) and a required reviewer on `production` | a `beta-*` tag deploys; a `v*.*.*` tag pauses for approval | todo |
 | Restore the standard's two-tier tag->env routing (inherited `deploy.yml` is prod-only) | `beta-*` tag routes to the `beta` environment | todo - TD-001, blocked on a beta target |
 
