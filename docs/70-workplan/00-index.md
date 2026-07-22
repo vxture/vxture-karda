@@ -28,7 +28,15 @@ GitHub repo, environments, secrets, and platform registration all start empty.
 | Platform-side registration **segment A** (directory row, tier seeding, `karda` production OIDC client, C2 credentials, C3 signing secret) | credentials issued and transported into repo secrets | sent 2026-07-22 (`80-liaison/20-2607222338`), awaiting reply |
 | Platform-side registration **segment B** (`product_webhooks` tailnet address, edge vhost target, `karda-beta` OIDC client) | vhost live; TD-001 closable | **blocked on the deploy host/port assignment** - an owner/infra decision, not a platform-line one |
 | Deploy Environments `beta` / `production` with `DEPLOY_*` (exact `DEPLOY_DIR`, mandatory `DEPLOY_KNOWN_HOSTS`) and a required reviewer on `production` | a `beta-*` tag deploys; a `v*.*.*` tag pauses for approval | blocked on the same host assignment |
-| Restore the standard's two-tier tag->env routing (inherited `deploy.yml` is prod-only) | `beta-*` tag routes to the `beta` environment | todo - TD-001, blocked on a beta target |
+| Restore the standard's two-tier tag->env routing (inherited `deploy.yml` is prod-only) | `beta-*` tag routes to the `beta` environment | todo - TD-001, blocked on a target |
+
+**Deployment is deferred** (owner 2026-07-23). Karda keeps the standard two tiers
+as its target, but has no host assigned and **is not going on worker-02** - do not
+infer its target from arda's. Until a host exists there is no Environment, no
+`DEPLOY_*`, no `APP_PUBLISH_PORT`, and no edge vhost to install; the deploy
+workflows stay authored-but-unexercised. Everything else in batch 1 is done, so
+this is the only thing standing between karda and a deployable state - and it is
+deliberately parked, not stalled.
 
 ## Batch 2 - docs convention + karda product definition and design
 

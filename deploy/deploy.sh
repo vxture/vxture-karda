@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
-# On-host deployment lifecycle for the karda production stack. Invoked
-# by CI (deploy.yml / rollback.yml) after the image build. Single-stack, prod
-# only. worker02 is a data-array box, so a full-stack pull + up -d is fine.
+# On-host deployment lifecycle for the karda stack. Invoked by CI
+# (deploy.yml / rollback.yml) after the image build.
+#
+# NOTE: the full-stack `pull + up -d` below is only safe on a host with room to
+# hold old and new containers at once. Governance section 4 requires per-service
+# `pull + up -d --no-deps` on a memory-constrained box (2C2G), where recreating
+# a whole stack exhausts memory and drags down the tailnet. Karda's deploy host
+# is not assigned yet - re-check this choice against the host profile before the
+# first deploy.
 #
 #   bash deploy.sh all       # directories -> start -> verify
 #   bash deploy.sh start     # pull image (GHCR primary, ACR fallback) + up -d

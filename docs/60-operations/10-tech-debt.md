@@ -28,14 +28,22 @@ deliberately not carried over.
   repos default to two tag->env tiers, `beta-*` -> beta and `v*.*.*` ->
   production.
 - **Reason**: `deploy.yml` is inherited verbatim from `vxture-template`, which was
-  deliberately prod-only for its single demo instantiation. Karda has no beta
-  deploy target assigned (no host, no port, no `beta` GitHub Environment), so
-  there is nothing for a `beta-*` tag to route to. Authoring a beta branch of the
-  routing against an undecided target would be invention, not inheritance.
+  deliberately prod-only for its single demo instantiation. Karda has **no deploy
+  target at all** yet - no host, no port, no GitHub Environment, for either tier -
+  so there is nothing for a `beta-*` tag to route to. Authoring a beta branch of
+  the routing against an undecided target would be invention, not inheritance.
+- **Two tiers remain the target** (owner confirmed 2026-07-23). This is an
+  unfinished item, not an accepted deviation: karda will adopt the section 4
+  default once a host exists. Karda is simply **not deployed for now**.
+- **worker-02 is ruled out** (owner 2026-07-23) - do not infer karda's target
+  from arda's, and do not copy its host/port/array layout. Arda's own beta stack
+  is slated for teardown, which is a fact about arda, not a precedent for karda.
 - **Annotated at**: `.github/workflows/deploy.yml` header comment.
-- **Recovery condition**: the owner assigns karda a beta host/port. Then add the
+- **Recovery condition**: the owner assigns karda deploy hosts/ports. Then add the
   `beta-*` tag trigger, the beta branch of the `detect-target-environment`
-  routing, the `beta` GitHub Environment (no reviewer gate), and its `DEPLOY_*`
-  secrets; close this entry.
+  routing, an env-aware `stack_root`/`deploy_dir` (both currently hardcoded to
+  `/srv/md0/<code>`), the `beta` GitHub Environment (no reviewer gate) and the
+  `production` one (required reviewer), and their `DEPLOY_*` secrets; close this
+  entry. `vxture-arda`'s `deploy.yml` is the reference two-tier implementation.
 - **Report to platform line**: pending - goes out with the next liaison letter
   (`docs/80-liaison/`). The taxonomy letter was docs-only and did not carry it.
