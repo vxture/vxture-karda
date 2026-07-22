@@ -6,7 +6,9 @@ artifact(s) here; an operator installs them on the shared vxture public edge hos
 over tailscale to the app on the deploy host).
 
 - `karda.vxture.com.conf` - prod vhost. Set `$upstream` to
-  `vx-worker-02:<APP_PUBLISH_PORT>` (this product's assigned port).
+  `<DEPLOY_HOST>:<APP_PUBLISH_PORT>` from the infra allocation. Neither is
+  assigned yet, and worker-02 is ruled out (owner 2026-07-23) - do not copy
+  another product's host into this file.
 
 ## Install (operator, on the edge / vxture project repo)
 
