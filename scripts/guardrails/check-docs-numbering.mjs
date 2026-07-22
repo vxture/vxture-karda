@@ -13,10 +13,15 @@
  * therefore NOT a legal shape here; a file carrying one is a violation.
  *
  * Three checks (see the convention, section 7):
- *   1. file names   - NN(N)-slug.md, or the ADR-/TD- registers
- *   2. directory names - NN(N)-name, or one of the org-pinned named exceptions
+ *   1. file names      - NN(N)-slug.md, or the ADR-/TD- registers
+ *   2. directory names - NN(N)-name for a sequence directory, or a docs-relative
+ *                        path in DIR_EXEMPTIONS for a keyed one
  *   3. root-only README whitelist - a nested README.md cannot open an unnumbered
- *      area (the platform version whitelists it by basename at any depth)
+ *                        area
+ *
+ * Checks 2 and 3 originated here and were adopted org-wide in the 2026-07-22
+ * taxonomy revision (batch 5), so they are no longer local tightenings - the
+ * platform implementation now carries both. Keep the two in step.
  *
  * Modes: default lists violations as a worklist (exit 0); `--strict` fails hard
  * (exit 1) for CI.
@@ -41,27 +46,34 @@ const NUMBERED_FILE = [
   /^(ADR|TD)-\d{3}.*\.md$/u,
 ];
 
-// Legal directory shape, plus the closed set of org-pinned exceptions: these two
-// paths are fixed by the org standards (taxonomy section 4 pins ADRs at
-// 30-design/decisions/; the governance standard pins rebuild/main-ruleset.json),
-// so they cannot be renamed to carry a number. Adding to this set requires
-// amending docs/00-meta/10-docs-convention.md section 4 first.
-const NUMBERED_DIR = /^\d{2,3}-[a-z0-9-]+$/u;
-const DIR_EXCEPTIONS = new Set(["decisions", "rebuild"]);
+// Directory classification (org taxonomy section 2, revised 2026-07-22):
+//   sequence directory - carries an ordered grouping, must be NN(N)-name
+//   keyed directory    - the name IS a stable external key (ADR number, table
+//                        name, package name), so a number would fake an order
+//                        that does not exist; unnumbered but registered below
+// Keys are docs-relative PATHS, not bare names: a bare name would exempt any
+// directory that happens to reuse it anywhere in the tree.
+// Adding an entry requires amending docs/00-meta/10-docs-convention.md section 4.
+const NUMBERED_DIR = /^\d{2,3}-[a-z][a-z0-9-]*$/u;
+const DIR_EXEMPTIONS = new Set([
+  "30-design/decisions", // key = ADR number; org taxonomy section 4 pins this path
+  "50-deployment/rebuild", // governance standard section 1 pins rebuild/main-ruleset.json
+]);
 
 const fileViolations = [];
 const dirViolations = [];
 
-function walk(dir, depth) {
+function walk(dir, relDir) {
   for (const name of readdirSync(dir)) {
     const full = join(dir, name);
+    const relPath = relDir ? `${relDir}/${name}` : name;
     if (statSync(full).isDirectory()) {
-      if (!NUMBERED_DIR.test(name) && !DIR_EXCEPTIONS.has(name)) {
+      if (!NUMBERED_DIR.test(name) && !DIR_EXEMPTIONS.has(relPath)) {
         dirViolations.push(rel(full));
       }
-      walk(full, depth + 1);
+      walk(full, relPath);
     } else if (name.endsWith(".md")) {
-      const whitelisted = depth === 0 && ROOT_WHITELIST.has(name);
+      const whitelisted = relDir === "" && ROOT_WHITELIST.has(name);
       if (!whitelisted && !NUMBERED_FILE.some((re) => re.test(name))) {
         fileViolations.push(rel(full));
       }
@@ -74,7 +86,7 @@ function rel(p) {
 }
 
 try {
-  walk(DOCS_ROOT, 0);
+  walk(DOCS_ROOT, "");
 } catch {
   console.log(`[docs-numbering] no ${DOCS_ROOT}/ - skip`);
   process.exit(0);

@@ -7,7 +7,7 @@ name: deploy
 # DEVIATION (140-repo-governance-standard.md section 4): product repos default to
 # TWO tiers (beta-* -> beta, v*.*.* -> production). This workflow is inherited
 # prod-only from the template and karda has no beta target assigned yet. Tracked
-# as TD-001 in docs/60-operations/00-index.md; add the beta tag trigger and
+# as TD-001 in docs/60-operations/10-tech-debt.md; add the beta tag trigger and
 # routing once the owner assigns a beta host.
 on:
   push:

@@ -32,7 +32,8 @@ GitHub repo, environments, secrets, and platform registration all start empty.
 | Item | Lands in | State |
 |------|----------|-------|
 | Repo docs convention (org taxonomy section 3 delegates in-repo organization) + guardrail rewrite (file names, directory names, README whitelist) | `docs/00-meta/10-docs-convention.md` | done 2026-07-22 |
-| Report the taxonomy audit findings to the platform line (8 standing gaps, 4 decisions requested) | `docs/80-liaison/10-2607221756-karda-taxonomy-findings.md` | sent 2026-07-22, awaiting reply |
+| Report the taxonomy audit findings to the platform line (8 standing gaps, 4 decisions requested) | `docs/80-liaison/10-2607221756-karda-taxonomy-findings.md` | closed 2026-07-22 - all landed in 070 batch 5 |
+| Re-align the convention and guardrail to 070 batch 5 (TD register to the newly pinned `10-tech-debt.md`, path-keyed `DIR_EXEMPTIONS`, sequence/keyed subdirectory model) | `docs/00-meta/10-docs-convention.md`, `scripts/guardrails/` | done 2026-07-22, zero deviations |
 | Product definition (what karda is, surfaces, business rules) | `docs/20-specs/10-product-definition.md` | Draft v0.4 in repo |
 | Knowledge model / processing / retrieval / arda-channel design | `docs/30-design/{100,110,120,200}-*.md` | Draft v0.1 in repo |
 | Resolve the open decisions carried by those drafts (4 + 4 + 5 + Arda-side alignment) | the same documents | todo |
@@ -42,9 +43,12 @@ The org domain-code registration for `karda` (taxonomy section 5) landed on the
 platform side (branch `docs/register-karda-domain-code`). It governs karda
 documents that stay in the PLATFORM repo; it does not apply inside this repo.
 
-Blocked on the platform reply: karda's platform-side spec directory cannot be
-created until decision D3 in the liaison letter resolves - taxonomy section 6
-assigns `220` to karda, but `20-specs/220-vxtpl/` currently holds that number.
+Unblocked 2026-07-22: `220` is free (vxtpl moved to `940-vxtpl`, the out-of-tier
+band), so karda's platform-side spec directory `vxture/docs/20-specs/220-karda/`
+can be created whenever there is platform-perspective content to put in it.
+Nothing forces it yet - per taxonomy section 6, a product with no real specs to
+host does not pre-create an empty directory, and karda's specs currently live
+here, not there.
 
 Still staged in the git-ignored `temp/`:
 `product_110_amendment_user-dimension.md` - a platform-repo document (it is a
