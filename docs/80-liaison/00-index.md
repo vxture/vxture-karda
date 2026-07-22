@@ -10,7 +10,7 @@ history.
 
 | File | Stamp | To | Subject | Status |
 |------|-------|----|---------|--------|
-| `10-2607221756-karda-taxonomy-findings.md` | 2607221756 | platform line | `070-docs-taxonomy` audit: 8 standing standard/implementation gaps found while exercising the section-3 delegation, plus 4 decisions requested (kind set, subdirectory numbering, product number `220`, whether the delegation should mandate an in-repo convention) | open |
+| `10-2607221756-karda-taxonomy-findings.md` | 2607221756 | platform line | `070-docs-taxonomy` audit: 8 standing standard/implementation gaps found while exercising the section-3 delegation, plus 4 decisions requested (kind set, subdirectory numbering, product number `220`, whether the delegation should mandate an in-repo convention) | **approved** 2026-07-22 (all four), awaiting the platform-repo edits; only D3 (`220`) unblocks anything on our side |
 
 Expected next entries: the platform-side registration request (OIDC clients,
 C2/C3 secrets) and the edge vhost request for `karda.vxture.com`, both driven by
