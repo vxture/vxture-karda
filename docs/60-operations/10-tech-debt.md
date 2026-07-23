@@ -20,6 +20,7 @@ deliberately not carried over.
 
 | ID | Title | Opened | Status |
 |----|-------|--------|--------|
+| TD-003 | A broken workflow YAML passed all five required checks; nothing in CI reads a workflow file | 2026-07-24 | **closed** 2026-07-24 (same day) |
 | TD-002 | `db-init` applied the host's deployed DDL, not the pinned one - the version pin did nothing | 2026-07-24 | **closed** 2026-07-24 (same day) |
 | TD-001 | Beta tier not yet wired: development phase deploys straight to production, so the standard's second tag->env tier is dormant | 2026-07-22 | open - awaiting the beta server |
 
@@ -86,3 +87,31 @@ deliberately not carried over.
   would have caught this case but permanently couples schema changes to a prior
   deploy, which is backwards - schema often has to land before the code that
   uses it.
+
+
+## TD-003 - CI did not notice a workflow it had broken
+
+- **What happened** (2026-07-24): the TD-002 fix turned a literal `
+` inside a
+  shell `printf` into a real newline, splitting one line of `db-init.yml` in two.
+  YAML then read the continuation as a new top-level key and the file stopped
+  parsing. **All five required checks passed** and the change merged. The break
+  surfaced only when GitHub refused to dispatch the workflow, reporting that it
+  "does not have a `workflow_dispatch` trigger".
+- **Root cause**: none of `quality-gate` / `build` / `test-coverage` / `audit` /
+  `gitleaks` reads a workflow file. CI validated the application thoroughly and
+  the pipeline that runs CI not at all.
+- **Why the symptom misleads**: a workflow that cannot be parsed is
+  indistinguishable from one that does not exist, so the error points at a
+  missing trigger rather than at a syntax error - and it appears at the moment
+  you need the pipeline, not at the moment you broke it.
+- **Fix**: `scripts/guardrails/check-workflows.mjs`, wired into `quality-gate`
+  and exposed as `pnpm lint:workflows`. It asserts that every workflow declares
+  `on:`/`jobs:` and at least one recognised trigger, rejects tab indentation, and
+  checks that block scalars (`run: |`) are terminated only by a key, a list item
+  or a comment.
+- **A heuristic that was tried and discarded**: flagging shell lines with an odd
+  number of single quotes. It caught the real break but also cried wolf on
+  `sed "s/'/''/g"`, which is valid. Matching the structure rather than the
+  punctuation gives zero false positives on all seven current workflows while
+  still rejecting the exact injected-newline shape.

@@ -200,11 +200,9 @@ jobs:
           # exactly how a stale baseline once no-opped its way to a green run.
           # Compare what the pinned DDL declares against what the database now
           # has, and fail loudly on a shortfall.
-          declared_list="$(grep -oiE 'CREATE TABLE IF NOT EXISTS[[:space:]]+[a-z_]+\.[a-z_]+' ddl/00_baseline.sql                            | awk '{print tolower($NF)}' | sed "s/karda/${SNAKE}/g" | sort -u)"
-          declared_n="$(printf '%s
-' "$declared_list" | grep -c .)"
-          in_list="$(printf '%s
-' "$declared_list" | sed "s/.*/'&'/" | paste -sd, -)"
+          declared_list="$(grep -oiE 'CREATE TABLE IF NOT EXISTS[[:space:]]+[a-z_]+\.[a-z_]+' ddl/00_baseline.sql | awk '{print tolower($NF)}' | sed "s/karda/${SNAKE}/g" | sort -u)"
+          declared_n="$(echo "$declared_list" | grep -c .)"
+          in_list="$(echo "$declared_list" | sed "s/.*/'&'/" | paste -sd, -)"
           present_n="$(run -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema||'.'||table_name IN ($in_list);")"
           echo "[db-init] pinned baseline declares $declared_n tables; $present_n of them exist"
           if [ "$present_n" -lt "$declared_n" ]; then
