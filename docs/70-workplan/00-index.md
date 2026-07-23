@@ -26,17 +26,18 @@ GitHub repo, environments, secrets, and platform registration all start empty.
 | `ALIYUN_ACR_NAMESPACE` repo variable (governance section 6: read from `vars`, never hardcoded) | `build.yml` registry preflight passes | done 2026-07-22 = `vx-foundation` |
 | Dependabot registry credential (`.github/dependabot.yml` `registries:` block) | npm update runs stop failing `private_source_authentication_failure` | done 2026-07-22 |
 | Platform-side registration **segment A** (directory row, tier seeding, `karda` production OIDC client, C2 credentials, C3 signing secret) | credentials issued and transported into repo secrets | sent 2026-07-22 (`80-liaison/20-2607222338`), awaiting reply |
-| Platform-side registration **segment B** (`product_webhooks` tailnet address, edge vhost target, `karda-beta` OIDC client) | vhost live; TD-001 closable | **blocked on the deploy host/port assignment** - an owner/infra decision, not a platform-line one |
-| Deploy Environments `beta` / `production` with `DEPLOY_*` (exact `DEPLOY_DIR`, mandatory `DEPLOY_KNOWN_HOSTS`) and a required reviewer on `production` | a `beta-*` tag deploys; a `v*.*.*` tag pauses for approval | blocked on the same host assignment |
-| Restore the standard's two-tier tag->env routing (inherited `deploy.yml` is prod-only) | `beta-*` tag routes to the `beta` environment | todo - TD-001, blocked on a target |
+| Production deploy target allocated: worker-02, `/srv/md0/karda`, port 3233 | port free; edge conf and `.env.example` carry real values | done 2026-07-23 (owner) |
+| `production` GitHub Environment + required reviewer + non-secret `DEPLOY_*` | a `v*.*.*` tag pauses for approval and resolves the right host | done 2026-07-23 - `DEPLOY_HOST`/`DEPLOY_USER`/`DEPLOY_PORT`/`DEPLOY_DIR` set |
+| Platform-side registration **segment B** (edge vhost -> `vx-worker-02:3233`, `product_webhooks` delivery address, secret transport) | vhost live; `production` secrets complete | sent 2026-07-23 (`80-liaison/40-2607230909`), awaiting reply |
+| Owner-transported secrets: `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`, `ENV_FILE_BASE64`, `KARDA_DB_SVC_PASSWORD` | first `v*.*.*` tag can deploy | todo - only karda can receive them, only the owner can produce them |
+| Beta tier (`beta` Environment, `beta-*` trigger and routing, env-aware paths, `karda-beta` OIDC client) | `beta-*` tag routes to the beta environment | deferred - TD-001, awaiting the dedicated beta server |
 
-**Deployment is deferred** (owner 2026-07-23). Karda keeps the standard two tiers
-as its target, but has no host assigned and **is not going on worker-02** - do not
-infer its target from arda's. Until a host exists there is no Environment, no
-`DEPLOY_*`, no `APP_PUBLISH_PORT`, and no edge vhost to install; the deploy
-workflows stay authored-but-unexercised. Everything else in batch 1 is done, so
-this is the only thing standing between karda and a deployable state - and it is
-deliberately parked, not stalled.
+**Tiering, to keep it straight**: beta + production is the standard deployment
+model for every vxture product and karda follows it. During the development phase
+every product deploys **straight to production**, so only the production half is
+wired; beta is a reserved release channel that gets **its own separate server**
+later. That is a phase-and-hardware deferral, not an opt-out - TD-001 tracks it as
+an unfinished item, not an accepted deviation.
 
 ## Batch 2 - docs convention + karda product definition and design
 

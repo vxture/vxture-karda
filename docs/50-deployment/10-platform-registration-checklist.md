@@ -24,13 +24,15 @@ Product code `karda`; names below are the concrete derived values.
 
 ## Edge
 
-- [ ] Request the edge vhost `karda.vxture.com` -> the assigned deploy host and
-      published port. Track the request as a `docs/80-liaison/` letter.
+- [ ] Request the edge vhost `karda.vxture.com` -> `vx-worker-02:3233`
+      (letter `80-liaison/40-2607230909`). Production only for now; the beta
+      vhost belongs with the future beta server (TD-001).
 
 ## Provisioning webhook (C3)
 
 - [ ] Register karda in `product_webhooks` with its tailnet delivery address
-      (`KARDA_WEBHOOK_BASE_URL`).
+      `KARDA_WEBHOOK_BASE_URL` = `http://vx-worker-02:3233` (tailnet-direct, not
+      via the public edge).
 - [ ] Add `KARDA_PROVISION_WEBHOOK_SECRET` to the platform env; the owner
       hand-transports the secret value to this repo's GitHub secrets.
 
@@ -44,6 +46,6 @@ Product code `karda`; names below are the concrete derived values.
 ## Sequencing
 
 Karda inherits the platform-integration layer already built, so these rows are
-what stands between the inherited code and a live beta. Nothing here blocks the
+what stands between the inherited code and a live production stack. Nothing here blocks the
 GitHub bootstrap checklist (`20-github-bootstrap-checklist.md`), which can and
 should run first - the repo needs to exist before any secret can be placed in it.
