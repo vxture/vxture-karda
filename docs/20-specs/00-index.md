@@ -5,6 +5,7 @@ Karda's specification: what the product is, its surfaces, and its business rules
 | Doc | Scope | State |
 |-----|-------|-------|
 | `10-product-definition.md` | positioning, structure, settled decisions, v1 scope, open product-level decisions; carries the design-document family index | Draft v0.4 |
+| `20-decisions.md` | decision register (`KD-NNN`): the rulings that were scattered across the design docs' section-11 tables, collected in one place. On conflict this table wins; the design docs keep the context | v1 |
 
 Two-digit `NN-slug.md` numbering with ten-step gaps (`docs/00-meta/10-docs-convention.md`
 section 3). This repo holds one product, so there is no per-product subdirectory
