@@ -59,10 +59,15 @@ GRANT UPDATE (name, updated_at) ON karda_kb.folder TO karda_svc;
 -- the provenance and the dedup key; a mutable hash would make the idempotency
 -- index lie.
 REVOKE UPDATE ON karda_kb.document FROM karda_svc;
-GRANT UPDATE (title, folder_id, processing_template_id, content_state,
-              failure_reason, failed_at, verification_state, verifier,
-              verified_at, expires_at, sensitivity, business_meta, updated_at)
+GRANT UPDATE (title, folder_id, processing_template_id, storage_ref,
+              content_state, failure_reason, failed_at, verification_state,
+              verifier, verified_at, expires_at, sensitivity, business_meta,
+              updated_at)
   ON karda_kb.document TO karda_svc;
+-- storage_ref IS writable: the pipeline fills it once the raw file lands in
+-- karda's object storage, and a controlled rebuild may relocate it. source /
+-- connector_code / source_ref / content_hash stay immutable - they are the
+-- provenance and the dedup key.
 
 REVOKE UPDATE ON karda_kb.entry FROM karda_svc;
 GRANT UPDATE (title, folder_id, content_template_id, template_version, fields,

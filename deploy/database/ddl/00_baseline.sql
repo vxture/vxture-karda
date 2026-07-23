@@ -300,10 +300,21 @@ CREATE TABLE IF NOT EXISTS karda_kb.document (
   title                   VARCHAR(512) NOT NULL,
   mime                    VARCHAR(128),
   size_bytes              BIGINT,
+  -- Ingestion KIND, deliberately connector-agnostic: 'connector' covers every
+  -- external source karda attaches (Arda is simply the first of them, treated as
+  -- an internal third party). Naming a specific connector here would make adding
+  -- the next one a production structure change; the connector's identity lives
+  -- in connector_code, which is data.
   source                  VARCHAR(32) NOT NULL
                             CONSTRAINT chk_document_source
-                            CHECK (source IN ('upload', 'arda_sync', 'api')),
-  source_ref              JSONB,                      -- datasource_id / uri / external_version
+                            CHECK (source IN ('upload', 'api', 'connector')),
+  connector_code          VARCHAR(64),                -- e.g. 'arda'; NULL for upload/api
+  source_ref              JSONB,                      -- source_doc_id / uri / external_version
+  -- Pointer into karda's OWN object storage for the retained raw file
+  -- (110-processing 1: raw preservation - rechunk without reparsing, reindex
+  -- without redownloading). Karda holds its own copy; it does not depend on a
+  -- connector remaining reachable to serve or rebuild its content.
+  storage_ref             VARCHAR(512),
   content_hash            VARCHAR(80),
   processing_template_id  UUID,                       -- document-level override
   content_state           VARCHAR(32) NOT NULL DEFAULT 'processing'
@@ -328,19 +339,25 @@ CREATE TABLE IF NOT EXISTS karda_kb.document (
   CONSTRAINT fk_document_folder FOREIGN KEY (folder_id)
     REFERENCES karda_kb.folder (id) ON DELETE SET NULL,
   CONSTRAINT fk_document_processing_template FOREIGN KEY (processing_template_id)
-    REFERENCES karda_kb.processing_template (id)
+    REFERENCES karda_kb.processing_template (id),
+  -- A connector-sourced document must say which connector; upload/api must not.
+  CONSTRAINT chk_document_connector_code
+    CHECK ((source = 'connector') = (connector_code IS NOT NULL))
 );
 CREATE INDEX IF NOT EXISTS idx_document_kb_state
   ON karda_kb.document (kb_id, content_state);
--- Same-source same-content dedup: the storage-layer half of the content_hash
--- idempotency in 110-processing 7.
-CREATE UNIQUE INDEX IF NOT EXISTS uidx_document_kb_source_hash
-  ON karda_kb.document (kb_id, source, content_hash)
+-- Same-origin same-content dedup: the storage-layer half of the content_hash
+-- idempotency in 110-processing 7. connector_code is coalesced because a NULL
+-- would make every upload distinct from every other upload under SQL's
+-- NULL <> NULL rule, silently disabling dedup on exactly the ingestion path
+-- that needs it most.
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_document_kb_origin_hash
+  ON karda_kb.document (kb_id, source, coalesce(connector_code, ''), content_hash)
   WHERE content_hash IS NOT NULL AND content_state <> 'deleted';
--- Arda tombstone deletes locate rows by the envelope's source_doc_id.
+-- Tombstone deletes from any connector locate rows by the envelope's stable id.
 CREATE INDEX IF NOT EXISTS idx_document_source_doc_id
-  ON karda_kb.document ((source_ref ->> 'source_doc_id'))
-  WHERE source = 'arda_sync';
+  ON karda_kb.document (connector_code, (source_ref ->> 'source_doc_id'))
+  WHERE source = 'connector';
 
 -- Item-type content. HAS a 'draft' state (editing does not enter the index).
 -- template_version is load-bearing: template evolution bumps the version and
