@@ -20,6 +20,7 @@ deliberately not carried over.
 
 | ID | Title | Opened | Status |
 |----|-------|--------|--------|
+| TD-002 | `db-init` applied the host's deployed DDL, not the pinned one - the version pin did nothing | 2026-07-24 | **closed** 2026-07-24 (same day) |
 | TD-001 | Beta tier not yet wired: development phase deploys straight to production, so the standard's second tag->env tier is dormant | 2026-07-22 | open - awaiting the beta server |
 
 ## TD-001 - beta tier not yet wired
@@ -53,3 +54,35 @@ deliberately not carried over.
   recovery path.
 - **Report to platform line**: carried by
   `docs/80-liaison/40-2607230909-karda-platform-registration-b.md`.
+
+
+## TD-002 - db-init applied the wrong DDL and reported success
+
+- **Clause defeated**: `140-repo-governance-standard.md` section 6 - `db-init`
+  carries `expected_sha` specifically to "stop a floating ref applying stale
+  DDL".
+- **What happened** (2026-07-24): an `apply` run pinned to `35f9020` completed
+  green, yet none of the ten `karda_kb` tables existed afterwards. The remote
+  script did `cd "$REPO_DIR"` and applied DDL from `/srv/md0/karda/deploy`,
+  which is populated by the **deploy** rsync - at that moment still `2af1e38`,
+  a 149-line baseline with zero occurrences of `karda_kb`. Every statement is
+  `IF NOT EXISTS`, so applying the stale file no-opped cleanly and printed
+  `done`.
+- **Why it is worse than a plain bug**: the pin created false assurance. It
+  governed the runner's checkout while the applied bytes came from elsewhere,
+  so the one guarantee the standard asks of it was precisely the one it could
+  not give. And the failure mode is silent by construction - `IF NOT EXISTS`
+  means "applied the wrong file" and "applied the right file twice" look
+  identical.
+- **Fix**: `db-init` now tars `deploy/database/ddl` from the pinned checkout to
+  a `/tmp` staging directory on the host and applies from there, leaving the
+  deployed copy (owned by the deploy rsync) untouched. It also logs the SHA
+  whose DDL it is applying.
+- **Second layer**: a post-apply assertion compares the table set the pinned
+  baseline declares against what the database actually has, and fails loudly
+  listing the missing ones. Verified offline against the real baseline: 20
+  declared, a simulated 10-table database is rejected.
+- **Not fixed by**: asserting the host's `VERSION` matches `expected_sha`. That
+  would have caught this case but permanently couples schema changes to a prior
+  deploy, which is backwards - schema often has to land before the code that
+  uses it.
