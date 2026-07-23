@@ -107,6 +107,7 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
           ALIYUN_ACR_REGISTRY: ${{ vars.ALIYUN_ACR_REGISTRY }}
           ALIYUN_ACR_NAMESPACE: ${{ vars.ALIYUN_ACR_NAMESPACE }}
           TAILSCALE_OAUTH_CLIENT_ID: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
@@ -120,6 +121,25 @@ jobs:
           test -n "$ALIYUN_ACR_NAMESPACE"
           test -n "$TAILSCALE_OAUTH_CLIENT_ID"
           test -n "$TAILSCALE_OAUTH_CLIENT_SECRET"
+
+          # DEPLOY_DIR must be an absolute POSIX path. Setting it from Git Bash
+          # on Windows silently rewrites a leading "/" into the MSYS install
+          # prefix (a Windows drive path), and the remote deploy.sh then derives
+          # ROOT from it and looks for the stack in a directory that does not
+          # exist. That cost a full build + approval + SSH round trip to surface
+          # as "missing <root>/etc/.env" on 2026-07-23. Assert the shape here so
+          # it fails in seconds instead. Set the secret from PowerShell, the
+          # GitHub UI, or Git Bash with MSYS_NO_PATHCONV=1.
+          # Empty is allowed: the deploy step falls back to /srv/md0/<code>/deploy.
+          if [ -n "${DEPLOY_DIR:-}" ]; then
+            case "$DEPLOY_DIR" in
+              /*) ;;
+              *) echo "::error::DEPLOY_DIR must be an absolute POSIX path (starts with '/'). It looks path-converted - see the comment in deploy.yml." >&2; exit 1 ;;
+            esac
+            case "$DEPLOY_DIR" in
+              *:*|*"Program Files"*) echo "::error::DEPLOY_DIR contains a Windows path fragment - it was mangled by MSYS path conversion." >&2; exit 1 ;;
+            esac
+          fi
 
       - name: Join tailnet and prepare SSH
         uses: ./.github/actions/tailnet-ssh-connect
