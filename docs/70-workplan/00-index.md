@@ -29,8 +29,12 @@ GitHub repo, environments, secrets, and platform registration all start empty.
 | Production deploy target allocated: worker-02, `/srv/md0/karda`, port 3233 | port free; edge conf and `.env.example` carry real values | done 2026-07-23 (owner) |
 | `production` GitHub Environment + required reviewer + non-secret `DEPLOY_*` | a `v*.*.*` tag pauses for approval and resolves the right host | done 2026-07-23 - `DEPLOY_HOST`/`DEPLOY_USER`/`DEPLOY_PORT`/`DEPLOY_DIR` set |
 | Platform-side registration **segment B** (edge vhost -> `vx-worker-02:3233`, `product_webhooks` delivery address, secret transport) | vhost live; `production` secrets complete | sent 2026-07-23 (`80-liaison/40-2607230909`), awaiting reply |
-| Owner-transported secrets: **`DEPLOY_SSH_KEY` + `DEPLOY_KNOWN_HOSTS`** | first `v*.*.*` tag can deploy | **the only two hard blockers left**; both fail the workflow immediately if absent |
-| Host-side `.env` at `/srv/md0/karda/etc/.env` (owner writes it directly, incl. `OIDC_CLIENT_SECRET`, `PLATFORM_API_URL`, `PLATFORM_INTERNAL_AUTH_TOKEN`) | app starts configured | todo - **must exist before the first deploy**; see the timing trap in `60-operations/20-run-first-deploy.md` section 2. `ENV_FILE_BASE64` is then unnecessary |
+| Owner-transported secrets: **`DEPLOY_SSH_KEY` + `DEPLOY_KNOWN_HOSTS`** | first `v*.*.*` tag can deploy | done 2026-07-23 |
+| **First production deploy** | stack live, health 200, VERSION traceable | **done 2026-07-23** - `v0.1.1` at `sha-2af1e38`; `v0.1.0` failed on a mangled `DEPLOY_DIR` and an empty host `.env`, both fixed |
+| C2 channel live against the real platform | authenticated probe returns a valid envelope | **done 2026-07-23** - 200 with the unsubscribed envelope; 401 without a token and with a wrong one |
+| C1 login loop end to end | a real authorize -> token exchange succeeds | blocked on the edge vhost (segment B) - `/auth/login` already 307s to the issuer correctly |
+| Business-face DB structure via `db-init.yml` | `data.database.reachable=true` | in progress - `verify` run awaiting approval |
+| Host-side `.env` at `/srv/md0/karda/etc/.env` | app starts configured | done 2026-07-23 - 26 keys, mode 600; written directly to the host. `ENV_FILE_BASE64` stays unused by design |
 | Tier -> entitlement/quota mapping for the platform to publish the five DRAFT plans | platform admin publishes real `features`/`quota` | blocked on `20-specs/10-product-definition.md` reaching v1 - its section 11 still carries 7 product-level decisions, two of which drive quota semantics |
 | Beta tier (`beta` Environment, `beta-*` trigger and routing, env-aware paths, `karda-beta` OIDC client) | `beta-*` tag routes to the beta environment | deferred - TD-001, awaiting the dedicated beta server |
 
