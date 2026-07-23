@@ -122,9 +122,20 @@ UNIQUE (`kb_id`, `field_name`)。
 ### 3.6 `document`
 
 系统段：`id` / `kb_id` FK / `folder_id` FK NULL / `title` / `mime` / `size_bytes` BIGINT /
-`source` CHECK `upload / arda_sync / api` / `source_ref` JSONB（`datasource_id`/`uri`/`external_version`）/
+`source` CHECK **`upload / api / connector`** / `connector_code` VARCHAR(64)（`source=connector` 时必填）/
+`source_ref` JSONB（`source_doc_id`/`uri`/`external_version`）/ **`storage_ref` VARCHAR(512)** /
 `content_hash` VARCHAR(80) / `processing_template_id` UUID NULL（**文档级覆盖**）/
 `created_in_product` VARCHAR(32) / `created_by` VARCHAR(128) **[ref]** / `created_at` / `updated_at`。
+
+**`source` 是连接器无关的"摄取种类"，不是连接器名**（2026-07-23 方向调整）。原枚举写死
+`arda_sync`，等于把一个连接器焊进 CHECK 约束——而产品方向是陆续开放外接知识库/文档库，
+那样每接一个源都要动一次生产结构。现在连接器身份落在 `connector_code`（**数据，不是结构**），
+新增连接器不需要 DDL 变更。`chk_document_connector_code` 保证两者一致：`connector` 必带 code，
+`upload`/`api` 必不带。
+
+**`storage_ref` 指向 karda 自有对象存储中的原始件**。110-processing §1 的"阶段产物留存"要求原始件
+持久化（重分块不重解析、重索引不重下载）；更要紧的是**自闭环**：karda 持有自己的副本，不依赖
+某个连接器持续可达才能服务或重建自己的内容。
 
 内容主状态：`content_state` CHECK **`processing / indexed / failed / archived / deleted`**
 （**无 `draft`**——文件到达即进 processing，§5.1）+ `failure_reason` TEXT + `failed_at` TIMESTAMPTZ。
@@ -134,9 +145,13 @@ UNIQUE (`kb_id`, `field_name`)。
 
 业务段：`business_meta` JSONB NOT NULL DEFAULT `'{}'`。
 
-约束：UNIQUE (`kb_id`, `source`, `content_hash`) WHERE `content_state <> 'deleted'`——同库同源同内容
-去重，正是 110-processing §7 的 hash 幂等落到存储层；`idx_document_kb_state` (`kb_id`, `content_state`)；
-`idx_document_source_ref_doc_id` 对 Arda 通道的 `source_doc_id` 建表达式索引（墓碑删除按它定位）。
+约束：UNIQUE (`kb_id`, `source`, `coalesce(connector_code,'')`, `content_hash`)
+WHERE `content_state <> 'deleted'`——同库同源同内容去重，正是 110-processing §7 的 hash 幂等落到
+存储层。**`connector_code` 必须 `coalesce`**：SQL 的 `NULL <> NULL` 会让每一次上传都与其它上传
+互不冲突，恰好在最需要去重的摄取路径上静默失效。
+`idx_document_kb_state` (`kb_id`, `content_state`)；
+`idx_document_source_doc_id` (`connector_code`, `source_ref->>'source_doc_id'`) WHERE `source='connector'`
+——任何连接器的墓碑删除都按它定位。
 
 ### 3.7 `entry`
 

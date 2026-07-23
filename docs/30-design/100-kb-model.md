@@ -82,7 +82,13 @@ FAQ / 术语库需求的标准解法(已拍板):**加工模板选 Q&A 式(文件
 
 ### 4.1 系统段(system,只读,平台维护)
 
-`id / owner(type+key) / kb_id / folder_id / source(upload|arda_sync|api) / source_ref(血缘) / created_in_product / created_by / created_at / updated_at / content_state(§5.1) / template_ref(加工或内容模板及版本)`
+`id / owner(type+key) / kb_id / folder_id / source(upload|api|connector) / connector_code(source=connector 时必填) /
+source_ref(血缘) / storage_ref(karda 自有对象存储中的原始件指针) / created_in_product / created_by /
+created_at / updated_at / content_state(§5.1) / template_ref(加工或内容模板及版本)`
+
+> **source 为连接器无关枚举**(2026-07-23 方向调整):`connector` 覆盖一切外接源,具体是哪个连接器由
+> `connector_code` 承载(如 `arda`)。把某个连接器名写进枚举,会让"再接一个源"变成一次生产结构变更——
+> 而陆续开放外接知识库/文档库正是产品方向。Arda 由此降为**第一个连接器实现**,非架构对等方。
 
 ### 4.2 治理段(governance,治理角色维护)
 

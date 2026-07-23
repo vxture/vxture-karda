@@ -276,7 +276,9 @@ model Document {
   mime                 String?   @db.VarChar(128)
   sizeBytes            BigInt?   @map("size_bytes")
   source               String    @db.VarChar(32)
+  connectorCode        String?   @map("connector_code") @db.VarChar(64)
   sourceRef            Json?     @map("source_ref")
+  storageRef           String?   @map("storage_ref") @db.VarChar(512)
   contentHash          String?   @map("content_hash") @db.VarChar(80)
   processingTemplateId String?   @map("processing_template_id") @db.Uuid
   contentState         String    @default("processing") @map("content_state") @db.VarChar(32)
