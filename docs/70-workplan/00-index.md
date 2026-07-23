@@ -88,10 +88,65 @@ Still staged in the git-ignored `temp/`:
 `product_110_amendment_user-dimension.md` - a platform-repo document (it is a
 draft amendment to `product_110_sharing-isolation.md`), so it does not land here.
 
-## Later
+## Product development plan (batches 3-8)
 
-| Batch | Scope |
-|-------|-------|
-| 3 | Karda domain schema + DDL increment (three-part DDL, service role, column locks, Prisma lockstep guardrail) |
-| 4 | Karda application surfaces on top of the inherited shell |
-| 5 | Online integration against real platform endpoints; first beta deploy |
+The platform integration layer is done and verified end to end (see the batch-1
+rows and `80-liaison/60-2607231722`). What follows is karda's own domain.
+
+### The one thing that decides the shape of this plan
+
+**Atlas gates two of the four largest domains.** `110-processing` section 4 states
+the iron rule - "there is no second model host outside Atlas" - so parsing models,
+OCR, table structure, embedding, rerank and generation all leave karda and land on
+Atlas. karda hosts no model runtime at all, deliberately unlike RAGFlow.
+
+Atlas is live in production (it is the Model Platform's final product name, per
+`product_100_matrix`), but **no karda-Atlas interface contract exists** - the
+platform repo has no atlas contract document. Until it does, the processing and
+retrieval domains can only be built against a mock.
+
+That is why the Atlas request goes out **first**, in parallel with batch 3: its
+round trip is long, and it blocks more downstream work than anything else. The
+same sequencing rule as before - external round trips start their clock only when
+the letter does.
+
+### Dependency map
+
+| Domain | External dependency | Can start now? |
+|--------|--------------------|----------------|
+| Asset layer (objects, metadata, state machines, templates) | **none** | **yes** |
+| Processing pipeline | Atlas (parsing models + embedding) | skeleton yes, real runs no |
+| Retrieval | Atlas (rerank + generation) | skeleton yes, real runs no |
+| Arda sync ingestion | arda line (`80-liaison/30`, unanswered) | no |
+| C2 cache invalidation event | platform `product_310` | TTL fallback works meanwhile |
+| Tool surface (7 tools) | the domains beneath it | last |
+
+### Batches
+
+| # | Scope | Blocked by | State |
+|---|-------|-----------|-------|
+| 3 | **Domain data model**: schema design doc (`30-design/` 2xx band) + DDL + Prisma in lockstep + column locks. Covers KnowledgeBase / Folder / Document / Chunk / Entry / ProcessingTemplate / ContentTemplate, the three-part metadata, and both state machines | nothing | **next** |
+| 4 | **Asset layer**: CRUD for the above, dual templates, filterable whitelist, content + governance state machines, U-tier full flow | batch 3 | after 3 |
+| 5 | **Processing pipeline**: three-tier queue, staged parsing, templated chunking, atomic commit, incremental update, `failed` residency and retry | Atlas contract | skeleton in parallel |
+| 6 | **Retrieval**: RRF dual-path, cross-namespace union recall, visible-set cache, `verification_filter`, citation provenance | Atlas contract | skeleton in parallel |
+| 7 | **Arda content channel**: Binding, notify-then-pull, tombstone delete, revoke cascade | arda reply | blocked |
+| 8 | **Tool surface + Console**: the seven `karda.*` tools, recall testing, failure view | 4-6 | last |
+
+Batch 3 is deliberately first and deliberately narrow: every other domain writes
+to or reads from these tables, and `lint:data-design` makes DDL/Prisma drift a
+hard CI failure, so getting the shape wrong here is expensive to unwind later.
+
+### Decisions that must land before batch 3 closes
+
+`100-kb-model` section 11 carries four open items. Three do not touch the schema
+(Entry edit rights, the preset ContentTemplate list, archive retention policy);
+one does: **the filterable field cap** (proposed 16), which becomes a constraint.
+The seven product-level items in `10-product-definition` section 11 do not block
+batch 3 either, but two of them - first P-tier package selection, and the
+instantiation/archive metering basis - gate the tier-to-entitlement mapping the
+platform needs before it can publish karda's five DRAFT plans.
+
+## Superseded
+
+Earlier "Later" rows (domain schema / application surfaces / online integration)
+are replaced by the batches above, now that the designs exist to plan against.
