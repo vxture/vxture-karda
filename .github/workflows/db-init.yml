@@ -110,6 +110,7 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
+          PINNED_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
           port="${DEPLOY_PORT:-22}"
@@ -117,9 +118,23 @@ jobs:
           snake="${PRODUCT_CODE//-/_}"
           ssh_opts=(-i ~/.ssh/deploy_key -p "$port" -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -o ConnectTimeout=30)
 
+          # Deliver the DDL from THIS run's checkout, which is pinned to
+          # expected_sha. Previously the remote script applied whatever DDL the
+          # last DEPLOY had rsync'd onto the host, so expected_sha pinned the
+          # runner's checkout while a stale baseline was applied - every
+          # statement IF NOT EXISTS, so it no-opped and still reported success.
+          # Governance section 6 gives the pin exactly one job (stop a floating
+          # ref applying stale DDL); it could not do that job while the applied
+          # bytes came from somewhere else. Staged under /tmp so the deployed
+          # copy, which the deploy rsync owns, is left untouched.
+          ddl_stage="/tmp/${PRODUCT_CODE}-ddl-${PINNED_SHA:0:7}"
+          ssh "${ssh_opts[@]}" "$DEPLOY_USER@$DEPLOY_HOST" "rm -rf '$ddl_stage' && mkdir -p '$ddl_stage'"
+          tar -cf - -C deploy/database ddl             | ssh "${ssh_opts[@]}" "$DEPLOY_USER@$DEPLOY_HOST" "tar -xf - -C '$ddl_stage'"
+
           cat > /tmp/db-init.sh <<'REMOTE_SCRIPT'
           set -euo pipefail
-          cd "$REPO_DIR"
+          cd "$DDL_STAGE"
+          echo "[db-init] DDL source: $DDL_STAGE (pinned $PINNED_SHA)"
           DB="vxturebiz_${SNAKE}_prod"
           CONT="${PRODUCT_CODE}-db"
           ENV_FILE="$(cd "$REPO_DIR/.." && pwd)/etc/.env"
@@ -179,8 +194,29 @@ jobs:
           esc="$(printf '%s' "$svc_pw" | sed "s/'/''/g")"
           printf "ALTER ROLE %s_svc PASSWORD '%s';\n" "$SNAKE" "$esc" | run
           echo "[db-init] service-role password set"
+
+          # Post-apply assertion. Every statement in the DDL is IF NOT EXISTS, so
+          # applying the WRONG file succeeds silently and reports done - which is
+          # exactly how a stale baseline once no-opped its way to a green run.
+          # Compare what the pinned DDL declares against what the database now
+          # has, and fail loudly on a shortfall.
+          declared_list="$(grep -oiE 'CREATE TABLE IF NOT EXISTS[[:space:]]+[a-z_]+\.[a-z_]+' ddl/00_baseline.sql                            | awk '{print tolower($NF)}' | sed "s/karda/${SNAKE}/g" | sort -u)"
+          declared_n="$(printf '%s
+' "$declared_list" | grep -c .)"
+          in_list="$(printf '%s
+' "$declared_list" | sed "s/.*/'&'/" | paste -sd, -)"
+          present_n="$(run -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema||'.'||table_name IN ($in_list);")"
+          echo "[db-init] pinned baseline declares $declared_n tables; $present_n of them exist"
+          if [ "$present_n" -lt "$declared_n" ]; then
+            echo "[db-init] ERROR: the applied DDL did not take effect." >&2
+            echo "[db-init] Missing:" >&2
+            run -tAc "SELECT x FROM unnest(ARRAY[$in_list]) AS x WHERE x NOT IN (SELECT table_schema||'.'||table_name FROM information_schema.tables);" >&2
+            exit 1
+          fi
+
           echo "[db-init] done."
+          rm -rf "$DDL_STAGE"
           REMOTE_SCRIPT
           scp -i ~/.ssh/deploy_key -P "$port" -o ConnectTimeout=30 /tmp/db-init.sh "$DEPLOY_USER@$DEPLOY_HOST:/tmp/db-init.sh"
-          printf '%s\n' "REPO_DIR=$(printf %q "$deploy_dir") ACTION=$(printf %q "$ACTION") PRODUCT_CODE=$(printf %q "$PRODUCT_CODE") SNAKE=$(printf %q "$snake") bash /tmp/db-init.sh" \
+          printf '%s\n' "REPO_DIR=$(printf %q "$deploy_dir") DDL_STAGE=$(printf %q "$ddl_stage") PINNED_SHA=$(printf %q "$PINNED_SHA") ACTION=$(printf %q "$ACTION") PRODUCT_CODE=$(printf %q "$PRODUCT_CODE") SNAKE=$(printf %q "$snake") bash /tmp/db-init.sh" \
             | ssh "${ssh_opts[@]}" "$DEPLOY_USER@$DEPLOY_HOST" bash -s
