@@ -129,7 +129,7 @@ jobs:
           # copy, which the deploy rsync owns, is left untouched.
           ddl_stage="/tmp/${PRODUCT_CODE}-ddl-${PINNED_SHA:0:7}"
           ssh "${ssh_opts[@]}" "$DEPLOY_USER@$DEPLOY_HOST" "rm -rf '$ddl_stage' && mkdir -p '$ddl_stage'"
-          tar -cf - -C deploy/database ddl             | ssh "${ssh_opts[@]}" "$DEPLOY_USER@$DEPLOY_HOST" "tar -xf - -C '$ddl_stage'"
+          tar -cf - -C deploy database/ddl             | ssh "${ssh_opts[@]}" "$DEPLOY_USER@$DEPLOY_HOST" "tar -xf - -C '$ddl_stage'"
 
           cat > /tmp/db-init.sh <<'REMOTE_SCRIPT'
           set -euo pipefail
@@ -200,7 +200,7 @@ jobs:
           # exactly how a stale baseline once no-opped its way to a green run.
           # Compare what the pinned DDL declares against what the database now
           # has, and fail loudly on a shortfall.
-          declared_list="$(grep -oiE 'CREATE TABLE IF NOT EXISTS[[:space:]]+[a-z_]+\.[a-z_]+' ddl/00_baseline.sql | awk '{print tolower($NF)}' | sed "s/karda/${SNAKE}/g" | sort -u)"
+          declared_list="$(grep -oiE 'CREATE TABLE IF NOT EXISTS[[:space:]]+[a-z_]+\.[a-z_]+' database/ddl/00_baseline.sql | awk '{print tolower($NF)}' | sed "s/karda/${SNAKE}/g" | sort -u)"
           declared_n="$(echo "$declared_list" | grep -c .)"
           in_list="$(echo "$declared_list" | sed "s/.*/'&'/" | paste -sd, -)"
           present_n="$(run -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema||'.'||table_name IN ($in_list);")"
