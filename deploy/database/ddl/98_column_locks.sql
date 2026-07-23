@@ -36,3 +36,49 @@ GRANT UPDATE (flushed) ON local_usage.raw TO karda_svc;
 
 REVOKE UPDATE ON local_usage.checkpoint FROM karda_svc;
 GRANT UPDATE (flushed_at) ON local_usage.checkpoint TO karda_svc;
+
+-- --- karda_kb (domain; authority = docs/30-design/210-data-model.md section 4) ---
+-- Anchor columns are absent from every whitelist below: id, all *_id reference
+-- keys, and created_at. Ownership and lineage (workspace_id, owner_type,
+-- owner_sub, origin_kb_id, origin_snapshot_at) are equally immutable - once a
+-- library's owner or provenance is established, changing it would rewrite
+-- history rather than record it.
+
+REVOKE UPDATE ON karda_kb.knowledge_base FROM karda_svc;
+GRANT UPDATE (name, description, publish_state, processing_template_id,
+              processing_params, embedding_model, fulltext_enabled, graph_enabled,
+              retrieval_defaults, governance_enabled, default_verifier,
+              default_verify_interval_days, exempt_synced_content, deleted_at,
+              updated_at)
+  ON karda_kb.knowledge_base TO karda_svc;
+
+REVOKE UPDATE ON karda_kb.folder FROM karda_svc;
+GRANT UPDATE (name, updated_at) ON karda_kb.folder TO karda_svc;
+
+-- document: kb_id / source / source_ref / content_hash stay immutable - they are
+-- the provenance and the dedup key; a mutable hash would make the idempotency
+-- index lie.
+REVOKE UPDATE ON karda_kb.document FROM karda_svc;
+GRANT UPDATE (title, folder_id, processing_template_id, content_state,
+              failure_reason, failed_at, verification_state, verifier,
+              verified_at, expires_at, sensitivity, business_meta, updated_at)
+  ON karda_kb.document TO karda_svc;
+
+REVOKE UPDATE ON karda_kb.entry FROM karda_svc;
+GRANT UPDATE (title, folder_id, content_template_id, template_version, fields,
+              content_state, failure_reason, failed_at, verification_state,
+              verifier, verified_at, expires_at, sensitivity, business_meta,
+              updated_at)
+  ON karda_kb.entry TO karda_svc;
+
+-- chunk: derived data, rebuilt rather than edited. Granting nothing here forces
+-- content changes through the processing pipeline's atomic replace, so index and
+-- source cannot silently diverge via a stray UPDATE.
+REVOKE UPDATE ON karda_kb.chunk FROM karda_svc;
+
+-- Template and field declarations are seeded / changed through the admin path,
+-- and evolution means a new version row - never an in-place edit.
+REVOKE UPDATE ON karda_kb.processing_template FROM karda_svc;
+REVOKE UPDATE ON karda_kb.content_template FROM karda_svc;
+REVOKE UPDATE ON karda_kb.content_template_field FROM karda_svc;
+REVOKE UPDATE ON karda_kb.kb_metadata_field FROM karda_svc;

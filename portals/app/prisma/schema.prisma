@@ -9,7 +9,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  schemas  = ["vx_provision", "local_authz", "local_usage"]
+  schemas  = ["vx_provision", "local_authz", "local_usage", "karda_kb"]
 }
 
 // ===== vx_provision =====
@@ -142,4 +142,210 @@ model Checkpoint {
   @@unique([workspaceId, metric], map: "uidx_checkpoint_ws_metric")
   @@map("checkpoint")
   @@schema("local_usage")
+}
+
+// ===== karda_kb (domain; DDL authority = deploy/database/ddl/00_baseline.sql,
+// design authority = docs/30-design/210-data-model.md) =====
+
+model ProcessingTemplate {
+  id            String   @id @default(uuid()) @db.Uuid
+  templateCode  String   @map("template_code") @db.VarChar(64)
+  name          String   @db.VarChar(255)
+  version       Int      @default(1)
+  defaultParams Json     @default("{}") @map("default_params")
+  isPreset      Boolean  @default(true) @map("is_preset")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  knowledgeBases KnowledgeBase[]
+  documents      Document[]
+
+  @@unique([templateCode], map: "uidx_processing_template_code")
+  @@map("processing_template")
+  @@schema("karda_kb")
+}
+
+model ContentTemplate {
+  id           String   @id @default(uuid()) @db.Uuid
+  templateCode String   @map("template_code") @db.VarChar(64)
+  name         String   @db.VarChar(255)
+  version      Int      @default(1)
+  scope        String   @default("platform") @db.VarChar(16)
+  workspaceId  String?  @map("workspace_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+
+  fields  ContentTemplateField[]
+  entries Entry[]
+
+  @@unique([scope, workspaceId, templateCode, version], map: "uidx_content_template_identity")
+  @@map("content_template")
+  @@schema("karda_kb")
+}
+
+model ContentTemplateField {
+  id            String   @id @default(uuid()) @db.Uuid
+  templateId    String   @map("template_id") @db.Uuid
+  fieldName     String   @map("field_name") @db.VarChar(64)
+  valueType     String   @map("value_type") @db.VarChar(16)
+  enumValues    Json?    @map("enum_values")
+  required      Boolean  @default(false)
+  retrievalRole String   @default("store_only") @map("retrieval_role") @db.VarChar(16)
+  ontosType     String?  @map("ontos_type") @db.VarChar(128)
+  position      Int      @default(0)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  template ContentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade, map: "fk_ct_field_template")
+
+  @@unique([templateId, fieldName], map: "uidx_ct_field_template_name")
+  @@map("content_template_field")
+  @@schema("karda_kb")
+}
+
+model KnowledgeBase {
+  id                        String    @id @default(uuid()) @db.Uuid
+  workspaceId               String    @map("workspace_id") @db.Uuid
+  ownerType                 String    @map("owner_type") @db.VarChar(16)
+  ownerSub                  String?   @map("owner_sub") @db.VarChar(128)
+  name                      String    @db.VarChar(255)
+  description               String?
+  publishState              String    @default("private") @map("publish_state") @db.VarChar(32)
+  originKbId                String?   @map("origin_kb_id") @db.Uuid
+  originSnapshotAt          DateTime? @map("origin_snapshot_at") @db.Timestamptz()
+  processingTemplateId      String?   @map("processing_template_id") @db.Uuid
+  processingParams          Json      @default("{}") @map("processing_params")
+  embeddingModel            String?   @map("embedding_model") @db.VarChar(128)
+  fulltextEnabled           Boolean   @default(true) @map("fulltext_enabled")
+  graphEnabled              Boolean   @default(false) @map("graph_enabled")
+  retrievalDefaults         Json      @default("{}") @map("retrieval_defaults")
+  governanceEnabled         Boolean   @default(false) @map("governance_enabled")
+  defaultVerifier           String?   @map("default_verifier") @db.VarChar(128)
+  defaultVerifyIntervalDays Int?      @map("default_verify_interval_days")
+  exemptSyncedContent       Boolean   @default(true) @map("exempt_synced_content")
+  deletedAt                 DateTime? @map("deleted_at") @db.Timestamptz()
+  createdAt                 DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt                 DateTime  @default(now()) @map("updated_at") @db.Timestamptz()
+
+  processingTemplate ProcessingTemplate? @relation(fields: [processingTemplateId], references: [id], map: "fk_kb_processing_template")
+  folders            Folder[]
+  metadataFields     KbMetadataField[]
+  documents          Document[]
+  entries            Entry[]
+
+  @@index([ownerType, ownerSub], map: "idx_kb_owner")
+  @@map("knowledge_base")
+  @@schema("karda_kb")
+}
+
+model Folder {
+  id        String   @id @default(uuid()) @db.Uuid
+  kbId      String   @map("kb_id") @db.Uuid
+  name      String   @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+
+  knowledgeBase KnowledgeBase @relation(fields: [kbId], references: [id], onDelete: Cascade, map: "fk_folder_kb")
+  documents     Document[]
+  entries       Entry[]
+
+  @@unique([kbId, name], map: "uidx_folder_kb_name")
+  @@map("folder")
+  @@schema("karda_kb")
+}
+
+model KbMetadataField {
+  id         String   @id @default(uuid()) @db.Uuid
+  kbId       String   @map("kb_id") @db.Uuid
+  fieldName  String   @map("field_name") @db.VarChar(64)
+  valueType  String   @map("value_type") @db.VarChar(16)
+  enumValues Json?    @map("enum_values")
+  filterable Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  knowledgeBase KnowledgeBase @relation(fields: [kbId], references: [id], onDelete: Cascade, map: "fk_kb_meta_kb")
+
+  @@unique([kbId, fieldName], map: "uidx_kb_meta_kb_field")
+  @@map("kb_metadata_field")
+  @@schema("karda_kb")
+}
+
+model Document {
+  id                   String    @id @default(uuid()) @db.Uuid
+  kbId                 String    @map("kb_id") @db.Uuid
+  folderId             String?   @map("folder_id") @db.Uuid
+  title                String    @db.VarChar(512)
+  mime                 String?   @db.VarChar(128)
+  sizeBytes            BigInt?   @map("size_bytes")
+  source               String    @db.VarChar(32)
+  sourceRef            Json?     @map("source_ref")
+  contentHash          String?   @map("content_hash") @db.VarChar(80)
+  processingTemplateId String?   @map("processing_template_id") @db.Uuid
+  contentState         String    @default("processing") @map("content_state") @db.VarChar(32)
+  failureReason        String?   @map("failure_reason")
+  failedAt             DateTime? @map("failed_at") @db.Timestamptz()
+  verificationState    String    @default("unverified") @map("verification_state") @db.VarChar(32)
+  verifier             String?   @db.VarChar(128)
+  verifiedAt           DateTime? @map("verified_at") @db.Timestamptz()
+  expiresAt            DateTime? @map("expires_at") @db.Timestamptz()
+  sensitivity          String?   @db.VarChar(32)
+  businessMeta         Json      @default("{}") @map("business_meta")
+  createdInProduct     String?   @map("created_in_product") @db.VarChar(32)
+  createdBy            String?   @map("created_by") @db.VarChar(128)
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt            DateTime  @default(now()) @map("updated_at") @db.Timestamptz()
+
+  knowledgeBase      KnowledgeBase       @relation(fields: [kbId], references: [id], onDelete: Cascade, map: "fk_document_kb")
+  folder             Folder?             @relation(fields: [folderId], references: [id], map: "fk_document_folder")
+  processingTemplate ProcessingTemplate? @relation(fields: [processingTemplateId], references: [id], map: "fk_document_processing_template")
+  chunks             Chunk[]
+
+  @@index([kbId, contentState], map: "idx_document_kb_state")
+  @@map("document")
+  @@schema("karda_kb")
+}
+
+model Entry {
+  id                String    @id @default(uuid()) @db.Uuid
+  kbId              String    @map("kb_id") @db.Uuid
+  folderId          String?   @map("folder_id") @db.Uuid
+  title             String?   @db.VarChar(512)
+  contentTemplateId String    @map("content_template_id") @db.Uuid
+  templateVersion   Int       @default(1) @map("template_version")
+  fields            Json      @default("{}")
+  contentState      String    @default("draft") @map("content_state") @db.VarChar(32)
+  failureReason     String?   @map("failure_reason")
+  failedAt          DateTime? @map("failed_at") @db.Timestamptz()
+  verificationState String    @default("unverified") @map("verification_state") @db.VarChar(32)
+  verifier          String?   @db.VarChar(128)
+  verifiedAt        DateTime? @map("verified_at") @db.Timestamptz()
+  expiresAt         DateTime? @map("expires_at") @db.Timestamptz()
+  sensitivity       String?   @db.VarChar(32)
+  businessMeta      Json      @default("{}") @map("business_meta")
+  createdInProduct  String?   @map("created_in_product") @db.VarChar(32)
+  createdBy         String?   @map("created_by") @db.VarChar(128)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt         DateTime  @default(now()) @map("updated_at") @db.Timestamptz()
+
+  knowledgeBase   KnowledgeBase   @relation(fields: [kbId], references: [id], onDelete: Cascade, map: "fk_entry_kb")
+  folder          Folder?         @relation(fields: [folderId], references: [id], map: "fk_entry_folder")
+  contentTemplate ContentTemplate @relation(fields: [contentTemplateId], references: [id], map: "fk_entry_content_template")
+
+  @@index([kbId, contentState], map: "idx_entry_kb_state")
+  @@map("entry")
+  @@schema("karda_kb")
+}
+
+model Chunk {
+  id         String   @id @default(uuid()) @db.Uuid
+  documentId String   @map("document_id") @db.Uuid
+  ordinal    Int
+  text       String
+  tokenCount Int?     @map("token_count")
+  vectorRef  String?  @map("vector_ref") @db.VarChar(128)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade, map: "fk_chunk_document")
+
+  @@unique([documentId, ordinal], map: "uidx_chunk_document_ordinal")
+  @@map("chunk")
+  @@schema("karda_kb")
 }

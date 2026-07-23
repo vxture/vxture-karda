@@ -18,3 +18,10 @@ GRANT SELECT, INSERT, DELETE ON ALL TABLES IN SCHEMA vx_provision, local_authz, 
 
 -- Domain schemas (added by the product) must grant the service role explicitly;
 -- the contract schemas above are the factory baseline.
+
+-- karda_kb: karda's knowledge-base domain (docs/30-design/210-data-model.md).
+-- Same posture as the contract schemas - SELECT/INSERT/DELETE only, no DDL, no
+-- blanket UPDATE; column-level UPDATE is whitelisted in 98_column_locks.sql.
+GRANT USAGE ON SCHEMA karda_kb TO karda_svc;
+
+GRANT SELECT, INSERT, DELETE ON ALL TABLES IN SCHEMA karda_kb TO karda_svc;
