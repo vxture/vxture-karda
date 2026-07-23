@@ -190,9 +190,18 @@ jobs:
             "$stage/" "$DEPLOY_USER@$DEPLOY_HOST:$deploy_dir/"
           rm -rf "$stage"
 
-          # Confirm the delivered compose carries the expected db service.
+          # Confirm the delivered compose carries a db service - catches a stale
+          # or truncated compose being rsync'd before we start the stack.
+          #
+          # Grep the container_name TEMPLATE, not the resolved name. The file
+          # says `container_name: ${PROJECT_NAME:-karda}-db`, so the literal
+          # "karda-db" never appears in it and the previous check
+          # (grep '${PRODUCT_CODE}-db') could never match: it warned on every
+          # deploy, which is worse than having no check at all - a guard that
+          # always fires trains everyone to ignore it. It also only warned, so
+          # a genuinely missing db service would not have stopped the deploy.
           ssh "${ssh_opts[@]}" "$DEPLOY_USER@$DEPLOY_HOST" \
-            "grep -q '${PRODUCT_CODE}-db' '$deploy_dir/docker-compose.yml' && echo '[deliver] compose has ${PRODUCT_CODE}-db' || echo '[deliver] WARN: ${PRODUCT_CODE}-db missing'"
+            "grep -qE 'container_name:.*-db$' '$deploy_dir/docker-compose.yml' && echo '[deliver] compose declares a db service' || { echo '[deliver] ERROR: delivered compose has no db service' >&2; exit 1; }"
           ssh "${ssh_opts[@]}" "$DEPLOY_USER@$DEPLOY_HOST" "printf '%s\n' '$PASSED_SHA' > '$deploy_dir/VERSION'"
 
           # Remote deploy script: GHCR primary (non-VPC host), ACR fallback.
