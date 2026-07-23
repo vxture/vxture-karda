@@ -398,6 +398,34 @@ CREATE TABLE IF NOT EXISTS karda_kb.entry (
 CREATE INDEX IF NOT EXISTS idx_entry_kb_state
   ON karda_kb.entry (kb_id, content_state);
 
+-- Subscription of a knowledge base to one syncable range on an external source
+-- (220-connector-framework section 3). Connector-agnostic on purpose: Arda is
+-- simply one connector_code among the ones karda will open over time, so nothing
+-- about a specific connector appears in this shape.
+CREATE TABLE IF NOT EXISTS karda_kb.binding (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  kb_id               UUID NOT NULL,
+  connector_code      VARCHAR(64) NOT NULL,
+  external_source_id  VARCHAR(255) NOT NULL,          -- the connector-side range id
+  mode                VARCHAR(32) NOT NULL DEFAULT 'backfill'
+                        CONSTRAINT chk_binding_mode
+                        CHECK (mode IN ('backfill', 'incremental')),
+  state               VARCHAR(32) NOT NULL DEFAULT 'active'
+                        CONSTRAINT chk_binding_state
+                        CHECK (state IN ('active', 'paused', 'revoked')),
+  cursor              VARCHAR(512),                   -- karda-side consumption checkpoint
+  last_synced_at      TIMESTAMPTZ,
+  created_by          VARCHAR(128),                   -- [ref] the owner who registered it (OBO)
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT fk_binding_kb FOREIGN KEY (kb_id)
+    REFERENCES karda_kb.knowledge_base (id) ON DELETE CASCADE,
+  CONSTRAINT uidx_binding_kb_connector_source
+    UNIQUE (kb_id, connector_code, external_source_id)
+);
+CREATE INDEX IF NOT EXISTS idx_binding_state
+  ON karda_kb.binding (state, connector_code);
+
 -- Derived recall unit, Document only (an Entry is itself the recall unit).
 -- The vector lives in the index store, not here; vector_ref is the pointer.
 -- No writable columns at all (98_column_locks) - chunks are rebuilt, never

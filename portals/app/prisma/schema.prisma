@@ -230,6 +230,7 @@ model KnowledgeBase {
   metadataFields     KbMetadataField[]
   documents          Document[]
   entries            Entry[]
+  bindings           Binding[]
 
   @@index([ownerType, ownerSub], map: "idx_kb_owner")
   @@map("knowledge_base")
@@ -349,5 +350,26 @@ model Chunk {
 
   @@unique([documentId, ordinal], map: "uidx_chunk_document_ordinal")
   @@map("chunk")
+  @@schema("karda_kb")
+}
+
+model Binding {
+  id               String    @id @default(uuid()) @db.Uuid
+  kbId             String    @map("kb_id") @db.Uuid
+  connectorCode    String    @map("connector_code") @db.VarChar(64)
+  externalSourceId String    @map("external_source_id") @db.VarChar(255)
+  mode             String    @default("backfill") @db.VarChar(32)
+  state            String    @default("active") @db.VarChar(32)
+  cursor           String?   @db.VarChar(512)
+  lastSyncedAt     DateTime? @map("last_synced_at") @db.Timestamptz()
+  createdBy        String?   @map("created_by") @db.VarChar(128)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt        DateTime  @default(now()) @map("updated_at") @db.Timestamptz()
+
+  knowledgeBase KnowledgeBase @relation(fields: [kbId], references: [id], onDelete: Cascade, map: "fk_binding_kb")
+
+  @@unique([kbId, connectorCode, externalSourceId], map: "uidx_binding_kb_connector_source")
+  @@index([state, connectorCode], map: "idx_binding_state")
+  @@map("binding")
   @@schema("karda_kb")
 }

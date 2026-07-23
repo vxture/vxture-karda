@@ -87,3 +87,11 @@ REVOKE UPDATE ON karda_kb.processing_template FROM karda_svc;
 REVOKE UPDATE ON karda_kb.content_template FROM karda_svc;
 REVOKE UPDATE ON karda_kb.content_template_field FROM karda_svc;
 REVOKE UPDATE ON karda_kb.kb_metadata_field FROM karda_svc;
+
+-- binding: kb_id / connector_code / external_source_id / created_by are the
+-- subscription's identity and its OBO provenance - changing any of them would
+-- silently repoint an existing sync at a different source or owner rather than
+-- creating a new subscription.
+REVOKE UPDATE ON karda_kb.binding FROM karda_svc;
+GRANT UPDATE (mode, state, cursor, last_synced_at, updated_at)
+  ON karda_kb.binding TO karda_svc;

@@ -117,7 +117,8 @@ the letter does.
 | Asset layer (objects, metadata, state machines, templates) | **none** | **yes** |
 | Processing pipeline | Atlas (parsing models + embedding) | skeleton yes, real runs no |
 | Retrieval | Atlas (rerank + generation) | skeleton yes, real runs no |
-| Arda sync ingestion | arda line (`80-liaison/30`, unanswered) | no |
+| Connector framework | **none** - `poll` is the default capability, so a connector needs no cooperation from the source beyond the five invariants | yes |
+| The *arda* connector specifically | arda line (`80-liaison/30`, unanswered; urgency corrected in `80`) | no, but nothing else waits on it |
 | C2 cache invalidation event | platform `product_310` | TTL fallback works meanwhile |
 | Tool surface (7 tools) | the domains beneath it | last |
 
@@ -129,7 +130,7 @@ the letter does.
 | 4 | **Asset layer**: CRUD for the above, dual templates, filterable whitelist, content + governance state machines, U-tier full flow | batch 3 | after 3 |
 | 5 | **Processing pipeline**: three-tier queue, staged parsing, templated chunking, atomic commit, incremental update, `failed` residency and retry | Atlas contract | skeleton in parallel |
 | 6 | **Retrieval**: RRF dual-path, cross-namespace union recall, visible-set cache, `verification_filter`, citation provenance | Atlas contract | skeleton in parallel |
-| 7 | **Arda content channel**: Binding, notify-then-pull, tombstone delete, revoke cascade | arda reply | blocked |
+| 7 | **Connector framework**: Binding lifecycle, poll and notify delivery, tombstone delete, revoke cascade, reconciliation. Arda is the first implementation, an external doc source the second | nothing structural - `220-connector-framework` + the `binding` table already landed | no longer blocked |
 | 8 | **Tool surface + Console**: the seven `karda.*` tools, recall testing, failure view | 4-6 | last |
 
 Batch 3 is deliberately first and deliberately narrow: every other domain writes
