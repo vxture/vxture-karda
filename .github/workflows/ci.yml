@@ -100,6 +100,9 @@ jobs:
       - name: Data architecture guardrail (DDL <-> Prisma lockstep)
         run: node scripts/guardrails/check-data-architecture.mjs --strict
 
+      - name: Workflow guardrail (workflows parse and keep their triggers)
+        run: node scripts/guardrails/check-workflows.mjs --strict
+
   # -- Quality gate (aggregator; stable required-check name) ------------------
   quality-gate:
     name: quality-gate
