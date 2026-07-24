@@ -100,15 +100,20 @@ the iron rule - "there is no second model host outside Atlas" - so parsing model
 OCR, table structure, embedding, rerank and generation all leave karda and land on
 Atlas. karda hosts no model runtime at all, deliberately unlike RAGFlow.
 
-Atlas is live in production (it is the Model Platform's final product name, per
-`product_100_matrix`), but **no karda-Atlas interface contract exists** - the
-platform repo has no atlas contract document. Until it does, the processing and
-retrieval domains can only be built against a mock.
+The Atlas request (`80-liaison/70`) was answered on 2026-07-24 (`90`), and the
+answer reshaped this plan more than a contract document would have. Atlas is not
+yet an independent product - it is the combined `@vxture/service-model-platform`
+inside the platform repo - and of karda's four asks, **only A4 (generation)
+exists**. A1 embedding, A2 parsing models, and A3 rerank are **not built**: the
+gap is capability, not documentation, so it cannot be closed by writing a
+contract. Those await Atlas's own design-and-build schedule.
 
-That is why the Atlas request goes out **first**, in parallel with batch 3: its
-round trip is long, and it blocks more downstream work than anything else. The
-same sequencing rule as before - external round trips start their clock only when
-the letter does.
+The consequence for sequencing: "wait for the Atlas contract" was the wrong
+frame. What actually blocks is embedding (A1) - without it a chunk cannot enter a
+vector index and retrieval has nothing to recall. So batch 5 and 6 each split
+into a part that needs no Atlas capability we lack (storage, orchestration, the
+BM25 and answering paths over the live A4) and a part that waits on A1/A3. The
+former proceeds now; the latter is explicitly parked, not mocked-then-forgotten.
 
 ### Dependency map
 
@@ -126,12 +131,14 @@ the letter does.
 
 | # | Scope | Blocked by | State |
 |---|-------|-----------|-------|
-| 3 | **Domain data model**: schema design doc (`30-design/` 2xx band) + DDL + Prisma in lockstep + column locks. Covers KnowledgeBase / Folder / Document / Chunk / Entry / ProcessingTemplate / ContentTemplate, the three-part metadata, and both state machines | nothing | **next** |
-| 4 | **Asset layer**: CRUD for the above, dual templates, filterable whitelist, content + governance state machines, U-tier full flow | batch 3 | after 3 |
-| 5 | **Processing pipeline**: three-tier queue, staged parsing, templated chunking, atomic commit, incremental update, `failed` residency and retry | Atlas contract | skeleton in parallel |
-| 6 | **Retrieval**: RRF dual-path, cross-namespace union recall, visible-set cache, `verification_filter`, citation provenance | Atlas contract | skeleton in parallel |
-| 7 | **Connector framework**: Binding lifecycle, poll and notify delivery, tombstone delete, revoke cascade, reconciliation. Arda is the first implementation, an external doc source the second | nothing structural - `220-connector-framework` + the `binding` table already landed | no longer blocked |
-| 8 | **Tool surface + Console**: the seven `karda.*` tools, recall testing, failure view | 4-6 | last |
+| 3 | **Domain data model** | nothing | **done** (#19) |
+| 4 | **Asset layer**: KB/Folder/Document/Entry store+service, dual templates, filterable whitelist, both state machines, U-tier flow | batch 3 | **in progress** - state machines, metadata, KB ownership/store/service landed (#25, #27) |
+| 5a | **Processing pipeline, storage + orchestration**: three-tier queue, staged parsing to element tree, templated chunking, `failed` residency, atomic commit, own object storage for raw files | nothing (parse stages that call Atlas A2 are stubbed) | after 4 |
+| 5b | **Vectorization**: embed chunks via Atlas | **Atlas A1 unimplemented** (KD-107) - the hard block; nothing to embed against | waits on Atlas capability |
+| 6a | **Retrieval evaluation chain, non-embedding parts**: visible-set cache, whitelist, gating/CTA, citation assembly, BM25 path, the answering surface `karda.ask` over Atlas A4 | A4 is live (KD-108) | can proceed once 5a lands |
+| 6b | **Vector recall + unified rerank**: dual-path RRF, cross-namespace union, rerank | **Atlas A1 + A3 unimplemented** (KD-107, KD-102) | waits on Atlas capability |
+| 7 | **Connector framework**: Binding lifecycle, poll/notify delivery, tombstone delete, revoke cascade. Arda first, an external doc source second | nothing structural (`220` + `binding` table landed) | arda connector waits on arda reply |
+| 8 | **Tool surface + Console**: the seven `karda.*` tools, recall testing, failure view | 4, 6a | last |
 
 Batch 3 is deliberately first and deliberately narrow: every other domain writes
 to or reads from these tables, and `lint:data-design` makes DDL/Prisma drift a
