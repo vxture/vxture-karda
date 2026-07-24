@@ -25,6 +25,9 @@ export interface DocumentRow {
   source: DocumentSource;
   connectorCode: string | null;
   contentHash: string | null;
+  storageRef: string | null;
+  mime: string | null;
+  sizeBytes: number | null;
   contentState: ContentState;
   failureReason: string | null;
   verificationState: VerificationState;
@@ -53,6 +56,9 @@ export interface CreateDocumentInput {
   source: DocumentSource;
   connectorCode?: string | null;
   contentHash?: string | null;
+  storageRef?: string | null;
+  mime?: string | null;
+  sizeBytes?: number | null;
 }
 
 export interface CreateEntryInput {
@@ -134,6 +140,9 @@ export class InMemoryContentStore implements ContentStore {
       source: input.source,
       connectorCode: input.connectorCode ?? null,
       contentHash: input.contentHash ?? null,
+      storageRef: input.storageRef ?? null,
+      mime: input.mime ?? null,
+      sizeBytes: input.sizeBytes ?? null,
       contentState: "processing" as ContentState,
       failureReason: null as string | null,
       verificationState: "unverified" as VerificationState,

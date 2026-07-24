@@ -42,7 +42,11 @@ export type ContentKind = "document" | "entry";
 // document silently.
 const CONTENT_TRANSITIONS: Record<ContentState, readonly ContentState[]> = {
   draft: ["processing", "deleted"],
-  processing: ["indexed", "failed"],
+  // A user may delete a document that is still processing - deletion is an owner
+  // act (cancel an upload, remove a mistake) and must not be blocked by the
+  // pipeline's status. Archiving, by contrast, stays illegal from processing:
+  // you cannot archive content that was never indexed.
+  processing: ["indexed", "failed", "deleted"],
   indexed: ["processing", "archived", "deleted"], // reprocessing re-enters processing
   failed: ["processing", "deleted"], // retry, or give up
   archived: ["indexed", "deleted"], // restorable

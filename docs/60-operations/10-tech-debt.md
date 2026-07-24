@@ -193,10 +193,13 @@ deliberately not carried over.
   IR, `general` chunking, and an orchestrator that runs a document through
   fetch/parse/chunk/embed/commit against injected ports. Fully tested (28 tests).
 - **What is deferred**: (1) a real queue worker driving the three tiers with the
-  org-level concurrency cap and per-KB serial window; (2) raw-file object storage
-  behind `document.storage_ref`; (3) persisting stage products (the IR) so a
-  resume skips re-parsing; (4) wiring the orchestrator's result onto the document
-  content-state transitions via ContentService. These are runtime scaffolding
+  org-level concurrency cap and per-KB serial window; (2) persisting stage
+  products (the IR) so a resume skips re-parsing; (3) wiring the orchestrator's
+  result onto the document content-state via ContentService. **Object storage is
+  now built** (2026-07-24, the document-upload path): `document.storage_ref`
+  points at karda's own filesystem-backed object store, so an uploaded document
+  persists and is downloadable today - what remains is triggering the pipeline on
+  it, which is the queue worker above. These are runtime scaffolding
   around a tested core, deferred so the core could be verified in isolation
   first.
 - **What is Atlas-blocked, separately (TD-004)**: the embed stage's real client
