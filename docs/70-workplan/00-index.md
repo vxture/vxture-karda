@@ -54,7 +54,7 @@ an unfinished item, not an accepted deviation.
 | Re-align the convention and guardrail to 070 batch 5 (TD register to the newly pinned `10-tech-debt.md`, path-keyed `DIR_EXEMPTIONS`, sequence/keyed subdirectory model) | `docs/00-meta/10-docs-convention.md`, `scripts/guardrails/` | done 2026-07-22, zero deviations |
 | Product definition (what karda is, surfaces, business rules) | `docs/20-specs/10-product-definition.md` | Draft v0.4 in repo |
 | Knowledge model / processing / retrieval / arda-channel design | `docs/30-design/{100,110,120,200}-*.md` | Draft v0.1 in repo |
-| Resolve the open decisions carried by those drafts | the same documents | 25 items open, split by who can decide - see below |
+| Resolve the open decisions carried by those drafts | `docs/20-specs/20-decisions.md` (register, authority) | **A/B groups ratified 2026-07-24** (KD-001..016 - all karda-alone design + params); C group external (Atlas / platform); D group owner-pending (KD-201..204). The "who can decide" split below is the original framing - the register now holds the rulings |
 | Arda-side alignment on the content channel (5 items; `200-arda-channel` stays v0.1 until answered) | `docs/30-design/200-arda-channel.md` | sent 2026-07-22 (`80-liaison/30-2607222338`), awaiting reply |
 | Decisions taken along the way | `docs/30-design/decisions/ADR-NNN-*` | todo |
 
@@ -139,6 +139,42 @@ former proceeds now; the latter is explicitly parked, not mocked-then-forgotten.
 | 6b | **Vector recall + unified rerank**: dual-path RRF, cross-namespace union, rerank | **Atlas A1 + A3 unimplemented** (KD-107, KD-102) | waits on Atlas capability |
 | 7 | **Connector framework**: Binding lifecycle, poll/notify delivery, tombstone delete, revoke cascade. Arda first, an external doc source second | nothing structural (`220` + `binding` table landed) | arda connector waits on arda reply |
 | 8 | **Tool surface** (`karda.*` seven tools, S2S gateway, OBO-only gate, `/.well-known/vxture-tools`) **+ Console** | 4, 6a | tool surface **done** - 32 tests; read tools wired, write tools gate correctly then not_implemented (TD-009). Console + recall testing deferred |
+
+### Next phase - the A1-wait window (sequenced 2026-07-24)
+
+The binding constraint is **Atlas A1 (embedding)**. The pipeline is
+embed-before-commit (110-processing 6), so no chunks land until A1 exists - a
+document flows fetch/parse/chunk and **parks at embed** by design, losing
+nothing. So the core RAG flywheel cannot produce real data yet. Strategy for the
+wait window: build karda into a complete, demoable product for everything
+**except vector search**, so the day A1 lands the flywheel turns with no new
+plumbing - 5b/6b drop into seams that already exist and are tested.
+
+Design is NOT the blocker: the register's A/B groups (KD-001..016) were all
+ratified by the owner 2026-07-24 (`20-specs/20-decisions.md`), so every track
+below has its design inputs. What remains is the owner D-group (KD-201..204) and
+the external C-group (Atlas A1/A2/A3, platform `product_310`/`product_110`) -
+neither blocks the tracks below.
+
+**Build track (owner endorsed all four, 2026-07-24), in execution order:**
+
+| # | Track | Why here | Blocked by |
+|---|-------|----------|-----------|
+| 9 | **Tool-surface write backends** (TD-009) | most contained; `write_document` now creates + enqueues on the runtime just wired (#42); completes the agent-facing write path | nothing |
+| 10 | **Console** (library + document management UI) | turns the finished-but-headless asset layer into a demoable product - the core "upload -> classify into graded libraries -> set per-library sharing" surface (KD-016); the one thing a stakeholder can see and validate | nothing (KD-006 keeps publish/govern/delete in Console, not tools) |
+| 11 | **Connector framework** (batch 7) | external ingestion skeleton: Binding lifecycle, poll/notify, tombstone, revoke cascade; arda connector plugs in on arda's reply | nothing structural (KD-013/014 set); arda connector waits on arda |
+| 12 | **Governance / verification runtime** | `verified/stale` transitions, verifier assignment, interval-expiry sweep - the enterprise-trust layer; asset + retrieval already leave the state-machine seams | nothing |
+| - | **BM25 recall engine** (TD-008) | staged LATE, just before A1 - it has no real chunks to index until A1, so building it earlier indexes nothing | real payoff gated on A1 |
+
+**Decision track (parallel, owner):** ratify D-group **KD-201..204**. **KD-202**
+(private-lib retention) and **KD-203** (instantiation/archive metering) gate the
+tier -> entitlement/quota mapping the platform needs to publish karda's five
+DRAFT commercial plans; **KD-201** (first P-tier package) is a product-direction
+call. Recommendations sit in `20-specs/20-decisions.md` section 3.
+
+**On A1 landing:** 5b (vectorize) + 6b (vector recall + rerank) complete the
+flywheel through the tested seams; BM25 (TD-008) lands alongside for the
+dual-path RRF.
 
 Batch 3 is deliberately first and deliberately narrow: every other domain writes
 to or reads from these tables, and `lint:data-design` makes DDL/Prisma drift a
