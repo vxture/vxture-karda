@@ -20,6 +20,7 @@ deliberately not carried over.
 
 | ID | Title | Opened | Status |
 |----|-------|--------|--------|
+| TD-007 | Processing pipeline has no real queue worker or raw object storage yet | 2026-07-24 | open - 5a is the pure pipeline; the runtime around it is deferred |
 | TD-006 | Preset seed (`seedPresets`) has no invocation point wired yet | 2026-07-24 | open - seed mechanism undecided |
 | TD-005 | Ownership transfer has no runtime write path (owner_sub is column-locked) | 2026-07-24 | open - needs a privileged path |
 | TD-004 | Batches 5b/6b parked: vectorization and rerank depend on Atlas A1/A3, not yet built | 2026-07-24 | open - awaiting Atlas capability |
@@ -181,3 +182,25 @@ deliberately not carried over.
   it now means the wiring later is a one-line call, not a redesign.
 - **Recovery condition**: the admin/console surface (batch 8) or a db-init seed
   step decides how factory data is applied; wire `seedPresets` into it.
+
+
+## TD-007 - processing pipeline runtime not yet built
+
+- **What exists (5a)**: the pure pipeline - the five-stage model, idempotency
+  key, failure taxonomy, queue-tier routing, the fast-path parser to element-tree
+  IR, `general` chunking, and an orchestrator that runs a document through
+  fetch/parse/chunk/embed/commit against injected ports. Fully tested (28 tests).
+- **What is deferred**: (1) a real queue worker driving the three tiers with the
+  org-level concurrency cap and per-KB serial window; (2) raw-file object storage
+  behind `document.storage_ref`; (3) persisting stage products (the IR) so a
+  resume skips re-parsing; (4) wiring the orchestrator's result onto the document
+  content-state transitions via ContentService. These are runtime scaffolding
+  around a tested core, deferred so the core could be verified in isolation
+  first.
+- **What is Atlas-blocked, separately (TD-004)**: the embed stage's real client
+  (A1) and deep-path parsing (A2). The orchestrator already handles their absence
+  correctly - deep parse parks as permanent-for-now, embed suspends and resumes -
+  so wiring the real clients later changes nothing about the control flow.
+- **Recovery condition**: a task-runner increment builds the worker + storage +
+  state wiring; independently, Atlas A1/A2 replace the stubs. Neither blocks the
+  other, and both plug into seams that already exist and are tested.
