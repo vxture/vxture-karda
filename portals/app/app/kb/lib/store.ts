@@ -5,7 +5,6 @@
 import { prismaEnabled } from "../../lib/db";
 import { PrismaKbStore } from "./prisma-store";
 import type { OwnerType, PublishState } from "./ownership";
-import type { ContentState, VerificationState } from "./state";
 
 export interface KnowledgeBaseRow {
   id: string;
@@ -41,19 +40,6 @@ export interface UpdateKbInput {
   processingTemplateId?: string | null;
   governanceEnabled?: boolean;
   exemptSyncedContent?: boolean;
-}
-
-export interface DocumentRow {
-  id: string;
-  kbId: string;
-  folderId: string | null;
-  title: string;
-  source: "upload" | "api" | "connector";
-  connectorCode: string | null;
-  contentHash: string | null;
-  contentState: ContentState;
-  verificationState: VerificationState;
-  createdAt: Date;
 }
 
 export interface KbStore {
