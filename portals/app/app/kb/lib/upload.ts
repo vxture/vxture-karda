@@ -43,6 +43,11 @@ export async function uploadDocument(
   input: UploadInput,
   content: ContentService,
   objects: ObjectStore,
+  // Optional: called once, after the document record is created, to enqueue it
+  // for processing (TD-007). Kept as an injected hook so upload stays pure and
+  // testable, and so a caller that only wants the raw document (no indexing) can
+  // omit it. It runs only on a successful create - never for a duplicate.
+  enqueue?: (doc: DocumentRow) => void | Promise<void>,
 ): Promise<Result<DocumentRow>> {
   if (input.bytes.length === 0) return err({ code: "empty_file" });
 
@@ -77,6 +82,7 @@ export async function uploadDocument(
     // harmless overwrite - nothing to clean up.
     return err(mapContentError(created.error.code));
   }
+  if (enqueue) await enqueue(created.value);
   return ok(created.value);
 }
 

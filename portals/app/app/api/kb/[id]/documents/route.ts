@@ -5,6 +5,7 @@ import { ContentService } from "../../../../kb/lib/content-service";
 import { getContentStore } from "../../../../kb/lib/content-store";
 import { uploadDocument } from "../../../../kb/lib/upload";
 import { getObjectStore } from "../../../../kb/storage/objectstore";
+import { getProcessingRuntime, enqueueForDocument } from "../../../../kb/processing/runtime";
 import { requireAuth } from "../../../../kb/api/http";
 import type { AuthUser } from "../../../../auth/lib/claims";
 
@@ -66,10 +67,28 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     folderId = url.searchParams.get("folder_id") || null;
   }
 
+  // On a successful upload, enqueue the document for processing on the shared
+  // runtime queue. A tick (POST /api/kb/processing/tick) drains it later; the
+  // document stays `processing` until it indexes or parks at embed (Atlas A1).
+  const runtime = getProcessingRuntime();
   const result = await uploadDocument(
     { kbId: id, workspaceId: auth.user.activeWorkspace, folderId, title, mime, bytes },
     content(),
     getObjectStore(),
+    (doc) => {
+      enqueueForDocument(runtime.queue, {
+        docId: doc.id,
+        kbId: kb.id,
+        workspaceId: kb.workspaceId,
+        contentHash: doc.contentHash,
+        config: {
+          processingTemplateId: kb.processingTemplateId,
+          processingParams: {},
+          embeddingModel: null,
+        },
+        trigger: "upload",
+      });
+    },
   );
   if (!result.ok) {
     const status = result.error.code === "duplicate_document" ? 409 : 400;
