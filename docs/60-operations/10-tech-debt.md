@@ -258,13 +258,20 @@ deliberately not carried over.
   (RS256 + aud=karda + the act.sub / OBO-only / no-internal-auth refusals), and
   dispatch with the mode gate. `karda.list_kbs` is fully wired to KbService.
   32 tests.
-- **What is deferred**: `search` / `ask` are not injected into the route's
-  backends yet - they need a recall backend (TD-008) to return anything real, so
-  dispatch returns not_implemented rather than an empty-but-successful result.
-  `create_kb` / `attach` / `detach` / `write_document` / `create_entry` pass the
-  mode gate (a service call is correctly refused) but return not_implemented,
-  because attachment storage (TD-008) and the ingest/task runtime (TD-007) are
-  not built.
+- **`write_document` is now wired (2026-07-24, track 9a)**: an OBO call captures
+  a document into a library and enqueues it on the shared runtime queue (the same
+  path as the HTTP upload, reusing `uploadDocument` + `enqueueForDocument`), so a
+  tool-written and a Console-uploaded document are indistinguishable downstream.
+  Inline `content` only for now; `file_ref` ingestion returns not_implemented. 4
+  tests. Per-doc metering (metric `karda.ingest`) is declared but not yet emitted
+  to the usage buffer - a small follow-up.
+- **What is deferred**: `search` / `ask` need a recall backend (TD-008) to return
+  anything real, so dispatch returns not_implemented rather than an
+  empty-but-successful result. `create_kb` / `attach` / `detach` need an
+  **attachment store** (user x product x kb - no such table exists yet, so a DDL
+  + db-init cycle: track 9b); `create_entry` needs **content-template resolution**
+  (code -> row id, 9b). All still pass the mode gate (a service call is correctly
+  refused) - only their backends are absent.
 - **Why the gate ships before the backend, deliberately**: the OBO-only refusal
   is an authorization guarantee, not plumbing. A service-mode call to a write
   tool is denied today, so the security contract is complete even though the
