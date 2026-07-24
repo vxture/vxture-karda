@@ -447,5 +447,19 @@ CREATE TABLE IF NOT EXISTS karda_kb.chunk (
     REFERENCES karda_kb.document (id) ON DELETE CASCADE,
   CONSTRAINT uidx_chunk_document_version_ordinal UNIQUE (document_id, version, ordinal)
 );
-CREATE INDEX IF NOT EXISTS idx_chunk_active
-  ON karda_kb.chunk (document_id, version);
+-- idx_chunk_active references `version`. On a fresh DB the column exists (just
+-- created above) so the index is built here, keeping baseline a complete
+-- provision. On a LIVE pre-versioning table the CREATE TABLE above is a no-op
+-- and `version` does not exist yet - so guard on the column, or this standalone
+-- statement fails before incr/0001 (which adds the column AND this index) runs.
+-- db-init applies baseline THEN incr, so the live path is covered by 0001.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'karda_kb' AND table_name = 'chunk' AND column_name = 'version'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_chunk_active
+      ON karda_kb.chunk (document_id, version);
+  END IF;
+END $$;
