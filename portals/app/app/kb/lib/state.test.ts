@@ -48,9 +48,13 @@ test("indexed content can re-enter processing (reprocess / controlled rebuild)",
   assert.ok(canTransitionContent("document", "indexed", "processing"));
 });
 
-test("processing cannot jump straight to archived or deleted", () => {
+test("processing cannot jump to archived (never indexed), but CAN be deleted", () => {
+  // Archiving un-indexed content is nonsensical; deleting it is a legitimate
+  // owner act - cancel an upload, remove a mistake - and must not be blocked by
+  // processing status.
   assert.equal(canTransitionContent("document", "processing", "archived"), false);
-  assert.equal(canTransitionContent("document", "processing", "deleted"), false);
+  assert.equal(canTransitionContent("document", "processing", "deleted"), true);
+  assert.equal(canTransitionContent("entry", "processing", "deleted"), true);
 });
 
 test("assertContentTransition throws with both states named", () => {
