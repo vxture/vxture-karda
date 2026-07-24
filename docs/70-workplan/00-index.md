@@ -138,7 +138,7 @@ former proceeds now; the latter is explicitly parked, not mocked-then-forgotten.
 | 6a | **Retrieval evaluation chain, non-embedding parts**: scope resolution + whitelist floor, visible-set cache (event + TTL), RRF, degrade contract, and `karda.ask` over the LIVE Atlas A4 | A4 live (KD-108) | **done** - 37 retrieval tests. Whitelist holds through both degrade paths; real BM25 engine + vector recall deferred (TD-008) |
 | 6b | **Vector recall + unified rerank**: dual-path RRF, cross-namespace union, rerank | **Atlas A1 + A3 unimplemented** (KD-107, KD-102) | waits on Atlas capability |
 | 7 | **Connector framework**: Binding lifecycle, poll/notify delivery, tombstone delete, revoke cascade. Arda first, an external doc source second | nothing structural (`220` + `binding` table landed) | arda connector waits on arda reply |
-| 8 | **Tool surface + Console**: the seven `karda.*` tools, recall testing, failure view | 4, 6a | last |
+| 8 | **Tool surface** (`karda.*` seven tools, S2S gateway, OBO-only gate, `/.well-known/vxture-tools`) **+ Console** | 4, 6a | tool surface **done** - 32 tests; read tools wired, write tools gate correctly then not_implemented (TD-009). Console + recall testing deferred |
 
 Batch 3 is deliberately first and deliberately narrow: every other domain writes
 to or reads from these tables, and `lint:data-design` makes DDL/Prisma drift a
