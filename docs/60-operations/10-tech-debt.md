@@ -20,6 +20,7 @@ deliberately not carried over.
 
 | ID | Title | Opened | Status |
 |----|-------|--------|--------|
+| TD-009 | Tool surface: write/create/attach tools gate correctly but their backends are not wired; search/ask not injected | 2026-07-24 | open - depends on TD-007/008 backends |
 | TD-008 | Retrieval has no real BM25 engine or vector recall yet; chain runs over injected recallers | 2026-07-24 | open - 6a is the eval chain; recall backends deferred / Atlas-blocked |
 | TD-007 | Processing pipeline has no real queue worker or raw object storage yet | 2026-07-24 | open - 5a is the pure pipeline; the runtime around it is deferred |
 | TD-006 | Preset seed (`seedPresets`) has no invocation point wired yet | 2026-07-24 | open - seed mechanism undecided |
@@ -227,3 +228,29 @@ deliberately not carried over.
   fill; independently, Atlas A1/A3 add vector recall and rerank. `karda.ask` is
   the one retrieval surface that works end-to-end today, because A4 is live -
   only its recall quality improves as the backends land.
+
+
+## TD-009 - tool surface backends partially wired
+
+- **What exists**: the full `karda.*` contract face - the seven descriptors,
+  `/.well-known/vxture-tools` (S2S-authenticated, tailnet only), the S2S gateway
+  (RS256 + aud=karda + the act.sub / OBO-only / no-internal-auth refusals), and
+  dispatch with the mode gate. `karda.list_kbs` is fully wired to KbService.
+  32 tests.
+- **What is deferred**: `search` / `ask` are not injected into the route's
+  backends yet - they need a recall backend (TD-008) to return anything real, so
+  dispatch returns not_implemented rather than an empty-but-successful result.
+  `create_kb` / `attach` / `detach` / `write_document` / `create_entry` pass the
+  mode gate (a service call is correctly refused) but return not_implemented,
+  because attachment storage (TD-008) and the ingest/task runtime (TD-007) are
+  not built.
+- **Why the gate ships before the backend, deliberately**: the OBO-only refusal
+  is an authorization guarantee, not plumbing. A service-mode call to a write
+  tool is denied today, so the security contract is complete even though the
+  write path is not - and a test asserts the 403 holds regardless of backend
+  presence. Wiring each backend later is a one-line addition at a seam dispatch
+  already routes through.
+- **Recovery condition**: search/ask unblock when TD-008's BM25 + C2 fill land
+  (ask already works end-to-end for grounding+A4, it just needs recall to feed
+  it); the write tools unblock when TD-007's ingest runtime and TD-008's
+  attachment storage land.
