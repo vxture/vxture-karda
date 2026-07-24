@@ -2,7 +2,7 @@ name: deploy
 
 # Tag-triggered production deploy. A v*.*.* tag builds the image and deploys the
 # production stack on worker-02 (tailnet, non-VPC -> GHCR primary with ACR
-# fallback), stack root /srv/md0/karda, published port 3233. The production
+# fallback), stack root /srv/md0/karda, published port 3240. The production
 # GitHub Environment carries a required-reviewer gate, so the deploy job pauses
 # until approved.
 #

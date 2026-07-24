@@ -2,7 +2,7 @@
 
 karda 第一次上真机的**有序**清单。顺序是有讲究的，尤其 §2 的 `.env` 时机——写晚了会踩一个不可逆的坑。
 
-- **目标**：worker-02（`vx-worker-02` / `100.76.219.48`），stack root `/srv/md0/karda`，端口 3233
+- **目标**：worker-02（`vx-worker-02` / `100.76.219.48`），stack root `/srv/md0/karda`，端口 3240（2026-07-24 改配，原 3233；beta 预留 3241）
 - **档位**：仅生产（beta 待专属服务器，TD-001）
 - **参数权威**：`docs/50-deployment/20-github-bootstrap-checklist.md`
 
@@ -10,7 +10,7 @@ karda 第一次上真机的**有序**清单。顺序是有讲究的，尤其 §2
 
 ## 0. 当前缺什么（2026-07-23）
 
-CI 侧全部就绪：仓库、ruleset、`production` 环境（必审人门）、`APP_PUBLISH_PORT=3233`、
+CI 侧全部就绪：仓库、ruleset、`production` 环境（必审人门）、`APP_PUBLISH_PORT=3240`、
 四个非密 `DEPLOY_*`、`ALIYUN_ACR_NAMESPACE`、org 级 ACR/tailscale/npm 凭据。
 
 **只差两个 secret，且只有 owner 能产出**——它们是硬阻断，缺任一 `deploy.yml` 立即失败：
@@ -30,7 +30,7 @@ docker login ghcr.io          # 主源：非 VPC 主机走 GHCR
 docker login <ACR 端点>        # 兜底
 ```
 
-同时确认 tailscale 接口放行 3233 入站、公网接口封禁（照 arda 同款处置）。
+同时确认 tailscale 接口放行 3240 入站、公网接口封禁（照 arda 同款处置）。
 
 ## 2. 写 `.env` —— 必须在首次部署**之前**
 
@@ -49,7 +49,7 @@ docker login <ACR 端点>        # 兜底
 
 | 键 | 值 / 来源 |
 |---|---|
-| `APP_PUBLISH_PORT` | `3233` |
+| `APP_PUBLISH_PORT` | `3240` |
 | `NEXT_PUBLIC_APP_URL` / `OIDC_REDIRECT_URI` / `OIDC_POST_LOGOUT_REDIRECT_URI` | `karda.vxture.com` 域下，见 `.env.example` |
 | `OIDC_CLIENT_ID` | `karda` |
 | **`OIDC_CLIENT_SECRET`** | 平台线已发放（owner 手上）。**注意**：它虽已写入本仓 repo secret，但部署链没有任何一步读它，且 GitHub secret 只写不可读回——所以必须在这里手工填入，仓库里那份是无效的（见 `80-liaison/50-2607230957` §2.1） |

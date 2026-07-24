@@ -24,14 +24,15 @@ Product code `karda`; names below are the concrete derived values.
 
 ## Edge
 
-- [ ] Request the edge vhost `karda.vxture.com` -> `vx-worker-02:3233`
-      (letter `80-liaison/40-2607230909`). Production only for now; the beta
-      vhost belongs with the future beta server (TD-001).
+- [ ] Request the edge vhost `karda.vxture.com` -> `vx-worker-02:3240`
+      (reallocated 2026-07-24, was 3233; letters `80-liaison/40-2607230909` +
+      the port-change note). Production only for now; the beta vhost (port 3241)
+      belongs with the future beta server (TD-001).
 
 ## Provisioning webhook (C3)
 
 - [ ] Register karda in `product_webhooks` with its tailnet delivery address
-      `KARDA_WEBHOOK_BASE_URL` = `http://vx-worker-02:3233` (tailnet-direct, not
+      `KARDA_WEBHOOK_BASE_URL` = `http://vx-worker-02:3240` (tailnet-direct, not
       via the public edge).
 - [ ] Add `KARDA_PROVISION_WEBHOOK_SECRET` to the platform env; the owner
       hand-transports the secret value to this repo's GitHub secrets.

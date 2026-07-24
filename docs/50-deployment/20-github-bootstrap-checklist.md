@@ -43,10 +43,10 @@ over from the template. Allocation decided 2026-07-23 (owner):
 | host | worker-02 (`vx-worker-02`, tailnet, IP `100.76.219.48`), user `stone`, port 22 |
 | profile | non-VPC -> **GHCR primary + ACR fallback** |
 | stack root | `/srv/md0/karda`; `DEPLOY_DIR` = `/srv/md0/karda/deploy` |
-| `APP_PUBLISH_PORT` | **3233** (arda holds 3230/3231, vxtpl demo 3232) |
+| `APP_PUBLISH_PORT` | **3240** (beta 3241 reserved; arda holds 3230/3231, vxtpl demo 3232) |
 | tiers live now | **production only** - beta awaits its own server, see TD-001 |
 
-- [x] `APP_PUBLISH_PORT` repo variable = `3233`.
+- [x] `APP_PUBLISH_PORT` repo variable = `3240` (reallocated 2026-07-24, was 3233).
 - [x] `production` GitHub Environment **with a Required reviewer**. Zero
       protection means a pushed tag deploys immediately with no pause - that is
       the varda lesson, do not skip it.
@@ -64,7 +64,7 @@ over from the template. Allocation decided 2026-07-23 (owner):
       **Owner transport.**
 - [ ] `ENV_FILE_BASE64` - base64 of karda's `.env`, built from `.env.example`
       (host `karda.vxture.com`, DB `vxturebiz_karda_prod` / role `karda_svc`,
-      `APP_PUBLISH_PORT=3233`, plus the OIDC / webhook / internal-job secrets).
+      `APP_PUBLISH_PORT=3240`, plus the OIDC / webhook / internal-job secrets).
       Bootstrap only writes it when the host has no `.env`; an existing one is
       never overwritten. **Owner transport.**
 - [ ] `KARDA_DB_SVC_PASSWORD` - service-role password. **Owner transport.**
