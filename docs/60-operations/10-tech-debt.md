@@ -20,6 +20,7 @@ deliberately not carried over.
 
 | ID | Title | Opened | Status |
 |----|-------|--------|--------|
+| TD-008 | Retrieval has no real BM25 engine or vector recall yet; chain runs over injected recallers | 2026-07-24 | open - 6a is the eval chain; recall backends deferred / Atlas-blocked |
 | TD-007 | Processing pipeline has no real queue worker or raw object storage yet | 2026-07-24 | open - 5a is the pure pipeline; the runtime around it is deferred |
 | TD-006 | Preset seed (`seedPresets`) has no invocation point wired yet | 2026-07-24 | open - seed mechanism undecided |
 | TD-005 | Ownership transfer has no runtime write path (owner_sub is column-locked) | 2026-07-24 | open - needs a privileged path |
@@ -204,3 +205,25 @@ deliberately not carried over.
 - **Recovery condition**: a task-runner increment builds the worker + storage +
   state wiring; independently, Atlas A1/A2 replace the stubs. Neither blocks the
   other, and both plug into seams that already exist and are tested.
+
+
+## TD-008 - retrieval recall backends not yet built
+
+- **What exists (6a)**: the full evaluation chain as pure logic over injected
+  ports - scope resolution with the whitelist floor, the visible-set cache
+  (event-invalidation + TTL), RRF fusion, the unified-rerank step with its
+  degrade contract, and `karda.ask` grounding a single-turn cited answer over
+  the LIVE Atlas A4. 37 tests, including the security-critical ones: the
+  whitelist is enforced at the recall boundary AND holds through both degrade
+  paths (rerank-unavailable and namespace-partial).
+- **What is deferred**: a real BM25 engine behind the `Recaller` port (the text
+  index over indexed chunks/entries), and the C2 visible-set fetch that fills the
+  cache. These are backends behind seams the chain already drives and tests.
+- **What is Atlas-blocked, separately (TD-004)**: vector recall (a second
+  `Recaller`, needs A1 embeddings) and the real reranker (A3). The chain already
+  fuses whatever recallers it is given and already degrades correctly when the
+  reranker is absent, so both plug in without changing the chain.
+- **Recovery condition**: a search-backend increment builds BM25 + the C2 cache
+  fill; independently, Atlas A1/A3 add vector recall and rerank. `karda.ask` is
+  the one retrieval surface that works end-to-end today, because A4 is live -
+  only its recall quality improves as the backends land.
