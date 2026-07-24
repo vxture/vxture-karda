@@ -263,3 +263,40 @@ deliberately not carried over.
   (ask already works end-to-end for grounding+A4, it just needs recall to feed
   it); the write tools unblock when TD-007's ingest runtime and TD-008's
   attachment storage land.
+
+
+## TD-010 - db-init applies increments after 97/98, so live-added columns break
+
+- **Clause strained**: `140-repo-governance-standard.md` section 6/7 - the DDL
+  applier (`deploy/database/apply.sh`, mirrored in `db-init.yml`) is inherited
+  from `vxture-template` and applies `00_baseline.sql -> 97_service_role.sql ->
+  98_column_locks.sql -> incr/*.sql`. The increments run LAST.
+- **What happened** (2026-07-24): the chunk-versioning migration (#38) added
+  `document.active_chunk_version` and `chunk.version`. On a fresh DB the baseline
+  creates those columns, so everything downstream sees them. But on the LIVE
+  production DB the tables predate versioning, so `CREATE TABLE IF NOT EXISTS`
+  no-ops and the columns do not exist until `incr/0001` runs - which is AFTER
+  baseline and after `98`. Two statements referencing the not-yet-existing
+  columns therefore failed in sequence across two apply runs: first baseline's
+  standalone `CREATE INDEX idx_chunk_active ... (version)` (run 30079362140),
+  then `98`'s `GRANT UPDATE (... active_chunk_version ...)` (run 30082017288).
+- **Root cause, generalized**: any statement that db-init runs *before* the
+  increments (baseline standalone statements, and every GRANT in `98`) must not
+  reference a column that an increment adds, because on a live DB that column is
+  not there yet. The class is structural, not a one-off typo.
+- **Tactical fix (in this repo, in-zone)**: guard baseline's index on column
+  existence, and move the increment-added column's GRANT out of `98` and into
+  the increment that adds it (`incr/0001`), leaving a pointer comment in `98`.
+  Verified against real Postgres 18 across the full `baseline -> 97 -> 98 ->
+  incr` sequence on both a live (pre-versioning) and a fresh DB. See
+  `deploy/database/ddl/incr/README.md`.
+- **Systemic fix (belongs upstream, NOT diverged here)**: reorder the inherited
+  applier to `baseline -> incr/* -> 97 -> 98`, so role and column-locks always
+  run against the final structure and the whole class disappears. The applier is
+  template-inherited/rigid (`apply.sh` + `db-init.yml`), so per the working
+  agreement this ordering must be fixed in the platform/template repo first, then
+  mirrored - reported to the platform line, not changed unilaterally in a product
+  repo.
+- **Recovery condition**: closed when the platform reorders the applier and karda
+  mirrors it; at that point the per-column guards/relocations added here become
+  redundant belt-and-suspenders and MAY be simplified, but are harmless to keep.

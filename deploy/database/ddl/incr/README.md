@@ -27,6 +27,20 @@ statement on the column's existence (see `idx_chunk_active` in `00_baseline.sql`
 fresh DB builds it and a live DB defers to the increment. The increment stays the
 authority for the live path.
 
+The same trap applies to **`98_column_locks.sql`**, which db-init also runs *before*
+the increments. A column-level `GRANT UPDATE (...)` that names a column an increment
+adds will fail on a live DB (the column is not there yet at step 98). So the GRANT for
+an increment-added writable column must travel **with the increment**, not in `98`
+(see the `active_chunk_version` grant in `0001_chunk_versioning.sql`). Leave a pointer
+comment in `98` so the whitelist still documents the column as writable.
+
+> Note: this whole class exists because db-init applies `baseline -> 97 -> 98 ->
+> incr/*` - the increments run last, so 98 cannot see them. A cleaner long-term order
+> is `baseline -> incr/* -> 97 -> 98`, so role + column-locks always run against the
+> final structure. That ordering lives in the inherited applier (`apply.sh` and
+> `db-init.yml`) and must be fixed upstream in the platform/template repo, not diverged
+> here - tracked as tech debt / a liaison item.
+
 ## Shipped increments
 
 - `0001_chunk_versioning.sql` - chunk atomic-replace versioning: `document`
