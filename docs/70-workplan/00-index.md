@@ -133,7 +133,7 @@ former proceeds now; the latter is explicitly parked, not mocked-then-forgotten.
 |---|-------|-----------|-------|
 | 3 | **Domain data model** | nothing | **done** (#19) |
 | 4 | **Asset layer**: KB/Folder/Document/Entry store+service, dual templates, filterable whitelist, both state machines, HTTP API | batch 3 | **done** - state machines + metadata (#25), KB ownership/store/service (#27), presets+seed (#30), content layer (#31), HTTP routes (this PR). 134 tests |
-| 5a | **Processing pipeline, storage + orchestration**: three-tier queue, staged parsing to element tree, templated chunking, `failed` residency, atomic commit, own object storage for raw files | nothing (parse stages that call Atlas A2 are stubbed) | after 4 |
+| 5a | **Processing pipeline, storage + orchestration**: five-stage model + idempotency key + failure taxonomy + queue-tier routing, fast-path parser to element-tree IR, templated chunking (`general`), orchestrator with the Atlas seam | nothing (deep parse=A2 and embed=A1 stubbed) | **done** - 28 pipeline tests. Deep parse and embed park, not fail; real queue worker + object storage deferred |
 | 5b | **Vectorization**: embed chunks via Atlas | **Atlas A1 unimplemented** (KD-107) - the hard block; nothing to embed against | waits on Atlas capability |
 | 6a | **Retrieval evaluation chain, non-embedding parts**: visible-set cache, whitelist, gating/CTA, citation assembly, BM25 path, the answering surface `karda.ask` over Atlas A4 | A4 is live (KD-108) | can proceed once 5a lands |
 | 6b | **Vector recall + unified rerank**: dual-path RRF, cross-namespace union, rerank | **Atlas A1 + A3 unimplemented** (KD-107, KD-102) | waits on Atlas capability |
