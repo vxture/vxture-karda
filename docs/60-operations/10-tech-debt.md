@@ -20,6 +20,7 @@ deliberately not carried over.
 
 | ID | Title | Opened | Status |
 |----|-------|--------|--------|
+| TD-006 | Preset seed (`seedPresets`) has no invocation point wired yet | 2026-07-24 | open - seed mechanism undecided |
 | TD-005 | Ownership transfer has no runtime write path (owner_sub is column-locked) | 2026-07-24 | open - needs a privileged path |
 | TD-004 | Batches 5b/6b parked: vectorization and rerank depend on Atlas A1/A3, not yet built | 2026-07-24 | open - awaiting Atlas capability |
 | TD-003 | A broken workflow YAML passed all five required checks; nothing in CI reads a workflow file | 2026-07-24 | **closed** 2026-07-24 (same day) |
@@ -157,3 +158,26 @@ deliberately not carried over.
   the DB owner (not the service role) to set `owner_sub`, gated like other
   privileged structure/data changes. Small; deferred only because no departure/
   transfer flow is exercised in v1 yet.
+
+
+## TD-006 - preset seed has no invocation point
+
+- **What exists**: `seedPresets()` (app/kb/lib/seed.ts) idempotently inserts the
+  six processing presets and three content presets (FAQ/glossary/SOP, KD-002)
+  via ON CONFLICT DO NOTHING. Fully unit-tested at the data level (9 tests).
+- **What is missing**: nothing calls it in production. The templates are factory
+  product data, so an empty karda_kb has no presets until something runs the
+  seed.
+- **Why deferred, not decided now**: the invocation point is a real choice with
+  trade-offs - an app-startup hook (simple, but runs on every boot and needs a
+  lock to avoid a thundering-herd insert across replicas), a one-shot admin/
+  db-init step (explicit and gated, matches how structure changes ship), or a
+  first-request lazy seed (no extra machinery, but couples seeding to traffic).
+  It is not worth picking under time pressure while the surrounding admin surface
+  does not exist yet.
+- **Why idempotency was built in first anyway**: whichever invocation wins, it
+  will re-run - a startup hook every boot, db-init every apply - so INSERT-only
+  seeding against the unique keys is the correct shape regardless, and building
+  it now means the wiring later is a one-line call, not a redesign.
+- **Recovery condition**: the admin/console surface (batch 8) or a db-init seed
+  step decides how factory data is applied; wire `seedPresets` into it.
