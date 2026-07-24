@@ -62,12 +62,17 @@ REVOKE UPDATE ON karda_kb.document FROM karda_svc;
 GRANT UPDATE (title, folder_id, processing_template_id, storage_ref,
               content_state, failure_reason, failed_at, verification_state,
               verifier, verified_at, expires_at, sensitivity, business_meta,
-              active_chunk_version, updated_at)
+              updated_at)
   ON karda_kb.document TO karda_svc;
 -- storage_ref IS writable: the pipeline fills it once the raw file lands in
 -- karda's object storage, and a controlled rebuild may relocate it. source /
 -- connector_code / source_ref / content_hash stay immutable - they are the
 -- provenance and the dedup key.
+-- active_chunk_version is ALSO writable (the atomic swap flips it at commit),
+-- but its column is added by incr/0001, which db-init applies AFTER this file.
+-- On a live DB the column does not exist yet when 98 runs, so its GRANT cannot
+-- live here - it travels with the increment that adds the column. General rule
+-- for any writable column added by an increment: see incr/README.md.
 
 REVOKE UPDATE ON karda_kb.entry FROM karda_svc;
 GRANT UPDATE (title, folder_id, content_template_id, template_version, fields,

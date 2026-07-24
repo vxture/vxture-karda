@@ -39,3 +39,10 @@ END $$;
 
 CREATE INDEX IF NOT EXISTS idx_chunk_active
   ON karda_kb.chunk (document_id, version);
+
+-- Column-level UPDATE grant for the newly-added active_chunk_version. db-init
+-- applies 98_column_locks.sql BEFORE the increments, so on a live DB that column
+-- does not exist when 98 runs - its GRANT must live here, with the increment
+-- that adds it. Idempotent (GRANT is a no-op if already held). The karda_svc
+-- role is created by 97_service_role.sql, which runs before this file.
+GRANT UPDATE (active_chunk_version) ON karda_kb.document TO karda_svc;
