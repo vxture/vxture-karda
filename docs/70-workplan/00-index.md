@@ -132,7 +132,7 @@ former proceeds now; the latter is explicitly parked, not mocked-then-forgotten.
 | # | Scope | Blocked by | State |
 |---|-------|-----------|-------|
 | 3 | **Domain data model** | nothing | **done** (#19) |
-| 4 | **Asset layer**: KB/Folder/Document/Entry store+service, dual templates, filterable whitelist, both state machines, U-tier flow | batch 3 | **in progress** - state machines, metadata, KB ownership/store/service landed (#25, #27) |
+| 4 | **Asset layer**: KB/Folder/Document/Entry store+service, dual templates, filterable whitelist, both state machines, HTTP API | batch 3 | **done** - state machines + metadata (#25), KB ownership/store/service (#27), presets+seed (#30), content layer (#31), HTTP routes (this PR). 134 tests |
 | 5a | **Processing pipeline, storage + orchestration**: three-tier queue, staged parsing to element tree, templated chunking, `failed` residency, atomic commit, own object storage for raw files | nothing (parse stages that call Atlas A2 are stubbed) | after 4 |
 | 5b | **Vectorization**: embed chunks via Atlas | **Atlas A1 unimplemented** (KD-107) - the hard block; nothing to embed against | waits on Atlas capability |
 | 6a | **Retrieval evaluation chain, non-embedding parts**: visible-set cache, whitelist, gating/CTA, citation assembly, BM25 path, the answering surface `karda.ask` over Atlas A4 | A4 is live (KD-108) | can proceed once 5a lands |

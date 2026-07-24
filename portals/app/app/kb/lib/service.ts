@@ -52,6 +52,10 @@ export class KbService {
     return row ? ok(row) : err({ code: "not_found" });
   }
 
+  async list(workspaceId: string): Promise<KnowledgeBaseRow[]> {
+    return this.store.listKbs(workspaceId);
+  }
+
   /**
    * Rename / reconfigure. Publish-state changes are NOT accepted here - they go
    * through `setPublishState` because they carry an authorization rule the plain
