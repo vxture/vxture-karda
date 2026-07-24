@@ -178,12 +178,19 @@ WHERE `content_state <> 'deleted'`——同库同源同内容去重，正是 110
 
 ### 3.8 `chunk`
 
-`id` / `document_id` FK ON DELETE CASCADE / `ordinal` INTEGER NOT NULL / `text` TEXT NOT NULL /
-`token_count` INTEGER / `vector_ref` VARCHAR(128) / `created_at`。
-UNIQUE (`document_id`, `ordinal`)。
+`id` / `document_id` FK ON DELETE CASCADE / **`version` INTEGER NOT NULL** / `ordinal` INTEGER NOT NULL /
+`text` TEXT NOT NULL / `token_count` INTEGER / `vector_ref` VARCHAR(128) / `created_at`。
+UNIQUE (`document_id`, **`version`**, `ordinal`)。
 
 **只有 Document 有 chunk**：Entry 整条即召回单元（§6），不分块。
 `vector_ref` 是向量库中的指针，**向量本身不落 Postgres**——索引存储的选型属批次 6，本表只留接口。
+
+**原子替换的版本机制（110-processing §6，2026-07-24 补）**：commit 是**文档级原子替换**——
+新 chunk 集合以**新 `version`** 整体写入，与旧版本瞬时并存（这正是唯一键含 `version` 的原因，
+否则同 `ordinal` 撞键）；写完后把 `document.active_chunk_version` 原子切到新版本，检索**只读活跃
+版本**、永不见半更新态；旧版本的 chunk 异步清理。`document.active_chunk_version` 为 NULL 表示
+该文档尚未成功提交过任何索引（新上传、加工中、或加工失败）——检索据此天然排除未就绪文档，无需
+额外的 `content_state` 判断在召回热路径上。
 
 ## 4. 与列锁的关系（可写列白名单）
 

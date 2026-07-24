@@ -293,6 +293,7 @@ model Document {
   businessMeta         Json      @default("{}") @map("business_meta")
   createdInProduct     String?   @map("created_in_product") @db.VarChar(32)
   createdBy            String?   @map("created_by") @db.VarChar(128)
+  activeChunkVersion   Int?      @map("active_chunk_version")
   createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt            DateTime  @default(now()) @map("updated_at") @db.Timestamptz()
 
@@ -340,6 +341,7 @@ model Entry {
 model Chunk {
   id         String   @id @default(uuid()) @db.Uuid
   documentId String   @map("document_id") @db.Uuid
+  version    Int
   ordinal    Int
   text       String
   tokenCount Int?     @map("token_count")
@@ -348,7 +350,8 @@ model Chunk {
 
   document Document @relation(fields: [documentId], references: [id], onDelete: Cascade, map: "fk_chunk_document")
 
-  @@unique([documentId, ordinal], map: "uidx_chunk_document_ordinal")
+  @@unique([documentId, version, ordinal], map: "uidx_chunk_document_version_ordinal")
+  @@index([documentId, version], map: "idx_chunk_active")
   @@map("chunk")
   @@schema("karda_kb")
 }

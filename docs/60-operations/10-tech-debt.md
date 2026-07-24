@@ -199,12 +199,13 @@ deliberately not carried over.
   parks it (suspend). 24 tests. The worker already handles the embed-unavailable
   path: it suspends, so a document flows through fetch/parse/chunk and parks,
   losing nothing.
-- **What is still deferred**: (1) the CommitTarget that persists chunks to
-  karda_kb.chunk with the atomic version-swap (110-processing 6) - the worker
-  drives it through an injected port, but the real chunk-writing implementation
-  is a separate increment; (2) IR persistence so a resume skips re-parsing;
-  (3) the production wiring - a singleton queue, enqueue-on-upload, and a worker
-  loop/cron driving `tick`. These are the runtime around a tested core. These are runtime scaffolding
+- **What is still deferred**: (1) IR persistence so a resume skips re-parsing;
+  (2) the production wiring - a singleton queue, enqueue-on-upload, and a worker
+  loop/cron driving `tick`. The **chunk-commit is now built** (2026-07-24): the
+  atomic-replace CommitTarget writes a new chunk version, flips
+  document.active_chunk_version, and drops superseded versions in one
+  transaction, so retrieval never sees a half-update. Verified on real Postgres,
+  including the live-migration incr and the two-versions-coexist unique key. These are runtime scaffolding
   around a tested core, deferred so the core could be verified in isolation
   first.
 - **What is Atlas-blocked, separately (TD-004)**: the embed stage's real client

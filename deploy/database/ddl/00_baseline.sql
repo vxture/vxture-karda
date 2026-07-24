@@ -332,6 +332,9 @@ CREATE TABLE IF NOT EXISTS karda_kb.document (
   business_meta           JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_in_product      VARCHAR(32),
   created_by              VARCHAR(128),               -- [ref]
+  -- The chunk version retrieval reads. Set by the atomic swap at commit; NULL
+  -- until a document has successfully committed an index (110-processing 6).
+  active_chunk_version    INTEGER,
   created_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT fk_document_kb FOREIGN KEY (kb_id)
@@ -434,6 +437,7 @@ CREATE INDEX IF NOT EXISTS idx_binding_state
 CREATE TABLE IF NOT EXISTS karda_kb.chunk (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   document_id  UUID NOT NULL,
+  version      INTEGER NOT NULL,                    -- atomic-replace version (110-processing 6)
   ordinal      INTEGER NOT NULL,
   text         TEXT NOT NULL,
   token_count  INTEGER,
@@ -441,5 +445,7 @@ CREATE TABLE IF NOT EXISTS karda_kb.chunk (
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT fk_chunk_document FOREIGN KEY (document_id)
     REFERENCES karda_kb.document (id) ON DELETE CASCADE,
-  CONSTRAINT uidx_chunk_document_ordinal UNIQUE (document_id, ordinal)
+  CONSTRAINT uidx_chunk_document_version_ordinal UNIQUE (document_id, version, ordinal)
 );
+CREATE INDEX IF NOT EXISTS idx_chunk_active
+  ON karda_kb.chunk (document_id, version);

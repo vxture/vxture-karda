@@ -62,7 +62,7 @@ REVOKE UPDATE ON karda_kb.document FROM karda_svc;
 GRANT UPDATE (title, folder_id, processing_template_id, storage_ref,
               content_state, failure_reason, failed_at, verification_state,
               verifier, verified_at, expires_at, sensitivity, business_meta,
-              updated_at)
+              active_chunk_version, updated_at)
   ON karda_kb.document TO karda_svc;
 -- storage_ref IS writable: the pipeline fills it once the raw file lands in
 -- karda's object storage, and a controlled rebuild may relocate it. source /
