@@ -199,15 +199,27 @@ deliberately not carried over.
   parks it (suspend). 24 tests. The worker already handles the embed-unavailable
   path: it suspends, so a document flows through fetch/parse/chunk and parks,
   losing nothing.
+- **Chunk-commit is built and LIVE** (2026-07-24): the atomic-replace
+  CommitTarget writes a new chunk version, flips document.active_chunk_version,
+  and drops superseded versions in one transaction, so retrieval never sees a
+  half-update. Verified on real Postgres, including the live-migration incr and
+  the two-versions-coexist unique key; the versioning migration is applied to
+  `vxturebiz_karda_prod` (db-init run `30086025097`).
+- **Production wiring - now partly built** (2026-07-24): `processing/runtime.ts`
+  assembles the pure core into a runnable system - a process-wide singleton
+  **queue**, a **DocumentSink** over ContentService (indexed / failed, swallowing
+  the deleted-mid-flight race), a per-task **resolver** (raw text over object
+  storage + the A1 stub embedder + the Prisma commit target), **enqueue-on-upload**
+  (the documents POST route enqueues on a successful create), and an
+  internal-token-gated **tick endpoint** (`POST /api/kb/processing/tick`, same
+  posture as `/api/usage/flush`) that drains one bounded pass. 8 tests over the
+  pure pieces; the impure singleton is the one untested edge, by design.
 - **What is still deferred**: (1) IR persistence so a resume skips re-parsing;
-  (2) the production wiring - a singleton queue, enqueue-on-upload, and a worker
-  loop/cron driving `tick`. The **chunk-commit is now built** (2026-07-24): the
-  atomic-replace CommitTarget writes a new chunk version, flips
-  document.active_chunk_version, and drops superseded versions in one
-  transaction, so retrieval never sees a half-update. Verified on real Postgres,
-  including the live-migration incr and the two-versions-coexist unique key. These are runtime scaffolding
-  around a tested core, deferred so the core could be verified in isolation
-  first.
+  (2) an external scheduler (host cron / platform) actually calling `tick` on an
+  interval - the endpoint exists but nothing drives it yet; (3) sourcing the KB's
+  real `processing_params` / `embedding_model` for the config fingerprint and
+  resolver - the KB row exposes only `processing_template_id` today, so both
+  default (inert while A1 is down, since embed suspends regardless).
 - **What is Atlas-blocked, separately (TD-004)**: the embed stage's real client
   (A1) and deep-path parsing (A2). The orchestrator already handles their absence
   correctly - deep parse parks as permanent-for-now, embed suspends and resumes -
