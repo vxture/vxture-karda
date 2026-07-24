@@ -20,6 +20,8 @@ deliberately not carried over.
 
 | ID | Title | Opened | Status |
 |----|-------|--------|--------|
+| TD-005 | Ownership transfer has no runtime write path (owner_sub is column-locked) | 2026-07-24 | open - needs a privileged path |
+| TD-004 | Batches 5b/6b parked: vectorization and rerank depend on Atlas A1/A3, not yet built | 2026-07-24 | open - awaiting Atlas capability |
 | TD-003 | A broken workflow YAML passed all five required checks; nothing in CI reads a workflow file | 2026-07-24 | **closed** 2026-07-24 (same day) |
 | TD-002 | `db-init` applied the host's deployed DDL, not the pinned one - the version pin did nothing | 2026-07-24 | **closed** 2026-07-24 (same day) |
 | TD-001 | Beta tier not yet wired: development phase deploys straight to production, so the standard's second tag->env tier is dormant | 2026-07-22 | open - awaiting the beta server |
@@ -115,3 +117,43 @@ deliberately not carried over.
   `sed "s/'/''/g"`, which is valid. Matching the structure rather than the
   punctuation gives zero false positives on all seven current workflows while
   still rejecting the exact injected-newline shape.
+
+
+## TD-004 - vectorization and rerank parked on Atlas capability
+
+- **What is deferred**: batch 5b (embed chunks via Atlas A1) and batch 6b
+  (vector recall + unified rerank via A1/A3). Karda hosts no model runtime by
+  iron rule (`110-processing` section 4), so these cannot be built locally.
+- **Why it is debt, not just a schedule**: the asset and processing storage/
+  orchestration layers (5a) and the non-embedding retrieval chain plus
+  `karda.ask` over the live A4 (6a) proceed now, which leaves karda with a
+  processing pipeline that stops before `embedding` and a retrieval chain with a
+  BM25 path but no vector path. That is a real, shippable-but-incomplete state
+  that must be tracked so it is not mistaken for done.
+- **External status**: A4 generation is live (KD-108). A1 embedding is the hard
+  block (KD-107); A3 rerank next (KD-102); A2 parsing is a quality enhancer, not
+  a start gate (KD-101). Atlas is now an independent product in active
+  development; requirements submitted in `80-liaison/100-2607240931`.
+- **Recovery condition**: Atlas ships A1 -> 5b and the vector half of 6a/6b
+  unpark in order. Nothing in karda's own code blocks them; the interfaces are
+  designed against the requirements letter so the wiring is small when capability
+  lands.
+- **Interim shape**: 5a defines the persistence port for chunks and vector
+  references (`document.storage_ref`, `chunk.vector_ref` already exist in the
+  schema) so vectorization is an implementation behind a stable seam, not a
+  redesign.
+
+## TD-005 - ownership transfer has no runtime write path
+
+- **What is missing**: `KbService` exposes `canTransfer` (the permission check)
+  but no transfer write. `owner_sub` is column-locked (`98_column_locks`), so the
+  service role cannot reassign a library's owner.
+- **Why it is deliberate, not an oversight**: reassigning a departed user's
+  library is an administrative act (definition 4.6: the home WS admin transfers).
+  Handing that write to the runtime service role would mean widening the column
+  lock to grant a capability the governance design withholds on purpose. The gap
+  is the correct state; what is missing is the privileged path that performs it.
+- **Recovery condition**: a db-init-style or admin-scoped operation that runs as
+  the DB owner (not the service role) to set `owner_sub`, gated like other
+  privileged structure/data changes. Small; deferred only because no departure/
+  transfer flow is exercised in v1 yet.
