@@ -23,6 +23,10 @@ export interface ToolBackends {
   // dispatch stays free of the chain's construction details.
   search?(caller: CallerContext, args: Record<string, unknown>): Promise<unknown>;
   ask?(caller: CallerContext, args: Record<string, unknown>): Promise<unknown>;
+  // write_document returns a full DispatchResult (it has real 4xx cases:
+  // not-found library, duplicate, bad args), so the backend owns the status, not
+  // dispatch. Injected by the route (TD-009 track 9a).
+  writeDocument?(caller: CallerContext, args: Record<string, unknown>): Promise<DispatchResult>;
 }
 
 const notImplemented = (name: string): DispatchResult => ({
@@ -73,13 +77,17 @@ export async function dispatchTool(
       const result = await backends.ask(caller, args);
       return { status: 200, body: { result: result as Record<string, unknown> } };
     }
-    // OBO-only tools: gate already passed (so a service call was refused above),
-    // but the runtime behind them is not built. Return not_implemented rather
-    // than a fake success.
+    // write_document is wired (TD-009 9a): it captures a document and enqueues
+    // it on the runtime. The backend owns the status (it has real 4xx cases).
+    case "karda.write_document":
+      return backends.writeDocument ? backends.writeDocument(caller, args) : notImplemented(name);
+    // The remaining OBO-only tools: gate already passed (so a service call was
+    // refused above), but their runtime is not built yet - create_kb / attach /
+    // detach need the attachment store (9b), create_entry needs template
+    // resolution (9b). Return not_implemented rather than a fake success.
     case "karda.create_kb":
     case "karda.attach_kb":
     case "karda.detach_kb":
-    case "karda.write_document":
     case "karda.create_entry":
       return notImplemented(name);
     default:
