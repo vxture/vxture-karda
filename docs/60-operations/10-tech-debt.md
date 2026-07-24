@@ -192,14 +192,19 @@ deliberately not carried over.
   key, failure taxonomy, queue-tier routing, the fast-path parser to element-tree
   IR, `general` chunking, and an orchestrator that runs a document through
   fetch/parse/chunk/embed/commit against injected ports. Fully tested (28 tests).
-- **What is deferred**: (1) a real queue worker driving the three tiers with the
-  org-level concurrency cap and per-KB serial window; (2) persisting stage
-  products (the IR) so a resume skips re-parsing; (3) wiring the orchestrator's
-  result onto the document content-state via ContentService. **Object storage is
-  now built** (2026-07-24, the document-upload path): `document.storage_ref`
-  points at karda's own filesystem-backed object store, so an uploaded document
-  persists and is downloadable today - what remains is triggering the pipeline on
-  it, which is the queue worker above. These are runtime scaffolding
+- **What is now built** (2026-07-24): object storage behind `storage_ref` (the
+  document-upload path); and the **queue + worker** - the three tiers with the
+  org concurrency cap and per-KB serial window, and the worker that runs the
+  pipeline and maps its result onto the document state (indexed / failed) or
+  parks it (suspend). 24 tests. The worker already handles the embed-unavailable
+  path: it suspends, so a document flows through fetch/parse/chunk and parks,
+  losing nothing.
+- **What is still deferred**: (1) the CommitTarget that persists chunks to
+  karda_kb.chunk with the atomic version-swap (110-processing 6) - the worker
+  drives it through an injected port, but the real chunk-writing implementation
+  is a separate increment; (2) IR persistence so a resume skips re-parsing;
+  (3) the production wiring - a singleton queue, enqueue-on-upload, and a worker
+  loop/cron driving `tick`. These are the runtime around a tested core. These are runtime scaffolding
   around a tested core, deferred so the core could be verified in isolation
   first.
 - **What is Atlas-blocked, separately (TD-004)**: the embed stage's real client
