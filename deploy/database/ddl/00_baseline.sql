@@ -463,3 +463,26 @@ BEGIN
       ON karda_kb.chunk (document_id, version);
   END IF;
 END $$;
+
+-- A user's per-product attachment list (definition 4.8; karda.attach_kb /
+-- detach_kb / create_kb-auto-attach). The permission unit is the library; this is
+-- a working-set link, NOT an authorization surface - a row here means "this user
+-- has this library in their attachment list for this product", nothing more.
+-- Insert/delete only (no writable columns): attaching and detaching are the only
+-- operations, so 98_column_locks grants no UPDATE.
+-- NOTE (live DB): added by incr/0002, which db-init applies AFTER 97/98, so its
+-- service-role grants travel with that increment, not with 97.
+CREATE TABLE IF NOT EXISTS karda_kb.kb_attachment (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id  UUID NOT NULL,
+  user_sub      VARCHAR(128) NOT NULL,
+  product_code  VARCHAR(32) NOT NULL,          -- the calling product (S2S act.sub)
+  kb_id         UUID NOT NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT fk_kb_attachment_kb FOREIGN KEY (kb_id)
+    REFERENCES karda_kb.knowledge_base (id) ON DELETE CASCADE,
+  CONSTRAINT uidx_kb_attachment_ws_user_product_kb
+    UNIQUE (workspace_id, user_sub, product_code, kb_id)
+);
+CREATE INDEX IF NOT EXISTS idx_kb_attachment_lookup
+  ON karda_kb.kb_attachment (workspace_id, user_sub, product_code);

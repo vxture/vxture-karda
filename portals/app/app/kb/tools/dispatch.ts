@@ -30,6 +30,11 @@ export interface ToolBackends {
   // create_entry likewise owns its status (unknown template, field validation,
   // not-found library). Injected by the route (TD-009 track 9b).
   createEntry?(caller: CallerContext, args: Record<string, unknown>): Promise<DispatchResult>;
+  // create_kb / attach_kb / detach_kb own their status (name_taken, not-found /
+  // not-visible library). Injected by the route (TD-009 track 9b, attachment store).
+  createKb?(caller: CallerContext, args: Record<string, unknown>): Promise<DispatchResult>;
+  attachKb?(caller: CallerContext, args: Record<string, unknown>): Promise<DispatchResult>;
+  detachKb?(caller: CallerContext, args: Record<string, unknown>): Promise<DispatchResult>;
 }
 
 const notImplemented = (name: string): DispatchResult => ({
@@ -87,14 +92,14 @@ export async function dispatchTool(
       return backends.writeDocument ? backends.writeDocument(caller, args) : notImplemented(name);
     case "karda.create_entry":
       return backends.createEntry ? backends.createEntry(caller, args) : notImplemented(name);
-    // The remaining OBO-only tools: gate already passed (so a service call was
-    // refused above), but their runtime is not built yet - create_kb / attach /
-    // detach need the attachment store (a table + db-init). Return
-    // not_implemented rather than a fake success.
+    // create_kb / attach_kb / detach_kb are wired (TD-009 9b, attachment store):
+    // each owns its status (name_taken, not-found / not-visible library).
     case "karda.create_kb":
+      return backends.createKb ? backends.createKb(caller, args) : notImplemented(name);
     case "karda.attach_kb":
+      return backends.attachKb ? backends.attachKb(caller, args) : notImplemented(name);
     case "karda.detach_kb":
-      return notImplemented(name);
+      return backends.detachKb ? backends.detachKb(caller, args) : notImplemented(name);
     default:
       return { status: 404, body: { error: "unknown_tool", detail: name } };
   }
