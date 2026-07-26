@@ -9,6 +9,9 @@ import { getObjectStore } from "../../../kb/storage/objectstore";
 import { getProcessingRuntime } from "../../../kb/processing/runtime";
 import { getTemplateResolver } from "../../../kb/lib/template-resolver";
 import { getAttachmentStore } from "../../../kb/attachments/store";
+import { getRecallCorpus } from "../../../kb/retrieval/corpus";
+import { getVisibleSetResolver } from "../../../kb/retrieval/visible-set";
+import { searchTool } from "../../../kb/retrieval/search-tool";
 import { writeDocument } from "../../../kb/tools/write";
 import { createEntry } from "../../../kb/tools/entry";
 import { createKb, attachKb, detachKb } from "../../../kb/attachments/tools";
@@ -42,10 +45,16 @@ function backends(): ToolBackends {
     createKb: (caller, args) => createKb(caller, args, { kb, attachments: getAttachmentStore() }),
     attachKb: (caller, args) => attachKb(caller, args, { kb, attachments: getAttachmentStore() }),
     detachKb: (caller, args) => detachKb(caller, args, { kb, attachments: getAttachmentStore() }),
-    // search/ask are intentionally not injected yet: the retrieval chain needs a
-    // recall backend (BM25) and a C2 visible-set fill to run for real (TD-008).
-    // Dispatch returns not_implemented for them, which is honest; wiring them is
-    // a one-line addition here once those backends land.
+    // search is wired (TD-008): scope (visible-set INTERSECT attachment) + BM25
+    // recall + rerank-degrade. Returns real results over attached+indexed content
+    // (empty until content indexes, which is correct, not a leak). ask stays
+    // not_implemented until the Atlas A4 generation client + a chunk resolver land.
+    search: (caller, args) =>
+      searchTool(caller, args, {
+        visibleSet: getVisibleSetResolver(getKbStore()),
+        attachments: getAttachmentStore(),
+        corpus: getRecallCorpus(),
+      }),
   };
 }
 
