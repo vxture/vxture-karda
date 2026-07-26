@@ -26,11 +26,19 @@ CI 侧全部就绪：仓库、ruleset、`production` 环境（必审人门）、
 
 ```bash
 mkdir -p /srv/md0/karda/etc
-docker login ghcr.io          # 主源：非 VPC 主机走 GHCR
-docker login <ACR 端点>        # 兜底
+docker login <ACR 端点>        # 主源：国内主机 ACR 更快（deploy.yml 已置 ACR 为主）
+docker login ghcr.io          # 兜底
 ```
 
 同时确认 tailscale 接口放行 3240 入站、公网接口封禁（照 arda 同款处置）。
+
+**Docker registry 镜像加速（国内主机必配）**：worker-02 拉 Docker Hub 基础镜像
+（`redis` / `postgres` / `nginx` 等）必须走 registry-mirror，否则会像 2026-07-26 那次
+一样卡死。`/etc/docker/daemon.json` 里 `registry-mirrors` 只保留可用的**专属**加速器
+（owner 的 `https://vp6xaxdh.mirror.aliyuncs.com`），改后 `sudo systemctl reload docker`
+（SIGHUP 热更新，不重启容器）。注意 `mirrors.aliyun.com` 是 apt/yum 源、**不是** docker
+registry 镜像，放这里无效；`data-root` 必须保留为 `/srv/md0/docker`。deploy.sh 已改为
+"基础镜像本地已存在就跳过拉取、且带超时"，与镜像加速是两道独立保险。
 
 ## 2. 写 `.env` —— 必须在首次部署**之前**
 

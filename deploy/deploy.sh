@@ -8,7 +8,7 @@
 # box (2C2G) - if karda ever moves host, re-check this against the new profile.
 #
 #   bash deploy.sh all       # directories -> start -> verify
-#   bash deploy.sh start     # pull image (GHCR primary, ACR fallback) + up -d
+#   bash deploy.sh start     # pull app image (ACR primary, GHCR fallback) + up -d
 #   bash deploy.sh verify    # health check
 #
 # The image tag + registries come from the environment CI sets:
@@ -58,19 +58,45 @@ cmd_directories() {
   log "directories ready ($DATA_DIR)"
 }
 
+# Keep only the just-deployed app image locally (owner: only ever one latest). A
+# China host re-pulls fast from ACR if a rollback is ever needed, so hoarding old
+# per-sha layers only costs disk. Best-effort: an image still referenced by a
+# shared/in-use layer just stays.
+prune_old_app_images() {
+  local keep="$1"
+  docker images --format '{{.Repository}}:{{.Tag}}' \
+    | grep -E "/${IMAGE_NAME}:" | grep -v ":${keep}$" \
+    | xargs -r -n1 docker rmi >/dev/null 2>&1 || true
+  log "pruned old ${IMAGE_NAME} images (kept ${keep})"
+}
+
 cmd_start() {
   local reg="${IMAGE_REGISTRY:-ghcr.io}" ns="${IMAGE_NAMESPACE:-vxture}" tag="${IMAGE_TAG:-latest}"
   local primary="${reg}/${ns}/${IMAGE_NAME}:${tag}"
   log "pulling ${primary}"
-  if ! docker pull "$primary"; then
+  if ! timeout 300 docker pull "$primary"; then
     local fb="${FALLBACK_IMAGE_REGISTRY:-}/${FALLBACK_IMAGE_NAMESPACE:-}/${IMAGE_NAME}:${tag}"
-    log "primary pull failed; trying fallback ${fb}"
+    log "primary pull failed/timed out; trying fallback ${fb}"
     docker pull "$fb"
     docker tag "$fb" "$primary"
   fi
-  # Data-array box: full-stack recreate is fine.
-  compose pull redis db || true
+  # Base images (redis/postgres) are pinned tags that rarely change and are almost
+  # always already present. Re-pulling them every deploy is what once wedged a
+  # China-host deploy for 40 min on a slow Docker Hub mirror - so pull only a base
+  # image that is actually MISSING, and bound even that with a timeout so a slow
+  # mirror can never hang the deploy on an image we already have. (Docker Hub pull
+  # speed itself is a daemon registry-mirror concern, configured on the host.)
+  local base
+  for base in $(compose config --images 2>/dev/null | grep -Ev "/${IMAGE_NAME}:" || true); do
+    if docker image inspect "$base" >/dev/null 2>&1; then
+      log "base image present, skip pull: ${base}"
+    else
+      log "pulling missing base image: ${base}"
+      timeout 180 docker pull "$base" || log "base pull skipped (timeout/failure): ${base}"
+    fi
+  done
   compose up -d
+  prune_old_app_images "$tag"
   log "started"
 }
 
