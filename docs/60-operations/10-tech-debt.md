@@ -20,8 +20,8 @@ deliberately not carried over.
 
 | ID | Title | Opened | Status |
 |----|-------|--------|--------|
-| TD-009 | Tool surface: write_document + create_entry + create_kb/attach_kb/detach_kb all wired (attachment store landed; prod needs the `incr/0002` db-init); search/ask still need recall (TD-008) | 2026-07-24 | open - search/ask remain; attachment tools pending the prod db-init |
-| TD-008 | BM25 recaller built (engine + corpus port + recaller, 2026-07-27); still need the C2 visible-set fill + route-wiring to unblock search/ask; vector recall + rerank Atlas-blocked | 2026-07-24 | open - BM25 done; C2 visible-set fill + wiring remain; vector/rerank Atlas-blocked |
+| TD-009 | Tool surface: write_document + create_entry + create_kb/attach_kb/detach_kb + **search** all wired; only `ask` remains not_implemented (needs the Atlas A4 client, TD-008) | 2026-07-24 | open - only `ask` remains |
+| TD-008 | BM25 recaller built + `karda.search` wired end-to-end (local visible-set + scope + BM25 + meter, 2026-07-27); `ask` needs the Atlas A4 client; platform-namespace visible-set + vector recall + rerank still deferred/Atlas-blocked | 2026-07-24 | open - search wired; ask needs A4; vector/rerank Atlas-blocked |
 | TD-007 | Processing pipeline has no real queue worker or raw object storage yet | 2026-07-24 | open - 5a is the pure pipeline; the runtime around it is deferred |
 | TD-006 | Preset seed (`seedPresets`) has no invocation point wired yet | 2026-07-24 | open - seed mechanism undecided |
 | TD-005 | Ownership transfer has no runtime write path (owner_sub is column-locked) | 2026-07-24 | open - needs a privileged path |
@@ -246,10 +246,17 @@ deliberately not carried over.
   port, applying the verification quality tier on top. 12 tests. Until Atlas A1
   commits chunks the chunk side is empty by construction, but the engine + path
   are live, not stubbed.
-- **What is still deferred**: the C2 visible-set FETCH that fills the scope cache
-  (without it, scope resolves empty under Mock C2, so search returns nothing even
-  with the recaller in place), and the route-wiring that injects the recaller +
-  the A4 generation client so `karda.search` / `ask` leave `not_implemented`.
+- **`karda.search` is now wired end-to-end (2026-07-27)**: `visible-set.ts` feeds
+  the ORG-namespace visible set from karda's own publish-state/ownership (local +
+  cached, TTL + invalidation - authoritative for own libraries, self-contained),
+  `search-tool.ts` composes scope (visible INTERSECT attachment, kb_ids narrows) +
+  the BM25 recaller + the degrading rerank and meters `karda.search` per call, and
+  the tools route injects it - so dispatch returns a real search (empty until
+  content indexes / a library is attached, which is correct, not a leak).
+- **What is still deferred**: `karda.ask` needs the Atlas A4 generation client (no
+  client is built yet, only the interface) + a chunk-text resolver, so it stays
+  `not_implemented`; and the PLATFORM-namespace (P-tier) visible set needs the C2
+  fetch (the org namespace is local and done).
 - **What is Atlas-blocked, separately (TD-004)**: vector recall (a second
   `Recaller`, needs A1 embeddings) and the real reranker (A3). The chain already
   fuses whatever recallers it is given and already degrades correctly when the
