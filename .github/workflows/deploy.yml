@@ -224,15 +224,18 @@ jobs:
             "grep -qE 'container_name:.*-db$' '$deploy_dir/docker-compose.yml' && echo '[deliver] compose declares a db service' || { echo '[deliver] ERROR: delivered compose has no db service' >&2; exit 1; }"
           ssh "${ssh_opts[@]}" "$DEPLOY_USER@$DEPLOY_HOST" "printf '%s\n' '$PASSED_SHA' > '$deploy_dir/VERSION'"
 
-          # Remote deploy script: GHCR primary (non-VPC host), ACR fallback.
+          # Remote deploy script: Aliyun ACR PRIMARY (worker-02 is a China host -
+          # ACR is markedly faster than ghcr.io from here), GHCR fallback. The
+          # image is pushed to BOTH by build.yml, so this is a pull-order choice,
+          # not an availability one.
           cat > /tmp/deploy.sh <<'REMOTE_SCRIPT'
           set -euo pipefail
           cd "$REPO_DIR"
-          export IMAGE_REGISTRY="ghcr.io"
-          export IMAGE_NAMESPACE="vxture"
+          export IMAGE_REGISTRY="$ALIYUN_ACR_REGISTRY"
+          export IMAGE_NAMESPACE="$ALIYUN_ACR_NAMESPACE"
           export IMAGE_TAG="$IMAGE_TAG"
-          export FALLBACK_IMAGE_REGISTRY="$ALIYUN_ACR_REGISTRY"
-          export FALLBACK_IMAGE_NAMESPACE="$ALIYUN_ACR_NAMESPACE"
+          export FALLBACK_IMAGE_REGISTRY="ghcr.io"
+          export FALLBACK_IMAGE_NAMESPACE="vxture"
           if [ -n "${GHCR_TOKEN:-}" ]; then
             printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
           fi
