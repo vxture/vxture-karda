@@ -73,8 +73,13 @@ prune_old_app_images() {
 cmd_start() {
   local reg="${IMAGE_REGISTRY:-ghcr.io}" ns="${IMAGE_NAMESPACE:-vxture}" tag="${IMAGE_TAG:-latest}"
   local primary="${reg}/${ns}/${IMAGE_NAME}:${tag}"
-  log "pulling ${primary}"
-  if ! timeout 300 docker pull "$primary"; then
+  # The deploy tag is an immutable per-commit sha, so a tag already present locally
+  # is identical content - do NOT force-pull an unchanged version (owner). Only a
+  # genuinely absent tag is fetched: ACR primary, GHCR fallback, primary bounded by
+  # a timeout so a slow registry fails over instead of hanging.
+  if docker image inspect "$primary" >/dev/null 2>&1; then
+    log "app image already present, skip pull: ${primary}"
+  elif ! timeout 300 docker pull "$primary"; then
     local fb="${FALLBACK_IMAGE_REGISTRY:-}/${FALLBACK_IMAGE_NAMESPACE:-}/${IMAGE_NAME}:${tag}"
     log "primary pull failed/timed out; trying fallback ${fb}"
     docker pull "$fb"
