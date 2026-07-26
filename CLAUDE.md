@@ -154,8 +154,12 @@ rule, not a posture backed by a private boundary.
    source). `package.json` keeps `"private": true` as an npm-publish guard, which
    is unrelated to GitHub repo visibility.
 
-Shared credentials (ACR, tailscale, npm token) are org-level: configured once and
-shared to selected repos, not duplicated per repo.
+Shared credentials (ACR, tailscale, npm token, and the worker-02 deploy-target
+secrets `DEPLOY_WORKER02_*` - HOST/USER/PORT/KNOWN_HOSTS/SSH_KEY/SSH_KEY_PASSPHRASE)
+are org-level: configured once and shared to selected repos, not duplicated per
+repo. `DEPLOY_DIR` and `ENV_FILE_BASE64` stay per-repo (they are per-product, not
+host-pointing). The deploy workflows keep their local env-var names (`DEPLOY_HOST`
+etc.) and only read from the renamed `secrets.DEPLOY_WORKER02_*`.
 
 ## Dependency security (SCA)
 

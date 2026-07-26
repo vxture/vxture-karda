@@ -11,14 +11,16 @@ karda 第一次上真机的**有序**清单。顺序是有讲究的，尤其 §2
 ## 0. 当前缺什么（2026-07-23）
 
 CI 侧全部就绪：仓库、ruleset、`production` 环境（必审人门）、`APP_PUBLISH_PORT=3240`、
-四个非密 `DEPLOY_*`、`ALIYUN_ACR_NAMESPACE`、org 级 ACR/tailscale/npm 凭据。
+逐仓 `DEPLOY_DIR`、`ALIYUN_ACR_NAMESPACE`、org 级 `DEPLOY_WORKER02_*` 与 ACR/tailscale/npm 凭据。
 
-**只差两个 secret，且只有 owner 能产出**——它们是硬阻断，缺任一 `deploy.yml` 立即失败：
+**主机指向密钥已是组织级共享**（`DEPLOY_WORKER02_*`，2026-07-27 由旧的裸 `DEPLOY_*`
+改名，配一次共享给 worker-02 各仓；工作流保留本地变量名 `DEPLOY_HOST` 等，只把来源换成
+`secrets.DEPLOY_WORKER02_*`）。其中两个只有 owner 能产出、且是硬阻断，缺任一 `deploy.yml` 立即失败：
 
-| Secret | 位置 | 产出方式 | 缺了会怎样 |
-|---|---|---|---|
-| `DEPLOY_SSH_KEY` | `production` 环境 | worker-02 上对 `stone` 授权的私钥（+ 可选 `DEPLOY_SSH_KEY_PASSPHRASE`） | "Validate deployment secrets" 步 `test -n` 直接 fail |
-| `DEPLOY_KNOWN_HOSTS` | `production` 环境 | 可信网络执行 `ssh-keyscan -p 22 vx-worker-02` | `tailnet-ssh-connect` 对空值 **fail-closed**（拒绝 TOFU 回落防 MITM），不降级、直接失败 |
+| Secret（组织级） | 产出方式 | 缺了会怎样 |
+|---|---|---|
+| `DEPLOY_WORKER02_SSH_KEY` | worker-02 上对 `stone` 授权的私钥（+ 可选 `DEPLOY_WORKER02_SSH_KEY_PASSPHRASE`） | "Validate deployment secrets" 步 `test -n` 直接 fail |
+| `DEPLOY_WORKER02_KNOWN_HOSTS` | 可信网络执行 `ssh-keyscan -p 22 vx-worker-02` | `tailnet-ssh-connect` 对空值 **fail-closed**（拒绝 TOFU 回落防 MITM），不降级、直接失败 |
 
 `ENV_FILE_BASE64` **不是必需**——只要按 §2 先在主机建好 `.env` 即可，见下。
 
@@ -70,11 +72,15 @@ registry 镜像，放这里无效；`data-root` 必须保留为 `/srv/md0/docker
 `PLATFORM_API_URL` 或 token 留空 → C2 回落 Mock：所有 workspace 读作"未订阅"。这与平台侧
 五档骨架仍为 DRAFT 的现状**一致**，因此首次上线读到"未订阅"是预期，不是故障。
 
-## 3. 补两个 secret（owner，GitHub）
+## 3. 确认组织级密钥可见性（owner，GitHub）
+
+主机指向密钥现为**组织级**，配一次即共享给 worker-02 各仓——不再逐仓 `--env production` 设置。
+本仓只需确认在可见范围内即可（已含）。若首次产出这两个 owner 密钥，用组织级设置：
 
 ```
-gh secret set DEPLOY_SSH_KEY      --repo vxture/vxture-karda --env production < <私钥文件>
-gh secret set DEPLOY_KNOWN_HOSTS  --repo vxture/vxture-karda --env production < <keyscan 输出>
+gh secret set DEPLOY_WORKER02_SSH_KEY     --org vxture --visibility selected < <私钥文件>
+gh secret set DEPLOY_WORKER02_KNOWN_HOSTS --org vxture --visibility selected < <keyscan 输出>
+# 然后把 vxture-karda 加入这两个密钥的可见仓库列表（GitHub UI 或 gh api）
 ```
 
 ## 4. 发布（可由 agent 执行）
@@ -99,8 +105,8 @@ rsync 投递 `deploy/`+`configs/`+`compose` → 拉不可变 `sha-<short>` 镜�
 `gh secret set DEPLOY_DIR --body "/srv/md0/karda/deploy"` 在 Git Bash 下，值会被改写成
 `<Git 安装盘符>/Program Files/Git/srv/md0/karda/deploy`，远端 `deploy.sh` 据此推出的 `ROOT` 错误，
 报 `missing .../etc/.env`。**处置**：用 PowerShell 设置、GitHub 网页 UI 设置，或在 Git Bash 前置 `MSYS_NO_PATHCONV=1`。
-只有 `DEPLOY_DIR` 受影响；`DEPLOY_HOST`/`USER`/`PORT` 不以 `/` 开头不受影响，
-经 stdin 写入的 `DEPLOY_KNOWN_HOSTS` 也不受影响。
+只有 `DEPLOY_DIR` 受影响；`DEPLOY_WORKER02_HOST`/`USER`/`PORT` 不以 `/` 开头不受影响，
+经 stdin 写入的 `DEPLOY_WORKER02_KNOWN_HOSTS` 也不受影响。
 
 **已加机检**（2026-07-23，此坑二次险些复发后）：`deploy.yml` 的 "Validate deployment secrets"
 步现在断言 `DEPLOY_DIR` 必须是绝对 POSIX 路径且不含 Windows 路径片段，**几秒内失败**，
