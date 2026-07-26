@@ -20,7 +20,7 @@ deliberately not carried over.
 
 | ID | Title | Opened | Status |
 |----|-------|--------|--------|
-| TD-009 | Tool surface: write/create/attach tools gate correctly but their backends are not wired; search/ask not injected | 2026-07-24 | open - depends on TD-007/008 backends |
+| TD-009 | Tool surface: write_document + create_entry wired (+ ingest metering); create_kb/attach/detach need the attachment store; search/ask not injected | 2026-07-24 | open - create_kb/attach/detach + search/ask remain |
 | TD-008 | Retrieval has no real BM25 engine or vector recall yet; chain runs over injected recallers | 2026-07-24 | open - 6a is the eval chain; recall backends deferred / Atlas-blocked |
 | TD-007 | Processing pipeline has no real queue worker or raw object storage yet | 2026-07-24 | open - 5a is the pure pipeline; the runtime around it is deferred |
 | TD-006 | Preset seed (`seedPresets`) has no invocation point wired yet | 2026-07-24 | open - seed mechanism undecided |
@@ -262,16 +262,27 @@ deliberately not carried over.
   a document into a library and enqueues it on the shared runtime queue (the same
   path as the HTTP upload, reusing `uploadDocument` + `enqueueForDocument`), so a
   tool-written and a Console-uploaded document are indistinguishable downstream.
-  Inline `content` only for now; `file_ref` ingestion returns not_implemented. 4
-  tests. Per-doc metering (metric `karda.ingest`) is declared but not yet emitted
-  to the usage buffer - a small follow-up.
+  Inline `content` only for now; `file_ref` ingestion returns not_implemented.
+- **`create_entry` is now wired (2026-07-26, track 9b)**: an OBO call resolves the
+  template CODE it is given (faq / glossary / sop) to the seeded `content_template`
+  row via a `TemplateResolver` (preset-only offline, Prisma over the seeded row
+  when a DB is attached - no DDL, the table already exists), validates the field
+  map against the template contract, and writes the entry in `draft`. Submitting a
+  draft into the index is a separate, not-yet-built entry-processing path (parallel
+  to the document pipeline, A1-blocked either way), so v1 stops at the durable
+  draft.
+- **Per-doc metering is now emitted (2026-07-26)**: both `write_document` and
+  `create_entry` record a `karda.ingest` counter into the local usage buffer on a
+  successful capture, attributed to the library's owning workspace (110-processing
+  5) and idempotent on the new row id (a 409 duplicate never reaches the emit, and
+  a re-emit cannot double-count). Best-effort - a buffer hiccup never fails the
+  write, since the row is already durable.
 - **What is deferred**: `search` / `ask` need a recall backend (TD-008) to return
   anything real, so dispatch returns not_implemented rather than an
   empty-but-successful result. `create_kb` / `attach` / `detach` need an
   **attachment store** (user x product x kb - no such table exists yet, so a DDL
-  + db-init cycle: track 9b); `create_entry` needs **content-template resolution**
-  (code -> row id, 9b). All still pass the mode gate (a service call is correctly
-  refused) - only their backends are absent.
+  + db-init cycle: the remaining slice of track 9b). All still pass the mode gate
+  (a service call is correctly refused) - only their backends are absent.
 - **Why the gate ships before the backend, deliberately**: the OBO-only refusal
   is an authorization guarantee, not plumbing. A service-mode call to a write
   tool is denied today, so the security contract is complete even though the
@@ -280,8 +291,9 @@ deliberately not carried over.
   already routes through.
 - **Recovery condition**: search/ask unblock when TD-008's BM25 + C2 fill land
   (ask already works end-to-end for grounding+A4, it just needs recall to feed
-  it); the write tools unblock when TD-007's ingest runtime and TD-008's
-  attachment storage land.
+  it); `write_document` and `create_entry` are wired; the remaining write tools
+  (`create_kb` / `attach` / `detach`) unblock when the attachment store (a table +
+  db-init) lands.
 
 
 ## TD-010 - db-init applies increments after 97/98, so live-added columns break

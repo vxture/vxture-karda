@@ -17,6 +17,7 @@ import type { TaskQueue } from "../processing/queue";
 import type { DocumentRow } from "../lib/content-store";
 import { uploadDocument } from "../lib/upload";
 import { enqueueForDocument } from "../processing/runtime";
+import { recordUsage } from "../../usage/lib/buffer";
 
 export interface WriteDeps {
   kb: KbService;
@@ -94,9 +95,21 @@ export async function writeDocument(
     return bad(result.error.code);
   }
 
-  // NOTE: per-doc metering (metric karda.ingest) is declared in the catalog but
-  // not emitted here yet - wiring it to the usage buffer is a small follow-up
-  // (TD-009), and attribution is to the library's owning workspace, not the
-  // caller, per 110-processing 5.
+  // Per-doc ingest metering (catalog: write_document -> per_doc, metric
+  // karda.ingest). Attributed to the library's owning workspace (110-processing
+  // 5), idempotent on the new document id. Best-effort: the document is already
+  // durable and enqueued, so a buffer hiccup must not fail the write. A 409
+  // duplicate never reaches here, so a re-captured identical blob is not counted.
+  try {
+    await recordUsage({
+      workspaceId: ws,
+      metric: "karda.ingest",
+      amount: 1,
+      idempotencyKey: `karda.ingest:${result.value.id}`,
+    });
+  } catch {
+    // swallow - metering is not on the write's critical path.
+  }
+
   return { status: 201, body: { document: { id: result.value.id, content_state: result.value.contentState } } };
 }

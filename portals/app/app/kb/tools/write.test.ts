@@ -8,6 +8,7 @@ import { ContentService } from "../lib/content-service";
 import { InMemoryContentStore } from "../lib/content-store";
 import { InMemoryObjectStore } from "../storage/objectstore";
 import { TaskQueue } from "../processing/queue";
+import { InMemoryUsageStore, setUsageStore } from "../../usage/lib/store";
 
 const oboCaller = (over: Partial<CallerContext> = {}): CallerContext => ({
   callerProduct: "agent",
@@ -55,6 +56,24 @@ test("write_document validates args: kb_id required, content non-empty, file_ref
   const fr = await writeDocument(oboCaller(), { kb_id: kbId, file_ref: "obj://x" }, deps);
   assert.equal(fr.status, 501, "file_ref ingestion is not wired yet");
   assert.equal(fr.body.error, "not_implemented");
+});
+
+test("write_document meters ingest to the library's workspace, keyed by the new doc id", async () => {
+  const usage = new InMemoryUsageStore();
+  setUsageStore(usage);
+  try {
+    const { deps, kbId } = await fixture();
+    const r = await writeDocument(oboCaller(), { kb_id: kbId, content: "metered bytes" }, deps);
+    assert.equal(r.status, 201);
+    const docId = (r.body.document as { id: string }).id;
+    const buffered = await usage.unflushed(10);
+    assert.equal(buffered.length, 1, "one ingest event buffered");
+    assert.equal(buffered[0].metric, "karda.ingest");
+    assert.equal(buffered[0].workspaceId, "ws1");
+    assert.equal(buffered[0].idempotencyKey, `karda.ingest:${docId}`);
+  } finally {
+    setUsageStore(null);
+  }
 });
 
 test("write_document dedups identical content in the same library (409)", async () => {

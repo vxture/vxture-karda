@@ -7,7 +7,9 @@ import { ContentService } from "../../../kb/lib/content-service";
 import { getContentStore } from "../../../kb/lib/content-store";
 import { getObjectStore } from "../../../kb/storage/objectstore";
 import { getProcessingRuntime } from "../../../kb/processing/runtime";
+import { getTemplateResolver } from "../../../kb/lib/template-resolver";
 import { writeDocument } from "../../../kb/tools/write";
+import { createEntry } from "../../../kb/tools/entry";
 
 // POST /api/tools/:tool   (S2S, tailnet only)
 //
@@ -29,6 +31,9 @@ function backends(): ToolBackends {
     // write_document is wired (TD-009 9a): capture a document and enqueue it on
     // the shared runtime queue (the same one POST /api/kb/processing/tick drains).
     writeDocument: (caller, args) => writeDocument(caller, args, { kb, content, objects, queue: runtime.queue }),
+    // create_entry is wired (TD-009 9b): write a template-shaped draft entry. The
+    // resolver bridges the template code the caller passes -> the seeded row id.
+    createEntry: (caller, args) => createEntry(caller, args, { kb, content, templates: getTemplateResolver() }),
     // search/ask are intentionally not injected yet: the retrieval chain needs a
     // recall backend (BM25) and a C2 visible-set fill to run for real (TD-008).
     // Dispatch returns not_implemented for them, which is honest; wiring them is
