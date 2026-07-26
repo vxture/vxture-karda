@@ -20,7 +20,8 @@ history.
 | `90-2607240921-karda-atlas-reply-received.md` | 2607240921 | (record) | platform's reply to `70`: Atlas is not yet independent and only A4 (generation) exists - A1 embedding / A2 parsing / A3 rerank are unbuilt, a capability gap not a doc gap. Reshapes batches 5-6; A4 unblocks `karda.ask`, A1 remains the hard block. KD-101/102 split, KD-107/108 added | received - plan adjusted |
 | `100-2607240931-karda-atlas-capability-requirements.md` | 2607240931 | atlas line | field-level requirements for A1 embedding / A2 parsing models / A3 rerank, as design input while Atlas builds them. Flags the hard constraints karda cannot yield (version-locked embedding, 100-candidate rerank under 400ms, 429 that distinguishes throttle from quota) and the unlock order A1 > A3 > A2 | open (design input) |
 | `80-2607240013-karda-arda-channel-repriority.md` | 2607240013 | arda line | corrects the urgency stated in `30`: karda now self-hosts storage and treats Arda as one connector among many, so the five open items affect only the arda connector rather than blocking karda's mainline. Reframes them as "confirm Arda's values on the connector capability matrix" | open |
-| `110-2607241749-karda-port-reallocation.md` | 2607241749 | platform line | production publish port reallocated by product number: prod `3233` -> `3240`, beta `3241` reserved (still deferred with the beta server). Amends every `3233` in letter `40`. Lists the karda-side repo changes and the owner/platform sync actions (repo variable, host `.env`, edge upstream, firewall, webhook base URL) | open - platform syncing |
+| `110-2607241749-karda-port-reallocation.md` | 2607241749 | platform line | production publish port reallocated by product number: prod `3233` -> `3240`, beta `3241` reserved (still deferred with the beta server). Amends every `3233` in letter `40`. Lists the karda-side repo changes and the owner/platform sync actions (repo variable, host `.env`, edge upstream, firewall, webhook base URL) | **edge done** (2026-07-26 host cutover, `karda.vxture.com` 200 on 3240); remaining webhook-address item folded into `120` |
+| `120-2607261820-karda-platform-registration-c.md` | 2607261820 | platform line | registration segment C - post-launch (`v0.2.0` live). Four platform-side actions: (1) register the `product_webhooks` delivery address `http://vx-worker-02:3240` (C3 inbound is built + verified but nothing is sent until registered); (2) register the metric-registry keys karda now emits - `karda.ingest` (live), `karda.search` / `karda.ask` (declared); (3) delete the inert `OIDC_CLIENT_SECRET` repo secret (closes `50` R2); (4) sync-only: the five DRAFT plans wait on karda's tier->entitlement mapping (KD-202/203 + product-def v1), a later dedicated letter | open - awaiting platform |
 
 ## Received
 
@@ -44,10 +45,14 @@ not against mocks:
 | C2 entitlement | probed three ways - no token 401, correct token 200 with the unsubscribed envelope, wrong token 401 |
 | C3 provisioning | signature probed four ways (correct / tampered / stale timestamp / absent), delivery semantics four ways (first / replay / stale seq / subscription_changed), each cross-checked against what actually landed in the DB. Probe rows removed afterwards |
 
-Still open on the platform side: `product_webhooks` delivery-address
-registration (karda can process webhooks correctly, but nothing will be sent
-until the address is registered), and the inert repo secret in `50`'s R2.
+Still open on the platform side, now consolidated into segment C (`120`):
+`product_webhooks` delivery-address registration at `http://vx-worker-02:3240`
+(karda processes webhooks correctly, but nothing is sent until the address is
+registered); registration of the metric-registry keys karda now emits
+(`karda.ingest` live, `karda.search` / `karda.ask` declared); and deletion of the
+inert `OIDC_CLIENT_SECRET` repo secret (`50` R2).
 
-Next outbound letter will most likely be karda's tier-to-entitlement mapping,
-which the platform needs before it can publish the five DRAFT plans - and which
-waits on `20-specs/10-product-definition.md` reaching v1.
+The tier-to-entitlement mapping - which the platform needs before it can publish
+the five DRAFT plans, and which waits on KD-202/203 and
+`20-specs/10-product-definition.md` reaching v1 - stays a later, dedicated letter;
+`120` only records the dependency so the metric keys line up in advance.
