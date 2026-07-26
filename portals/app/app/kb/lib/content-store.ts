@@ -24,6 +24,8 @@ export interface DocumentRow {
   title: string;
   source: DocumentSource;
   connectorCode: string | null;
+  /** Connector provenance (immutable): source_doc_id / binding_id / uri / etc. */
+  sourceRef: Record<string, unknown> | null;
   contentHash: string | null;
   storageRef: string | null;
   mime: string | null;
@@ -76,6 +78,7 @@ export interface CreateDocumentInput {
   title: string;
   source: DocumentSource;
   connectorCode?: string | null;
+  sourceRef?: Record<string, unknown> | null;
   contentHash?: string | null;
   storageRef?: string | null;
   mime?: string | null;
@@ -114,6 +117,11 @@ export interface ContentStore {
     connectorCode: string | null,
     contentHash: string,
   ): Promise<boolean>;
+  /** The live (non-deleted) connector document for a stable source id, if any -
+   *  the locator for a connector upsert/tombstone (220-connector-framework I1). */
+  findLiveConnectorDocument(kbId: string, connectorCode: string, sourceDocId: string): Promise<DocumentRow | null>;
+  /** Live connector documents belonging to a binding - the revoke cascade set. */
+  listLiveConnectorDocsByBinding(kbId: string, bindingId: string): Promise<DocumentRow[]>;
 
   // entries
   createEntry(input: CreateEntryInput): Promise<EntryRow>;
@@ -166,6 +174,7 @@ export class InMemoryContentStore implements ContentStore {
       title: input.title,
       source: input.source,
       connectorCode: input.connectorCode ?? null,
+      sourceRef: input.sourceRef ?? null,
       contentHash: input.contentHash ?? null,
       storageRef: input.storageRef ?? null,
       mime: input.mime ?? null,
@@ -217,6 +226,22 @@ export class InMemoryContentStore implements ContentStore {
         (d.connectorCode ?? "") === (connectorCode ?? "") &&
         d.contentHash === contentHash,
     );
+  }
+  async findLiveConnectorDocument(kbId: string, connectorCode: string, sourceDocId: string): Promise<DocumentRow | null> {
+    const d = [...this.docs.values()].find(
+      (x) =>
+        !x.deleted &&
+        x.kbId === kbId &&
+        x.source === "connector" &&
+        x.connectorCode === connectorCode &&
+        (x.sourceRef?.source_doc_id ?? null) === sourceDocId,
+    );
+    return d ? strip(d) : null;
+  }
+  async listLiveConnectorDocsByBinding(kbId: string, bindingId: string): Promise<DocumentRow[]> {
+    return [...this.docs.values()]
+      .filter((x) => !x.deleted && x.kbId === kbId && x.source === "connector" && (x.sourceRef?.binding_id ?? null) === bindingId)
+      .map(strip);
   }
 
   async createEntry(input: CreateEntryInput): Promise<EntryRow> {

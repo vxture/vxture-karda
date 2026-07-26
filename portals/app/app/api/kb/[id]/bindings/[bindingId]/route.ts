@@ -3,6 +3,11 @@ import { KbService } from "../../../../../kb/lib/service";
 import { getKbStore, type KnowledgeBaseRow } from "../../../../../kb/lib/store";
 import { BindingService } from "../../../../../kb/connectors/binding-service";
 import { getBindingStore } from "../../../../../kb/connectors/binding-store";
+import { revokeCascade } from "../../../../../kb/connectors/ingest";
+import { ContentService } from "../../../../../kb/lib/content-service";
+import { getContentStore } from "../../../../../kb/lib/content-store";
+import { getObjectStore } from "../../../../../kb/storage/objectstore";
+import { getProcessingRuntime } from "../../../../../kb/processing/runtime";
 import { requireAuth, readJson } from "../../../../../kb/api/http";
 import { actorForKb } from "../../../../../kb/api/actor";
 import type { AuthUser } from "../../../../../auth/lib/claims";
@@ -68,6 +73,20 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string; bi
   if (!result.ok) {
     const status = result.error.code === "not_found" ? 404 : result.error.code === "illegal_transition" ? 409 : 400;
     return NextResponse.json({ error: result.error.code, detail: result.error }, { status });
+  }
+
+  // Revoke is terminal AND cascades: the binding's live content leaves recall
+  // immediately (220-connector-framework section 7). Runs after the state moved.
+  if (action === "revoke") {
+    const runtime = getProcessingRuntime();
+    const cascade = await revokeCascade(bindingId, {
+      content: new ContentService(getContentStore()),
+      bindings: getBindingStore(),
+      kbs: getKbStore(),
+      objects: getObjectStore(),
+      queue: runtime.queue,
+    });
+    return NextResponse.json({ binding: result.value, cascade });
   }
   return NextResponse.json({ binding: result.value });
 }

@@ -30,6 +30,7 @@ function toDoc(r: any): DocumentRow {
     title: r.title,
     source: r.source as DocumentSource,
     connectorCode: r.connectorCode,
+    sourceRef: (r.sourceRef ?? null) as Record<string, unknown> | null,
     contentHash: r.contentHash,
     storageRef: r.storageRef,
     mime: r.mime,
@@ -99,6 +100,7 @@ export class PrismaContentStore implements ContentStore {
           title: input.title,
           source: input.source,
           connectorCode: input.connectorCode ?? null,
+          sourceRef: (input.sourceRef ?? undefined) as object | undefined,
           contentHash: input.contentHash ?? null,
           storageRef: input.storageRef ?? null,
           mime: input.mime ?? null,
@@ -158,6 +160,31 @@ export class PrismaContentStore implements ContentStore {
         },
       })) > 0
     );
+  }
+  async findLiveConnectorDocument(kbId: string, connectorCode: string, sourceDocId: string): Promise<DocumentRow | null> {
+    const p = await getPrismaClient();
+    const r = await p.document.findFirst({
+      where: {
+        kbId,
+        source: "connector",
+        connectorCode,
+        contentState: { not: "deleted" },
+        sourceRef: { path: ["source_doc_id"], equals: sourceDocId },
+      },
+    });
+    return r ? toDoc(r) : null;
+  }
+  async listLiveConnectorDocsByBinding(kbId: string, bindingId: string): Promise<DocumentRow[]> {
+    const p = await getPrismaClient();
+    const rows = await p.document.findMany({
+      where: {
+        kbId,
+        source: "connector",
+        contentState: { not: "deleted" },
+        sourceRef: { path: ["binding_id"], equals: bindingId },
+      },
+    });
+    return rows.map(toDoc);
   }
 
   async createEntry(input: CreateEntryInput): Promise<EntryRow> {

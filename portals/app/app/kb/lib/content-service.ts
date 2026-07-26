@@ -85,6 +85,17 @@ export class ContentService {
     return this.store.listDocuments(kbId);
   }
 
+  /** The live connector document for a stable source id (connector upsert/tombstone
+   *  locator, 220-connector-framework I1). */
+  async findLiveConnectorDocument(kbId: string, connectorCode: string, sourceDocId: string): Promise<DocumentRow | null> {
+    return this.store.findLiveConnectorDocument(kbId, connectorCode, sourceDocId);
+  }
+
+  /** Live connector documents belonging to a binding - the revoke cascade set. */
+  async listLiveConnectorDocsByBinding(kbId: string, bindingId: string): Promise<DocumentRow[]> {
+    return this.store.listLiveConnectorDocsByBinding(kbId, bindingId);
+  }
+
   async transitionDocument(
     id: string,
     to: ContentState,
