@@ -9,9 +9,11 @@ import { getObjectStore } from "../../../kb/storage/objectstore";
 import { getProcessingRuntime } from "../../../kb/processing/runtime";
 import { getTemplateResolver } from "../../../kb/lib/template-resolver";
 import { getAttachmentStore } from "../../../kb/attachments/store";
-import { getRecallCorpus } from "../../../kb/retrieval/corpus";
+import { getRecallCorpus, getRecallTextResolver } from "../../../kb/retrieval/corpus";
 import { getVisibleSetResolver } from "../../../kb/retrieval/visible-set";
+import { getGenerationClient, askModelCode } from "../../../kb/retrieval/generation";
 import { searchTool } from "../../../kb/retrieval/search-tool";
+import { askTool } from "../../../kb/retrieval/ask-tool";
 import { writeDocument } from "../../../kb/tools/write";
 import { createEntry } from "../../../kb/tools/entry";
 import { createKb, attachKb, detachKb } from "../../../kb/attachments/tools";
@@ -29,6 +31,7 @@ function backends(): ToolBackends {
   const content = new ContentService(getContentStore());
   const objects = getObjectStore();
   const runtime = getProcessingRuntime();
+  const generation = getGenerationClient();
   return {
     async listKbs(workspaceId) {
       return kb.list(workspaceId);
@@ -55,6 +58,22 @@ function backends(): ToolBackends {
         attachments: getAttachmentStore(),
         corpus: getRecallCorpus(),
       }),
+    // ask is wired only when the Atlas A4 client is configured (PLATFORM_API_URL +
+    // token + ATLAS_CHAT_PATH); otherwise it is left out and dispatch returns
+    // not_implemented rather than failing at call time.
+    ...(generation
+      ? {
+          ask: (caller, args) =>
+            askTool(caller, args, {
+              visibleSet: getVisibleSetResolver(getKbStore()),
+              attachments: getAttachmentStore(),
+              corpus: getRecallCorpus(),
+              textResolver: getRecallTextResolver(),
+              generation,
+              model: askModelCode(),
+            }),
+        }
+      : {}),
   };
 }
 

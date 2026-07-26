@@ -20,7 +20,7 @@ deliberately not carried over.
 
 | ID | Title | Opened | Status |
 |----|-------|--------|--------|
-| TD-009 | Tool surface: write_document + create_entry + create_kb/attach_kb/detach_kb + **search** all wired; only `ask` remains not_implemented (needs the Atlas A4 client, TD-008) | 2026-07-24 | open - only `ask` remains |
+| TD-009 | Tool surface: ALL nine tools wired (list_kbs/search/ask/write_document/create_entry/create_kb/attach_kb/detach_kb + manifest); `ask` activates once `ATLAS_CHAT_PATH`/`ATLAS_ASK_MODEL` are set | 2026-07-24 | effectively closed - only runtime config (ATLAS_*) + Atlas-blocked recall quality remain |
 | TD-008 | BM25 recaller built + `karda.search` wired end-to-end (local visible-set + scope + BM25 + meter, 2026-07-27); `ask` needs the Atlas A4 client; platform-namespace visible-set + vector recall + rerank still deferred/Atlas-blocked | 2026-07-24 | open - search wired; ask needs A4; vector/rerank Atlas-blocked |
 | TD-007 | Processing pipeline has no real queue worker or raw object storage yet | 2026-07-24 | open - 5a is the pure pipeline; the runtime around it is deferred |
 | TD-006 | Preset seed (`seedPresets`) has no invocation point wired yet | 2026-07-24 | open - seed mechanism undecided |
@@ -253,10 +253,18 @@ deliberately not carried over.
   the BM25 recaller + the degrading rerank and meters `karda.search` per call, and
   the tools route injects it - so dispatch returns a real search (empty until
   content indexes / a library is attached, which is correct, not a leak).
-- **What is still deferred**: `karda.ask` needs the Atlas A4 generation client (no
-  client is built yet, only the interface) + a chunk-text resolver, so it stays
-  `not_implemented`; and the PLATFORM-namespace (P-tier) visible set needs the C2
-  fetch (the org namespace is local and done).
+- **`karda.ask` is now wired (2026-07-27)**: `generation.ts` is the Atlas A4
+  client (POST over the internal platform base + `x-vxture-internal-auth`, the same
+  transport as C2/C3; egress-guarded), `corpus.ts` gained a `RecallTextResolver`
+  (id -> grounding text), and `ask-tool.ts` composes scope + BM25 + the A4 client
+  via `runAsk`, metering `karda.ask` only when a grounded answer is generated. The
+  route injects it **only when the client is configured**, so ask is honestly
+  `not_implemented` until the owner sets `ATLAS_CHAT_PATH` + `ATLAS_ASK_MODEL` (the
+  endpoint path and model code live in the platform's `40-model-platform.md`, not
+  in karda's repo). With those set, ask runs against the live A4.
+- **What is still deferred**: the PLATFORM-namespace (P-tier) visible set needs the
+  C2 fetch (the org namespace is local and done); vector recall + the real reranker
+  are Atlas-blocked (TD-004).
 - **What is Atlas-blocked, separately (TD-004)**: vector recall (a second
   `Recaller`, needs A1 embeddings) and the real reranker (A3). The chain already
   fuses whatever recallers it is given and already degrades correctly when the

@@ -23,9 +23,14 @@ export interface RecallCorpus {
   units(kbIds: string[]): Promise<RecallUnit[]>;
 }
 
+/** Resolves recall-unit ids back to their text - for ask grounding + citation. */
+export interface RecallTextResolver {
+  resolve(ids: string[]): Promise<{ id: string; kbId: string; text: string }[]>;
+}
+
 // --- in-memory (offline / tests) --------------------------------------------
 
-export class InMemoryRecallCorpus implements RecallCorpus {
+export class InMemoryRecallCorpus implements RecallCorpus, RecallTextResolver {
   constructor(private all: RecallUnit[] = []) {}
   add(u: RecallUnit): void {
     this.all.push(u);
@@ -33,6 +38,10 @@ export class InMemoryRecallCorpus implements RecallCorpus {
   async units(kbIds: string[]): Promise<RecallUnit[]> {
     const set = new Set(kbIds);
     return this.all.filter((u) => set.has(u.kbId));
+  }
+  async resolve(ids: string[]): Promise<{ id: string; kbId: string; text: string }[]> {
+    const set = new Set(ids);
+    return this.all.filter((u) => set.has(u.id)).map((u) => ({ id: u.id, kbId: u.kbId, text: u.text }));
   }
 }
 
@@ -88,4 +97,28 @@ export class PrismaRecallCorpus implements RecallCorpus {
 
 export function getRecallCorpus(): RecallCorpus {
   return prismaEnabled() ? new PrismaRecallCorpus() : new InMemoryRecallCorpus();
+}
+
+/** Resolve recall-unit ids (chunks + entries) to their text, by id. */
+export class PrismaRecallTextResolver implements RecallTextResolver {
+  async resolve(ids: string[]): Promise<{ id: string; kbId: string; text: string }[]> {
+    if (ids.length === 0) return [];
+    const p = await getPrismaClient();
+    const out: { id: string; kbId: string; text: string }[] = [];
+    const chunks: { id: string; text: string; document: { kbId: string } | null }[] = await p.chunk.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, text: true, document: { select: { kbId: true } } },
+    });
+    for (const c of chunks) if (c.document) out.push({ id: c.id, kbId: c.document.kbId, text: c.text });
+    const entries: { id: string; kbId: string; fields: unknown }[] = await p.entry.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, kbId: true, fields: true },
+    });
+    for (const e of entries) out.push({ id: e.id, kbId: e.kbId, text: entryText(e.fields) });
+    return out;
+  }
+}
+
+export function getRecallTextResolver(): RecallTextResolver {
+  return prismaEnabled() ? new PrismaRecallTextResolver() : new InMemoryRecallCorpus();
 }
