@@ -29,6 +29,8 @@ export interface Kb {
   processingTemplateId: string | null;
   governanceEnabled: boolean;
   exemptSyncedContent: boolean;
+  defaultVerifier: string | null;
+  defaultVerifyIntervalDays: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -40,6 +42,9 @@ export interface Doc {
   source: "upload" | "api" | "connector";
   contentState: string;
   verificationState: string;
+  verifier: string | null;
+  verifiedAt: string | null;
+  expiresAt: string | null;
   mime: string | null;
   sizeBytes: number | null;
   failureReason: string | null;
@@ -124,6 +129,20 @@ export async function setGovernance(id: string, governanceEnabled: boolean): Pro
   return knowledgeBase;
 }
 
+// Verifier assignment (Track 12b): the default verifier (a user sub, or null to
+// clear) and the re-verification interval in days (null = verify once).
+export async function setVerifierConfig(
+  id: string,
+  cfg: { defaultVerifier: string | null; defaultVerifyIntervalDays: number | null },
+): Promise<Kb> {
+  const { knowledgeBase } = await req<{ knowledgeBase: Kb }>(`/api/kb/${id}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(cfg),
+  });
+  return knowledgeBase;
+}
+
 // --- documents ----------------------------------------------------------------
 
 export async function listDocuments(kbId: string): Promise<Doc[]> {
@@ -144,4 +163,9 @@ export async function uploadDocument(kbId: string, file: File, title?: string): 
 
 export async function deleteDocument(kbId: string, docId: string): Promise<void> {
   await req<void>(`/api/kb/${kbId}/documents/${docId}`, { method: "DELETE" });
+}
+
+export async function verifyDocument(kbId: string, docId: string): Promise<Doc> {
+  const { document } = await req<{ document: Doc }>(`/api/kb/${kbId}/documents/${docId}/verify`, { method: "POST" });
+  return document;
 }
