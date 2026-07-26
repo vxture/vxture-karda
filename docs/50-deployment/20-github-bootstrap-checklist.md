@@ -50,18 +50,22 @@ over from the template. Allocation decided 2026-07-23 (owner):
 - [x] `production` GitHub Environment **with a Required reviewer**. Zero
       protection means a pushed tag deploys immediately with no pause - that is
       the varda lesson, do not skip it.
-- [x] Non-secret environment values: `DEPLOY_HOST` = `vx-worker-02`,
-      `DEPLOY_USER` = `stone`, `DEPLOY_PORT` = `22`, `DEPLOY_DIR` =
-      `/srv/md0/karda/deploy`. `DEPLOY_DIR` must be the EXACT directory holding
-      the compose file and `.env` - one level off (`/srv/md0/karda`) and the
-      image pulls but compose cannot find its env_file.
-- [ ] `DEPLOY_SSH_KEY` (+ optional `DEPLOY_SSH_KEY_PASSPHRASE`) - a private key
-      authorized for `stone` on worker-02. **Owner transport.**
-- [ ] `DEPLOY_KNOWN_HOSTS` (required, not optional): `ssh-keyscan -p 22
-      vx-worker-02` from a trusted network. The `tailnet-ssh-connect` action is
-      fail-closed on an empty known_hosts and will not fall back to TOFU, so a
-      missing value fails the deploy rather than silently degrading it.
-      **Owner transport.**
+- [x] **Host-pointing secrets are ORG-LEVEL** (`DEPLOY_WORKER02_*`, shared to the
+      worker-02 repos - configured once org-wide, not per repo; renamed from the
+      old bare `DEPLOY_*` on 2026-07-27): `DEPLOY_WORKER02_HOST` = `vx-worker-02`,
+      `DEPLOY_WORKER02_USER` = `stone`, `DEPLOY_WORKER02_PORT` = `22`,
+      `DEPLOY_WORKER02_SSH_KEY` (+ optional `DEPLOY_WORKER02_SSH_KEY_PASSPHRASE`) -
+      a private key authorized for `stone`, and `DEPLOY_WORKER02_KNOWN_HOSTS`
+      (required, not optional: `ssh-keyscan -p 22 vx-worker-02`; `tailnet-ssh-connect`
+      is fail-closed on an empty value and will not fall back to TOFU). The
+      workflows keep the local env-var names (`DEPLOY_HOST` etc.) and only read
+      from the renamed `secrets.DEPLOY_WORKER02_*`. Confirm karda is in each
+      secret's visibility list. **Owner transport.**
+- [x] **Per-repo** (NOT shared - naturally per-product): `DEPLOY_DIR` =
+      `/srv/md0/karda/deploy`, the EXACT directory holding the compose file and
+      `.env` - one level off (`/srv/md0/karda`) and the image pulls but compose
+      cannot find its env_file. Set via PowerShell/UI, not Git Bash (MSYS mangles
+      a leading `/`).
 - [ ] `ENV_FILE_BASE64` - base64 of karda's `.env`, built from `.env.example`
       (host `karda.vxture.com`, DB `vxturebiz_karda_prod` / role `karda_svc`,
       `APP_PUBLISH_PORT=3240`, plus the OIDC / webhook / internal-job secrets).
