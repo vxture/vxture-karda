@@ -54,6 +54,17 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       typeof body.governanceEnabled === "boolean" ? body.governanceEnabled : undefined,
     exemptSyncedContent:
       typeof body.exemptSyncedContent === "boolean" ? body.exemptSyncedContent : undefined,
+    // Verifier assignment (Track 12): a user sub or null to clear; interval in
+    // days or null for verify-once. Anything else is left untouched.
+    defaultVerifier:
+      typeof body.defaultVerifier === "string" || body.defaultVerifier === null
+        ? body.defaultVerifier
+        : undefined,
+    defaultVerifyIntervalDays:
+      (typeof body.defaultVerifyIntervalDays === "number" && body.defaultVerifyIntervalDays > 0) ||
+      body.defaultVerifyIntervalDays === null
+        ? body.defaultVerifyIntervalDays
+        : undefined,
   });
   if (!result.ok) return errorJson(result.error);
   return NextResponse.json({ knowledgeBase: result.value });

@@ -6,6 +6,8 @@ import type {
   CreateDocumentInput,
   CreateEntryInput,
   DocumentSource,
+  VerificationPatch,
+  DueItem,
 } from "./content-store";
 import type { ContentState, VerificationState } from "./state";
 import { getPrismaClient } from "../../lib/db";
@@ -35,6 +37,9 @@ function toDoc(r: any): DocumentRow {
     contentState: r.contentState as ContentState,
     failureReason: r.failureReason,
     verificationState: r.verificationState as VerificationState,
+    verifier: r.verifier ?? null,
+    verifiedAt: r.verifiedAt ?? null,
+    expiresAt: r.expiresAt ?? null,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   };
@@ -50,6 +55,9 @@ function toEntry(r: any): EntryRow {
     fields: (r.fields ?? {}) as Record<string, unknown>,
     contentState: r.contentState as ContentState,
     verificationState: r.verificationState as VerificationState,
+    verifier: r.verifier ?? null,
+    verifiedAt: r.verifiedAt ?? null,
+    expiresAt: r.expiresAt ?? null,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   };
@@ -199,5 +207,49 @@ export class PrismaContentStore implements ContentStore {
     const p2 = await getPrismaClient();
     const r = await p2.entry.findUnique({ where: { id } });
     return r ? toEntry(r) : null;
+  }
+
+  async setDocumentVerification(id: string, patch: VerificationPatch): Promise<DocumentRow | null> {
+    const p = await getPrismaClient();
+    const res = await p.document.updateMany({
+      where: { id, contentState: { not: "deleted" } },
+      data: {
+        verificationState: patch.verificationState,
+        verifier: patch.verifier,
+        verifiedAt: patch.verifiedAt,
+        expiresAt: patch.expiresAt,
+        updatedAt: new Date(),
+      },
+    });
+    if (res.count === 0) return null;
+    return this.getDocument(id);
+  }
+  async setEntryVerification(id: string, patch: VerificationPatch): Promise<EntryRow | null> {
+    const p = await getPrismaClient();
+    const res = await p.entry.updateMany({
+      where: { id, contentState: { not: "deleted" } },
+      data: {
+        verificationState: patch.verificationState,
+        verifier: patch.verifier,
+        verifiedAt: patch.verifiedAt,
+        expiresAt: patch.expiresAt,
+        updatedAt: new Date(),
+      },
+    });
+    if (res.count === 0) return null;
+    return this.getEntry(id);
+  }
+  async dueForStale(now: Date, limit: number): Promise<DueItem[]> {
+    const p = await getPrismaClient();
+    const where = { verificationState: "verified", expiresAt: { lte: now }, contentState: { not: "deleted" } };
+    const [docs, entries] = await Promise.all([
+      p.document.findMany({ where, select: { id: true, kbId: true }, take: limit, orderBy: { expiresAt: "asc" } }),
+      p.entry.findMany({ where, select: { id: true, kbId: true }, take: limit, orderBy: { expiresAt: "asc" } }),
+    ]);
+    const out: DueItem[] = [
+      ...docs.map((d: { id: string; kbId: string }) => ({ kind: "document" as const, id: d.id, kbId: d.kbId })),
+      ...entries.map((e: { id: string; kbId: string }) => ({ kind: "entry" as const, id: e.id, kbId: e.kbId })),
+    ];
+    return out.slice(0, limit);
   }
 }

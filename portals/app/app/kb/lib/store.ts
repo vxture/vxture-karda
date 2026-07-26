@@ -17,6 +17,10 @@ export interface KnowledgeBaseRow {
   processingTemplateId: string | null;
   governanceEnabled: boolean;
   exemptSyncedContent: boolean;
+  /** The default verifier (a user sub) for content in this library (KD-016). */
+  defaultVerifier: string | null;
+  /** Re-verification interval in days; null = verify once, never expires. */
+  defaultVerifyIntervalDays: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,6 +44,8 @@ export interface UpdateKbInput {
   processingTemplateId?: string | null;
   governanceEnabled?: boolean;
   exemptSyncedContent?: boolean;
+  defaultVerifier?: string | null;
+  defaultVerifyIntervalDays?: number | null;
 }
 
 export interface KbStore {
@@ -79,6 +85,8 @@ export class InMemoryKbStore implements KbStore {
       processingTemplateId: input.processingTemplateId ?? null,
       governanceEnabled: false,
       exemptSyncedContent: true,
+      defaultVerifier: null as string | null,
+      defaultVerifyIntervalDays: null as number | null,
       createdAt: now,
       updatedAt: now,
       deletedAt: null as Date | null,

@@ -31,6 +31,9 @@ export interface DocumentRow {
   contentState: ContentState;
   failureReason: string | null;
   verificationState: VerificationState;
+  verifier: string | null;
+  verifiedAt: Date | null;
+  expiresAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,8 +48,26 @@ export interface EntryRow {
   fields: Record<string, unknown>;
   contentState: ContentState;
   verificationState: VerificationState;
+  verifier: string | null;
+  verifiedAt: Date | null;
+  expiresAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+/** The governance columns a verify / expiry transition writes together. */
+export interface VerificationPatch {
+  verificationState: VerificationState;
+  verifier: string | null;
+  verifiedAt: Date | null;
+  expiresAt: Date | null;
+}
+
+/** A content item whose verification clock has run out - a stale-sweep candidate. */
+export interface DueItem {
+  kind: "document" | "entry";
+  id: string;
+  kbId: string;
 }
 
 export interface CreateDocumentInput {
@@ -100,6 +121,12 @@ export interface ContentStore {
   listEntries(kbId: string): Promise<EntryRow[]>;
   updateEntryFields(id: string, fields: Record<string, unknown>): Promise<EntryRow | null>;
   setEntryState(id: string, state: ContentState): Promise<EntryRow | null>;
+
+  // governance (verification state machine - the orthogonal, human-driven axis)
+  setDocumentVerification(id: string, patch: VerificationPatch): Promise<DocumentRow | null>;
+  setEntryVerification(id: string, patch: VerificationPatch): Promise<EntryRow | null>;
+  /** Verified items whose expiresAt has passed - candidates for the stale sweep. */
+  dueForStale(now: Date, limit: number): Promise<DueItem[]>;
 }
 
 // --- in-memory ---------------------------------------------------------------
@@ -146,6 +173,9 @@ export class InMemoryContentStore implements ContentStore {
       contentState: "processing" as ContentState,
       failureReason: null as string | null,
       verificationState: "unverified" as VerificationState,
+      verifier: null as string | null,
+      verifiedAt: null as Date | null,
+      expiresAt: null as Date | null,
       createdAt: now,
       updatedAt: now,
       deleted: false,
@@ -201,6 +231,9 @@ export class InMemoryContentStore implements ContentStore {
       fields: input.fields,
       contentState: "draft",
       verificationState: "unverified",
+      verifier: null,
+      verifiedAt: null,
+      expiresAt: null,
       createdAt: now,
       updatedAt: now,
     };
@@ -226,6 +259,43 @@ export class InMemoryContentStore implements ContentStore {
     e.contentState = state;
     e.updatedAt = new Date();
     return e;
+  }
+
+  async setDocumentVerification(id: string, patch: VerificationPatch): Promise<DocumentRow | null> {
+    const d = this.docs.get(id);
+    if (!d || d.deleted) return null;
+    d.verificationState = patch.verificationState;
+    d.verifier = patch.verifier;
+    d.verifiedAt = patch.verifiedAt;
+    d.expiresAt = patch.expiresAt;
+    d.updatedAt = new Date();
+    return strip(d);
+  }
+  async setEntryVerification(id: string, patch: VerificationPatch): Promise<EntryRow | null> {
+    const e = this.entries.get(id);
+    if (!e) return null;
+    e.verificationState = patch.verificationState;
+    e.verifier = patch.verifier;
+    e.verifiedAt = patch.verifiedAt;
+    e.expiresAt = patch.expiresAt;
+    e.updatedAt = new Date();
+    return e;
+  }
+  async dueForStale(now: Date, limit: number): Promise<DueItem[]> {
+    const out: DueItem[] = [];
+    for (const d of this.docs.values()) {
+      if (!d.deleted && d.verificationState === "verified" && d.expiresAt && d.expiresAt <= now) {
+        out.push({ kind: "document", id: d.id, kbId: d.kbId });
+        if (out.length >= limit) return out;
+      }
+    }
+    for (const e of this.entries.values()) {
+      if (e.contentState !== "deleted" && e.verificationState === "verified" && e.expiresAt && e.expiresAt <= now) {
+        out.push({ kind: "entry", id: e.id, kbId: e.kbId });
+        if (out.length >= limit) return out;
+      }
+    }
+    return out;
   }
 }
 
