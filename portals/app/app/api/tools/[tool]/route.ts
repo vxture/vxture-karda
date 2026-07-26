@@ -8,8 +8,10 @@ import { getContentStore } from "../../../kb/lib/content-store";
 import { getObjectStore } from "../../../kb/storage/objectstore";
 import { getProcessingRuntime } from "../../../kb/processing/runtime";
 import { getTemplateResolver } from "../../../kb/lib/template-resolver";
+import { getAttachmentStore } from "../../../kb/attachments/store";
 import { writeDocument } from "../../../kb/tools/write";
 import { createEntry } from "../../../kb/tools/entry";
+import { createKb, attachKb, detachKb } from "../../../kb/attachments/tools";
 
 // POST /api/tools/:tool   (S2S, tailnet only)
 //
@@ -34,6 +36,12 @@ function backends(): ToolBackends {
     // create_entry is wired (TD-009 9b): write a template-shaped draft entry. The
     // resolver bridges the template code the caller passes -> the seeded row id.
     createEntry: (caller, args) => createEntry(caller, args, { kb, content, templates: getTemplateResolver() }),
+    // create_kb / attach_kb / detach_kb are wired (TD-009 9b): the attachment
+    // store keys (workspace, user, calling-product) -> kb. create_kb also makes
+    // the library; attach/detach only touch the list.
+    createKb: (caller, args) => createKb(caller, args, { kb, attachments: getAttachmentStore() }),
+    attachKb: (caller, args) => attachKb(caller, args, { kb, attachments: getAttachmentStore() }),
+    detachKb: (caller, args) => detachKb(caller, args, { kb, attachments: getAttachmentStore() }),
     // search/ask are intentionally not injected yet: the retrieval chain needs a
     // recall backend (BM25) and a C2 visible-set fill to run for real (TD-008).
     // Dispatch returns not_implemented for them, which is honest; wiring them is

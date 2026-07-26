@@ -100,3 +100,9 @@ REVOKE UPDATE ON karda_kb.kb_metadata_field FROM karda_svc;
 REVOKE UPDATE ON karda_kb.binding FROM karda_svc;
 GRANT UPDATE (mode, state, cursor, last_synced_at, updated_at)
   ON karda_kb.binding TO karda_svc;
+
+-- kb_attachment: a working-set link, insert/delete only - attaching and
+-- detaching are the only operations, so there is no UPDATE to grant. The table is
+-- added by incr/0002, which db-init applies AFTER this file, so its SELECT/INSERT/
+-- DELETE grant travels with that increment (incr/README.md); there is nothing to
+-- REVOKE here because 97's `ON ALL TABLES` grant also predates the table.

@@ -20,7 +20,7 @@ deliberately not carried over.
 
 | ID | Title | Opened | Status |
 |----|-------|--------|--------|
-| TD-009 | Tool surface: write_document + create_entry wired (+ ingest metering); create_kb/attach/detach need the attachment store; search/ask not injected | 2026-07-24 | open - create_kb/attach/detach + search/ask remain |
+| TD-009 | Tool surface: write_document + create_entry + create_kb/attach_kb/detach_kb all wired (attachment store landed; prod needs the `incr/0002` db-init); search/ask still need recall (TD-008) | 2026-07-24 | open - search/ask remain; attachment tools pending the prod db-init |
 | TD-008 | Retrieval has no real BM25 engine or vector recall yet; chain runs over injected recallers | 2026-07-24 | open - 6a is the eval chain; recall backends deferred / Atlas-blocked |
 | TD-007 | Processing pipeline has no real queue worker or raw object storage yet | 2026-07-24 | open - 5a is the pure pipeline; the runtime around it is deferred |
 | TD-006 | Preset seed (`seedPresets`) has no invocation point wired yet | 2026-07-24 | open - seed mechanism undecided |
@@ -277,12 +277,21 @@ deliberately not carried over.
   5) and idempotent on the new row id (a 409 duplicate never reaches the emit, and
   a re-emit cannot double-count). Best-effort - a buffer hiccup never fails the
   write, since the row is already durable.
+- **`create_kb` / `attach_kb` / `detach_kb` are now wired (2026-07-27, track 9b)**:
+  a new `kb_attachment` table (`(workspace, user, product, kb)`, insert/delete
+  only) backs a user's per-product attachment list. `create_kb` makes a user-owned
+  library and auto-attaches it; `attach_kb` adds a VISIBLE library (owned, or
+  published to ws/org - a private library owned by another reads not_found);
+  `detach_kb` is idempotent. **Pending: the production db-init.** The DDL is staged
+  (`00_baseline.sql` + `incr/0002_kb_attachment.sql` with the service-role grant
+  travelling in the increment per TD-010; guardrail at 21 tables), but until
+  `db-init.yml` applies `0002` to the prod DB (gated: `confirm=yes` + `expected_sha`
+  + approval), the Prisma path has no table - so these three tools 500 against a
+  live DB until that apply runs. Offline/in-memory is green.
 - **What is deferred**: `search` / `ask` need a recall backend (TD-008) to return
   anything real, so dispatch returns not_implemented rather than an
-  empty-but-successful result. `create_kb` / `attach` / `detach` need an
-  **attachment store** (user x product x kb - no such table exists yet, so a DDL
-  + db-init cycle: the remaining slice of track 9b). All still pass the mode gate
-  (a service call is correctly refused) - only their backends are absent.
+  empty-but-successful result. All still pass the mode gate (a service call is
+  correctly refused).
 - **Why the gate ships before the backend, deliberately**: the OBO-only refusal
   is an authorization guarantee, not plumbing. A service-mode call to a write
   tool is denied today, so the security contract is complete even though the
@@ -291,9 +300,9 @@ deliberately not carried over.
   already routes through.
 - **Recovery condition**: search/ask unblock when TD-008's BM25 + C2 fill land
   (ask already works end-to-end for grounding+A4, it just needs recall to feed
-  it); `write_document` and `create_entry` are wired; the remaining write tools
-  (`create_kb` / `attach` / `detach`) unblock when the attachment store (a table +
-  db-init) lands.
+  it); `write_document` / `create_entry` are wired; `create_kb` / `attach_kb` /
+  `detach_kb` are wired and unblock in production once the `kb_attachment` db-init
+  (`incr/0002`) is applied.
 
 
 ## TD-010 - db-init applies increments after 97/98, so live-added columns break

@@ -46,3 +46,7 @@ comment in `98` so the whitelist still documents the column as writable.
 - `0001_chunk_versioning.sql` - chunk atomic-replace versioning: `document`
   gains `active_chunk_version`; `chunk` gains `version` and its uniqueness moves
   from `(document_id, ordinal)` to `(document_id, version, ordinal)`.
+- `0002_kb_attachment.sql` - the per-user, per-product library attachment list
+  (`karda_kb.kb_attachment`, definition 4.8). A brand-new table, so its
+  `SELECT/INSERT/DELETE` service-role grant travels with the increment (97's
+  `ON ALL TABLES` grant predates it). Insert/delete only, no writable columns.
