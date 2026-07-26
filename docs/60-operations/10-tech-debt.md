@@ -21,7 +21,7 @@ deliberately not carried over.
 | ID | Title | Opened | Status |
 |----|-------|--------|--------|
 | TD-009 | Tool surface: write_document + create_entry + create_kb/attach_kb/detach_kb all wired (attachment store landed; prod needs the `incr/0002` db-init); search/ask still need recall (TD-008) | 2026-07-24 | open - search/ask remain; attachment tools pending the prod db-init |
-| TD-008 | Retrieval has no real BM25 engine or vector recall yet; chain runs over injected recallers | 2026-07-24 | open - 6a is the eval chain; recall backends deferred / Atlas-blocked |
+| TD-008 | BM25 recaller built (engine + corpus port + recaller, 2026-07-27); still need the C2 visible-set fill + route-wiring to unblock search/ask; vector recall + rerank Atlas-blocked | 2026-07-24 | open - BM25 done; C2 visible-set fill + wiring remain; vector/rerank Atlas-blocked |
 | TD-007 | Processing pipeline has no real queue worker or raw object storage yet | 2026-07-24 | open - 5a is the pure pipeline; the runtime around it is deferred |
 | TD-006 | Preset seed (`seedPresets`) has no invocation point wired yet | 2026-07-24 | open - seed mechanism undecided |
 | TD-005 | Ownership transfer has no runtime write path (owner_sub is column-locked) | 2026-07-24 | open - needs a privileged path |
@@ -238,17 +238,26 @@ deliberately not carried over.
   the LIVE Atlas A4. 37 tests, including the security-critical ones: the
   whitelist is enforced at the recall boundary AND holds through both degrade
   paths (rerank-unavailable and namespace-partial).
-- **What is deferred**: a real BM25 engine behind the `Recaller` port (the text
-  index over indexed chunks/entries), and the C2 visible-set fetch that fills the
-  cache. These are backends behind seams the chain already drives and tests.
+- **BM25 recaller is now built (2026-07-27)**: `bm25.ts` is a pure Okapi BM25
+  (BM25+ IDF, k1=1.5/b=0.75, tokenize + IDF + TF-saturation + length-norm),
+  `corpus.ts` is the `RecallCorpus` port (in-memory + Prisma over the `indexed`
+  chunks of a document's active version + `indexed` entries - the hard recall
+  filter lives in the query), and `bm25-recaller.ts` implements the `Recaller`
+  port, applying the verification quality tier on top. 12 tests. Until Atlas A1
+  commits chunks the chunk side is empty by construction, but the engine + path
+  are live, not stubbed.
+- **What is still deferred**: the C2 visible-set FETCH that fills the scope cache
+  (without it, scope resolves empty under Mock C2, so search returns nothing even
+  with the recaller in place), and the route-wiring that injects the recaller +
+  the A4 generation client so `karda.search` / `ask` leave `not_implemented`.
 - **What is Atlas-blocked, separately (TD-004)**: vector recall (a second
   `Recaller`, needs A1 embeddings) and the real reranker (A3). The chain already
   fuses whatever recallers it is given and already degrades correctly when the
   reranker is absent, so both plug in without changing the chain.
-- **Recovery condition**: a search-backend increment builds BM25 + the C2 cache
-  fill; independently, Atlas A1/A3 add vector recall and rerank. `karda.ask` is
-  the one retrieval surface that works end-to-end today, because A4 is live -
-  only its recall quality improves as the backends land.
+- **Recovery condition**: BM25 is in place; `search` / `ask` unblock end-to-end
+  when the C2 visible-set fill lands and the route injects the recaller +
+  generation. Independently, Atlas A1/A3 add vector recall and rerank - only
+  recall quality improves as they land.
 
 
 ## TD-009 - tool surface backends partially wired
