@@ -10,6 +10,9 @@ export default function HomePage() {
     <main style={{ fontFamily: "system-ui, sans-serif", padding: "2rem" }}>
       <h1>{BRAND.displayName}</h1>
       <p>Vxture product template shell. Build {gitSha}.</p>
+      <p>
+        <a href="/console">Open the Console</a> &middot; <a href="/status">Integration status</a>
+      </p>
     </main>
   );
 }
