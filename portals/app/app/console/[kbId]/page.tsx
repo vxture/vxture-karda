@@ -9,6 +9,8 @@ import {
   deleteDocument,
   setSharing,
   setGovernance,
+  setVerifierConfig,
+  verifyDocument,
   loginHref,
   ApiError,
   type Kb,
@@ -17,6 +19,8 @@ import {
 import {
   sharingMeta,
   contentStateMeta,
+  verificationMeta,
+  formatInterval,
   processingHint,
   formatBytes,
   formatWhen,
@@ -41,7 +45,17 @@ export default function LibraryPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [verifierInput, setVerifierInput] = useState("");
+  const [intervalInput, setIntervalInput] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Mirror the saved governance config into the editable inputs whenever the
+  // library (re)loads, so the fields always show the current server state.
+  useEffect(() => {
+    if (!kb) return;
+    setVerifierInput(kb.defaultVerifier ?? "");
+    setIntervalInput(kb.defaultVerifyIntervalDays != null ? String(kb.defaultVerifyIntervalDays) : "");
+  }, [kb]);
 
   const guard = useCallback((e: unknown, fallback: string): void => {
     if (e instanceof ApiError && e.status === 401) {
@@ -134,6 +148,43 @@ export default function LibraryPage() {
     }
   }
 
+  async function onSaveVerifierConfig() {
+    if (busy || !kb) return;
+    const raw = intervalInput.trim();
+    const days = raw === "" ? null : Number(raw);
+    if (days !== null && (!Number.isInteger(days) || days <= 0)) {
+      setError("Interval must be a positive whole number of days, or blank for verify-once.");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      setKb(await setVerifierConfig(kbId, { defaultVerifier: verifierInput.trim() || null, defaultVerifyIntervalDays: days }));
+      setNotice("Governance settings saved.");
+    } catch (err) {
+      guard(err, "Could not save governance settings.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onVerify(doc: Doc) {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await verifyDocument(kbId, doc.id);
+      setNotice(`Verified "${doc.title}".`);
+      await loadDocs();
+    } catch (err) {
+      guard(err, "Could not verify the document.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (needsAuth) {
     return (
       <main style={styles.page}>
@@ -195,7 +246,7 @@ export default function LibraryPage() {
                 <h2 style={{ ...styles.h2, marginBottom: 2 }}>Governance</h2>
                 <p style={styles.sub}>
                   {kb.governanceEnabled
-                    ? "Verification tracking is on for this library."
+                    ? `Verification tracking is on. Re-verify ${formatInterval(kb.defaultVerifyIntervalDays)}.`
                     : "Off - content stays untracked (the default)."}
                 </p>
               </div>
@@ -203,6 +254,41 @@ export default function LibraryPage() {
                 {kb.governanceEnabled ? "Turn off" : "Turn on"}
               </Button>
             </div>
+
+            {kb.governanceEnabled && (
+              <div style={{ marginTop: 12, borderTop: `1px solid ${T.line}`, paddingTop: 12 }}>
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
+                  <label style={{ flex: "1 1 220px", ...styles.sub }}>
+                    Default verifier (user id)
+                    <input
+                      style={{ ...styles.input, marginTop: 4 }}
+                      placeholder="usr_... (leave blank for admins only)"
+                      value={verifierInput}
+                      onChange={(e) => setVerifierInput(e.target.value)}
+                      aria-label="Default verifier"
+                    />
+                  </label>
+                  <label style={{ flex: "0 1 160px", ...styles.sub }}>
+                    Re-verify interval (days)
+                    <input
+                      style={{ ...styles.input, marginTop: 4 }}
+                      placeholder="blank = once"
+                      inputMode="numeric"
+                      value={intervalInput}
+                      onChange={(e) => setIntervalInput(e.target.value)}
+                      aria-label="Re-verify interval in days"
+                    />
+                  </label>
+                  <Button onClick={onSaveVerifierConfig} disabled={busy}>
+                    Save
+                  </Button>
+                </div>
+                <p style={{ ...styles.sub, marginTop: 8 }}>
+                  The assigned verifier (or an admin) may verify documents. A verified document turns stale once its
+                  interval lapses, dropping out of the default search tier until re-verified.
+                </p>
+              </div>
+            )}
           </section>
 
           {/* Upload */}
@@ -225,6 +311,8 @@ export default function LibraryPage() {
               docs.map((doc) => {
                 const st = contentStateMeta(doc.contentState);
                 const hint = processingHint(doc.contentState);
+                const gov = kb.governanceEnabled;
+                const vr = verificationMeta(doc.verificationState);
                 return (
                   <div key={doc.id} style={{ borderTop: `1px solid ${T.line}`, padding: "10px 0" }}>
                     <div style={styles.rowBetween}>
@@ -235,12 +323,25 @@ export default function LibraryPage() {
                         </div>
                       </div>
                       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        {gov && <Badge tone={vr.tone}>{vr.label}</Badge>}
                         <Badge tone={st.tone}>{st.label}</Badge>
+                        {gov && (
+                          <Button onClick={() => onVerify(doc)} disabled={busy}>
+                            {doc.verificationState === "verified" ? "Re-verify" : "Verify"}
+                          </Button>
+                        )}
                         <Button variant="danger" onClick={() => onDelete(doc)} disabled={busy}>
                           Delete
                         </Button>
                       </div>
                     </div>
+                    {gov && doc.verificationState === "verified" && doc.verifiedAt && (
+                      <div style={{ ...styles.sub, fontSize: 12.5, marginTop: 6 }}>
+                        Verified {formatWhen(doc.verifiedAt)}
+                        {doc.verifier ? ` by ${doc.verifier}` : ""}
+                        {doc.expiresAt ? ` · expires ${formatWhen(doc.expiresAt)}` : ""}
+                      </div>
+                    )}
                     {doc.contentState === "failed" && doc.failureReason && (
                       <div style={{ ...styles.sub, color: T.danger, marginTop: 6 }}>{doc.failureReason}</div>
                     )}

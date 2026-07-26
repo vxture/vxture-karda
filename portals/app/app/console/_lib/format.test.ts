@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   sharingMeta,
   contentStateMeta,
+  verificationMeta,
+  formatInterval,
   processingHint,
   formatBytes,
   formatWhen,
@@ -25,6 +27,20 @@ test("content state tone: processing warns, indexed ok, failed bad", () => {
   assert.equal(contentStateMeta("failed").tone, "bad");
   // an unknown state degrades gracefully rather than throwing
   assert.equal(contentStateMeta("something_new").label, "something_new");
+});
+
+test("verification tone: verified ok, stale warns, unverified muted", () => {
+  assert.equal(verificationMeta("verified").tone, "ok");
+  assert.equal(verificationMeta("stale").tone, "warn");
+  assert.equal(verificationMeta("unverified").tone, "muted");
+  assert.equal(verificationMeta("verified").label, "Verified");
+});
+
+test("formatInterval reads as a cadence; blank/zero = verify-once", () => {
+  assert.equal(formatInterval(30), "every 30 days");
+  assert.equal(formatInterval(1), "every 1 day");
+  assert.match(formatInterval(null), /once/);
+  assert.match(formatInterval(0), /once/);
 });
 
 test("processing hint appears only while parked in processing (the A1 wait)", () => {

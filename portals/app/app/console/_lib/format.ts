@@ -54,6 +54,28 @@ export function contentStateMeta(state: string): StateMeta {
   return CONTENT_STATE[state as ContentState] ?? { label: state, tone: "muted" };
 }
 
+// --- verification (governance) state -----------------------------------------
+
+export type VerificationState = "unverified" | "verified" | "stale";
+
+const VERIFICATION_STATE: Record<VerificationState, StateMeta> = {
+  unverified: { label: "Unverified", tone: "muted" },
+  verified: { label: "Verified", tone: "ok" },
+  // A stale item was verified once but its interval lapsed - the default quality
+  // tier stops recalling it, so it reads as an attention state, not an error.
+  stale: { label: "Stale", tone: "warn" },
+};
+
+export function verificationMeta(state: string): StateMeta {
+  return VERIFICATION_STATE[state as VerificationState] ?? { label: state, tone: "muted" };
+}
+
+/** Re-verification cadence for display. null/0 = verify once, no expiry. */
+export function formatInterval(days: number | null | undefined): string {
+  if (!days || days <= 0) return "once (no expiry)";
+  return `every ${days} day${days === 1 ? "" : "s"}`;
+}
+
 /**
  * While Atlas A1 (embedding) is unavailable the pipeline is embed-before-commit,
  * so an uploaded document legitimately parks in `processing` and never reaches
