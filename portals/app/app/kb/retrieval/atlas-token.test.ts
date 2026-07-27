@@ -42,7 +42,11 @@ test("mint posts the RFC 8693 service-mode form to {issuer}/oidc/token", async (
   assert.equal(form.get("audience"), "atlas");
   assert.equal(form.get("client_id"), "karda");
   assert.equal(form.get("client_secret"), "shh");
-  assert.deepEqual(JSON.parse(form.get("requested_context") ?? "{}"), { org_id: "org1", workspace_id: "ws1" });
+  // context is separate org_id / workspace_id fields, not a JSON requested_context
+  // blob (verified live: the JSON shape is rejected invalid_request).
+  assert.equal(form.get("org_id"), "org1");
+  assert.equal(form.get("workspace_id"), "ws1");
+  assert.equal(form.get("requested_context"), null);
   // service mode: no subject_token
   assert.equal(form.get("subject_token"), null);
 });
