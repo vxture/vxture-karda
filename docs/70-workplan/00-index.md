@@ -188,9 +188,18 @@ re-shapes the two karda-side A4 tasks:
   platform token-exchange has been live since 2026-07-12; the sole residual is
   whether **Atlas's product registration ran in production** (`product.products`
   row + `aud=atlas` OIDC client mapping) - a **platform-line** confirmation, filed
-  as `vxture/vxture-platform#145` (`liaison`). Once confirmed, set `ATLAS_BASE_URL`
-  + the ask task-profile on the host. The caller, the client wiring, and the
-  whitelist/degrade path (6a) are all built and tested.
+  as `vxture/vxture-platform#145`, **confirmed 2026-07-27** (`aud=atlas` is now a
+  mintable audience). The caller, the client wiring, and the whitelist/degrade path
+  (6a) are all built and tested.
+
+  **Live E2E verification (2026-07-27, on worker-02) found two things:** (i) a real
+  bug in karda's token caller - it sent the context as a JSON `requested_context`
+  blob; the platform wants separate `org_id`/`workspace_id` fields - fixed in `#74`;
+  (ii) with the correct format the mint reaches the platform's **D2 coverage check**
+  and returns `invalid_target` for the test workspace *even for `aud=vxture`*, so
+  the platform sees no karda coverage there. Filed as `vxture/vxture-platform#147` -
+  the current blocker. Once coverage is resolved: mint -> model-list -> `/chat`, then
+  set `ATLAS_BASE_URL` + the ask task-profile on the host to go live.
 
 **On A1 landing:** 5b (vectorize) + 6b (vector recall + rerank) complete the
 flywheel through the tested seams; BM25 (TD-008) lands alongside for the
