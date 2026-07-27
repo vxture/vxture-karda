@@ -187,9 +187,10 @@ re-shapes the two karda-side A4 tasks:
 - (b) **the live `karda.ask` <-> A4 call** no longer waits on Atlas: per #70 §5 the
   platform token-exchange has been live since 2026-07-12; the sole residual is
   whether **Atlas's product registration ran in production** (`product.products`
-  row + `aud=atlas` OIDC client mapping) - a **platform-line** confirmation. Once
-  confirmed, set `ATLAS_BASE_URL` + the ask task-profile on the host. The caller,
-  the client wiring, and the whitelist/degrade path (6a) are all built and tested.
+  row + `aud=atlas` OIDC client mapping) - a **platform-line** confirmation, filed
+  as `vxture/vxture-platform#145` (`liaison`). Once confirmed, set `ATLAS_BASE_URL`
+  + the ask task-profile on the host. The caller, the client wiring, and the
+  whitelist/degrade path (6a) are all built and tested.
 
 **On A1 landing:** 5b (vectorize) + 6b (vector recall + rerank) complete the
 flywheel through the tested seams; BM25 (TD-008) lands alongside for the

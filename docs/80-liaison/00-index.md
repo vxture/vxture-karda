@@ -1,5 +1,16 @@
 # 80-liaison - Cross-org liaison
 
+> **CHANNEL FROZEN 2026-07-27 - cross-repo liaison moved to GitHub Issues.**
+> Per platform `140-repo-governance-standard §10/§11` + `070-docs-taxonomy`, product
+> repos no longer create new `NN-YYMMDDHHMM-slug.md` letter files. Coordination
+> (replies / requests / agreements / syncs) is now a GitHub **Issue opened in the
+> repo that must act** (not the sender's) - e.g. karda needing Atlas to change an
+> endpoint -> issue in `vxture-atlas`; karda needing a platform action -> issue in
+> `vxture-platform`. Tag `liaison`; cross-reference with native `org/repo#N`. The
+> files below are a **retained archive** - not migrated, not deleted; this table
+> just stops growing. New coordination is tracked in Issues (see the map at the
+> bottom).
+
 Cross-organization liaison for this repo: reply letters, integration agreements,
 and sync notes with other product lines or the platform line. Artifacts are named
 `NN-{YYMMDDHHMM}-{slug}.md` - the stamp follows the `NN-` index so the docs
@@ -30,7 +41,7 @@ Letters without the suffix are still in flight (awaiting the platform or arda).
 | `120-2607261820-karda-platform-registration-c-DONE.md` | 2607261820 | platform line | registration segment C - post-launch (`v0.2.0` live). Four platform-side actions: (1) register the `product_webhooks` delivery address `http://vx-worker-02:3240` (C3 inbound is built + verified but nothing is sent until registered); (2) register the metric-registry keys karda now emits - `karda.ingest` (live), `karda.search` / `karda.ask` (declared); (3) delete the inert `OIDC_CLIENT_SECRET` repo secret (closes `50` R2); (4) sync-only: the five DRAFT plans wait on karda's tier->entitlement mapping (KD-202/203 + product-def v1), a later dedicated letter | **DONE** 2026-07-27 - all three asks fulfilled in production: `product_webhooks` address set to `http://100.76.219.48:3240` (= vx-worker-02, IP form), the three metric keys written (`db-init action=seed` succeeded: `✓ [all] Seed completed`), and karda deleted its own inert repo secret. (The seed run's `30-verify` flagged `[B0] DDL baseline hash mismatch` - a pre-existing platform-wide DDL-drift signal, unrelated to karda's rows, which were written; the platform line owns that separately.) **C3 loop confirmed end to end 2026-07-27**: the platform's test delivery `3421924b-1b1a-4916-9876-e92b4f459472` (`subscription_changed`) returned 2xx AND karda recorded it `result=processed` in `vx_provision.webhook_delivery` at 06:09:43Z - i.e. signature + replay-window + seq all passed and the event was handled (the `processed` ledger row only exists after those gates), with `provision_seq` updated the same instant. No `app_instance` row, correct for a cache-invalidation event |
 | `140-2607271500-karda-atlas-a4-direct-request.md` | 2607271500 | atlas line (vxture-atlas) | first direct request to the now-independent Atlas repo (per the `130` redirect): formally confirm the A4 endpoint (Atlas draft says `POST /model-platform/chat`, host `待分配`/worker-02:3100 unconfirmed), the S2S token-exchange auth (the platform's issuance endpoint is not built - is there an interim path, or must karda wait?), and the `modelCode` + a read-only model enumeration; confirm the ChatRequest/Response + metering/429 semantics (and formally send the two still-draft Atlas letters); reconfirms the `100` A1/A3/A2 capability needs (unlock order A1 > A3 > A2) | open - **two premises now superseded by `141`**: (a) the platform's token-exchange issuance IS implemented (control-plane T1/T2 in production), so karda's "interim path?" question is void; (b) the host is a registry-confirmed fact (`13-infra-allocation-registry`: atlas = `worker-02:3100`, in production, co-located with karda). karda's A4 client corrected accordingly: base `http://100.76.219.48:3100` (separate from `PLATFORM_API_URL`) + path `/model-platform/chat` + **Bearer** auth (not the C2/C3 internal-auth). See `141` for the corrected asks | **answered 2026-07-27 (issue #70)**: endpoint `/model-platform/chat` + RS256/JWKS auth confirmed |
 | `141-2607271730-karda-atlas-a4-followup-premises.md` | 2607271730 | atlas line (vxture-atlas) | follow-up to `140`: corrects the two now-stale premises (platform token-exchange issuance IS built; Atlas host IS allocated in production), reports karda has BUILT the S2S token-exchange caller (aud=atlas, service mode, per-`(org,ws)` cached bearer) and wired it dynamically into the A4 client - so karda is now fully code-ready and a live call turns on `ATLAS_BASE_URL` alone. Re-pings the still-open atlas-side items: formal endpoint confirm, the verify-side JWKS/aud posture, `modelCode` + read-only enumeration, ChatRequest/Response + 429/quota, and the `100` A1/A3/A2 schedule | **answered 2026-07-27 (issue #70)**: endpoint + verify-side (RS256/JWKS) confirmed; model selection via `taskProfile`/tenant-filtered list (§6). **`141`'s "blockers entirely cleared" is corrected**: a live `aud=atlas` token still needs Atlas's product registration to have run in production db-init (§5) - a platform-line confirmation, now the sole residual |
-| `142-2607272000-karda-platform-atlas-registration-confirm.md` | 2607272000 | platform line | the sole residual gate for a live `aud=atlas` token, surfaced by atlas #70 §5: the platform's token-exchange is live (since 2026-07-12) but an `aud=atlas` audience needs **Atlas's product registration to have run in production** (`product.products` row + OIDC client mapping). Atlas can't guarantee that part - asks the platform line to confirm it ran (or run it). karda mints from its own client, so no new platform secret is needed; endpoint/verify/model are settled atlas-side | open - awaiting the platform line's confirm/run; this is the last thing between karda's ready A4 code and a live call |
+| `142-2607272000-karda-platform-atlas-registration-confirm.md` | 2607272000 | platform line | the sole residual gate for a live `aud=atlas` token, surfaced by atlas #70 §5: the platform's token-exchange is live (since 2026-07-12) but an `aud=atlas` audience needs **Atlas's product registration to have run in production** (`product.products` row + OIDC client mapping). Atlas can't guarantee that part - asks the platform line to confirm it ran (or run it). karda mints from its own client, so no new platform secret is needed; endpoint/verify/model are settled atlas-side | **migrated to an Issue 2026-07-27** (channel change): re-filed in the acting repo as `vxture/vxture-platform#145` (`liaison`). This file is the frozen archive; the live thread is the issue |
 
 ## Received
 
@@ -99,5 +110,22 @@ selection), leaving only the platform-side Atlas product-registration run to ver
 
 The tier-to-entitlement mapping - which the platform needs before it can publish
 the five DRAFT plans, and which waits on KD-202/203 and
-`20-specs/10-product-definition.md` reaching v1 - stays a later, dedicated letter;
-`120` only records the dependency so the metric keys line up in advance.
+`20-specs/10-product-definition.md` reaching v1 - stays a later, dedicated thread
+(now an Issue, not a letter); `120` only records the dependency so the metric keys
+line up in advance.
+
+## Active liaison (Issues, from 2026-07-27)
+
+New cross-repo coordination is tracked in GitHub Issues in the **acting** repo,
+tagged `liaison`. Current threads that continue the archived letters above:
+
+| Issue | Repo (actor) | Continues | Subject | State |
+|-------|--------------|-----------|---------|-------|
+| `vxture/vxture-karda#70` | karda | `100`/`140`/`141` | atlas line's reply (A4 endpoint/verify confirmed, 429/403 final, taskProfile + model list, §5 registration caveat) | closed - processed in `#71` |
+| `vxture/vxture-karda#72` | karda | new | model-selection UX direction (KD-109) | closed - auto-adapt now, picker phased later |
+| `vxture/vxture-platform#145` | platform | `142` | confirm Atlas product registration ran in production (the `aud=atlas` token gate) | open - awaiting platform confirm/run |
+| `vxture/vxture-atlas#34` | atlas | `140` | karda's A4 direct request (answered by `#70`) | atlas-side; answered |
+| `vxture/vxture-atlas#41` / `#42` | atlas | `#72` deps | tenant-scoped model list / taskProfile routing | atlas-side capability tracks |
+
+Older arda-line letters (`30`, `80`) remain archived here; if reactivated they
+re-file as Issues in `vxture-arda`.
