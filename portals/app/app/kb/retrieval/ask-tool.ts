@@ -53,6 +53,7 @@ export async function askTool(caller: CallerContext, args: Record<string, unknow
     recallers: [new Bm25Recaller(deps.corpus)],
     reranker: new UnavailableReranker(),
     tenantId: caller.org ?? "",
+    workspaceId: ws,
     userId: caller.user ?? undefined,
     modelCode: deps.model,
     resolver: new TextResolverAdapter(deps.textResolver),
