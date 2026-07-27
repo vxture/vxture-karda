@@ -119,7 +119,7 @@ entitlement / commerce 集成设计等）继续留在 platform 仓并沿用 `{ki
   不再是偏差。
 - 本文对 070 §3 域码前缀的**不适用**，由 §3 自身的作用域条款授权；§3 的义务段进一步把"固化约定 +
   接入机检 + 回报平台线"变成产品仓的**义务**，本文即履行该义务的产物（回报见
-  `80-liaison/10-2607221756-karda-taxonomy-findings.md`）。
+  `80-liaison/10-2607221756-karda-taxonomy-findings-DONE.md`）。
 - 070 §0.1「仅约束 `.md`」、§2 序列/键控子目录、§4 寄存器路径（`60-operations/10-tech-debt.md`、
   runbook `NN-run-{slug}.md`）均已在本仓落地。
 

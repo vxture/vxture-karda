@@ -4,7 +4,7 @@
 > **回函来源**：vxture-platform（Atlas 尚未独立为产品/仓库，无独立 atlas 线，故由 platform 出具）
 > **时间**：2026-07-24 09:21（stamp 2607240921）
 > **性质**：**收悉 + 计划调整触发**，非仅存档——本回复改变了批次 5/6 的前提
-> **前序**：`70-2607232158-karda-atlas-contract-request.md`（发时误设收件方为"atlas 线"）
+> **前序**：`70-2607232158-karda-atlas-contract-request-DONE.md`（发时误设收件方为"atlas 线"）
 
 ---
 

@@ -60,7 +60,7 @@ deliberately not carried over.
   scrutiny, and `rollback.yml` (pulls an immutable `sha-<short>` tag) is the only
   recovery path.
 - **Report to platform line**: carried by
-  `docs/80-liaison/40-2607230909-karda-platform-registration-b.md`.
+  `docs/80-liaison/40-2607230909-karda-platform-registration-b-DONE.md`.
 
 
 ## TD-002 - db-init applied the wrong DDL and reported success
