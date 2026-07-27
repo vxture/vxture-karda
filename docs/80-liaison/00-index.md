@@ -123,9 +123,10 @@ tagged `liaison`. Current threads that continue the archived letters above:
 |-------|--------------|-----------|---------|-------|
 | `vxture/vxture-karda#70` | karda | `100`/`140`/`141` | atlas line's reply (A4 endpoint/verify confirmed, 429/403 final, taskProfile + model list, §5 registration caveat) | closed - processed in `#71` |
 | `vxture/vxture-karda#72` | karda | new | model-selection UX direction (KD-109) | closed - auto-adapt now, picker phased later |
-| `vxture/vxture-platform#145` | platform | `142` | confirm Atlas product registration ran in production (the `aud=atlas` token gate) | **confirmed 2026-07-27** - `aud=atlas` is a registered/mintable audience (two prod seed runs; `[B0]` drift unrelated). karda to close after E2E passes |
-| `vxture/vxture-platform#147` | platform | new (from E2E) | service-mode token-exchange fails `invalid_target` (D2 coverage) for a workspace that should be covered - even `aud=vxture` fails, so it's the coverage check, not the audience | open - the current blocker on a live A4 call |
-| `vxture/vxture-karda#76` | karda | new (go-live tracker) | take `karda.ask <-> A4` live: resume the E2E (mint -> model-list -> chat -> host cutover) once `#147` clears | open - blocked on `#147`; karda's durable last-mile tracker |
+| `vxture/vxture-platform#145` | platform | `142` | confirm Atlas product registration ran in production (the `aud=atlas` token gate) | **closed 2026-07-27** - proven end to end: `aud=atlas` token mints and Atlas verify accepts it |
+| `vxture/vxture-platform#147` | platform | (from E2E) | service-mode token-exchange fails `invalid_target` (D2 coverage) | **closed 2026-07-27** - not a bug; the owner added a karda **free subscription** and the mint now succeeds (the active-subscription branch of the D2 rule) |
+| `vxture/vxture-atlas#47` | atlas | (from E2E) | `GET /model-platform/models?tenantId=` and `/chat` with a `taskProfile` both `500`; unfiltered list empty -> karda has no routable `modelCode`/`taskProfile` for `karda.ask` | open - the current blocker on a live A4 generation |
+| `vxture/vxture-karda#76` | karda | (go-live tracker) | take `karda.ask <-> A4` live: chat round-trip -> host cutover once atlas#47 gives a routable model | open - blocked-by moved from `#147` to `atlas#47`; auth chain proven |
 | `vxture/vxture-atlas#34` | atlas | `140` | karda's A4 direct request (answered by `#70`) | atlas-side; answered |
 | `vxture/vxture-atlas#41` / `#42` | atlas | `#72` deps | tenant-scoped model list / taskProfile routing | atlas-side capability tracks |
 
