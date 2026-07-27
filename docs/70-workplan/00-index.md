@@ -192,14 +192,22 @@ re-shapes the two karda-side A4 tasks:
   mintable audience). The caller, the client wiring, and the whitelist/degrade path
   (6a) are all built and tested.
 
-  **Live E2E verification (2026-07-27, on worker-02) found two things:** (i) a real
-  bug in karda's token caller - it sent the context as a JSON `requested_context`
-  blob; the platform wants separate `org_id`/`workspace_id` fields - fixed in `#74`;
-  (ii) with the correct format the mint reaches the platform's **D2 coverage check**
-  and returns `invalid_target` for the test workspace *even for `aud=vxture`*, so
-  the platform sees no karda coverage there. Filed as `vxture/vxture-platform#147` -
-  the current blocker. Once coverage is resolved: mint -> model-list -> `/chat`, then
-  set `ATLAS_BASE_URL` + the ask task-profile on the host to go live.
+  **Live E2E verification (2026-07-27, on worker-02):** proved the whole
+  karda -> platform -> Atlas S2S chain works. Along the way it (i) caught + fixed a
+  real bug in karda's token caller - it sent the context as a JSON
+  `requested_context` blob; the platform wants separate `org_id`/`workspace_id`
+  fields (`#74`); (ii) surfaced a D2 coverage gap, resolved when the owner added a
+  karda **free subscription** (`vxture/vxture-platform#147`, closed - not a bug).
+  With that, the `aud=atlas` token **mints** and Atlas **accepts** it: a
+  `/model-platform/chat` call with a dummy code returns `404 MODEL_NOT_ROUTABLE`
+  (past auth), confirming endpoint + contract + error semantics.
+
+  **The sole remaining blocker is now Atlas-side** (`vxture/vxture-atlas#47`):
+  `GET /model-platform/models?tenantId=` and `/chat` with a `taskProfile` both
+  return `500`, and the unfiltered model list is empty - so karda has no routable
+  `modelCode`/`taskProfile` to actually generate. Once atlas#47 provides one: a chat
+  round-trip, then set `ATLAS_BASE_URL` + the ask selection on the host to go live
+  (tracked in `vxture/vxture-karda#76`). No karda code change expected.
 
 **On A1 landing:** 5b (vectorize) + 6b (vector recall + rerank) complete the
 flywheel through the tested seams; BM25 (TD-008) lands alongside for the
