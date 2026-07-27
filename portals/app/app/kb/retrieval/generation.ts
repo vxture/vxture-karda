@@ -1,26 +1,27 @@
-// The Atlas A4 generation client (KD-108). Atlas is now an INDEPENDENT product
-// (repo vxture-atlas), deployed on worker-02:3100 (platform infra registry
-// `13-infra-allocation-registry` §3, in production 2026-07-27) - a SEPARATE
-// service from the C2/C3 platform API (worker-01:8080). So A4 has its OWN base
-// (ATLAS_BASE_URL), NOT PLATFORM_API_URL, and its OWN auth: A4 routes verify an
-// S2S token-exchange bearer (RS256/JWKS, product_210), NOT the C2/C3
-// x-vxture-internal-auth header. Endpoint path is `/model-platform/chat`
-// (`ModelRuntimeController`); the exact path + a valid model code are being
-// confirmed direct with the atlas line (80-liaison/140).
+// The Atlas A4 generation client (KD-108). Atlas is an INDEPENDENT product (repo
+// vxture-atlas), deployed on worker-02:3100 (platform infra registry §3, in
+// production 2026-07-27) - a SEPARATE service from the C2/C3 platform API
+// (worker-01:8080). So A4 has its OWN base (ATLAS_BASE_URL, NOT PLATFORM_API_URL)
+// and its OWN auth: an S2S token-exchange bearer (aud=atlas, RS256/JWKS,
+// product_210 §3), NOT the C2/C3 x-vxture-internal-auth header. The bearer is
+// minted dynamically per (org, ws) by the token-exchange caller (atlas-token.ts),
+// so there is no static token to provision - karda mints one from its own OIDC
+// client creds against the platform IdP.
 //
-// This implements the GenerationClient port ask.ts drives. It stays inactive
-// (getGenerationClient -> null) until ATLAS_BASE_URL + a bearer token are set, so
-// karda.ask is honestly not_implemented until Atlas is reachable. NOTE: the
-// platform's token-exchange ISSUANCE endpoint is not built yet, so a real bearer
-// cannot be minted until that lands - ATLAS_S2S_TOKEN is the interim seam.
+// Endpoint path is `/model-platform/chat` (`ModelRuntimeController`); the exact
+// path + a valid model code are being confirmed direct with the atlas line
+// (80-liaison/140). Client stays inactive (getGenerationClient -> null) until
+// ATLAS_BASE_URL is set, so karda.ask is honestly not_implemented until Atlas is
+// reachable.
 import { assertInternalTarget } from "../../lib/internal-target";
 import type { GenerationClient, ChatRequest, ChatResponse } from "./ask";
+import { getAtlasTokenSource, type AtlasTokenSource } from "./atlas-token";
 
 export interface AtlasClientConfig {
   baseUrl: string;
   chatPath: string;
-  /** S2S bearer token (from token-exchange; ATLAS_S2S_TOKEN in the interim). */
-  token: string;
+  /** Mints the aud=atlas bearer per (org, ws); see atlas-token.ts. */
+  tokenSource: AtlasTokenSource;
 }
 
 type FetchLike = typeof fetch;
@@ -34,12 +35,14 @@ export class AtlasA4Client implements GenerationClient {
   ) {}
 
   async chat(req: ChatRequest): Promise<ChatResponse> {
-    // Egress guard: cleartext http only to loopback/private/tailnet (worker-02
-    // is on the tailnet, so 100.76.219.48:3100 passes; a public host must be https).
+    // Mint (or reuse a cached) aud=atlas bearer for this call's org/ws.
+    const token = await this.cfg.tokenSource.tokenFor({ org: req.tenantId, ws: req.workspaceId ?? "" });
+    // Egress guard: cleartext http only to loopback/private/tailnet (worker-02 is
+    // on the tailnet, so 100.76.219.48:3100 passes; a public host must be https).
     const url = assertInternalTarget(`${this.cfg.baseUrl.replace(/\/$/, "")}${this.cfg.chatPath}`);
     const res = await this.fetchImpl(url, {
       method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${this.cfg.token}` },
+      headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
       body: JSON.stringify(req),
       cache: "no-store",
     });
@@ -67,18 +70,18 @@ export function extractContent(body: unknown): string | null {
 }
 
 /**
- * The generation client, or null when it cannot run yet. Activates only when the
- * Atlas base (ATLAS_BASE_URL, e.g. http://100.76.219.48:3100) and a bearer token
- * (ATLAS_S2S_TOKEN) are both set; null keeps karda.ask honestly not_implemented
- * rather than failing at call time. The chat path defaults to the known Atlas
- * route and is overridable via ATLAS_CHAT_PATH.
+ * The generation client, or null when it cannot run yet. Activates only when
+ * ATLAS_BASE_URL is set (e.g. http://100.76.219.48:3100) AND karda has OIDC client
+ * creds to mint the bearer (getAtlasTokenSource); null keeps karda.ask honestly
+ * not_implemented rather than failing at call time. The chat path defaults to the
+ * known Atlas route and is overridable via ATLAS_CHAT_PATH.
  */
 export function getGenerationClient(): GenerationClient | null {
   const baseUrl = process.env.ATLAS_BASE_URL;
-  const token = process.env.ATLAS_S2S_TOKEN;
-  if (!baseUrl || !token) return null;
+  const tokenSource = getAtlasTokenSource();
+  if (!baseUrl || !tokenSource) return null;
   const chatPath = process.env.ATLAS_CHAT_PATH || DEFAULT_ATLAS_CHAT_PATH;
-  return new AtlasA4Client({ baseUrl, chatPath, token });
+  return new AtlasA4Client({ baseUrl, chatPath, tokenSource });
 }
 
 /** The model code ask uses, from ATLAS_ASK_MODEL (owner sets a valid code). */

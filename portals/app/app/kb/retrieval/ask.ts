@@ -22,6 +22,8 @@ export interface ChatRequest {
   temperature?: number;
   maxTokens?: number;
   tenantId: string;
+  /** The org's active workspace - the S2S token-exchange service context. */
+  workspaceId?: string;
   applicationId?: string;
   applicationType?: "agent" | "workflow" | "api_client" | "internal_service";
   userId?: string;
@@ -53,6 +55,7 @@ export interface ChunkResolver {
 
 export interface AskInput extends Omit<SearchInput, "params"> {
   tenantId: string;
+  workspaceId?: string;
   userId?: string;
   modelCode: string;
   resolver: ChunkResolver;
@@ -111,6 +114,7 @@ export async function runAsk(input: AskInput): Promise<AskResult> {
     messages: prompt,
     temperature: 0,
     tenantId: input.tenantId,
+    workspaceId: input.workspaceId,
     userId: input.userId,
     applicationType: "internal_service",
     usageType: "normal",
