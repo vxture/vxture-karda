@@ -27,7 +27,7 @@ Letters without the suffix are still in flight (awaiting the platform or arda).
 | `80-2607240013-karda-arda-channel-repriority.md` | 2607240013 | arda line | corrects the urgency stated in `30`: karda now self-hosts storage and treats Arda as one connector among many, so the five open items affect only the arda connector rather than blocking karda's mainline. Reframes them as "confirm Arda's values on the connector capability matrix" | open |
 | `110-2607241749-karda-port-reallocation-DONE.md` | 2607241749 | platform line | production publish port reallocated by product number: prod `3233` -> `3240`, beta `3241` reserved (still deferred with the beta server). Amends every `3233` in letter `40`. Lists the karda-side repo changes and the owner/platform sync actions (repo variable, host `.env`, edge upstream, firewall, webhook base URL) | **DONE** - port cutover complete end to end (repo/host/edge on 3240, `karda.vxture.com` 200); webhook-base residual tracked in `120` |
 | `130-2607271030-karda-atlas-a4-access-request.md` | 2607271030 | platform line | A4 access request: `karda.ask`'s Atlas A4 generation client is built + wired (activates on `ATLAS_CHAT_PATH`/`ATLAS_ASK_MODEL`), but a live probe found the chat endpoint on none of 9 candidate paths / 7 discovery paths on `:8080` and no other model port open. Asks for 3 things - the A4 chat endpoint (URL/path), a valid model code + enumeration, the auth posture - plus confirmation of the ChatRequest/Response schema + metering/throttle semantics. Continues the Atlas thread (`70`/`90`/`100`) | **redirected** (reply `vxture/.../60-2607271430`): Atlas is an independent repo since 2026-07-24; platform does NOT proxy the A4 S2S link (the `:8080` 404 was expected). Re-sent direct to atlas as `140`; live A4 connect blocked on the platform's token-exchange issuance + Atlas host allocation |
-| `120-2607261820-karda-platform-registration-c.md` | 2607261820 | platform line | registration segment C - post-launch (`v0.2.0` live). Four platform-side actions: (1) register the `product_webhooks` delivery address `http://vx-worker-02:3240` (C3 inbound is built + verified but nothing is sent until registered); (2) register the metric-registry keys karda now emits - `karda.ingest` (live), `karda.search` / `karda.ask` (declared); (3) delete the inert `OIDC_CLIENT_SECRET` repo secret (closes `50` R2); (4) sync-only: the five DRAFT plans wait on karda's tier->entitlement mapping (KD-202/203 + product-def v1), a later dedicated letter | **replied** (`vxture/.../50-2607271400`): webhook mechanism + the three metric keys confirmed and added platform-side (`KARDA_METRICS` in seed-catalog, code only); **residual** - owner sets `KARDA_WEBHOOK_BASE_URL=http://vx-worker-02:3240` + one gated `db-init action=seed` (webhook address + metrics), and karda deletes its own inert `OIDC_CLIENT_SECRET` repo secret |
+| `120-2607261820-karda-platform-registration-c-DONE.md` | 2607261820 | platform line | registration segment C - post-launch (`v0.2.0` live). Four platform-side actions: (1) register the `product_webhooks` delivery address `http://vx-worker-02:3240` (C3 inbound is built + verified but nothing is sent until registered); (2) register the metric-registry keys karda now emits - `karda.ingest` (live), `karda.search` / `karda.ask` (declared); (3) delete the inert `OIDC_CLIENT_SECRET` repo secret (closes `50` R2); (4) sync-only: the five DRAFT plans wait on karda's tier->entitlement mapping (KD-202/203 + product-def v1), a later dedicated letter | **DONE** 2026-07-27 - all three asks fulfilled in production: `product_webhooks` address set to `http://100.76.219.48:3240` (= vx-worker-02, IP form), the three metric keys written (`db-init action=seed` succeeded: `✓ [all] Seed completed`), and karda deleted its own inert repo secret. (The seed run's `30-verify` flagged `[B0] DDL baseline hash mismatch` - a pre-existing platform-wide DDL-drift signal, unrelated to karda's rows, which were written; the platform line owns that separately.) Platform to send a test delivery to confirm the C3 loop |
 | `140-2607271500-karda-atlas-a4-direct-request.md` | 2607271500 | atlas line (vxture-atlas) | first direct request to the now-independent Atlas repo (per the `130` redirect): formally confirm the A4 endpoint (Atlas draft says `POST /model-platform/chat`, host `待分配`/worker-02:3100 unconfirmed), the S2S token-exchange auth (the platform's issuance endpoint is not built - is there an interim path, or must karda wait?), and the `modelCode` + a read-only model enumeration; confirm the ChatRequest/Response + metering/429 semantics (and formally send the two still-draft Atlas letters); reconfirms the `100` A1/A3/A2 capability needs (unlock order A1 > A3 > A2) | open - awaiting atlas |
 
 ## Received
@@ -54,13 +54,17 @@ not against mocks:
 | C2 entitlement | probed three ways - no token 401, correct token 200 with the unsubscribed envelope, wrong token 401 |
 | C3 provisioning | signature probed four ways (correct / tampered / stale timestamp / absent), delivery semantics four ways (first / replay / stale seq / subscription_changed), each cross-checked against what actually landed in the DB. Probe rows removed afterwards |
 
-Segment C (`120`) has been **replied** (`vxture/.../50-2607271400`): the webhook
-mechanism and the three metric keys (`karda.ingest` / `karda.search` /
-`karda.ask`) are confirmed and registered platform-side in code (`KARDA_METRICS`
-in `seed-catalog.mjs`). What remains is an **owner action, not a platform one**:
-set `KARDA_WEBHOOK_BASE_URL=http://vx-worker-02:3240` on the host and run one gated
-`db-init action=seed` (activates both the webhook address and the metric keys),
-and delete karda's own inert `OIDC_CLIENT_SECRET` repo secret.
+Segment C (`120`) is **DONE** (2026-07-27): the platform set the webhook address
+to `http://100.76.219.48:3240` and the `db-init action=seed` wrote the webhook row
+plus the three metric keys (`karda.ingest` / `karda.search` / `karda.ask`) to
+production (`✓ [all] Seed completed`); karda deleted its own inert
+`OIDC_CLIENT_SECRET` repo secret. So C3 inbound is now truly live and
+`karda.ingest` usage will land rather than accumulate. The seed run's read-only
+`30-verify` flagged `[B0] DDL baseline hash mismatch` - a pre-existing,
+karda-unrelated platform-wide DDL-drift signal (same hash predates this PR); it
+does not affect karda's written rows and is the platform line's own hygiene item
+(a non-destructive `migrate-seed` is the safer fix than a `reset`; karda is not
+blocked either way).
 
 A4 for `karda.ask` is **not a platform item** (`130` redirected by `60`): Atlas is
 an independent repo, so the endpoint / model / S2S details are requested direct
