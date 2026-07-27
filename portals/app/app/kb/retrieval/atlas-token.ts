@@ -62,11 +62,17 @@ export class Rfc8693TokenSource implements AtlasTokenSource {
 
   private async mint(ctx: TokenContext): Promise<{ accessToken: string; expiresIn?: number }> {
     // Service mode (product_210 §3.2): no subject_token; the caller declares the
-    // org/ws context and the platform validates it at mint time.
+    // org/ws context and the platform validates coverage at mint time. The wire
+    // encoding is separate `org_id` / `workspace_id` form fields - verified live
+    // 2026-07-27 against accounts.vxture.com: a JSON `requested_context` blob is
+    // rejected `invalid_request`, whereas separate fields parse (and reach the D2
+    // coverage check). The doc's `requested_context={org_id, workspace_id}` is the
+    // conceptual shape, not the field name.
     const body = new URLSearchParams({
       grant_type: TOKEN_EXCHANGE_GRANT,
       audience: this.cfg.audience,
-      requested_context: JSON.stringify({ org_id: ctx.org, workspace_id: ctx.ws }),
+      org_id: ctx.org,
+      workspace_id: ctx.ws,
       client_id: this.cfg.clientId,
       client_secret: this.cfg.clientSecret,
     });
