@@ -6,7 +6,7 @@
 > **主题**：edge vhost `karda.vxture.com` → `vx-worker-02:3233` 安装；
 > `product_webhooks` 投递地址登记；生产环境密钥转运清单
 > **状态**：open
-> **前序**：`20-2607222338-karda-platform-registration-a.md`（A 段，open）
+> **前序**：`20-2607222338-karda-platform-registration-a-DONE.md`（A 段，open）
 > **依据**：owner 2026-07-23 定：karda 生产部署 worker-02；开发阶段直发生产，
 > beta 为预留发布通道、另配服务器
 

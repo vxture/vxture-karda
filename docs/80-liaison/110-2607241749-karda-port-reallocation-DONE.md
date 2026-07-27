@@ -5,7 +5,7 @@
 > **时间**：2026-07-24 17:49（stamp 2607241749）
 > **主题**：karda 发布端口改配——prod `3240`、beta `3241`；修订 B 函 `40` 中的 `3233`
 > **状态**：open（平台侧正在同步修改）
-> **前序**：`40-2607230909-karda-platform-registration-b.md`（B 段，仍 open）
+> **前序**：`40-2607230909-karda-platform-registration-b-DONE.md`（B 段，仍 open）
 > **依据**：owner 2026-07-24 定：karda 端口按产品号对齐——prod=3240、beta=3241
 
 ---

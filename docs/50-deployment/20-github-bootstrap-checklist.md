@@ -75,7 +75,7 @@ over from the template. Allocation decided 2026-07-23 (owner):
 - [ ] SSH worker-02 once: `mkdir -p /srv/md0/karda`, confirm GHCR/ACR login works
       from there.
 - [ ] Edge vhost + DNS + firewall - requested in
-      `docs/80-liaison/40-2607230909-karda-platform-registration-b.md`.
+      `docs/80-liaison/40-2607230909-karda-platform-registration-b-DONE.md`.
 
 **Beta tier, when its server arrives** (TD-001): a `beta` Environment with no
 reviewer gate and its own `DEPLOY_*`, the `beta-*` trigger and routing branch,
