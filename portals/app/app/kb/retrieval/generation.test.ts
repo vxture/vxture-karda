@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { AtlasA4Client, extractContent } from "./generation";
+import { AtlasA4Client, extractContent, askModelSelection } from "./generation";
 import type { ChatRequest } from "./ask";
 import type { AtlasTokenSource, TokenContext } from "./atlas-token";
 
@@ -68,6 +68,35 @@ test("chat mints an aud=atlas bearer per (org, ws) and posts it to base+chatPath
   assert.match(captured.init?.body as string, /"tenantId":"org1"/);
   // the token was requested for exactly this call's org/ws context
   assert.deepEqual(seen, [{ org: "org1", ws: "ws1" }]);
+});
+
+test("a taskProfile is forwarded verbatim in the chat body (auto-adapt)", async () => {
+  const { cfg } = makeCfg();
+  const { fetch: f, captured } = fakeFetch(200, { content: "x" });
+  await new AtlasA4Client(cfg, f).chat({ ...req, modelCode: undefined, taskProfile: "karda.ask.default" });
+  const body = captured.init?.body as string;
+  assert.match(body, /"taskProfile":"karda.ask.default"/);
+  assert.doesNotMatch(body, /"modelCode"/, "auto-adapt sends no modelCode");
+});
+
+test("askModelSelection auto-adapts when ATLAS_ASK_TASK_PROFILE is set, else pins", () => {
+  const saved = { tp: process.env.ATLAS_ASK_TASK_PROFILE, mc: process.env.ATLAS_ASK_MODEL };
+  try {
+    process.env.ATLAS_ASK_TASK_PROFILE = "profile-x";
+    assert.deepEqual(askModelSelection(), { taskProfile: "profile-x" });
+
+    delete process.env.ATLAS_ASK_TASK_PROFILE;
+    process.env.ATLAS_ASK_MODEL = "model-y";
+    assert.deepEqual(askModelSelection(), { modelCode: "model-y" });
+
+    delete process.env.ATLAS_ASK_MODEL;
+    assert.deepEqual(askModelSelection(), { modelCode: "default" });
+  } finally {
+    if (saved.tp === undefined) delete process.env.ATLAS_ASK_TASK_PROFILE;
+    else process.env.ATLAS_ASK_TASK_PROFILE = saved.tp;
+    if (saved.mc === undefined) delete process.env.ATLAS_ASK_MODEL;
+    else process.env.ATLAS_ASK_MODEL = saved.mc;
+  }
 });
 
 test("a missing workspaceId mints for the empty-ws context (does not throw)", async () => {

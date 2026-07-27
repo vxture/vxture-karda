@@ -11,7 +11,7 @@ import { getTemplateResolver } from "../../../kb/lib/template-resolver";
 import { getAttachmentStore } from "../../../kb/attachments/store";
 import { getRecallCorpus, getRecallTextResolver } from "../../../kb/retrieval/corpus";
 import { getVisibleSetResolver } from "../../../kb/retrieval/visible-set";
-import { getGenerationClient, askModelCode } from "../../../kb/retrieval/generation";
+import { getGenerationClient, askModelSelection } from "../../../kb/retrieval/generation";
 import { searchTool } from "../../../kb/retrieval/search-tool";
 import { askTool } from "../../../kb/retrieval/ask-tool";
 import { writeDocument } from "../../../kb/tools/write";
@@ -58,9 +58,11 @@ function backends(): ToolBackends {
         attachments: getAttachmentStore(),
         corpus: getRecallCorpus(),
       }),
-    // ask is wired only when the Atlas A4 client is configured (PLATFORM_API_URL +
-    // token + ATLAS_CHAT_PATH); otherwise it is left out and dispatch returns
-    // not_implemented rather than failing at call time.
+    // ask is wired only when the Atlas A4 client is configured (ATLAS_BASE_URL +
+    // OIDC creds to mint the aud=atlas bearer, getGenerationClient); otherwise it
+    // is left out and dispatch returns not_implemented rather than failing at call
+    // time. Model selection (KD-109): auto-adapt via ATLAS_ASK_TASK_PROFILE, else a
+    // pinned ATLAS_ASK_MODEL - askModelSelection emits exactly one.
     ...(generation
       ? {
           ask: (caller, args) =>
@@ -70,7 +72,7 @@ function backends(): ToolBackends {
               corpus: getRecallCorpus(),
               textResolver: getRecallTextResolver(),
               generation,
-              model: askModelCode(),
+              ...askModelSelection(),
             }),
         }
       : {}),

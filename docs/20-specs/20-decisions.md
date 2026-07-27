@@ -1,6 +1,6 @@
 # Karda 决策登记（Decision Register）
 
-> 版本：v1（2026-07-24）
+> 版本：v1.1（2026-07-27：Atlas 回函 #70 更新 KD-101/102/107/108 状态，追加 KD-109 模型选择）
 > 定位：把散落在设计文档 §11 待拍板表里的决策集中到一处并记录裁定。设计文档保留问题的**上下文**，
 > 本表持有**裁定与状态**——两者冲突以本表为准。
 > 编号：`KD-NNN`（Karda Decision），append-only，稳定 ID 永不复用。
@@ -38,10 +38,11 @@
 
 | ID | 决策项 | 卡在 | 发起状态 |
 |----|--------|------|----------|
-| KD-101 | 解析模型（A2）批量接口 + 部署亲和 | Atlas 能力**未实现** | 回复见 `80-liaison/90-2607240921`；等 Atlas 建设，非补文档 |
-| KD-102 | rerank（A3）100 候选 400ms 可行性（联动 KD-009） | Atlas 能力**未实现** | 同上 |
-| KD-107 | embedding（A1）接口 + 版本锁定 | Atlas 能力**未实现** | **批次 5 向量化主路径的硬阻塞**；`90-2607240921` §2 |
-| KD-108 | 生成（A4）契约 | Atlas **已实现**（`ChatRequest`，生产运行） | **已解除**——`karda.ask` 应答域可真实推进 |
+| KD-101 | 解析模型（A2）批量接口 + 部署亲和 | Atlas 能力仍在建，**契约已回**（#70） | **A2.3 亲和已解**：Atlas 与 karda 同驻 worker-02，按"同机低延迟"设计；A2.4 响应形态采纳。能力实现待 Atlas 排期（承 `90`） |
+| KD-102 | rerank（A3）100 候选 400ms 可行性（联动 KD-009） | Atlas 能力未实现，**数字未承诺**（#70 §3） | Atlas 明确：P95 数字取决于实际交叉编码器 + 部署硬件，**先不给数**；一旦有真实实现即基准测试并主动回报。karda 侧按"未知、可能下调 N"设计（KD-009 精排池上限保守），不假设 400ms |
+| KD-107 | embedding（A1）接口 + 版本锁定 | Atlas 能力仍在建，**契约已回**（#70） | 批量接口 + `modelCode` 即版本锁定标识（无静默 latest 漂移，换版本=新 `modelCode`）+ 稳定维度采纳。**仍是批次 5 向量化主路径的硬阻塞**——契约在、能力未到 |
+| KD-108 | 生成（A4）契约 | Atlas **已确认**（#70：端点 + 验签 + 错误契约终版） | **已解除并确认**：端点 `POST /model-platform/chat`、验签 RS256/JWKS（与 karda 已建客户端一致）、错误契约终版（`429 RATE_LIMITED`+`retryAfterMs`/`Retry-After` 退避重试；`403 QUOTA_EXHAUSTED`+`resetAt` 挂起不重试；共享信封 `{code,message,requestId}`）。真实连通的唯一残留是平台侧 Atlas 产品注册是否已在产库执行（#70 §5，见 `80-liaison`） |
+| KD-109 | A4 模型选择方式（自动适配 vs 用户选择） | karda 决定（Atlas #70 §6 已给两种机制） | Atlas 提供 `taskProfile` 路由（发标签、Atlas 按租户授权解析出具体模型，无匹配 `404 TASK_PROFILE_NOT_ROUTABLE`）与租户过滤模型表 `GET /model-platform/models?tenantId=`。**karda 倾向**：`karda.ask`（S2S 工具、KD-004 单轮自动应答）默认**自动适配**——发 `taskProfile`（`ATLAS_ASK_TASK_PROFILE`），不写死 `modelCode`；**用户选择**留给后续 Console 模型选择器（读租户过滤表），非 `karda.ask` 边界。追加机制为纯增量，显式 `modelCode` 仍可用 |
 | KD-103 | 可见集失效事件契约（消息格式 + 投递语义） | 平台 `product_310` | karda 出消费需求清单，待发 |
 | KD-104 | Arda/Karda 边界三问规则确认 | 平台 `product_110` | **已确认收口 2026-07-27**：平台三处已裁定同一边界——`product_110 §5.4` 与 `product_100_matrix`（「连接=Arda、理解=Karda」，Arda=连接器唯一登记处/SoA、Karda=全量托管理解层），且 `design_sharing_100_isolation-review`「Karda 对 Arda 的实现层依赖不上升为矩阵结构概念，正确」。结论：arda = 连接器之一（实现层依赖，经 `220` 框架接入），非结构/架构依赖，karda 自闭环。承 `80-liaison/80-2607240013` 的方向调整 |
 | KD-105 | v1 首批开放哪些连接器（Arda 已定 + 一个 poll 型外部源待选） | 半外部 | 外部源选型可后置 |

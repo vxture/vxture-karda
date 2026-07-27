@@ -84,7 +84,22 @@ export function getGenerationClient(): GenerationClient | null {
   return new AtlasA4Client({ baseUrl, chatPath, tokenSource });
 }
 
-/** The model code ask uses, from ATLAS_ASK_MODEL (owner sets a valid code). */
-export function askModelCode(): string {
-  return process.env.ATLAS_ASK_MODEL ?? "default";
+export interface AskModelSelection {
+  modelCode?: string;
+  taskProfile?: string;
+}
+
+/**
+ * How karda.ask picks a model on Atlas (KD-109; Atlas #70 §6). Two modes, and
+ * exactly one field is emitted so there is no modelCode-vs-taskProfile precedence
+ * ambiguity (Atlas requires at least one, and the two are alternatives):
+ * - auto-adapt: if ATLAS_ASK_TASK_PROFILE is set, send that taskProfile label and
+ *   let Atlas resolve a concrete model from the tenant's grant (no pinned code).
+ *   This is the default posture for karda.ask, an S2S tool with no user model pick.
+ * - pinned: otherwise send ATLAS_ASK_MODEL as an explicit modelCode.
+ */
+export function askModelSelection(): AskModelSelection {
+  const taskProfile = process.env.ATLAS_ASK_TASK_PROFILE;
+  if (taskProfile) return { taskProfile };
+  return { modelCode: process.env.ATLAS_ASK_MODEL ?? "default" };
 }
