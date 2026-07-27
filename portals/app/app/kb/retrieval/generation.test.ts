@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { AtlasA4Client, extractContent } from "./generation";
 import type { ChatRequest } from "./ask";
 
-const cfg = { baseUrl: "http://100.100.197.42:8080", authToken: "tok", chatPath: "/model/chat" };
+const cfg = { baseUrl: "http://100.76.219.48:3100", chatPath: "/model-platform/chat", token: "tok" };
 
 const req: ChatRequest = {
   modelCode: "m1",
@@ -39,10 +39,10 @@ test("chat posts to base+chatPath with the internal-auth header and parses conte
   const { fetch: f, captured } = fakeFetch(200, { content: "the answer" });
   const res = await new AtlasA4Client(cfg, f).chat(req);
   assert.equal(res.content, "the answer");
-  assert.equal(String(captured.url), "http://100.100.197.42:8080/model/chat");
+  assert.equal(String(captured.url), "http://100.76.219.48:3100/model-platform/chat");
   assert.equal(captured.init?.method, "POST");
   const headers = captured.init?.headers as Record<string, string>;
-  assert.equal(headers["x-vxture-internal-auth"], "tok");
+  assert.equal(headers["authorization"], "Bearer tok");
   assert.match(captured.init?.body as string, /"tenantId":"org1"/);
 });
 
