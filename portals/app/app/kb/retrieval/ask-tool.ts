@@ -21,7 +21,10 @@ export interface AskToolDeps {
   corpus: RecallCorpus;
   textResolver: RecallTextResolver;
   generation: GenerationClient;
-  model: string;
+  // Model selection - exactly one is set (KD-109): a pinned modelCode, or a
+  // taskProfile label Atlas resolves per the tenant's grant (auto-adapt).
+  modelCode?: string;
+  taskProfile?: string;
 }
 
 export interface AskToolResult {
@@ -55,7 +58,8 @@ export async function askTool(caller: CallerContext, args: Record<string, unknow
     tenantId: caller.org ?? "",
     workspaceId: ws,
     userId: caller.user ?? undefined,
-    modelCode: deps.model,
+    modelCode: deps.modelCode,
+    taskProfile: deps.taskProfile,
     resolver: new TextResolverAdapter(deps.textResolver),
     generation: deps.generation,
     contextK: typeof args.top_k === "number" && args.top_k > 0 ? args.top_k : 5,

@@ -17,7 +17,11 @@ export interface ChatMessage {
 }
 
 export interface ChatRequest {
-  modelCode: string;
+  // At least one of modelCode / taskProfile is required (Atlas #70 §6); they are
+  // alternatives. A taskProfile lets Atlas resolve the concrete model from the
+  // tenant's grant (auto-adapt); a modelCode pins one explicitly.
+  modelCode?: string;
+  taskProfile?: string;
   messages: ChatMessage[];
   temperature?: number;
   maxTokens?: number;
@@ -57,7 +61,8 @@ export interface AskInput extends Omit<SearchInput, "params"> {
   tenantId: string;
   workspaceId?: string;
   userId?: string;
-  modelCode: string;
+  modelCode?: string;
+  taskProfile?: string;
   resolver: ChunkResolver;
   generation: GenerationClient;
   /** How many top results to ground the answer in. */
@@ -111,6 +116,7 @@ export async function runAsk(input: AskInput): Promise<AskResult> {
   const prompt = buildPrompt(input.query, grounded);
   const res = await input.generation.chat({
     modelCode: input.modelCode,
+    taskProfile: input.taskProfile,
     messages: prompt,
     temperature: 0,
     tenantId: input.tenantId,

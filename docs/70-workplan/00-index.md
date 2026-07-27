@@ -174,14 +174,22 @@ tier -> entitlement/quota mapping the platform needs to publish karda's five
 DRAFT commercial plans; **KD-201** (first P-tier package) is a product-direction
 call. Recommendations sit in `20-specs/20-decisions.md` section 3.
 
-**On the atlas 141 reply (A4 consumption side):** two karda-side tasks stay parked
-on the atlas line, not on karda - (a) **model-selection UX + `karda.ask` ->
-taskProfile/modelCode mapping** waits on Atlas's read-only model enumeration (`141`
-item 3); (b) **the live `karda.ask` <-> A4 call** waits on Atlas's formal endpoint /
-verify-side JWKS+aud / model confirmation (`141` items 1-3), then setting
-`ATLAS_BASE_URL` + `ATLAS_ASK_MODEL` on the host. No karda code change is needed for
-either once the atlas line answers - the caller, the client wiring, and the
-whitelist/degrade path (6a) are all built and tested.
+**Atlas replied 2026-07-27 (issue #70)** - answers `100`/`140`/`141`. Endpoint
+`POST /model-platform/chat` + verify-side RS256/JWKS **confirmed** (matches karda's
+built client); model selection is via `taskProfile` (auto-adapt: send a label, not a
+`modelCode`) or the tenant-filtered list `GET /model-platform/models?tenantId=`
+(#70 §6); 429/403 error contract final (`RATE_LIMITED`/`QUOTA_EXHAUSTED`). This
+re-shapes the two karda-side A4 tasks:
+
+- (a) **`taskProfile` auto-adapt wiring** is now **buildable** (§6 delivered the
+  mechanism) - no longer blocked. The user-facing "pick a model" UI over the model
+  list is a later Console surface.
+- (b) **the live `karda.ask` <-> A4 call** no longer waits on Atlas: per #70 §5 the
+  platform token-exchange has been live since 2026-07-12; the sole residual is
+  whether **Atlas's product registration ran in production** (`product.products`
+  row + `aud=atlas` OIDC client mapping) - a **platform-line** confirmation. Once
+  confirmed, set `ATLAS_BASE_URL` + the ask task-profile on the host. The caller,
+  the client wiring, and the whitelist/degrade path (6a) are all built and tested.
 
 **On A1 landing:** 5b (vectorize) + 6b (vector recall + rerank) complete the
 flywheel through the tested seams; BM25 (TD-008) lands alongside for the

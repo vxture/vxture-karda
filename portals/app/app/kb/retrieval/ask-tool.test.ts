@@ -28,7 +28,7 @@ async function fixture(gen: GenerationClient) {
   const attachments = new InMemoryAttachmentStore();
   const corpus = new InMemoryRecallCorpus();
   const kb = await kbs.createKb({ workspaceId: "ws1", ownerType: "user", ownerSub: "u1", name: "L" });
-  const deps = { visibleSet: new VisibleSetResolver(kbs), attachments, corpus, textResolver: corpus, generation: gen, model: "m1" };
+  const deps = { visibleSet: new VisibleSetResolver(kbs), attachments, corpus, textResolver: corpus, generation: gen, modelCode: "m1" };
   return { deps, attachments, corpus, kbId: kb.id };
 }
 
