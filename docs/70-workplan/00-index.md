@@ -202,12 +202,18 @@ re-shapes the two karda-side A4 tasks:
   `/model-platform/chat` call with a dummy code returns `404 MODEL_NOT_ROUTABLE`
   (past auth), confirming endpoint + contract + error semantics.
 
-  **The sole remaining blocker is now Atlas-side** (`vxture/vxture-atlas#47`):
-  `GET /model-platform/models?tenantId=` and `/chat` with a `taskProfile` both
-  return `500`, and the unfiltered model list is empty - so karda has no routable
-  `modelCode`/`taskProfile` to actually generate. Once atlas#47 provides one: a chat
-  round-trip, then set `ATLAS_BASE_URL` + the ask selection on the host to go live
-  (tracked in `vxture/vxture-karda#76`). No karda code change expected.
+  **LIVE 2026-07-28** (`vxture/vxture-karda#76` closed). The Atlas-side blockers
+  cleared in sequence via live iteration on `vxture/vxture-atlas#47`: a missing
+  `model_grants.task_profile` column (migration), a per-tenant technical grant
+  (admin-created, no tier auto-mapping), and a `modelCode`-verbatim-as-upstream-
+  `model` bug (Atlas re-registered literal upstream IDs). All three registered
+  models then generated real content (`doubao-seed-2-0-lite-260428`,
+  `doubao-seed-2-0-pro-260215`, `glm-5.2`). Go-live took a **redeploy**, not just an
+  env change: the running prod image (v0.2.2, commit #61) predated the feature, so
+  `ATLAS_BASE_URL` activated nothing until **v0.2.3** (`sha-5a30f90`) shipped the
+  token-exchange code. Now `POST /api/tools/ask` returns a `200` `AskToolResult`
+  (generation client active) instead of `501`. `ATLAS_ASK_MODEL=doubao-seed-2-0-lite-260428`
+  on the host. A grounded answer just needs indexed content (data, not integration).
 
 **On A1 landing:** 5b (vectorize) + 6b (vector recall + rerank) complete the
 flywheel through the tested seams; BM25 (TD-008) lands alongside for the

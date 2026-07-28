@@ -125,8 +125,8 @@ tagged `liaison`. Current threads that continue the archived letters above:
 | `vxture/vxture-karda#72` | karda | new | model-selection UX direction (KD-109) | closed - auto-adapt now, picker phased later |
 | `vxture/vxture-platform#145` | platform | `142` | confirm Atlas product registration ran in production (the `aud=atlas` token gate) | **closed 2026-07-27** - proven end to end: `aud=atlas` token mints and Atlas verify accepts it |
 | `vxture/vxture-platform#147` | platform | (from E2E) | service-mode token-exchange fails `invalid_target` (D2 coverage) | **closed 2026-07-27** - not a bug; the owner added a karda **free subscription** and the mint now succeeds (the active-subscription branch of the D2 rule) |
-| `vxture/vxture-atlas#47` | atlas | (from E2E) | `GET /model-platform/models?tenantId=` and `/chat` with a `taskProfile` both `500`; unfiltered list empty -> karda has no routable `modelCode`/`taskProfile` for `karda.ask` | open - the current blocker on a live A4 generation |
-| `vxture/vxture-karda#76` | karda | (go-live tracker) | take `karda.ask <-> A4` live: chat round-trip -> host cutover once atlas#47 gives a routable model | open - blocked-by moved from `#147` to `atlas#47`; auth chain proven |
+| `vxture/vxture-atlas#47` | atlas | (from E2E) | model routing/generation: missing `model_grants.task_profile` column, per-tenant grant, and `modelCode`-verbatim-upstream bug | **closed 2026-07-28** - all fixed; three models generate real content |
+| `vxture/vxture-karda#76` | karda | (go-live tracker) | take `karda.ask <-> A4` live | **closed 2026-07-28** - LIVE via **v0.2.3** (`sha-5a30f90`); `/api/tools/ask` returns `200` not `501`. Go-live needed a redeploy (prior image predated the feature) |
 | `vxture/vxture-atlas#34` | atlas | `140` | karda's A4 direct request (answered by `#70`) | atlas-side; answered |
 | `vxture/vxture-atlas#41` / `#42` | atlas | `#72` deps | tenant-scoped model list / taskProfile routing | atlas-side capability tracks |
 
