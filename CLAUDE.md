@@ -96,6 +96,12 @@ ruleset is `docs/50-deployment/rebuild/main-ruleset.json`:
 - `main` (single ruleset): require PR (0 approvals - checks gate merges, not human
   review), require the five status checks below (strict / up-to-date with base),
   block deletion, block non-fast-forward, require linear history, squash-only.
+- `bypass_actors` MUST stay empty (`[]`). The bootstrap reference carried an admin
+  `bypass_mode: always` entry that made every rule advisory for admins - a direct
+  `main` push (bypassing `gitleaks`/`audit`) succeeded silently. Removed 2026-07-28
+  (TD-011); do not reintroduce it. Break-glass is preserved: an admin can still edit
+  or disable the ruleset, but that is a recorded config change, not an invisible
+  per-push exemption.
 - `production` GitHub Environment: required reviewer - every `v*.*.*` tag deploy
   pauses here until approved.
 - `beta` GitHub Environment: no reviewer gate.
