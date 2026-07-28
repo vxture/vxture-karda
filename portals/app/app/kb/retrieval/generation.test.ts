@@ -20,7 +20,7 @@ function fakeTokenSource(token = "tok"): { source: AtlasTokenSource; seen: Token
 function makeCfg(token = "tok") {
   const { source, seen } = fakeTokenSource(token);
   return {
-    cfg: { baseUrl: "http://100.76.219.48:3100", chatPath: "/model-platform/chat", tokenSource: source },
+    cfg: { baseUrl: "http://100.76.219.48:3100", chatPath: "/v1/chat", tokenSource: source },
     seen,
   };
 }
@@ -61,7 +61,7 @@ test("chat mints an aud=atlas bearer per (org, ws) and posts it to base+chatPath
   const { fetch: f, captured } = fakeFetch(200, { content: "the answer" });
   const res = await new AtlasA4Client(cfg, f).chat(req);
   assert.equal(res.content, "the answer");
-  assert.equal(String(captured.url), "http://100.76.219.48:3100/model-platform/chat");
+  assert.equal(String(captured.url), "http://100.76.219.48:3100/v1/chat");
   assert.equal(captured.init?.method, "POST");
   const headers = captured.init?.headers as Record<string, string>;
   assert.equal(headers["authorization"], "Bearer tok");
