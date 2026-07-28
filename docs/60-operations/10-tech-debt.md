@@ -364,3 +364,35 @@ deliberately not carried over.
 - **Recovery condition**: closed when the platform reorders the applier and karda
   mirrors it; at that point the per-column guards/relocations added here become
   redundant belt-and-suspenders and MAY be simplified, but are harmless to keep.
+
+
+## TD-011 - main ruleset let admins bypass all checks (bypass_actors always)
+
+- **Clause strained**: this repo's own working agreement - "Direct `git push
+  origin main` is BLOCKED by the ruleset (must go through a PR, and the required
+  checks must pass)" - and the absolute secret-hygiene rule ("credentials never
+  committed"), since `gitleaks` and `audit` are in the required set.
+- **What was wrong**: `main-protection` (ruleset `19556856`) and the reference
+  artifact `docs/50-deployment/rebuild/main-ruleset.json` both carried
+  `"bypass_actors": [{ "actor_id": 5, "actor_type": "RepositoryRole",
+  "bypass_mode": "always" }]` - `actor_id 5` = repo admin, `always` = bypass in
+  every situation including a direct push. So for any admin, PR-required, the five
+  required checks (incl. `gitleaks`/`audit`), linear history, no force-push, and
+  no deletion were all advisory. "Merged via PR with green checks" and "pushed
+  around the rules" were indistinguishable in history. Not a karda-specific
+  mistake: the org bootstrap reference carried it, so every repo inherited it
+  (surfaced org-wide by `vxture-atlas`, filed here as `vxture-karda`#82).
+- **Fix applied (2026-07-28)**: set `bypass_actors: []` in both the live ruleset
+  (`gh api -X PUT .../rulesets/19556856`) and the repo artifact, so the two do not
+  drift. Verified: live `bypass_actors` is `[]`; all five required checks + PR /
+  linear-history / no-deletion / no-force-push rules intact; enforcement active.
+  `CLAUDE.md` now states `bypass_actors` must stay empty so it is not quietly
+  reintroduced. Break-glass preserved: an admin can still edit/disable the ruleset,
+  but that is a recorded config change with an actor + timestamp, not an invisible
+  per-push exemption.
+- **Upstream note**: the reference `main-ruleset.json` that all org repos bootstrap
+  from is the real root cause - fixing repos without fixing the reference resets
+  the clock. Tracked org-wide at `vxture-platform`#167; karda's local copy is now
+  clean regardless.
+- **Recovery condition**: closed - fixed in the live ruleset and the artifact;
+  standing rule recorded in `CLAUDE.md`.
