@@ -28,6 +28,11 @@ export interface ChatRequest {
   tenantId: string;
   /** The org's active workspace - the S2S token-exchange service context. */
   workspaceId?: string;
+  // Optional attribution. Atlas couples them: applicationType requires an
+  // applicationId, and applicationId must be a UUID from the token context (a
+  // tenant/workspace id), not a product string (verified live 2026-07-27). karda.ask
+  // sends neither - the tenant/workspace/user context is already carried by the
+  // token + the fields above - to keep the request minimal-valid.
   applicationId?: string;
   applicationType?: "agent" | "workflow" | "api_client" | "internal_service";
   userId?: string;
@@ -122,7 +127,6 @@ export async function runAsk(input: AskInput): Promise<AskResult> {
     tenantId: input.tenantId,
     workspaceId: input.workspaceId,
     userId: input.userId,
-    applicationType: "internal_service",
     usageType: "normal",
   });
 
