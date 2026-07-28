@@ -8,11 +8,12 @@
 // so there is no static token to provision - karda mints one from its own OIDC
 // client creds against the platform IdP.
 //
-// Endpoint path is `/model-platform/chat` (`ModelRuntimeController`); the exact
-// path + a valid model code are being confirmed direct with the atlas line
-// (80-liaison/140). Client stays inactive (getGenerationClient -> null) until
-// ATLAS_BASE_URL is set, so karda.ask is honestly not_implemented until Atlas is
-// reachable.
+// Endpoint path is `/v1/chat` - Atlas's canonical data-plane (its authoritative
+// `20-specs/10-http-surface.md`). `/model-platform/chat` is a LEGACY ALIAS Atlas
+// has slated for removal (vxture-atlas#40 / vxture-platform#144), so karda targets
+// `/v1/chat`; overridable via ATLAS_CHAT_PATH. Client stays inactive
+// (getGenerationClient -> null) until ATLAS_BASE_URL is set, so karda.ask is
+// honestly not_implemented until Atlas is reachable.
 import { assertInternalTarget } from "../../lib/internal-target";
 import type { GenerationClient, ChatRequest, ChatResponse } from "./ask";
 import { getAtlasTokenSource, type AtlasTokenSource } from "./atlas-token";
@@ -26,7 +27,7 @@ export interface AtlasClientConfig {
 
 type FetchLike = typeof fetch;
 
-export const DEFAULT_ATLAS_CHAT_PATH = "/model-platform/chat";
+export const DEFAULT_ATLAS_CHAT_PATH = "/v1/chat";
 
 export class AtlasA4Client implements GenerationClient {
   constructor(
