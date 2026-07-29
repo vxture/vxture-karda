@@ -9,11 +9,11 @@
 // client creds against the platform IdP.
 //
 // Endpoint path is `/v1/chat` - Atlas's canonical data-plane (its authoritative
-// `20-specs/10-http-surface.md`). `/model-platform/chat` is a LEGACY ALIAS Atlas
-// has slated for removal (vxture-atlas#40 / vxture-platform#144), so karda targets
-// `/v1/chat`; overridable via ATLAS_CHAT_PATH. Client stays inactive
-// (getGenerationClient -> null) until ATLAS_BASE_URL is set, so karda.ask is
-// honestly not_implemented until Atlas is reachable.
+// `20-specs/10-http-surface.md`). The old `/model-platform/*` aliases were REMOVED
+// 2026-07-28 (they now 404, verified live 2026-07-29) - `/v1/*` is the only path.
+// Overridable via ATLAS_CHAT_PATH. Client stays inactive (getGenerationClient ->
+// null) until ATLAS_BASE_URL is set, so karda.ask is honestly not_implemented
+// until Atlas is reachable.
 import { assertInternalTarget } from "../../lib/internal-target";
 import type { GenerationClient, ChatRequest, ChatResponse } from "./ask";
 import { getAtlasTokenSource, type AtlasTokenSource } from "./atlas-token";
