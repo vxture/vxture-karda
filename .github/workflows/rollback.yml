@@ -124,6 +124,10 @@ jobs:
           export IMAGE_TAG="$IMAGE_TAG"
           export FALLBACK_IMAGE_REGISTRY="$ALIYUN_ACR_REGISTRY"
           export FALLBACK_IMAGE_NAMESPACE="$ALIYUN_ACR_NAMESPACE"
+          # Library-image fallback source (see deploy.yml): the ACR relay the
+          # deploy chain maintains for non-owned compose images.
+          export LIBRARY_IMAGE_REGISTRY="$ALIYUN_ACR_REGISTRY"
+          export LIBRARY_IMAGE_NAMESPACE="$ALIYUN_ACR_NAMESPACE"
           printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
           if [ -n "${ALIYUN_ACR_USERNAME:-}" ] && [ -n "${ALIYUN_ACR_PASSWORD:-}" ]; then
             printf '%s' "$ALIYUN_ACR_PASSWORD" | timeout 45 docker login "$ALIYUN_ACR_REGISTRY" -u "$ALIYUN_ACR_USERNAME" --password-stdin || true
