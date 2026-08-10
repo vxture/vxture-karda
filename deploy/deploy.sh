@@ -70,6 +70,31 @@ prune_old_app_images() {
   log "pruned old ${IMAGE_NAME} images (kept ${keep})"
 }
 
+# Pull a non-owned (library) image: three bounded attempts at the original
+# name, then the ACR relay (LIBRARY_IMAGE_REGISTRY/NAMESPACE, populated by the
+# deploy workflow's pre-SSH relay step) tagged back to the compose-expected
+# name. Real incident: docker.io CloudFront blobs connection-reset on every
+# retry from this host while the ACR copy pulled instantly.
+pull_library_image() {
+  local image="$1" attempt
+  local basename="${image##*/}"
+  for attempt in 1 2 3; do
+    if timeout 180 docker pull "$image"; then return 0; fi
+    log "pull attempt ${attempt}/3 failed: ${image}"
+  done
+  if [ -n "${LIBRARY_IMAGE_REGISTRY:-}" ] && [ -n "${LIBRARY_IMAGE_NAMESPACE:-}" ]; then
+    local relay="${LIBRARY_IMAGE_REGISTRY}/${LIBRARY_IMAGE_NAMESPACE}/${basename}"
+    log "falling back to ACR relay: ${relay}"
+    if timeout 300 docker pull "$relay"; then
+      docker tag "$relay" "$image"
+      return 0
+    fi
+  else
+    log "no LIBRARY_IMAGE_* relay configured; cannot fall back"
+  fi
+  return 1
+}
+
 cmd_start() {
   local reg="${IMAGE_REGISTRY:-ghcr.io}" ns="${IMAGE_NAMESPACE:-vxture}" tag="${IMAGE_TAG:-latest}"
   local primary="${reg}/${ns}/${IMAGE_NAME}:${tag}"
@@ -89,15 +114,18 @@ cmd_start() {
   # always already present. Re-pulling them every deploy is what once wedged a
   # China-host deploy for 40 min on a slow Docker Hub mirror - so pull only a base
   # image that is actually MISSING, and bound even that with a timeout so a slow
-  # mirror can never hang the deploy on an image we already have. (Docker Hub pull
-  # speed itself is a daemon registry-mirror concern, configured on the host.)
+  # mirror can never hang the deploy on an image we already have. A missing image
+  # that fails its docker.io pulls falls back to the ACR relay the deploy
+  # workflow maintains (LIBRARY_IMAGE_*), tagged back to the compose-expected
+  # name; only when BOTH sources fail does the deploy stop (compose up would
+  # fail on the missing image anyway - fail loudly here instead).
   local base
   for base in $(compose config --images 2>/dev/null | grep -Ev "/${IMAGE_NAME}:" || true); do
     if docker image inspect "$base" >/dev/null 2>&1; then
       log "base image present, skip pull: ${base}"
     else
       log "pulling missing base image: ${base}"
-      timeout 180 docker pull "$base" || log "base pull skipped (timeout/failure): ${base}"
+      pull_library_image "$base" || { log "ERROR: cannot obtain base image ${base} from any source"; exit 1; }
     fi
   done
   compose up -d
