@@ -3,22 +3,28 @@
 # Build context = repo root (so the workspace and lockfile are visible).
 # Produces the single owned image <code>-app.
 
-FROM node:22-alpine AS base
+FROM node:24-alpine AS base
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH
-RUN corepack enable
+RUN corepack enable && corepack prepare pnpm@11.21.0 --activate
 
 # --- deps + build ---
 FROM base AS builder
 WORKDIR /repo
 COPY . .
 # The GitHub Packages token (for @vxture/*, e.g. @vxture/shared - TD-001) rides
-# a BuildKit secret, read via .npmrc's ${NODE_AUTH_TOKEN} - never a build-arg,
-# never baked into a layer. Required: the app depends on @vxture/shared.
+# a BuildKit secret - never a build-arg, never baked into a layer. pnpm 11 no
+# longer expands ${NODE_AUTH_TOKEN} in the project .npmrc, so the token is
+# written to /root/.npmrc for the install and removed in the SAME layer.
 ARG VXTURE_NPM_REGISTRY
 RUN --mount=type=secret,id=node_auth_token \
     --mount=type=cache,id=pnpm,target=/pnpm/store \
-    NODE_AUTH_TOKEN="$(cat /run/secrets/node_auth_token 2>/dev/null || true)" \
-    pnpm install --frozen-lockfile
+    set -e; \
+    token="$(cat /run/secrets/node_auth_token 2>/dev/null || true)"; \
+    if [ -n "$token" ]; then \
+      printf '//npm.pkg.github.com/:_authToken=%s\n' "$token" >> /root/.npmrc; \
+    fi; \
+    pnpm install --frozen-lockfile; \
+    rm -f /root/.npmrc
 RUN pnpm --filter @karda/app build
 
 # --- runner (Next standalone, non-root, never migrates) ---

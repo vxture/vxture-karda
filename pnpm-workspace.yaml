@@ -3,3 +3,21 @@
 packages:
   - "portals/*"
   - "portals/packages/*"
+
+# Security pin overrides. pnpm 11 no longer reads package.json's pnpm.overrides;
+# this block IS the former root-package.json block, moved verbatim - keep the
+# pins when editing here.
+overrides:
+  "postcss@<8.5.10": ">=8.5.10"
+  "@hono/node-server@<1.19.13": ">=1.19.13"
+  "sharp@<0.35.0": ">=0.35.0"
+  "valibot@<1.4.2": ">=1.4.2"
+
+# pnpm 11 build-script allowlist. MAPPING form on purpose: written as a list,
+# pnpm rewrites the file with garbage keys (arda, observed).
+allowBuilds:
+  "@prisma/engines": true
+  "@prisma/client": true
+  prisma: true
+  esbuild: true
+  sharp: true
