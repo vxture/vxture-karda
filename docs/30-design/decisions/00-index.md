@@ -4,8 +4,6 @@ Append-only log of architecture decisions for this repo. Each ADR is a file name
 `ADR-NNN-slug.md` with a stable, never-reused, never-renumbered ID (taxonomy
 meta-rule section 4). New decisions append; IDs may skip.
 
-Empty - no karda decisions have been recorded yet.
-
 | ID | Title | Status | Date |
 |----|-------|--------|------|
-| _(none yet)_ | | | |
+| ADR-001 | Adopt platform ADR-007 database naming (`vx_karda_db`) | accepted | 2026-08-10 |

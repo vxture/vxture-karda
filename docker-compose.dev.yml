@@ -1,0 +1,93 @@
+# Local dev stack (runos-style), prod-isomorphic: same Dockerfile/runner stage,
+# same pg18 layout, same vx_karda_db name, and the app connects as the
+# least-privilege karda_svc role exactly like production.
+#
+#   NODE_AUTH_TOKEN=$(gh auth token) docker compose -f docker-compose.dev.yml up -d --build
+#   bash deploy/database/apply-local-dev.sh     # baseline + 97 + 98 (NEVER incr/)
+#   curl http://127.0.0.1:3000/api/health
+#
+# gh's token carries read:packages, which is all the @vxture/* install needs.
+# The token rides a BuildKit secret (never a build-arg, never a layer).
+name: karda
+
+services:
+  app:
+    container_name: vx-karda-app-dev
+    build:
+      context: .
+      dockerfile: portals/app/Dockerfile
+      target: runner
+      secrets:
+        - node_auth_token
+      args:
+        APP_VERSION: dev
+        GIT_SHA: ${GIT_SHA:-unknown}
+        BUILD_TIME: ${BUILD_TIME:-unknown}
+        DEPLOY_STAGE: dev
+    image: karda-app:local
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      REDIS_URL: redis://vx-karda-redis-db-dev:6379
+      DATABASE_URL: postgresql://karda_svc:${KARDA_DEV_SVC_PASSWORD:-karda-dev}@vx-karda-postgres-db-dev:5432/vx_karda_db
+      # Local http: no OIDC (mock resolver, unconfigured C1) and a non-__Host
+      # session cookie name (see .env.example).
+      OIDC_RP_ENABLED: "off"
+      RP_SESSION_COOKIE_NAME: vx_rp_session
+      STATUS_PAGE: public
+      STATUS_SHOW_INFRA: "on"
+    ports:
+      - "${APP_PUBLISH_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks: [devnet]
+    restart: unless-stopped
+
+  redis:
+    container_name: vx-karda-redis-db-dev
+    image: redis:8-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    networks: [devnet]
+    restart: unless-stopped
+
+  db:
+    container_name: vx-karda-postgres-db-dev
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: vx_karda_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${KARDA_DEV_DB_OWNER_PASSWORD:-karda-dev-owner}
+    volumes:
+      # Parent-directory mount (pg18 keeps data in a versioned subdirectory).
+      - dbdata:/var/lib/postgresql
+    healthcheck:
+      # Real query against the target db, NOT pg_isready (init-probe trap: the
+      # temp init server answers pg_isready before POSTGRES_DB exists).
+      test: ["CMD-SHELL", "psql -U postgres -d vx_karda_db -c 'SELECT 1' >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [devnet]
+    restart: unless-stopped
+
+secrets:
+  node_auth_token:
+    environment: NODE_AUTH_TOKEN
+
+volumes:
+  dbdata:
+  redisdata:
+
+networks:
+  devnet:
+    name: vx-karda-dev-net
