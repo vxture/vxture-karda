@@ -12,8 +12,9 @@ karda product domain - knowledge model, ingestion/processing, retrieval tooling,
 arda channel - is the blank zone and is designed here.
 
 The product code is already resolved everywhere; there is no placeholder left to
-substitute. Derived names (`@karda/*`, `karda-app`, `vxturebiz_karda_<env>`,
-`karda_svc`, `KARDA_*` secrets, `karda.vxture.com`) are contracts - do not rename.
+substitute. Derived names (`@karda/*`, `karda-app`, `vx_karda_db` (ADR-007,
+same name in every env), `karda_svc`, `KARDA_*` secrets, `karda.vxture.com`)
+are contracts - do not rename.
 
 ## Where authority lives
 

@@ -12,6 +12,10 @@ services:
     build:
       context: .
       dockerfile: portals/app/Dockerfile
+      # Explicit runtime stage: without --target docker builds the LAST stage,
+      # so any stage appended after `runner` would silently become the image
+      # entrypoint. Pin it here and in build.yml.
+      target: runner
       # Local `compose build` only; the deploy path pulls the CI-built image (which
       # injects real provenance). Honest dev/unknown defaults for local builds.
       args:
@@ -47,7 +51,7 @@ services:
 
   redis:
     container_name: ${PROJECT_NAME:-karda}-redis
-    image: redis:7-alpine
+    image: redis:8-alpine
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - ${DATA_DIR:-./data}/redis:/data
@@ -56,17 +60,30 @@ services:
 
   db:
     container_name: ${PROJECT_NAME:-karda}-db
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     environment:
       # The container superuser is the DB OWNER, NOT the service role. The DDL
       # (db-init, as this owner) creates the least-privilege <code>_svc role that
       # the app connects as via DATABASE_URL (product_240 section 2.7: connect
       # identity = <code>_svc, never owner-direct).
-      POSTGRES_DB: ${POSTGRES_DB:-vxturebiz_${PRODUCT_CODE_SNAKE:-karda}_prod}
+      # DB name per platform ADR-007: vx_karda_db in EVERY environment - the
+      # env lives in the stack/instance, never in the database name.
+      POSTGRES_DB: ${POSTGRES_DB:-vx_${PRODUCT_CODE_SNAKE:-karda}_db}
       POSTGRES_USER: ${POSTGRES_DB_OWNER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
     volumes:
-      - ${DATA_DIR:-./data}/db:/var/lib/postgresql/data
+      # Mount the PARENT directory, not .../data: the 18+ image refuses a
+      # pre-18 layout at the old mount point and keeps data in a versioned
+      # subdirectory instead, which is what makes pg_upgrade --link possible.
+      - ${DATA_DIR:-./data}/db:/var/lib/postgresql
+    healthcheck:
+      # A real query against the target database, NOT pg_isready: during first
+      # init the entrypoint runs a temporary server where POSTGRES_DB does not
+      # exist yet but pg_isready already reports success.
+      test: ["CMD-SHELL", "psql -U ${POSTGRES_DB_OWNER:-postgres} -d ${POSTGRES_DB:-vx_karda_db} -c 'SELECT 1' >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
     networks: [appnet]
     restart: unless-stopped
 

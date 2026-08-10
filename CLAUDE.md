@@ -31,7 +31,9 @@ registration):
 
 OIDC client pair `karda` / `karda-beta`; compose project and container prefix
 `karda-app` / `karda-redis` / `karda-db`; image name `karda-app`; database
-`vxturebiz_karda_beta` / `vxturebiz_karda_prod` with service role `karda_svc`;
+`vx_karda_db` (ADR-007: same name in every environment, env lives in the
+stack/instance - migrated from `vxturebiz_karda_*` 2026-08-10) with service role
+`karda_svc`;
 workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 `KARDA_PROVISION_WEBHOOK_SECRET`, `KARDA_WEBHOOK_BASE_URL`; public host
 `karda.vxture.com`.

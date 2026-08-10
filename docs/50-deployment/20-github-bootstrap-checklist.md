@@ -67,7 +67,7 @@ over from the template. Allocation decided 2026-07-23 (owner):
       cannot find its env_file. Set via PowerShell/UI, not Git Bash (MSYS mangles
       a leading `/`).
 - [ ] `ENV_FILE_BASE64` - base64 of karda's `.env`, built from `.env.example`
-      (host `karda.vxture.com`, DB `vxturebiz_karda_prod` / role `karda_svc`,
+      (host `karda.vxture.com`, DB `vx_karda_db` / role `karda_svc`,
       `APP_PUBLISH_PORT=3240`, plus the OIDC / webhook / internal-job secrets).
       Bootstrap only writes it when the host has no `.env`; an existing one is
       never overwritten. **Owner transport.**

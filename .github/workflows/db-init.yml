@@ -135,7 +135,9 @@ jobs:
           set -euo pipefail
           cd "$DDL_STAGE"
           echo "[db-init] DDL source: $DDL_STAGE (pinned $PINNED_SHA)"
-          DB="vxturebiz_${SNAKE}_prod"
+          # ADR-007 naming: one db name in every environment (env is carried by
+          # the stack/instance, never by the database name).
+          DB="vx_${SNAKE}_db"
           CONT="${PRODUCT_CODE}-db"
           ENV_FILE="$(cd "$REPO_DIR/.." && pwd)/etc/.env"
           run() { docker exec -i "$CONT" psql -U postgres -d "$DB" -v ON_ERROR_STOP=1 "$@"; }

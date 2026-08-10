@@ -24,7 +24,7 @@ const FULL_ENV = {
   RP_SESSION_COOKIE_NAME: "__Host-vx_rp_session",
   PLATFORM_API_URL: "http://platform.internal",
   NEXT_PUBLIC_CONSOLE_URL: "https://console.vxture.com",
-  DATABASE_URL: `postgresql://karda_svc:${SECRETS.POSTGRES_PASSWORD}@karda-db:5432/vxturebiz_karda_prod`,
+  DATABASE_URL: `postgresql://karda_svc:${SECRETS.POSTGRES_PASSWORD}@karda-db:5432/vx_karda_db`,
   REDIS_URL: "redis://karda-redis:6379",
 };
 
@@ -54,8 +54,8 @@ test("resolver = platform only when both API url and token are set", () => {
 });
 
 test("parseDbUrl extracts host/db/role and DROPS the password", () => {
-  const p = parseDbUrl(`postgresql://karda_svc:${SECRETS.POSTGRES_PASSWORD}@karda-db:5432/vxturebiz_karda_prod`);
-  assert.deepEqual(p, { host: "karda-db", db: "vxturebiz_karda_prod", role: "karda_svc" });
+  const p = parseDbUrl(`postgresql://karda_svc:${SECRETS.POSTGRES_PASSWORD}@karda-db:5432/vx_karda_db`);
+  assert.deepEqual(p, { host: "karda-db", db: "vx_karda_db", role: "karda_svc" });
   assert.equal(JSON.stringify(p).includes(SECRETS.POSTGRES_PASSWORD), false);
   assert.equal(parseDbUrl(undefined), null);
 });
