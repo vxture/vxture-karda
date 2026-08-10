@@ -1,14 +1,20 @@
-# Local dev stack (runos-style), prod-isomorphic: same Dockerfile/runner stage,
-# same pg18 layout, same vx_karda_db name, and the app connects as the
-# least-privilege karda_svc role exactly like production.
+# Local dev stack - builds the app image from the working tree and runs the
+# full karda group (app + postgres + redis) on this machine, mirroring the
+# runos/atlas/arda local-stack conventions:
 #
+#   compose project  karda                      (Docker Desktop group)
+#   containers       vx-karda-app-dev / vx-karda-postgres-db-dev / vx-karda-redis-db-dev
+#   image            ghcr.io/vxture/karda-app:local   (compose build, never pushed)
+#
+# This file NEVER deploys anywhere: the deploy stacks use docker-compose.yml
+# with CI-built images. Service names (app/db/redis) are the stable network
+# aliases, so container renames never break a URL.
+#
+# Usage:
 #   NODE_AUTH_TOKEN=$(gh auth token) docker compose -f docker-compose.dev.yml up -d --build
-#   bash deploy/database/apply-local-dev.sh     # baseline + 97 + 98 (NEVER incr/)
-#   curl http://127.0.0.1:3000/api/health
-#
-# gh's token carries read:packages, which is all the @vxture/* install needs.
-# The token rides a BuildKit secret (never a build-arg, never a layer).
-name: karda
+#   bash deploy/database/apply-local-dev.sh     # DDL baseline into the dev db
+#   curl http://localhost:3240/api/health       # karda's allocated port (arda 3230, vxtpl 3232)
+name: ${PROJECT_NAME:-karda}
 
 services:
   app:
@@ -16,78 +22,87 @@ services:
     build:
       context: .
       dockerfile: portals/app/Dockerfile
+      # Explicit last-stage pin (#193): never depend on stage order.
       target: runner
+      # @vxture/* packages come from GitHub Packages; local builds need
+      # NODE_AUTH_TOKEN (gh's token carries read:packages) in the environment.
+      # BuildKit secret, same as CI - never a build-arg.
       secrets:
         - node_auth_token
       args:
-        APP_VERSION: dev
-        GIT_SHA: ${GIT_SHA:-unknown}
+        APP_VERSION: local
+        GIT_SHA: ${GIT_SHA:-local}
         BUILD_TIME: ${BUILD_TIME:-unknown}
         DEPLOY_STAGE: dev
-    image: karda-app:local
+    image: ghcr.io/vxture/karda-app:local
+    ports:
+      # Host port = karda's allocated product port (3240; arda holds 3230,
+      # vxtpl demo 3232) so parallel local stacks never collide. In-container
+      # the app listens on 3000 (Dockerfile PORT), unlike arda whose app
+      # listens on its product port directly.
+      - "${APP_PUBLISH_PORT:-3240}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
     environment:
       NODE_ENV: production
       PORT: "3000"
-      REDIS_URL: redis://vx-karda-redis-db-dev:6379
-      DATABASE_URL: postgresql://karda_svc:${KARDA_DEV_SVC_PASSWORD:-karda-dev}@vx-karda-postgres-db-dev:5432/vx_karda_db
+      REDIS_URL: redis://redis:6379
+      # Connect as the least-privilege service role (prod parity), created by
+      # deploy/database/ddl/97_service_role.sql via apply-local-dev.sh.
+      DATABASE_URL: postgresql://karda_svc:${KARDA_SVC_PASSWORD:-karda_svc_dev}@db:5432/vx_karda_db
       # Local http: no OIDC (mock resolver, unconfigured C1) and a non-__Host
       # session cookie name (see .env.example).
       OIDC_RP_ENABLED: "off"
       RP_SESSION_COOKIE_NAME: vx_rp_session
       STATUS_PAGE: public
       STATUS_SHOW_INFRA: "on"
-    ports:
-      - "${APP_PUBLISH_PORT:-3000}:3000"
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3
-    networks: [devnet]
+      start_period: 20s
+    networks: [appnet]
+    restart: unless-stopped
+
+  db:
+    container_name: vx-karda-postgres-db-dev
+    # postgres 18: parent-dir mount + real-query healthcheck (#192).
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: vx_karda_db
+      # Superuser = DB owner. Karda's owner is `postgres` (matches the prod
+      # compose and db-init), unlike arda which names it after the product.
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-karda}
+    volumes:
+      - karda-dev-pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "psql -U ${POSTGRES_USER:-postgres} -d vx_karda_db -c 'SELECT 1' >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks: [appnet]
     restart: unless-stopped
 
   redis:
     container_name: vx-karda-redis-db-dev
     image: redis:8-alpine
-    command: ["redis-server", "--appendonly", "yes"]
-    volumes:
-      - redisdata:/data
-    networks: [devnet]
+    command: ["redis-server", "--appendonly", "no", "--save", ""]
+    networks: [appnet]
     restart: unless-stopped
 
-  db:
-    container_name: vx-karda-postgres-db-dev
-    image: postgres:18-alpine
-    environment:
-      POSTGRES_DB: vx_karda_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${KARDA_DEV_DB_OWNER_PASSWORD:-karda-dev-owner}
-    volumes:
-      # Parent-directory mount (pg18 keeps data in a versioned subdirectory).
-      - dbdata:/var/lib/postgresql
-    healthcheck:
-      # Real query against the target db, NOT pg_isready (init-probe trap: the
-      # temp init server answers pg_isready before POSTGRES_DB exists).
-      test: ["CMD-SHELL", "psql -U postgres -d vx_karda_db -c 'SELECT 1' >/dev/null 2>&1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    networks: [devnet]
-    restart: unless-stopped
+networks:
+  appnet:
+    name: ${PROJECT_NAME:-karda}-dev-net
+
+volumes:
+  karda-dev-pgdata:
 
 secrets:
   node_auth_token:
     environment: NODE_AUTH_TOKEN
-
-volumes:
-  dbdata:
-  redisdata:
-
-networks:
-  devnet:
-    name: vx-karda-dev-net

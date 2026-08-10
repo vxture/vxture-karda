@@ -13,7 +13,7 @@ set -euo pipefail
 
 CONT="${1:-vx-karda-postgres-db-dev}"
 DB="vx_karda_db"
-SVC_PW="${KARDA_DEV_SVC_PASSWORD:-karda-dev}"
+SVC_PW="${KARDA_SVC_PASSWORD:-karda_svc_dev}"
 DDL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/ddl" && pwd)"
 
 run() { docker exec -i "$CONT" psql -U postgres -d "$DB" -v ON_ERROR_STOP=1 "$@"; }
