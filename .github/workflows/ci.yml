@@ -126,10 +126,17 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Enable corepack (pnpm from packageManager)
         run: corepack enable
+
+      # pnpm 11 no longer expands ${NODE_AUTH_TOKEN} in the project .npmrc, so
+      # the credential goes into ~/.npmrc explicitly before the install.
+      - name: Wire GitHub Packages auth
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+        run: echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> ~/.npmrc
 
       - name: Install (frozen lockfile)
         run: pnpm install --frozen-lockfile
@@ -160,10 +167,17 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Enable corepack (pnpm from packageManager)
         run: corepack enable
+
+      # pnpm 11 no longer expands ${NODE_AUTH_TOKEN} in the project .npmrc, so
+      # the credential goes into ~/.npmrc explicitly before the install.
+      - name: Wire GitHub Packages auth
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+        run: echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> ~/.npmrc
 
       - name: Install (frozen lockfile)
         run: pnpm install --frozen-lockfile
