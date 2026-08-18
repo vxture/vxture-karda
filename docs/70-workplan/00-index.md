@@ -267,7 +267,25 @@ per `docs/30-design/230-runos-channel.md`:
 | Shared backend assembly (`kb/tools/backends.ts`) - one knowledge service behind both channels | done 2026-08-18 |
 | Mint `RUNOS_CHANNEL_TOKEN` -> karda host env -> Runos credential vault (promote hard-gates on the binding) | ops, pending |
 | Register capabilities + endpoint in Runos (opera), promote to stable, grants for consuming agents | ops + runos line, pending |
-| Liaison letter to runos: registration request + caller-identity-forwarding and endpoint-base questions | pending |
+| Liaison letter to runos: registration request + caller-identity-forwarding and endpoint-base questions | **sent 2026-08-18** - `vxture-runos#156` |
+
+### 2026-08-18 - positioning uplift (KD-017): the Vxture Agent Knowledge Platform
+
+The owner's blueprint (2026-08-18) elevates karda's positioning from "enterprise
+knowledge capability domain" to **the shared knowledge infrastructure for AI
+agents** - one of the five agent-infrastructure planes. Landed as
+`docs/20-specs/30-agent-knowledge-blueprint.md` (positioning authority) +
+`10-product-definition.md` v0.5 (statement rewrite, blueprint<->implementation
+vocabulary mapping, v2/v3 roadmap alignment) + KD-017 in the register;
+propagated to README / CLAUDE.md / package.json description.
+
+**What the uplift adds to the roadmap (v2 per definition §9, no new v1 scope):**
+knowledge-asset model (Fact / Claim / Entity / Event / Evidence - closes the
+assertion-level provenance yucer asked in #103 Q14), Contextualization +
+extraction stages in processing, Knowledge API widening (retrieve / get /
+browse / find_entity / get_evidence / get_context on both channels), Atlas A2
+deep-parse wiring, Web/External connectors. RAG is a mechanism, not the product
+boundary; chunks are an intermediate product, not the core model.
 
 Batch 3 is deliberately first and deliberately narrow: every other domain writes
 to or reads from these tables, and `lint:data-design` makes DDL/Prisma drift a

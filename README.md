@@ -1,6 +1,6 @@
 # vxture-karda
 
-Karda - the Vxture enterprise intelligent knowledge service platform.
+Karda - the Vxture Agent Knowledge Platform: the shared knowledge infrastructure for AI agents. It builds, manages, and continuously accumulates enterprise knowledge assets from many sources, and serves shared knowledge, retrieval, and task context to every agent through one Knowledge Service (positioning authority: docs/20-specs/30-agent-knowledge-blueprint.md, KD-017).
 
 This repository is instantiated from `vxture-template` (product code `karda`), so
 it inherits the org governance base unchanged: trunk-based branching, the

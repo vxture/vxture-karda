@@ -4,12 +4,16 @@ Authoritative working agreement for this repo. The goal is a clean, predictable
 branch and deploy flow with no direct human writes to protected branches, on top
 of the org governance base inherited unchanged from `vxture-template`.
 
-This is Karda, the Vxture enterprise intelligent knowledge service platform. It
-was instantiated from `vxture-template` with product code `karda`, so everything
-below the product line - governance, CI/CD, the three platform integration
-channels, the business-face DB baseline - is inherited and rigid. Karda's own
-domain (knowledge model, ingestion/processing, retrieval tooling, arda channel)
-occupies the template's blank zone.
+This is Karda, the Vxture Agent Knowledge Platform - the shared knowledge
+infrastructure for AI agents (positioning authority:
+`docs/20-specs/30-agent-knowledge-blueprint.md`, owner blueprint 2026-08-18,
+KD-017; one of the five agent-infrastructure planes: Atlas thinks, Runos acts,
+Karda knows, Arda holds data, Ontos holds semantics). It was instantiated from
+`vxture-template` with product code `karda`, so everything below the product
+line - governance, CI/CD, the three platform integration channels, the
+business-face DB baseline - is inherited and rigid. Karda's own domain
+(knowledge model, ingestion/processing, retrieval tooling, arda channel, the
+runos supplier channel) occupies the template's blank zone.
 
 **Package manager: pnpm** (whole-stack, owner-decided 2026-07-20). CI cache keys,
 the Dockerfile deps stage, and the osv `--lockfile=pnpm-lock.yaml` path are all
