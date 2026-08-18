@@ -30,7 +30,23 @@ export function ConsoleHeader({ brand }: { brand: string }) {
         fontFamily: "system-ui, sans-serif",
       }}
     >
-      <a href="/console" style={{ textDecoration: "none", color: T.ink, fontWeight: 600, fontSize: 15 }}>
+      <a
+        href="/console"
+        style={{
+          textDecoration: "none",
+          color: T.ink,
+          fontWeight: 600,
+          fontSize: 15,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        {/* Brand mark (public/brand/vxture-logo.png, owner-provided 2026-08-19);
+            the app favicon is the App Router convention file app/favicon.ico,
+            auto-served by Next - no tag needed here. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/vxture-logo.png" alt="" height={20} style={{ display: "block" }} />
         {brand} <span style={{ color: T.sub, fontWeight: 400 }}>Console</span>
       </a>
       <div style={{ fontSize: 13, color: T.sub, display: "flex", gap: 14, alignItems: "center" }}>
