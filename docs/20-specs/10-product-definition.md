@@ -1,35 +1,75 @@
 # Karda 产品定位与设计思路(Product Definition)
 
-> 版本:v0.4
+> 版本:v0.5
 > 状态:Draft — 迭代基线
-> 上游文档:product_100_matrix、product_110_sharing-isolation(含用户维度增补 v2)、product_200_integration、product_210_tool-protocol v1.0
-> 约束基线:product_110 已固化项与 product_210 协议规范对本文档具有约束力
+> 上游文档:**30-agent-knowledge-blueprint(owner 蓝图,定位权威)**、product_100_matrix、product_110_sharing-isolation(含用户维度增补 v2)、product_200_integration、product_210_tool-protocol v1.0
+> 约束基线:product_110 已固化项与 product_210 协议规范对本文档具有约束力;**定位与方向以 30-blueprint 为准**
 >
-> **v0.4 变更摘要**(相对 v0.3):
-> 1. 文档角色调整:主文档承载定位、结构与已定决策,细节设计归 karda_{NNN} 子文档族(§2 族谱),消除双处维护;
-> 2. 对象模型对齐 100-kb-model:新增 Entry(条目型内容)与双模板机制(ProcessingTemplate / ContentTemplate)、Folder、三段式元数据、双正交状态机;
-> 3. 检索域对齐 120-retrieval-tools:RRF + 统一精排、verification_filter 质量档位、关联清单服务端表达、kb_ids 仅收窄;
-> 4. 工具面对齐 120-retrieval-tools:v1 七工具清单、创建/写入类仅 OBO、治理动作不进工具面;
-> 5. Arda 接口对齐 200-arda-channel:notify-then-pull、Binding 模型、revoke_binding 级联、v1 不透传源侧 ACL;
-> 6. v1 范围与待拍板项同步更新(子文档级待拍板归子文档,本文只留产品级)。
+> **v0.5 变更摘要**(相对 v0.4)— **定位提升**(owner 2026-08-18,KD-017):
+> 1. 定位陈述由"企业知识能力域(被 agent 关联使用的 L2 平台)"提升为 **Vxture 面向 AI Agent 的共享知识基础设施**——五平台之一(Atlas 思考 / Runos 行动 / Karda 知识 / Arda 数据 / Ontos 语义),owner 蓝图收编为 `30-agent-knowledge-blueprint.md` 并成为定位权威;
+> 2. 产品边界重述:**RAG 是 Karda 的一种检索/上下文机制,不是产品边界;Chunk 是加工中间产物,不是核心知识模型**——核心主线是 Multi-source → Knowledge → Index → Retrieval → Context → Agent,及 Agent → Karda → Shared Knowledge → Agent 沉淀闭环;
+> 3. 新增 §1.1 蓝图↔现行实现词汇映射(已建 / 承载中 / 路线三态,不推翻任何已裁 KD);
+> 4. 演进路线(§9)对齐蓝图:知识资产模型(Fact/Claim/Entity/Event/Evidence)、Knowledge API 扩面(retrieve/get_context/get_evidence/find_entity/browse)、Contextualization、Agentic/Graph Retrieval 入 v2/v3;
+> 5. 通道事实更新:Knowledge Service 双通道(直连 S2S + Runos MCP,`230-runos-channel`),Runos 通道含 service 模式写入(落 processing/draft,蓝图 §15 的沉淀阶梯)。
 
 ---
 
 ## 1. 定位陈述
 
-**Karda — 企业知识能力域(Enterprise Knowledge Intelligence Platform)。**
+**Karda — Vxture 面向 AI Agent 的共享知识基础设施(Vxture Agent Knowledge Platform)。**
 
-> 知识加工、检索与治理能力的域平台,托管平台 / 组织 / 用户三级知识库,被 agent 经关联集成应用。
+> Karda 从多源(文件 / 网络 / 业务系统 / Arda / Agent)构建、管理、组织并持续沉淀企业知识资产,
+> 经统一 Knowledge Service 为多个 Agent 提供共享知识、检索与任务上下文。它与 Atlas(思考)、
+> Runos(行动)、Arda(数据)、Ontos(语义)并列,是 Vxture Agent 基础设施的五平台之一。
+> (定位权威与完整论证:`30-agent-knowledge-blueprint.md`)
 
-四个定语界定其本质:
+三条核心价值(蓝图 §4):
 
-1. **能力域,不是知识汇聚中心**:提供加工与检索能力并托管知识资产,不主张"平台拉通"——知识由属主创建、发布由属主意愿 + 管理员执行逐级公开、使用由关联决定;
-2. **全量托管,授权即隔离**:非结构化知识加工后表示统一,托管水位线为全量;知识边界由授权逻辑 + 索引命名空间成立,无物理分库兜底;
+1. **企业知识资产化**——分散信息变成统一管理的知识资产;
+2. **Agent 之间的知识共享**——不同 Agent 不再各自建设独立知识库;
+3. **Agent 工作过程中持续沉淀知识**——读取 → 执行 → 产生 → 确认 → 沉淀的闭环,Karda 是持续演化的 Agent Shared Knowledge Layer。
+
+三条边界原则(蓝图 §10/§13):
+
+- **RAG 是机制不是边界**:RAG 只是 Karda 的一种 Retrieval / Context Assembly 机制;将来 Agent 主用 Agentic / Graph / 结构化检索,定位不变;
+- **Chunk 是中间产物**:Karda 管理的是知识资产(Document/Fact/Claim/Entity/Event/Evidence…),不是 Chunk;
+- **两个 Source of Truth**:业务事实真值在业务系统(经 Runos/Arda 查询),知识资产真值在 Karda——Karda 不做业务数据的最终主存储。
+
+结构与治理原则(承接 v0.4,继续有效——定位提升不改变这些已裁结构):
+
+1. **不主张"平台拉通"**:知识由属主创建、发布由属主意愿 + 管理员执行逐级公开、使用由关联/指名决定;
+2. **全量托管,授权即隔离**:托管水位线为全量;知识边界由授权逻辑 + 索引命名空间成立,无物理分库兜底;
 3. **库跟人走,产品零绑定**:U 级库治理锚定 home WS、使用随属主跨 WS;产品与库之间只有"关联使用"关系;
-4. **L2 统一原型实例**:能力层 + P-T-U 资产层 + 授权层,能力按 L0 工具协议(product_210)直连暴露。
+4. **L2 统一原型实例**:能力层 + P-T-U 资产层 + 授权层;Knowledge Service 双通道暴露——L0 工具协议直连(product_210)+ Runos 能力面(`230-runos-channel`),两通道同一服务。
 
 **仓库描述(英文,同步 product_100)**:
-Enterprise Knowledge Intelligence Platform — knowledge processing, retrieval, and governance capabilities, hosting platform / organization / user knowledge bases, attached and applied by agents.
+Vxture Agent Knowledge Platform — the shared knowledge infrastructure for AI agents: builds, manages, and continuously accumulates enterprise knowledge assets from many sources, and serves shared knowledge, retrieval, and task context to every agent through one Knowledge Service.
+
+### 1.1 蓝图 ↔ 现行实现词汇映射(定位提升不推翻已建之物)
+
+三态:**已建**(代码在产)/ **承载中**(蓝图概念由现有结构承载,暂不新建对象)/ **路线**(蓝图方向,入 §9 演进)。
+
+| 蓝图概念(30-blueprint) | 现行实现 | 状态 |
+|---|---|---|
+| Knowledge Space | org / workspace 维度 + P-T-U 资产分层 | 承载中(v2 复议是否显式化为对象) |
+| Knowledge Collection | `knowledge_base`(库,单一类型 + 双模板)+ Folder | 已建 |
+| Source:File / Arda / Agent | 上传;connector 框架(`220`)+ arda 通道(`200`);工具面与 Runos 通道写入 | 已建 |
+| Source:Web / External Systems | — | 路线(v2,connector 框架的新连接器) |
+| Processing:Parse/Chunk/Embedding | 五段管线 fetch/parse/chunk/embed/commit;向量化经 Atlas A1(2026-08-18 live-ready) | 已建 |
+| Processing:OCR / Layout / 表格(深解析) | Atlas A2 已上线,karda 深解析路径尚未接线 | 路线(近期) |
+| Processing:Contextualization / Entity·Fact 抽取 | — | 路线(v2,Fact/Entity 资产的前置) |
+| Asset:Document | `document`(内容态 + 治理态双状态机) | 已建 |
+| Asset:结构化条目(Procedure/Rule 的卡片化承载) | `entry` + ContentTemplate(FAQ/术语/SOP) | 已建 |
+| Asset:Fact / Claim / Entity / Event / Evidence | — | 路线(v2 起;依赖抽取管线 + Ontos schema;yucer #103 Q14 的断言级溯源在此闭合) |
+| Chunk(中间产物) | `chunk` + `chunk_embedding`(ADR-002) | 已建(按蓝图定性:非核心模型) |
+| Index:Vector / Full-text / Metadata | `chunk_embedding` + BM25 + filterable 白名单 | 已建 |
+| Index:Graph / Structured | — | 路线(v2/v3,图谱归属待 KD-205) |
+| Retrieval:Hybrid / Rerank | RRF 双路 + Atlas A3 统一精排 + verification_filter | 已建 |
+| Retrieval:Entity / Graph / Agentic / Navigation | — | 路线(v2/v3) |
+| Knowledge API:search / write_knowledge | `karda.search` / `karda.ask`;`write_document` / `create_entry` | 已建(双通道) |
+| Knowledge API:retrieve / get / browse / find_entity / get_evidence / get_context | — | 路线(v2 扩面;get_evidence 依赖 Evidence 资产) |
+| Agent 沉淀阶梯(蓝图 §15:Draft → Review/Verify → Published) | 写入落 processing/draft → 索引 → 验证治理(unverified/verified/stale)+ 发布阶梯 | 已建(即现行治理域) |
+| 经 Runos 暴露的 Knowledge Resource(蓝图 §12) | `karda.kb-read` / `karda.kb-write`(`230-runos-channel`,MCP 端点) | 已建(Runos 侧注册进行中) |
 
 ---
 
@@ -37,7 +77,8 @@ Enterprise Knowledge Intelligence Platform — knowledge processing, retrieval, 
 
 | 路径 | 范围 | 状态 |
 |---|---|---|
-| `docs/20-specs/10-product-definition`(本文) | 定位、结构、已定决策、v1 范围、产品级待拍板 | v0.4 |
+| `docs/20-specs/30-agent-knowledge-blueprint` | **定位权威**:owner 蓝图——五平台关系、六能力域、知识资产模型、边界表、第一阶段范围 | v1.0(2026-08-18) |
+| `docs/20-specs/10-product-definition`(本文) | 定位落地、结构、已定决策、v1 范围、产品级待拍板 | v0.5 |
 | `docs/30-design/100-kb-model` | 对象模型、双模板、层级、元数据、生命周期、库级配置面 | v0.1 |
 | `docs/30-design/110-processing` | 解析管线、分块参数化、增量与重建、失败重试工程 | v0.1 |
 | `docs/30-design/120-retrieval-tools` | 检索求值链、联合召回、可见集缓存、关联表达、工具面 | v0.1 |
@@ -46,7 +87,7 @@ Enterprise Knowledge Intelligence Platform — knowledge processing, retrieval, 
 > 编号即引用键(本仓文档约定 `docs/00-meta/10-docs-convention.md` §3):正文互引写编号或
 > `NNN-slug`,改 slug 不打断引用。`product_NNN` 前缀的引用指向 **platform 仓**文档,不在本仓。
 
-冲突裁决序:product_110/210(平台约束)> 本文(产品决策)> 子文档(设计细节);子文档间冲突以本文登记的决策为准。
+冲突裁决序:product_110/210(平台约束)> **30-blueprint(定位与方向)** > 本文(产品决策)> 子文档(设计细节);子文档间冲突以本文登记的决策为准。定位提升(KD-017)不推翻既有 KD 裁定——结构冲突逐条经决策登记收口,不默改。
 
 ---
 
@@ -168,13 +209,17 @@ Karda 作为 caller(调 Atlas/Arda)遵守 product_210 §3.4;Binding 登记用 OB
 - 协议面:七工具 + 全部 RP/计量义务;
 - Console:库管理(含双模板配置)、发布/晋升/移交、包订阅与实例化、关联清单管理、召回测试、失败件视图、基础用量。
 
-### v2
+### v2(对齐蓝图 §7/§8/§11:知识资产模型起步)
 
-图谱抽取 + GraphRAG 混合检索(Ontos 实例消费);治理域深化(验证规则化、质量报告);自适应检索;P 级知识包 SKU 化与内容生产管线;org 自建加工模板;定向共享(grantee=user)与源 ACL 透传视需求;silo-on-demand 审批流;工具面治理动作(带确认交互)复议。
+- **知识资产扩型**(蓝图核心方向):Contextualization + Entity / Fact / Evidence 抽取入加工管线;Fact / Claim / Entity / Event / Evidence 成为一等资产对象(断言级溯源在此闭合——据谁所说、何时、哪一版);
+- **Knowledge API 扩面**:retrieve / get / browse / find_entity / get_evidence / get_context,双通道同步暴露;
+- **深解析接线**:Atlas A2(OCR / Layout / 表格)接入 deep-parse 路径;
+- 图谱抽取 + GraphRAG 混合检索(Ontos 实例消费,归属待 KD-205);Web / External 连接器;
+- 治理域深化(验证规则化、质量报告);自适应检索;P 级知识包 SKU 化与内容生产管线;org 自建加工模板;定向共享(grantee=user)与源 ACL 透传视需求;silo-on-demand 审批流;工具面治理动作(带确认交互)复议。
 
-### v3(知识运行时方向)
+### v3(知识运行时方向,蓝图 §10 的远端)
 
-基于 agent 活动流的沉淀建议与上下文推送;检索—推理—验证一体化编排,与 Runa 技能生态协同。
+Agentic Retrieval / Graph Retrieval 成为主检索形态(定位不变——RAG 只是机制);基于 agent 活动流的沉淀建议与上下文推送;检索—推理—验证一体化编排,与 Runos 技能生态协同。
 
 ---
 

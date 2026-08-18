@@ -19,9 +19,11 @@ platform repo's `{kind}_{domain}_{NNN}_{slug}` family is not used here.
 | `220-connector-framework.md` | connector capability registry, binding lifecycle, ingest envelope | in repo |
 | `230-runos-channel.md` | karda as a Runos capability supplier: kb-read/kb-write capabilities, the MCP endpoint, channel rules | v1.0 implemented 2026-08-18; Runos-side registration pending |
 
-Product-level authority over these is `docs/20-specs/10-product-definition.md`;
-conflict order is platform constraints (`product_110` / `product_210`, platform
-repo) > product definition > these design docs.
+Product-level authority over these is `docs/20-specs/10-product-definition.md`,
+itself under the positioning authority `docs/20-specs/30-agent-knowledge-blueprint.md`
+(KD-017); conflict order is platform constraints (`product_110` / `product_210`,
+platform repo) > the blueprint (positioning and direction) > the product
+definition > these design docs.
 
 Not yet present: karda's DB schema documents (`2xx` band) and the implementation
 band (`3xx`). The schema docs must land together with `deploy/database/ddl/` and
