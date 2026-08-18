@@ -13,7 +13,7 @@
 # Usage:
 #   NODE_AUTH_TOKEN=$(gh auth token) docker compose -f docker-compose.dev.yml up -d --build
 #   bash deploy/database/apply-local-dev.sh     # DDL baseline into the dev db
-#   curl http://localhost:3240/api/health       # karda's allocated port (arda 3230, vxtpl 3232)
+#   curl http://localhost:3240/api/health       # karda allocated port (registry: arda 3230, vxtpl 4000)
 name: ${PROJECT_NAME:-karda}
 
 services:
@@ -36,11 +36,11 @@ services:
         DEPLOY_STAGE: dev
     image: ghcr.io/vxture/karda-app:local
     ports:
-      # Host port = karda's allocated product port (3240; arda holds 3230,
-      # vxtpl demo 3232) so parallel local stacks never collide. In-container
-      # the app listens on 3000 (Dockerfile PORT), unlike arda whose app
-      # listens on its product port directly.
-      - "${APP_PUBLISH_PORT:-3240}:3000"
+      # R3 (port registry): host port AND in-container port are both karda's
+      # allocated 3240 (arda holds 3230; vxtpl is 4000 since the 2026-08-13
+      # layer reassignment), so parallel local stacks never collide and the
+      # container speaks the same number the registry allocates.
+      - "${APP_PUBLISH_PORT:-3240}:3240"
     depends_on:
       db:
         condition: service_healthy
@@ -48,7 +48,7 @@ services:
         condition: service_started
     environment:
       NODE_ENV: production
-      PORT: "3000"
+      PORT: "3240"
       REDIS_URL: redis://redis:6379
       # Connect as the least-privilege service role (prod parity), created by
       # deploy/database/ddl/97_service_role.sql via apply-local-dev.sh.
@@ -60,7 +60,7 @@ services:
       STATUS_PAGE: public
       STATUS_SHOW_INFRA: "on"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3240/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3

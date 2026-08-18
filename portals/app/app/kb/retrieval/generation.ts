@@ -14,9 +14,9 @@
 // Overridable via ATLAS_CHAT_PATH. Client stays inactive (getGenerationClient ->
 // null) until ATLAS_BASE_URL is set, so karda.ask is honestly not_implemented
 // until Atlas is reachable.
-import { assertInternalTarget } from "../../lib/internal-target";
 import type { GenerationClient, ChatRequest, ChatResponse } from "./ask";
 import { getAtlasTokenSource, type AtlasTokenSource } from "./atlas-token";
+import { atlasPost } from "../atlas/client";
 
 export interface AtlasClientConfig {
   baseUrl: string;
@@ -36,19 +36,16 @@ export class AtlasA4Client implements GenerationClient {
   ) {}
 
   async chat(req: ChatRequest): Promise<ChatResponse> {
-    // Mint (or reuse a cached) aud=atlas bearer for this call's org/ws.
-    const token = await this.cfg.tokenSource.tokenFor({ org: req.tenantId, ws: req.workspaceId ?? "" });
-    // Egress guard: cleartext http only to loopback/private/tailnet (worker-02 is
-    // on the tailnet, so 100.76.219.48:3100 passes; a public host must be https).
-    const url = assertInternalTarget(`${this.cfg.baseUrl.replace(/\/$/, "")}${this.cfg.chatPath}`);
-    const res = await this.fetchImpl(url, {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
-      body: JSON.stringify(req),
-      cache: "no-store",
-    });
-    if (!res.ok) throw new Error(`atlas chat endpoint ${res.status}`);
-    const body: unknown = await res.json().catch(() => null);
+    // The shared /v1 core mints the bearer for this call's org/ws, applies the
+    // egress guard, and turns a non-2xx into a typed AtlasApiError carrying the
+    // envelope's { code, retryable } (never QUOTA_EXHAUSTED - that code was
+    // promised but never thrown; the real one is QUOTA_EXCEEDED, karda#100).
+    const body = await atlasPost(
+      { baseUrl: this.cfg.baseUrl, tokenSource: this.cfg.tokenSource, fetchImpl: this.fetchImpl },
+      this.cfg.chatPath,
+      { org: req.tenantId, ws: req.workspaceId ?? "" },
+      req as unknown as Record<string, unknown>,
+    );
     const content = extractContent(body);
     if (content === null) throw new Error("atlas chat: no content in response");
     return { content };

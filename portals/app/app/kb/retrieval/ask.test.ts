@@ -35,6 +35,7 @@ class CapturingGen implements GenerationClient {
 test("ask retrieves, grounds, generates, and returns citations", async () => {
   const gen = new CapturingGen();
   const r = await runAsk({
+    taskId: "t-test",
     query: "what is x?",
     scope: scopeOf([org("k")]),
     recallers: [bm25({ org: [{ id: "c1", kbId: "k" }] })],
@@ -55,6 +56,7 @@ test("ask retrieves, grounds, generates, and returns citations", async () => {
 test("no retrieval context means no generation and an honest no-context result", async () => {
   const gen = new CapturingGen();
   const r = await runAsk({
+    taskId: "t-test",
     query: "what is x?",
     scope: scopeOf([org("k")]),
     recallers: [bm25({ org: [] })], // nothing recalled
@@ -72,6 +74,7 @@ test("no retrieval context means no generation and an honest no-context result",
 test("the ChatRequest carries tenant/user attribution and temperature 0", async () => {
   const gen = new CapturingGen();
   await runAsk({
+    taskId: "t-test",
     query: "q",
     scope: scopeOf([org("k")]),
     recallers: [bm25({ org: [{ id: "c1", kbId: "k" }] })],
@@ -106,6 +109,7 @@ test("ask only grounds in chunks the resolver can actually return", async () => 
   // and from citations - the answer cannot cite what it was not shown.
   const gen = new CapturingGen();
   const r = await runAsk({
+    taskId: "t-test",
     query: "q",
     scope: scopeOf([org("k")]),
     recallers: [bm25({ org: [{ id: "c1", kbId: "k" }, { id: "c2", kbId: "k" }] })],

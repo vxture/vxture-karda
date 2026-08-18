@@ -8,17 +8,21 @@ import { randomUUID } from "node:crypto";
 import { runSearch, DEFAULT_SEARCH_PARAMS, UnavailableReranker } from "./search";
 import { resolveScope } from "./scope";
 import { Bm25Recaller } from "./bm25-recaller";
-import type { RecallCorpus } from "./corpus";
+import type { RecallCorpus, RecallTextResolver } from "./corpus";
 import type { VisibleSetResolver } from "./visible-set";
 import type { AttachmentStore } from "../attachments/store";
 import { recordUsage } from "../../usage/lib/buffer";
 import { VERIFICATION_FILTERS, type VerificationFilter } from "../lib/state";
 import type { CallerContext } from "../tools/s2s";
+import { retrievalAtlas, type RetrievalAtlas } from "../atlas/wiring";
+import { taskIdOr } from "../atlas/client";
 
 export interface SearchToolDeps {
   visibleSet: VisibleSetResolver;
   attachments: AttachmentStore;
   corpus: RecallCorpus;
+  /** Candidate texts for the cross-encoder; without it rerank stays degraded. */
+  textResolver?: RecallTextResolver;
 }
 
 export interface SearchToolResult {
@@ -56,11 +60,20 @@ export async function searchTool(caller: CallerContext, args: Record<string, unk
 
   const scope = resolveScope({ visibleSet, attached, kbIds });
 
+  // Atlas-side retrieval pieces (6b): a caller-threaded task_id (or a per-call
+  // work-unit id) keys this call's Atlas consumption; vector recall + rerank
+  // wire in only when configured, and the chain degrades whatever is absent.
+  const taskId = taskIdOr(args.task_id, `karda:search:${randomUUID()}`);
+  const atlas: RetrievalAtlas =
+    caller.org && deps.textResolver
+      ? retrievalAtlas({ org: caller.org, ws }, taskId, { texts: deps.textResolver })
+      : { vectorRecaller: null, reranker: null };
+
   const result = await runSearch({
     query: typeof args.query === "string" ? args.query : "",
     scope,
-    recallers: [new Bm25Recaller(deps.corpus)],
-    reranker: new UnavailableReranker(),
+    recallers: [new Bm25Recaller(deps.corpus), ...(atlas.vectorRecaller ? [atlas.vectorRecaller] : [])],
+    reranker: atlas.reranker ?? new UnavailableReranker(),
     params: { ...DEFAULT_SEARCH_PARAMS, topK: topK(args.top_k), verificationFilter: verificationFilter(args.verification_filter) },
   });
 

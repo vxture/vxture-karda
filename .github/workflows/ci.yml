@@ -103,6 +103,9 @@ jobs:
       - name: Workflow guardrail (workflows parse and keep their triggers)
         run: node scripts/guardrails/check-workflows.mjs --strict
 
+      - name: Port-consistency guardrail (registry R3, one story per repo)
+        run: node scripts/guardrails/check-port-consistency.mjs
+
   # -- Quality gate (aggregator; stable required-check name) ------------------
   quality-gate:
     name: quality-gate

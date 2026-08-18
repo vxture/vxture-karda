@@ -21,11 +21,11 @@ deliberately not carried over.
 | ID | Title | Opened | Status |
 |----|-------|--------|--------|
 | TD-009 | Tool surface: ALL nine tools wired (list_kbs/search/ask/write_document/create_entry/create_kb/attach_kb/detach_kb + manifest); `ask` activates once `ATLAS_CHAT_PATH`/`ATLAS_ASK_MODEL` are set | 2026-07-24 | effectively closed - only runtime config (ATLAS_*) + Atlas-blocked recall quality remain |
-| TD-008 | BM25 recaller built + `karda.search` wired end-to-end (local visible-set + scope + BM25 + meter, 2026-07-27); `ask` needs the Atlas A4 client; platform-namespace visible-set + vector recall + rerank still deferred/Atlas-blocked | 2026-07-24 | open - search wired; ask needs A4; vector/rerank Atlas-blocked |
+| TD-008 | BM25 recaller built + `karda.search` wired end-to-end (2026-07-27); vector recall + real rerank built 2026-08-18 (TD-004 closure) | 2026-07-24 | open - only the PLATFORM-namespace (P-tier) visible-set C2 fill remains |
 | TD-007 | Processing pipeline has no real queue worker or raw object storage yet | 2026-07-24 | open - 5a is the pure pipeline; the runtime around it is deferred |
 | TD-006 | Preset seed (`seedPresets`) has no invocation point wired yet | 2026-07-24 | open - seed mechanism undecided |
 | TD-005 | Ownership transfer has no runtime write path (owner_sub is column-locked) | 2026-07-24 | open - needs a privileged path |
-| TD-004 | Batches 5b/6b parked: vectorization and rerank depend on Atlas A1/A3, not yet built | 2026-07-24 | open - awaiting Atlas capability |
+| TD-004 | Batches 5b/6b parked: vectorization and rerank depend on Atlas A1/A3, not yet built | 2026-07-24 | **closed** 2026-08-18 - Atlas /v1 shipped A1/A3; 5b/6b built through the prepared seams |
 | TD-003 | A broken workflow YAML passed all five required checks; nothing in CI reads a workflow file | 2026-07-24 | **closed** 2026-07-24 (same day) |
 | TD-002 | `db-init` applied the host's deployed DDL, not the pinned one - the version pin did nothing | 2026-07-24 | **closed** 2026-07-24 (same day) |
 | TD-001 | Beta tier not yet wired: development phase deploys straight to production, so the standard's second tag->env tier is dormant | 2026-07-22 | open - awaiting the beta server |
@@ -146,6 +146,20 @@ deliberately not carried over.
   references (`document.storage_ref`, `chunk.vector_ref` already exist in the
   schema) so vectorization is an implementation behind a stable seam, not a
   redesign.
+- **CLOSED 2026-08-18**: Atlas's `/v1` consumption face shipped all four
+  capabilities (chat/embed/rerank/parse - the Atlas interface doc, v0.24.0), so
+  5b/6b were built exactly through the prepared seams: `AtlasEmbedClient`
+  (A1) behind the orchestrator's `EmbeddingClient` port, vector persistence in
+  `karda_kb.chunk_embedding` (ADR-002, written atomically with the chunk-version
+  commit), `VectorRecaller` as the chain's second recaller (cosine, KD-107 model
+  lock, self-degrading to lexical-only), and `AtlasReranker` (A3) behind the
+  `Reranker` port with the existing degrade contract. Parked documents resume via
+  `POST /api/kb/processing/tick {"resume": true}`. Activation is configuration,
+  not code: `ATLAS_EMBED_MODEL` (+ per-KB `embedding_model`) and
+  `ATLAS_RERANK_MODEL|TASK_PROFILE` on the host, plus Atlas-side grants for the
+  chosen models (A1 currently serves Zhipu-family embedding models only). The
+  A2 deep-parse path stays permanent-fail-for-now by choice (quality enhancer,
+  KD-101), tracked in the workplan rather than here.
 
 ## TD-005 - ownership transfer has no runtime write path
 
@@ -216,10 +230,13 @@ deliberately not carried over.
   pure pieces; the impure singleton is the one untested edge, by design.
 - **What is still deferred**: (1) IR persistence so a resume skips re-parsing;
   (2) an external scheduler (host cron / platform) actually calling `tick` on an
-  interval - the endpoint exists but nothing drives it yet; (3) sourcing the KB's
-  real `processing_params` / `embedding_model` for the config fingerprint and
-  resolver - the KB row exposes only `processing_template_id` today, so both
-  default (inert while A1 is down, since embed suspends regardless).
+  interval - the endpoint exists but nothing drives it yet (it now also accepts
+  `{"resume": true}` to wake the parked fleet). (3) is partly resolved
+  2026-08-18: the resolver now sources `embedding_model` from the KB row with an
+  `ATLAS_EMBED_MODEL` fallback; `processing_params` still defaults, and the
+  config fingerprint at enqueue time still passes `embeddingModel: null` (a
+  model change does not yet re-fingerprint - acceptable while the model is
+  workspace-uniform, revisit when per-KB models diverge).
 - **What is Atlas-blocked, separately (TD-004)**: the embed stage's real client
   (A1) and deep-path parsing (A2). The orchestrator already handles their absence
   correctly - deep parse parks as permanent-for-now, embed suspends and resumes -
@@ -262,17 +279,18 @@ deliberately not carried over.
   `not_implemented` until the owner sets `ATLAS_CHAT_PATH` + `ATLAS_ASK_MODEL` (the
   endpoint path and model code live in the platform's `40-model-platform.md`, not
   in karda's repo). With those set, ask runs against the live A4.
-- **What is still deferred**: the PLATFORM-namespace (P-tier) visible set needs the
-  C2 fetch (the org namespace is local and done); vector recall + the real reranker
-  are Atlas-blocked (TD-004).
-- **What is Atlas-blocked, separately (TD-004)**: vector recall (a second
-  `Recaller`, needs A1 embeddings) and the real reranker (A3). The chain already
-  fuses whatever recallers it is given and already degrades correctly when the
-  reranker is absent, so both plug in without changing the chain.
-- **Recovery condition**: BM25 is in place; `search` / `ask` unblock end-to-end
-  when the C2 visible-set fill lands and the route injects the recaller +
-  generation. Independently, Atlas A1/A3 add vector recall and rerank - only
-  recall quality improves as they land.
+- **Vector recall + real rerank are now built (2026-08-18, TD-004 closure)**:
+  `vector-corpus.ts` (the `VectorCorpus` port over `karda_kb.chunk_embedding`,
+  active-version indexed chunks only) + `vector-recaller.ts` (cosine ranking
+  under the KD-107 model lock, self-degrading to [] so an Atlas outage yields
+  lexical-only search, never a namespace failure) join the chain as the second
+  recaller; `atlas/rerank.ts` implements the real `Reranker` (A3, candidate cap
+  100, order-only scores). Both wire per-request in search-tool/ask-tool when
+  `ATLAS_EMBED_MODEL` / `ATLAS_RERANK_*` are configured.
+- **What is still deferred**: the PLATFORM-namespace (P-tier) visible set needs
+  the C2 fetch (the org namespace is local and done).
+- **Recovery condition**: the C2 visible-set fill lands for the platform
+  namespace; everything else in this entry is done.
 
 
 ## TD-009 - tool surface backends partially wired

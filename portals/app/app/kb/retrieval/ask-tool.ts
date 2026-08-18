@@ -14,6 +14,8 @@ import type { VisibleSetResolver } from "./visible-set";
 import type { AttachmentStore } from "../attachments/store";
 import { recordUsage } from "../../usage/lib/buffer";
 import type { CallerContext } from "../tools/s2s";
+import { retrievalAtlas, type RetrievalAtlas } from "../atlas/wiring";
+import { taskIdOr } from "../atlas/client";
 
 export interface AskToolDeps {
   visibleSet: VisibleSetResolver;
@@ -50,11 +52,19 @@ export async function askTool(caller: CallerContext, args: Record<string, unknow
   const kbIds = Array.isArray(args.kb_ids) ? (args.kb_ids as unknown[]).filter((x): x is string => typeof x === "string") : undefined;
   const scope = resolveScope({ visibleSet, attached, kbIds });
 
+  // One task_id keys the whole ask - recall embedding, rerank, and generation
+  // are one work unit on Atlas's meter (karda#101: same task, same value).
+  const taskId = taskIdOr(args.task_id, `karda:ask:${randomUUID()}`);
+  const atlas: RetrievalAtlas = caller.org
+    ? retrievalAtlas({ org: caller.org, ws }, taskId, { texts: deps.textResolver })
+    : { vectorRecaller: null, reranker: null };
+
   const result = await runAsk({
     query: typeof args.question === "string" ? args.question : "",
     scope,
-    recallers: [new Bm25Recaller(deps.corpus)],
-    reranker: new UnavailableReranker(),
+    recallers: [new Bm25Recaller(deps.corpus), ...(atlas.vectorRecaller ? [atlas.vectorRecaller] : [])],
+    reranker: atlas.reranker ?? new UnavailableReranker(),
+    taskId,
     tenantId: caller.org ?? "",
     workspaceId: ws,
     userId: caller.user ?? undefined,

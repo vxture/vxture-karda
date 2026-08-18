@@ -464,6 +464,25 @@ BEGIN
   END IF;
 END $$;
 
+-- The chunk's vector, in the index store the chunk.vector_ref comment above
+-- points at (ADR-002: the index store IS Postgres for now - vectors as JSONB,
+-- similarity in-process; pgvector is the named scale path). One row per
+-- embedded chunk, written in the SAME transaction as the chunk's version
+-- commit; model_code is the KD-107 vector-space lock - recall only compares
+-- vectors under one model_code. Rebuilt-never-edited like chunk itself
+-- (insert/delete only, no UPDATE grant); deletes ride the chunk cascade.
+-- NOTE (live DB): added by incr/0003, which db-init applies AFTER 97/98, so its
+-- service-role grants travel with that increment, not with 97.
+CREATE TABLE IF NOT EXISTS karda_kb.chunk_embedding (
+  chunk_id    UUID PRIMARY KEY,
+  model_code  VARCHAR(128) NOT NULL,             -- the embedding-model lock (KD-107)
+  dim         INTEGER NOT NULL,
+  vector      JSONB NOT NULL,                    -- float array; ADR-002
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT fk_chunk_embedding_chunk FOREIGN KEY (chunk_id)
+    REFERENCES karda_kb.chunk (id) ON DELETE CASCADE
+);
+
 -- A user's per-product attachment list (definition 4.8; karda.attach_kb /
 -- detach_kb / create_kb-auto-attach). The permission unit is the library; this is
 -- a working-set link, NOT an authorization surface - a row here means "this user

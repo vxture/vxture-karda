@@ -17,6 +17,12 @@ export interface ChatMessage {
 }
 
 export interface ChatRequest {
+  /** REQUIRED on every /v1 entry since Atlas v0.15.0 (product_251 X-2;
+   *  karda#101): the cross-product work-unit key. Any stable string <=128
+   *  chars, stored verbatim; the SAME agent task must send the SAME value
+   *  across products and models - it is the only key that adds a task's
+   *  consumption back together. */
+  taskId: string;
   // At least one of modelCode / taskProfile is required (Atlas #70 §6); they are
   // alternatives. A taskProfile lets Atlas resolve the concrete model from the
   // tenant's grant (auto-adapt); a modelCode pins one explicitly.
@@ -63,6 +69,8 @@ export interface ChunkResolver {
 // --- ask --------------------------------------------------------------------
 
 export interface AskInput extends Omit<SearchInput, "params"> {
+  /** The work-unit id threaded to Atlas (see ChatRequest.taskId). */
+  taskId: string;
   tenantId: string;
   workspaceId?: string;
   userId?: string;
@@ -120,6 +128,7 @@ export async function runAsk(input: AskInput): Promise<AskResult> {
 
   const prompt = buildPrompt(input.query, grounded);
   const res = await input.generation.chat({
+    taskId: input.taskId,
     modelCode: input.modelCode,
     taskProfile: input.taskProfile,
     messages: prompt,

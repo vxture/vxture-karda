@@ -15,14 +15,12 @@ import { getContentStore, type DocumentRow } from "../lib/content-store";
 import { getObjectStore, type ObjectStore } from "../storage/objectstore";
 import { TaskQueue, type Task } from "./queue";
 import type { DocumentSink, WorkerDeps } from "./worker";
-import {
-  UnavailableEmbeddingClient,
-  type RawSource,
-  type EmbeddingClient,
-  type CommitTarget,
-} from "./orchestrator";
+import type { RawSource, EmbeddingClient, CommitTarget } from "./orchestrator";
 import { PrismaCommitTarget } from "./commit";
 import { taskKey, configFingerprint, tierForTrigger } from "./stages";
+import { processingEmbedder, type EmbedderTaskContext } from "./atlas-embedder";
+import { defaultEmbedModel } from "../atlas/wiring";
+import { prismaEnabled, getPrismaClient } from "../../lib/db";
 
 // --- sink: content-state transitions ----------------------------------------
 
@@ -100,9 +98,26 @@ export function enqueueForDocument(queue: TaskQueue, p: EnqueueParams): boolean 
 export interface ResolverDeps {
   content: ContentService;
   objects: ObjectStore;
-  /** injectable for tests; prod uses the A1 stub (suspends) and the Prisma target. */
-  embedder?: () => EmbeddingClient;
+  /** injectable for tests; prod binds the real A1 client per task when Atlas is
+   *  configured (atlas-embedder.ts), else the suspend-stub. */
+  embedder?: (ctx: EmbedderTaskContext) => EmbeddingClient;
   commitTargetFor?: (docId: string) => CommitTarget;
+  /** the library's embedding-model lock (KD-107); prod reads the KB row and
+   *  falls back to ATLAS_EMBED_MODEL. */
+  kbEmbeddingModel?: (kbId: string) => Promise<string | null>;
+}
+
+/** KB.embedding_model, falling back to the workspace default (ATLAS_EMBED_MODEL).
+ *  Null when neither exists - the embed stage then parks (no silent default:
+ *  the modelCode IS the vector-space lock). */
+async function kbEmbeddingModelDefault(kbId: string): Promise<string | null> {
+  if (!prismaEnabled()) return defaultEmbedModel();
+  const p = await getPrismaClient();
+  const row: { embeddingModel: string | null } | null = await p.knowledgeBase.findUnique({
+    where: { id: kbId },
+    select: { embeddingModel: true },
+  });
+  return row?.embeddingModel ?? defaultEmbedModel();
 }
 
 /**
@@ -112,24 +127,23 @@ export interface ResolverDeps {
  * worker treats as "drop the task, do not fail a document that no longer exists".
  */
 export function makeResolver(deps: ResolverDeps): WorkerDeps["resolve"] {
-  const embedder = deps.embedder ?? (() => new UnavailableEmbeddingClient());
+  const embedder = deps.embedder ?? processingEmbedder;
   const commitTargetFor = deps.commitTargetFor ?? ((docId: string) => new PrismaCommitTarget(docId));
+  const kbEmbeddingModel = deps.kbEmbeddingModel ?? kbEmbeddingModelDefault;
 
   return async (task: Task) => {
     const got = await deps.content.getDocument(task.docId);
     if (!got.ok) return null;
     const doc = got.value;
 
-    // The KB row does not yet expose processing_params / embedding_model (only
-    // processing_template_id), so embeddingModel resolves to null for now. That
-    // is inert while Atlas A1 is unavailable - the embed stage suspends
-    // regardless - and sourcing the real model is a small follow-up (TD-007)
-    // once the KB row carries it.
-    const embeddingModel: string | null = null;
+    // The library's model lock (KD-107): KB.embedding_model, else the workspace
+    // default. Null parks the document at embed (AtlasEmbedClient refuses to
+    // guess a model) - the same resumable state as A1-unavailable was.
+    const embeddingModel = await kbEmbeddingModel(task.kbId);
 
     return {
       source: rawSourceFor(doc, deps.objects),
-      embedder: embedder(),
+      embedder: embedder({ docId: task.docId, workspaceId: task.org }),
       target: commitTargetFor(task.docId),
       embeddingModel,
     };
@@ -180,4 +194,52 @@ export function getProcessingRuntime(): WorkerDeps {
 /** Test-only: drop the singleton so the next getProcessingRuntime() rebuilds it. */
 export function resetProcessingRuntime(): void {
   runtime = null;
+}
+
+// --- parked-fleet recovery ---------------------------------------------------
+
+/**
+ * Re-enqueue every document sitting in `processing` (the parked-at-embed fleet,
+ * TD-004; also any task lost to a restart - the queue is in-memory). Enqueue
+ * dedups by task key, so re-running this against already-queued documents is a
+ * no-op; combined with queue.resumeSuspended it is the "A1 is configured now,
+ * turn the flywheel" lever the tick endpoint exposes.
+ */
+export async function reenqueueProcessing(queue: TaskQueue): Promise<number> {
+  if (!prismaEnabled()) return 0;
+  const p = await getPrismaClient();
+  const docs: {
+    id: string;
+    kbId: string;
+    contentHash: string | null;
+    processingTemplateId: string | null;
+    knowledgeBase: { workspaceId: string; processingTemplateId: string | null } | null;
+  }[] = await p.document.findMany({
+    where: { contentState: "processing" },
+    select: {
+      id: true,
+      kbId: true,
+      contentHash: true,
+      processingTemplateId: true,
+      knowledgeBase: { select: { workspaceId: true, processingTemplateId: true } },
+    },
+  });
+  let enqueued = 0;
+  for (const d of docs) {
+    if (!d.knowledgeBase) continue;
+    const ok = enqueueForDocument(queue, {
+      docId: d.id,
+      kbId: d.kbId,
+      workspaceId: d.knowledgeBase.workspaceId,
+      contentHash: d.contentHash,
+      config: {
+        processingTemplateId: d.processingTemplateId ?? d.knowledgeBase.processingTemplateId,
+        processingParams: {},
+        embeddingModel: null,
+      },
+      trigger: "rebuild",
+    });
+    if (ok) enqueued += 1;
+  }
+  return enqueued;
 }

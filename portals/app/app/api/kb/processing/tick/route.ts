@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { drain } from "../../../../kb/processing/worker";
-import { getProcessingRuntime } from "../../../../kb/processing/runtime";
+import { getProcessingRuntime, reenqueueProcessing } from "../../../../kb/processing/runtime";
 
 // POST /api/kb/processing/tick: drain claimable processing tasks in one bounded
 // pass. Gated by INTERNAL_JOB_TOKEN (an internal scheduler / cron on the tailnet,
@@ -18,6 +18,20 @@ export async function POST(req: Request): Promise<Response> {
   if (!expected || got !== expected) {
     return new NextResponse("forbidden", { status: 403 });
   }
-  const ran = await drain(getProcessingRuntime());
-  return NextResponse.json({ ran });
+
+  // `{"resume": true}` is the parked-fleet lever (TD-004): wake suspended tasks
+  // (quota returned / A1 now configured) and re-enqueue every `processing`
+  // document the in-memory queue may have lost to a restart. Enqueue dedups by
+  // key, so this is safe to send on every scheduled tick.
+  let resumed = 0;
+  let reenqueued = 0;
+  const runtime = getProcessingRuntime();
+  const body: unknown = await req.json().catch(() => null);
+  if (body && typeof body === "object" && (body as Record<string, unknown>).resume === true) {
+    resumed = runtime.queue.resumeSuspended(runtime.now());
+    reenqueued = await reenqueueProcessing(runtime.queue);
+  }
+
+  const ran = await drain(runtime);
+  return NextResponse.json({ ran, resumed, reenqueued });
 }
