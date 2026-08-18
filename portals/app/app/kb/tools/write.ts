@@ -72,7 +72,18 @@ export async function writeDocument(
   const bytes = Buffer.from(content, "utf-8");
 
   const result = await uploadDocument(
-    { kbId, workspaceId: ws, folderId: null, title, mime: "text/plain", bytes },
+    {
+      kbId,
+      workspaceId: ws,
+      folderId: null,
+      title,
+      mime: "text/plain",
+      bytes,
+      // Provenance: the calling product (S2S act.sub, or "runos" on the Runos
+      // channel) + the OBO user when one exists (null on a service-mode write).
+      createdInProduct: caller.callerProduct,
+      createdBy: caller.user,
+    },
     deps.content,
     deps.objects,
     (doc: DocumentRow) => {

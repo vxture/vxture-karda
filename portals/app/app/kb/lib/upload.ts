@@ -31,6 +31,10 @@ export interface UploadInput {
   title: string;
   mime: string;
   bytes: Buffer;
+  /** Row-level provenance: which product surface wrote this, and as which user
+   *  (null on a service-mode write). */
+  createdInProduct?: string | null;
+  createdBy?: string | null;
 }
 
 /**
@@ -74,6 +78,8 @@ export async function uploadDocument(
     storageRef: stored.key,
     mime: input.mime,
     sizeBytes: stored.sizeBytes,
+    createdInProduct: input.createdInProduct ?? null,
+    createdBy: input.createdBy ?? null,
   });
 
   if (!created.ok) {

@@ -62,7 +62,13 @@ export default function ConsolePage() {
   return (
     <main style={styles.page}>
       <h1 style={styles.h1}>Libraries</h1>
-      <p style={styles.sub}>Knowledge libraries in your active workspace. Upload documents into a library, then set who it is shared with.</p>
+      <p style={styles.sub}>
+        Knowledge libraries in your active workspace. Upload documents into a library, then set who it is shared with.{" "}
+        <a href="/console/search" style={{ color: T.accent }}>
+          Search &amp; ask
+        </a>{" "}
+        across everything you can see.
+      </p>
 
       {error && <Notice tone="bad">{error}</Notice>}
 

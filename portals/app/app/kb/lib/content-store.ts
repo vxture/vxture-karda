@@ -36,6 +36,9 @@ export interface DocumentRow {
   verifier: string | null;
   verifiedAt: Date | null;
   expiresAt: Date | null;
+  /** Row-level provenance; optional so pre-existing rows read back as absent. */
+  createdInProduct?: string | null;
+  createdBy?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -53,6 +56,9 @@ export interface EntryRow {
   verifier: string | null;
   verifiedAt: Date | null;
   expiresAt: Date | null;
+  /** Row-level provenance; optional so pre-existing rows read back as absent. */
+  createdInProduct?: string | null;
+  createdBy?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -83,6 +89,11 @@ export interface CreateDocumentInput {
   storageRef?: string | null;
   mime?: string | null;
   sizeBytes?: number | null;
+  // Row-level provenance (blueprint Q14 / 230-runos-channel 5.5): which product
+  // surface wrote this, and as which user (null on a service-mode write). The
+  // columns existed from day one; every write path now fills them.
+  createdInProduct?: string | null;
+  createdBy?: string | null;
 }
 
 export interface CreateEntryInput {
@@ -92,6 +103,8 @@ export interface CreateEntryInput {
   contentTemplateId: string;
   templateVersion: number;
   fields: Record<string, unknown>;
+  createdInProduct?: string | null;
+  createdBy?: string | null;
 }
 
 export interface ContentStore {
@@ -185,6 +198,8 @@ export class InMemoryContentStore implements ContentStore {
       verifier: null as string | null,
       verifiedAt: null as Date | null,
       expiresAt: null as Date | null,
+      createdInProduct: input.createdInProduct ?? null,
+      createdBy: input.createdBy ?? null,
       createdAt: now,
       updatedAt: now,
       deleted: false,
@@ -259,6 +274,8 @@ export class InMemoryContentStore implements ContentStore {
       verifier: null,
       verifiedAt: null,
       expiresAt: null,
+      createdInProduct: input.createdInProduct ?? null,
+      createdBy: input.createdBy ?? null,
       createdAt: now,
       updatedAt: now,
     };

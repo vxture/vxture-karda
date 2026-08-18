@@ -109,11 +109,14 @@ capabilities; (3) register + promote.
    `_meta.vxture.task_id`; karda threads it to every Atlas call it makes on
    behalf of the request, closing the metering chain
    (agent -> runos -> karda -> atlas) under one work-unit id.
-5. **Attribution of the write actor** is Runos's audit for now (per-agent
-   identity does not cross the gateway; `capability.call` rows carry
-   agent/task). karda records the channel (`callerProduct: "runos"`).
-   Threading a `created_by` through the write backends is a follow-up that
-   applies to BOTH channels (the columns exist; no backend sets them yet).
+5. **Attribution of the write actor**: since 2026-08-18 every write path fills
+   the row-level provenance columns - `created_in_product` = the channel's
+   product ("runos" here; the S2S act.sub on the direct channel; "karda" for a
+   Console upload) and `created_by` = the OBO user when one exists (null on
+   this channel's service-mode writes). Per-AGENT attribution still lives in
+   Runos's audit (`capability.call` rows carry agent/task) until the runos line
+   answers whether the gateway forwards caller identity (runos#156 Q1) - if it
+   does, the actor lands in `created_by` as a follow-up.
 
 ## 6. What remains (ops + liaison, no karda code)
 

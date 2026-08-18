@@ -23,7 +23,7 @@ deliberately not carried over.
 | TD-009 | Tool surface: ALL nine tools wired (list_kbs/search/ask/write_document/create_entry/create_kb/attach_kb/detach_kb + manifest); `ask` activates once `ATLAS_CHAT_PATH`/`ATLAS_ASK_MODEL` are set | 2026-07-24 | effectively closed - only runtime config (ATLAS_*) + Atlas-blocked recall quality remain |
 | TD-008 | BM25 recaller built + `karda.search` wired end-to-end (2026-07-27); vector recall + real rerank built 2026-08-18 (TD-004 closure) | 2026-07-24 | open - only the PLATFORM-namespace (P-tier) visible-set C2 fill remains |
 | TD-007 | Processing pipeline has no real queue worker or raw object storage yet | 2026-07-24 | open - 5a is the pure pipeline; the runtime around it is deferred |
-| TD-006 | Preset seed (`seedPresets`) has no invocation point wired yet | 2026-07-24 | open - seed mechanism undecided |
+| TD-006 | Preset seed (`seedPresets`) has no invocation point wired yet | 2026-07-24 | **closed** 2026-08-18 - internal-token endpoint `POST /api/kb/admin/seed-presets` |
 | TD-005 | Ownership transfer has no runtime write path (owner_sub is column-locked) | 2026-07-24 | open - needs a privileged path |
 | TD-004 | Batches 5b/6b parked: vectorization and rerank depend on Atlas A1/A3, not yet built | 2026-07-24 | **closed** 2026-08-18 - Atlas /v1 shipped A1/A3; 5b/6b built through the prepared seams |
 | TD-003 | A broken workflow YAML passed all five required checks; nothing in CI reads a workflow file | 2026-07-24 | **closed** 2026-07-24 (same day) |
@@ -198,6 +198,15 @@ deliberately not carried over.
   it now means the wiring later is a one-line call, not a redesign.
 - **Recovery condition**: the admin/console surface (batch 8) or a db-init seed
   step decides how factory data is applied; wire `seedPresets` into it.
+- **CLOSED 2026-08-18**: the "explicit and gated" option won -
+  `POST /api/kb/admin/seed-presets`, INTERNAL_JOB_TOKEN-gated (the tick/sweep/
+  flush posture), 503 when no database is configured. Idempotent by
+  construction, so the deploy runbook can hit it once per environment (or on
+  every deploy) safely. Chosen over the startup hook (per-boot writes + replica
+  herd) and over a db-init step (factory DATA is not schema STRUCTURE; db-init
+  stays structure-only). Ops note: run it once against prod after the next
+  deploy - until then the live DB has no preset templates and `create_entry`
+  cannot resolve a template CODE.
 
 
 ## TD-007 - processing pipeline runtime not yet built
