@@ -47,20 +47,31 @@ test("mapEmbedError: capability/authz gaps suspend; retryable + validation stay 
   assert.ok(invalid instanceof Error && !(invalid instanceof UnavailableError) && !(invalid instanceof QuotaError));
 });
 
-test("embed posts taskId + texts + workspaceId + modelCode and returns the vectors", async () => {
+test("a KB pin posts modelCode and the pin is the resolved space when the echo is absent", async () => {
   const { client: c, captured } = client(200, { vectors: [[1], [2]] });
   const out = await c.embed(["a", "b"], "embedding-3");
-  assert.deepEqual(out, [[1], [2]]);
+  assert.deepEqual(out.vectors, [[1], [2]]);
+  assert.equal(out.modelCode, "embedding-3");
   const body = JSON.parse(captured.body ?? "{}");
   assert.equal(body.taskId, "karda:ingest:d1");
   assert.deepEqual(body.texts, ["a", "b"]);
   assert.equal(body.workspaceId, "ws1");
   assert.equal(body.modelCode, "embedding-3");
+  assert.equal(body.taskProfile, undefined, "a pin sends no profile");
 });
 
-test("an unset model parks (UnavailableError) - no silent default vector space (KD-107)", async () => {
-  const { client: c } = client(200, { vectors: [] });
-  await assert.rejects(c.embed(["a"], "unset"), UnavailableError);
+test("no pin = grant-routed (KD-018): sends the fixed karda.embed profile, records the RESOLVED model", async () => {
+  const { client: c, captured } = client(200, { vectors: [[1]], modelCode: "embedding-3" });
+  const out = await c.embed(["a"], null);
+  assert.equal(out.modelCode, "embedding-3", "the response echo is the vector-space identity");
+  const body = JSON.parse(captured.body ?? "{}");
+  assert.equal(body.taskProfile, "karda.embed");
+  assert.equal(body.modelCode, undefined, "grant routing sends no modelCode");
+});
+
+test("a grant-routed response WITHOUT a modelCode echo is refused - never store vectors under a guessed space", async () => {
+  const { client: c } = client(200, { vectors: [[1]] });
+  await assert.rejects(c.embed(["a"], null), /no modelCode/);
 });
 
 test("a vector-count mismatch throws (transient), never a silent partial index", async () => {

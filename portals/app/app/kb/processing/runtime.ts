@@ -19,7 +19,6 @@ import type { RawSource, EmbeddingClient, CommitTarget } from "./orchestrator";
 import { PrismaCommitTarget } from "./commit";
 import { taskKey, configFingerprint, tierForTrigger } from "./stages";
 import { processingEmbedder, type EmbedderTaskContext } from "./atlas-embedder";
-import { defaultEmbedModel } from "../atlas/wiring";
 import { prismaEnabled, getPrismaClient } from "../../lib/db";
 
 // --- sink: content-state transitions ----------------------------------------
@@ -102,22 +101,22 @@ export interface ResolverDeps {
    *  configured (atlas-embedder.ts), else the suspend-stub. */
   embedder?: (ctx: EmbedderTaskContext) => EmbeddingClient;
   commitTargetFor?: (docId: string) => CommitTarget;
-  /** the library's embedding-model lock (KD-107); prod reads the KB row and
-   *  falls back to ATLAS_EMBED_MODEL. */
+  /** the library's OPTIONAL embedding-model pin (KD-107 lock); null = route by
+   *  grant (KD-018, the normal state). */
   kbEmbeddingModel?: (kbId: string) => Promise<string | null>;
 }
 
-/** KB.embedding_model, falling back to the workspace default (ATLAS_EMBED_MODEL).
- *  Null when neither exists - the embed stage then parks (no silent default:
- *  the modelCode IS the vector-space lock). */
+/** KB.embedding_model - the optional per-library pin. Null (the default) means
+ *  the embed client routes by grant (karda.embed taskProfile) and the RESOLVED
+ *  model is recorded at commit; a pinned library never drifts vector space. */
 async function kbEmbeddingModelDefault(kbId: string): Promise<string | null> {
-  if (!prismaEnabled()) return defaultEmbedModel();
+  if (!prismaEnabled()) return null;
   const p = await getPrismaClient();
   const row: { embeddingModel: string | null } | null = await p.knowledgeBase.findUnique({
     where: { id: kbId },
     select: { embeddingModel: true },
   });
-  return row?.embeddingModel ?? defaultEmbedModel();
+  return row?.embeddingModel ?? null;
 }
 
 /**
@@ -136,9 +135,9 @@ export function makeResolver(deps: ResolverDeps): WorkerDeps["resolve"] {
     if (!got.ok) return null;
     const doc = got.value;
 
-    // The library's model lock (KD-107): KB.embedding_model, else the workspace
-    // default. Null parks the document at embed (AtlasEmbedClient refuses to
-    // guess a model) - the same resumable state as A1-unavailable was.
+    // The library's optional pin (KD-107). Null = grant-routed (KD-018): the
+    // embed client sends karda.embed and the commit records whichever model
+    // the grant resolved. No grant -> TASK_PROFILE_NOT_ROUTABLE -> park.
     const embeddingModel = await kbEmbeddingModel(task.kbId);
 
     return {

@@ -32,7 +32,7 @@ test("extractScores handles results[{index,score}] and bare scores[]", () => {
   assert.equal(extractScores({ scores: [0.1] }, 2), null, "misaligned scores are rejected");
 });
 
-test("rerankSelection: taskProfile preferred, modelCode fallback, null when unconfigured", () => {
+test("rerankSelection: grant-routed by default (karda.rerank); env pins are break-glass (KD-018)", () => {
   const saved = { tp: process.env.ATLAS_RERANK_TASK_PROFILE, mc: process.env.ATLAS_RERANK_MODEL };
   try {
     process.env.ATLAS_RERANK_TASK_PROFILE = "rerank-profile";
@@ -41,7 +41,7 @@ test("rerankSelection: taskProfile preferred, modelCode fallback, null when unco
     process.env.ATLAS_RERANK_MODEL = "rr-1";
     assert.deepEqual(rerankSelection(), { modelCode: "rr-1" });
     delete process.env.ATLAS_RERANK_MODEL;
-    assert.equal(rerankSelection(), null);
+    assert.deepEqual(rerankSelection(), { taskProfile: "karda.rerank" }, "unconfigured = the fixed profile, never null");
   } finally {
     if (saved.tp === undefined) delete process.env.ATLAS_RERANK_TASK_PROFILE;
     else process.env.ATLAS_RERANK_TASK_PROFILE = saved.tp;

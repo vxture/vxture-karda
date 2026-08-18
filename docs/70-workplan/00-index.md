@@ -247,12 +247,15 @@ window closed exactly as designed - 5b/6b dropped into the prepared seams:
 - **Port R3 (#104)**: container/dev/compose ports unified on 3240;
   `check-port-consistency.mjs` guards it in quality-gate.
 
-**Activation checklist (config + ops, no further code)**: (1) db-init `apply`
-with `incr/0003_chunk_embedding.sql` (gated dispatch); (2) host env:
-`ATLAS_EMBED_MODEL` + `ATLAS_RERANK_MODEL|TASK_PROFILE` (A1 currently serves
-Zhipu-family embedding models only - pick from `GET /v1/models`); (3) Atlas-side
-tenant/product grants for the chosen models; (4) `tick {"resume": true}` to
-index the parked fleet; then verify `karda.search` returns dual-path results.
+**Activation checklist** (rewritten 2026-08-19 per KD-018 - selection moved
+from env config to Atlas authorization): (1) db-init `apply` with
+`incr/0003_chunk_embedding.sql` - **done 2026-08-18** (run 32140006415);
+(2) Atlas-side: label karda's tenant grants with the three task profiles -
+`karda.embed` (embedding-3 today), `karda.rerank` (rerank-v1),
+`karda.ask` (the chat model of choice) - requested in the karda->atlas
+liaison issue; NO karda host env for models (break-glass pins only);
+(3) `tick {"resume": true}` to index the parked fleet; then verify
+`karda.search` returns dual-path results.
 
 ### 2026-08-18 - the Runos channel (batch 14: karda as a capability supplier)
 

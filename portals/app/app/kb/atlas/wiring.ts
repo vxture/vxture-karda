@@ -1,14 +1,11 @@
-// Atlas /v1 wiring: the one place env config becomes live clients. Mirrors the
-// getGenerationClient() posture (generation.ts): a capability whose config is
-// absent yields null, so its surface stays honestly degraded/not_implemented
-// instead of failing at call time.
-//
-// Config keys (all in .env.example):
-//   ATLAS_BASE_URL           - shared base for every /v1 capability
-//   ATLAS_EMBED_MODEL        - default embedding modelCode (KB.embedding_model overrides)
-//   ATLAS_EMBED_PATH         - default /v1/embed
-//   ATLAS_RERANK_MODEL / ATLAS_RERANK_TASK_PROFILE - rerank selection (one of)
-//   ATLAS_RERANK_PATH        - default /v1/rerank
+// Atlas /v1 wiring: the one place deployment config becomes live clients. The
+// only activation switch is ATLAS_BASE_URL + OIDC creds (the shared core);
+// WHICH models serve each capability is not configured here at all - selection
+// is grant-driven (KD-018, kb/atlas/selection.ts): karda sends its fixed task
+// profiles and Atlas resolves models from the tenant's grants. A capability
+// with no matching grant fails at call time with TASK_PROFILE_NOT_ROUTABLE,
+// which every consumer maps to its designed degrade (embed parks, vector
+// recall self-degrades to [], rerank falls back to RRF order).
 import { getAtlasTokenSource } from "../retrieval/atlas-token";
 import type { Recaller, Reranker } from "../retrieval/search";
 import { VectorRecaller } from "../retrieval/vector-recaller";
@@ -16,7 +13,8 @@ import { getVectorCorpus } from "../retrieval/vector-corpus";
 import type { RecallTextResolver } from "../retrieval/corpus";
 import type { AtlasClientCore, AtlasContext } from "./client";
 import { AtlasEmbedClient } from "./embed";
-import { AtlasReranker, rerankSelection } from "./rerank";
+import { AtlasReranker } from "./rerank";
+import { rerankSelection } from "./selection";
 
 /** The shared /v1 core, or null when Atlas is not configured. */
 export function getAtlasCore(): AtlasClientCore | null {
@@ -24,12 +22,6 @@ export function getAtlasCore(): AtlasClientCore | null {
   const tokenSource = getAtlasTokenSource();
   if (!baseUrl || !tokenSource) return null;
   return { baseUrl, tokenSource };
-}
-
-/** The workspace-default embedding model lock (KB.embedding_model overrides per
- *  library at processing time; retrieval queries use this default). */
-export function defaultEmbedModel(): string | null {
-  return process.env.ATLAS_EMBED_MODEL || null;
 }
 
 export interface RetrievalAtlasDeps {
@@ -58,24 +50,20 @@ export function retrievalAtlas(
   if (!core) return { vectorRecaller: null, reranker: null };
   const context = () => Promise.resolve(ctx);
 
-  const embedModel = defaultEmbedModel();
-  const vectorRecaller = embedModel
-    ? new VectorRecaller(getVectorCorpus(), new AtlasEmbedClient(core, { context, taskId }), embedModel)
-    : null;
+  // Both pieces wire whenever the core exists - no per-capability model config
+  // (KD-018). A missing grant degrades at call time, it does not unconfigure.
+  const vectorRecaller = new VectorRecaller(getVectorCorpus(), new AtlasEmbedClient(core, { context, taskId }));
 
-  const selection = rerankSelection();
-  const reranker = selection
-    ? new AtlasReranker(
-        core,
-        { context, taskId },
-        {
-          async resolve(ids) {
-            return (await deps.texts.resolve(ids)).map((t) => ({ id: t.id, text: t.text }));
-          },
-        },
-        selection,
-      )
-    : null;
+  const reranker = new AtlasReranker(
+    core,
+    { context, taskId },
+    {
+      async resolve(ids) {
+        return (await deps.texts.resolve(ids)).map((t) => ({ id: t.id, text: t.text }));
+      },
+    },
+    rerankSelection(),
+  );
 
   return { vectorRecaller, reranker };
 }

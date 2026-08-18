@@ -25,7 +25,7 @@ class CapturingTarget implements CommitTarget {
 
 const fakeEmbedder = (dim = 3): EmbeddingClient => ({
   async embed(texts) {
-    return texts.map(() => Array.from({ length: dim }, () => 0.1));
+    return { vectors: texts.map(() => Array.from({ length: dim }, () => 0.1)), modelCode: "m-test" };
   },
 });
 
