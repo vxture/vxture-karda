@@ -39,7 +39,7 @@ ARG APP_VERSION=dev
 ARG GIT_SHA=unknown
 ARG BUILD_TIME=unknown
 ARG DEPLOY_STAGE=dev
-ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0 \
+ENV NODE_ENV=production PORT=3240 HOSTNAME=0.0.0.0 \
     APP_VERSION=${APP_VERSION} \
     GIT_SHA=${GIT_SHA} \
     BUILD_TIME=${BUILD_TIME} \
@@ -49,5 +49,7 @@ COPY --from=builder /repo/portals/app/.next/standalone ./
 COPY --from=builder /repo/portals/app/.next/static ./portals/app/.next/static
 COPY --from=builder /repo/portals/app/public ./portals/app/public
 USER nextjs
-EXPOSE 3000
+# R3: the in-container port IS the allocated number (3240); the host publish
+# port is the compose-level variable.
+EXPOSE 3240
 CMD ["node", "portals/app/server.js"]

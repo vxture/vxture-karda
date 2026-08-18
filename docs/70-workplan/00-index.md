@@ -135,9 +135,9 @@ former proceeds now; the latter is explicitly parked, not mocked-then-forgotten.
 | 3 | **Domain data model** | nothing | **done** (#19) |
 | 4 | **Asset layer**: KB/Folder/Document/Entry store+service, dual templates, filterable whitelist, both state machines, HTTP API | batch 3 | **done** - state machines + metadata (#25), KB ownership/store/service (#27), presets+seed (#30), content layer (#31), HTTP routes (this PR). 134 tests |
 | 5a | **Processing pipeline** + queue/worker + object storage: five-stage model, failure taxonomy, fast-path parser, chunking, orchestrator, three-tier queue with org cap + per-KB serial window, worker mapping outcomes to doc state | nothing (deep parse=A2, embed=A1 stubbed) | **done** - 52 tests. Object storage + upload live (#36); queue worker live. **Chunk-commit atomic-replace persistence done (#38) and its versioning migration is LIVE in `vxturebiz_karda_prod` (2026-07-24)**. **Runtime wiring partly built (2026-07-24): singleton queue + content sink + resolver + enqueue-on-upload + internal-token tick endpoint (`POST /api/kb/processing/tick`)**. Remaining deferred (TD-007): an external scheduler driving `tick`, IR persistence, and KB-level embedding-model/params sourcing |
-| 5b | **Vectorization**: embed chunks via Atlas | **Atlas A1 unimplemented** (KD-107) - the hard block; nothing to embed against | waits on Atlas capability |
+| 5b | **Vectorization**: embed chunks via Atlas | **Atlas A1 unimplemented** (KD-107) - the hard block; nothing to embed against | **done 2026-08-18** - Atlas /v1 shipped A1; `AtlasEmbedClient` + `chunk_embedding` store (ADR-002) + resume lever built. Activation = env + db-init `incr/0003` + Atlas grants (see the 2026-08-18 section) |
 | 6a | **Retrieval evaluation chain, non-embedding parts**: scope resolution + whitelist floor, visible-set cache (event + TTL), RRF, degrade contract, and `karda.ask` over the LIVE Atlas A4 | A4 live (KD-108) | **done** - 37 retrieval tests. Whitelist holds through both degrade paths; real BM25 engine + vector recall deferred (TD-008) |
-| 6b | **Vector recall + unified rerank**: dual-path RRF, cross-namespace union, rerank | **Atlas A1 + A3 unimplemented** (KD-107, KD-102) | waits on Atlas capability |
+| 6b | **Vector recall + unified rerank**: dual-path RRF, cross-namespace union, rerank | **Atlas A1 + A3 unimplemented** (KD-107, KD-102) | **done 2026-08-18** - `VectorRecaller` (second recaller, KD-107 model lock, self-degrading) + `AtlasReranker` (A3, cap 100, order-only scores) through the existing chain seams |
 | 7 | **Connector framework**: Binding lifecycle, poll/notify delivery, tombstone delete, revoke cascade. Arda first, an external doc source second | nothing structural (`220` + `binding` table landed) | arda connector waits on arda reply |
 | 8 | **Tool surface** (`karda.*` seven tools, S2S gateway, OBO-only gate, `/.well-known/vxture-tools`) **+ Console** | 4, 6a | tool surface **done** - 32 tests; read tools wired, write tools gate correctly then not_implemented (TD-009). Console + recall testing deferred |
 
@@ -218,6 +218,41 @@ re-shapes the two karda-side A4 tasks:
 **On A1 landing:** 5b (vectorize) + 6b (vector recall + rerank) complete the
 flywheel through the tested seams; BM25 (TD-008) lands alongside for the
 dual-path RRF.
+
+### 2026-08-18 - A1 landed: the flywheel is built (Atlas /v1 alignment + 5b + 6b)
+
+Atlas v0.24.0's consumption face now serves ALL four `/v1` capabilities
+(chat/embed/rerank/parse - the Atlas interface doc set, plus letters
+karda#100/#101/#102). That dissolved the plan's binding constraint, and the wait
+window closed exactly as designed - 5b/6b dropped into the prepared seams:
+
+- **/v1 contract alignment**: a shared Atlas core (`kb/atlas/client.ts`) speaks
+  the error envelope `{code, message, retryable, retryAfterMs?}`; `taskId` is
+  now sent on EVERY Atlas call (required since Atlas v0.15.0, #101) - tools
+  accept a caller-threaded `task_id` and fall back to a per-call work-unit id;
+  processing uses the stable `karda:ingest:<docId>`. Error branches key on
+  `QUOTA_EXCEEDED`/`retryable`, never the never-thrown `QUOTA_EXHAUSTED`
+  (#100); `retryAfterMs` is read null-safe (known Atlas defect).
+- **5b vectorization**: `AtlasEmbedClient` behind the orchestrator's
+  `EmbeddingClient` port; per-KB model lock (`KB.embedding_model`, fallback
+  `ATLAS_EMBED_MODEL`; no model configured = park, never a guessed vector
+  space); background tenant resolution via `vx_provision.app_instance`; vectors
+  persist to `karda_kb.chunk_embedding` (ADR-002) atomically with the chunk
+  commit; `POST /api/kb/processing/tick {"resume": true}` wakes the parked
+  fleet and re-enqueues `processing` documents lost to a restart.
+- **6b dual-path recall + rerank**: `VectorRecaller` (cosine, model lock,
+  self-degrades to [] so an Atlas outage means lexical-only search, never a
+  namespace failure) + `AtlasReranker` (cap 100 defensively enforced; scores
+  are ORDER-ONLY per Atlas #89 - no absolute-threshold rules).
+- **Port R3 (#104)**: container/dev/compose ports unified on 3240;
+  `check-port-consistency.mjs` guards it in quality-gate.
+
+**Activation checklist (config + ops, no further code)**: (1) db-init `apply`
+with `incr/0003_chunk_embedding.sql` (gated dispatch); (2) host env:
+`ATLAS_EMBED_MODEL` + `ATLAS_RERANK_MODEL|TASK_PROFILE` (A1 currently serves
+Zhipu-family embedding models only - pick from `GET /v1/models`); (3) Atlas-side
+tenant/product grants for the chosen models; (4) `tick {"resume": true}` to
+index the parked fleet; then verify `karda.search` returns dual-path results.
 
 Batch 3 is deliberately first and deliberately narrow: every other domain writes
 to or reads from these tables, and `lint:data-design` makes DDL/Prisma drift a

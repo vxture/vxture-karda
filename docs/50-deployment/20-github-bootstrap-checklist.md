@@ -43,7 +43,7 @@ over from the template. Allocation decided 2026-07-23 (owner):
 | host | worker-02 (`vx-worker-02`, tailnet, IP `100.76.219.48`), user `stone`, port 22 |
 | profile | non-VPC -> **GHCR primary + ACR fallback** |
 | stack root | `/srv/md0/karda`; `DEPLOY_DIR` = `/srv/md0/karda/deploy` |
-| `APP_PUBLISH_PORT` | **3240** (beta 3241 reserved; arda holds 3230/3231, vxtpl demo 3232) |
+| `APP_PUBLISH_PORT` | **3240** (beta 3241 reserved; arda holds 3230/3231; vxtpl moved to 4000 on 2026-08-13) |
 | tiers live now | **production only** - beta awaits its own server, see TD-001 |
 
 - [x] `APP_PUBLISH_PORT` repo variable = `3240` (reallocated 2026-07-24, was 3233).

@@ -57,6 +57,9 @@ function backends(): ToolBackends {
         visibleSet: getVisibleSetResolver(getKbStore()),
         attachments: getAttachmentStore(),
         corpus: getRecallCorpus(),
+        // enables the real reranker (A3) when ATLAS_RERANK_* is configured;
+        // vector recall (A1) wires in via the same per-request atlas wiring.
+        textResolver: getRecallTextResolver(),
       }),
     // ask is wired only when the Atlas A4 client is configured (ATLAS_BASE_URL +
     // OIDC creds to mint the aud=atlas bearer, getGenerationClient); otherwise it

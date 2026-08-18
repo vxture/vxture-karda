@@ -28,8 +28,10 @@ export interface EmbeddingClient {
 }
 
 export interface CommitTarget {
-  /** Atomic replace (110-processing 6): write the new chunk set as a new version. */
-  commit(chunks: CommittedChunk[]): Promise<void>;
+  /** Atomic replace (110-processing 6): write the new chunk set as a new
+   *  version. `embeddingModel` identifies the vector space the chunks' vectors
+   *  live in (KD-107 model lock); null when embedding was deferred. */
+  commit(chunks: CommittedChunk[], embeddingModel?: string | null): Promise<void>;
 }
 
 export interface CommittedChunk extends Chunk {
@@ -105,7 +107,7 @@ export async function runPipeline(input: RunInput): Promise<StageResult> {
   // commit - atomic replace
   try {
     const committed: CommittedChunk[] = chunks.map((c, i) => ({ ...c, vector: vectors ? vectors[i] : null }));
-    await input.target.commit(committed);
+    await input.target.commit(committed, input.embeddingModel);
     return { done: true, committed: committed.length };
   } catch (e) {
     return failure("commit", classifyFetchError(e), errMessage(e), attempt);

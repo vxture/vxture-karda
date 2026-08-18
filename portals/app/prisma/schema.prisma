@@ -367,11 +367,28 @@ model Chunk {
   vectorRef  String?  @map("vector_ref") @db.VarChar(128)
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
 
-  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade, map: "fk_chunk_document")
+  document  Document        @relation(fields: [documentId], references: [id], onDelete: Cascade, map: "fk_chunk_document")
+  embedding ChunkEmbedding?
 
   @@unique([documentId, version, ordinal], map: "uidx_chunk_document_version_ordinal")
   @@index([documentId, version], map: "idx_chunk_active")
   @@map("chunk")
+  @@schema("karda_kb")
+}
+
+// The in-Postgres vector index store (ADR-002): one row per embedded chunk,
+// written in the same transaction as the chunk-version commit. model_code is
+// the KD-107 vector-space lock; deletes ride the chunk FK cascade.
+model ChunkEmbedding {
+  chunkId   String   @id @map("chunk_id") @db.Uuid
+  modelCode String   @map("model_code") @db.VarChar(128)
+  dim       Int
+  vector    Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  chunk Chunk @relation(fields: [chunkId], references: [id], onDelete: Cascade, map: "fk_chunk_embedding_chunk")
+
+  @@map("chunk_embedding")
   @@schema("karda_kb")
 }
 

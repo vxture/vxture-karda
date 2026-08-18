@@ -26,6 +26,7 @@ function makeCfg(token = "tok") {
 }
 
 const req: ChatRequest = {
+  taskId: "task-1",
   modelCode: "m1",
   messages: [{ role: "user", content: "hi" }],
   tenantId: "org1",

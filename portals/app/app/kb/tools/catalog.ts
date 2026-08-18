@@ -29,7 +29,7 @@ export const TOOLS: ToolDescriptor[] = [
     summary: "Hybrid retrieval across visible, attached libraries.",
     mode: "obo_or_service",
     metering: { kind: "per_call", metric: "karda.search" },
-    input: ["query", "top_k", "kb_ids", "verification_filter", "filters"],
+    input: ["query", "top_k", "kb_ids", "verification_filter", "filters", "task_id"],
     authz: { asset_types: ["knowledge_base"] },
   },
   {
@@ -37,7 +37,7 @@ export const TOOLS: ToolDescriptor[] = [
     summary: "Single-turn cited question answering.",
     mode: "obo_or_service",
     metering: { kind: "per_call", metric: "karda.ask" },
-    input: ["question", "top_k", "kb_ids", "verification_filter"],
+    input: ["question", "top_k", "kb_ids", "verification_filter", "task_id"],
     authz: { asset_types: ["knowledge_base"] },
   },
   {
