@@ -254,6 +254,21 @@ Zhipu-family embedding models only - pick from `GET /v1/models`); (3) Atlas-side
 tenant/product grants for the chosen models; (4) `tick {"resume": true}` to
 index the parked fleet; then verify `karda.search` returns dual-path results.
 
+### 2026-08-18 - the Runos channel (batch 14: karda as a capability supplier)
+
+Owner direction: the capability platform gets knowledge READ and WRITE. Built
+per `docs/30-design/230-runos-channel.md`:
+
+| Item | State |
+|------|-------|
+| MCP endpoint `POST /api/mcp` (stateless Streamable HTTP; initialize/ping/tools list+call; bearer auth 503-fail-closed) | done 2026-08-18 |
+| Tool surface = the registration contract: `karda.kb-read` (search/ask/list_kbs) + `karda.kb-write` (write_document/create_entry), snake_case ops, one endpoint | done 2026-08-18 |
+| Channel rules: service-mode with org/workspace in arguments; `kb_ids` = required preset merge (product_110 D5, now also wired on the direct channel); service-mode writes land as processing/draft only (governance ladder, product definition section 15) | done 2026-08-18 |
+| Shared backend assembly (`kb/tools/backends.ts`) - one knowledge service behind both channels | done 2026-08-18 |
+| Mint `RUNOS_CHANNEL_TOKEN` -> karda host env -> Runos credential vault (promote hard-gates on the binding) | ops, pending |
+| Register capabilities + endpoint in Runos (opera), promote to stable, grants for consuming agents | ops + runos line, pending |
+| Liaison letter to runos: registration request + caller-identity-forwarding and endpoint-base questions | pending |
+
 Batch 3 is deliberately first and deliberately narrow: every other domain writes
 to or reads from these tables, and `lint:data-design` makes DDL/Prisma drift a
 hard CI failure, so getting the shape wrong here is expensive to unwind later.

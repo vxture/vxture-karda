@@ -57,8 +57,14 @@ export async function searchTool(caller: CallerContext, args: Record<string, unk
   const visibleSet = await deps.visibleSet.resolve({ org: caller.org, ws, product, user });
   const attached = await deps.attachments.listKbIds(ws, user ?? "", product);
   const kbIds = Array.isArray(args.kb_ids) ? (args.kb_ids as unknown[]).filter((x): x is string => typeof x === "string") : undefined;
+  // Preset libraries the caller merges explicitly by id (product_110 D5): they
+  // bypass the attachment list - the path a SERVICE caller (no user, so no
+  // attachments) names its libraries through - but still must be visible.
+  const presetKbIds = Array.isArray(args.preset_kb_ids)
+    ? (args.preset_kb_ids as unknown[]).filter((x): x is string => typeof x === "string")
+    : undefined;
 
-  const scope = resolveScope({ visibleSet, attached, kbIds });
+  const scope = resolveScope({ visibleSet, attached, kbIds, presetKbIds });
 
   // Atlas-side retrieval pieces (6b): a caller-threaded task_id (or a per-call
   // work-unit id) keys this call's Atlas consumption; vector recall + rerank

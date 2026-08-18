@@ -15,6 +15,9 @@ platform repo's `{kind}_{domain}_{NNN}_{slug}` family is not used here.
 | `110-processing.md` | offline processing pipeline: multi-stage parsing, templated chunking, vectorization and atomic commit, incremental update, controlled rebuild, retry | Draft v0.1, 4 open decisions |
 | `120-retrieval-tools.md` | retrieval evaluation chain, cross-namespace union recall, visible-set cache, association manifest, v1 tool surface | Draft v0.1, 5 open decisions |
 | `200-arda-channel.md` | Karda x Arda content channel contract (binding, delivery, incremental, tombstone delete, revoke cascade) | Draft v0.1, needs Arda-side alignment |
+| `210-data-model.md` | karda_kb schema refinement (DDL <-> Prisma lockstep) | in repo |
+| `220-connector-framework.md` | connector capability registry, binding lifecycle, ingest envelope | in repo |
+| `230-runos-channel.md` | karda as a Runos capability supplier: kb-read/kb-write capabilities, the MCP endpoint, channel rules | v1.0 implemented 2026-08-18; Runos-side registration pending |
 
 Product-level authority over these is `docs/20-specs/10-product-definition.md`;
 conflict order is platform constraints (`product_110` / `product_210`, platform
