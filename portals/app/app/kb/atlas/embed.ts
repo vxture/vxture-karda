@@ -1,8 +1,12 @@
-// The Atlas A1 embedding client (KD-107; TD-004 closure). POST /v1/embed with
-// { taskId, texts, workspaceId, modelCode } - the modelCode IS the library's
-// version-lock identifier (KD-107: no silent `latest` drift), so it is passed
-// per call from the KB row (falling back to ATLAS_EMBED_MODEL), never resolved
-// loosely here.
+// The Atlas A1 embedding client (KD-107; KD-018). POST /v1/embed with
+// { taskId, texts, workspaceId } plus the selection: a library-level modelCode
+// pin when the KB carries one, otherwise the fixed karda.embed taskProfile -
+// Atlas resolves the concrete model from the tenant's GRANTS (KD-018:
+// selection lives in authorization, not karda config). The response echoes the
+// RESOLVED modelCode (verified live, atlas#37: "201 with
+// modelCode=embedding-3"), and that echo is what callers record as the
+// vector-space identity - the KD-107 lock now travels with the data, not with
+// an env var.
 //
 // Error mapping is the load-bearing part: the processing taxonomy distinguishes
 // suspend (parked, resumable - quota / capability gaps an operator fixes) from
@@ -14,8 +18,9 @@
 //   validation 4xx (EMBED_TEXTS_INVALID, ...)                 -> plain Error (transient
 //     -> bounded retries -> failed visibly; a karda-side payload bug must surface,
 //     not park forever)
-import { QuotaError, UnavailableError, type EmbeddingClient } from "../processing/orchestrator";
+import { QuotaError, UnavailableError, type EmbeddingClient, type EmbedResult } from "../processing/orchestrator";
 import { AtlasApiError, atlasPost, type AtlasClientCore, type AtlasContext } from "./client";
+import { embedSelection } from "./selection";
 
 export const DEFAULT_ATLAS_EMBED_PATH = "/v1/embed";
 
@@ -77,6 +82,13 @@ export interface EmbedCallContext {
   taskId: string;
 }
 
+/** The resolved model the response reports (atlas#37 verified shape). */
+export function extractModelCode(body: unknown): string | null {
+  if (!body || typeof body !== "object") return null;
+  const code = (body as Record<string, unknown>).modelCode;
+  return typeof code === "string" && code ? code : null;
+}
+
 /**
  * The real A1 client behind the orchestrator's EmbeddingClient port. One batch
  * call per document's chunk set (KD-107 asked for a batch interface; Atlas
@@ -89,14 +101,9 @@ export class AtlasEmbedClient implements EmbeddingClient {
     private embedPath: string = process.env.ATLAS_EMBED_PATH || DEFAULT_ATLAS_EMBED_PATH,
   ) {}
 
-  async embed(texts: string[], modelVersion: string): Promise<number[][]> {
-    if (!modelVersion || modelVersion === "unset") {
-      // No model lock configured for this library: park, do not guess a model -
-      // KD-107 makes the modelCode the version lock, and an accidental default
-      // would silently mix vector spaces.
-      throw new UnavailableError("no embedding model configured (KB embedding_model / ATLAS_EMBED_MODEL)");
-    }
-    if (texts.length === 0) return [];
+  async embed(texts: string[], modelPin: string | null): Promise<EmbedResult> {
+    const selection = embedSelection(modelPin);
+    if (texts.length === 0) return { vectors: [], modelCode: selection.modelCode ?? "none" };
     let ctx: AtlasContext;
     try {
       ctx = await this.call.context();
@@ -109,7 +116,7 @@ export class AtlasEmbedClient implements EmbeddingClient {
         taskId: this.call.taskId,
         texts,
         workspaceId: ctx.ws,
-        modelCode: modelVersion,
+        ...selection,
       });
     } catch (e) {
       throw mapEmbedError(e);
@@ -118,6 +125,14 @@ export class AtlasEmbedClient implements EmbeddingClient {
     if (!vectors || vectors.length !== texts.length) {
       throw new Error(`atlas embed: response vector count ${vectors?.length ?? "none"} != texts ${texts.length}`);
     }
-    return vectors;
+    // The vector-space identity: prefer the response's resolved modelCode; a
+    // pinned call may fall back to its own pin if the echo is absent. A
+    // profile-routed call with NO echo cannot know its space - refuse rather
+    // than store vectors under a guessed identity (KD-107).
+    const modelCode = extractModelCode(body) ?? selection.modelCode ?? null;
+    if (!modelCode) {
+      throw new Error("atlas embed: response carries no modelCode - cannot identify the vector space");
+    }
+    return { vectors, modelCode };
   }
 }

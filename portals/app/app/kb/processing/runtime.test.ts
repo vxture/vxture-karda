@@ -79,7 +79,7 @@ test("makeResolver returns the raw text source and the injected ports", async ()
   });
   assert.ok(d.ok);
 
-  const embedder = { embed: async () => [] };
+  const embedder = { embed: async () => ({ vectors: [] as number[][], modelCode: "m-test" }) };
   const target = { commit: async () => {} };
   const resolve = makeResolver({ content, objects, embedder: () => embedder, commitTargetFor: () => target });
 

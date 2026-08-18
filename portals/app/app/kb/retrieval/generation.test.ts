@@ -80,7 +80,7 @@ test("a taskProfile is forwarded verbatim in the chat body (auto-adapt)", async 
   assert.doesNotMatch(body, /"modelCode"/, "auto-adapt sends no modelCode");
 });
 
-test("askModelSelection auto-adapts when ATLAS_ASK_TASK_PROFILE is set, else pins", () => {
+test("askModelSelection: grant-routed by default (karda.ask); env pins are break-glass (KD-018)", () => {
   const saved = { tp: process.env.ATLAS_ASK_TASK_PROFILE, mc: process.env.ATLAS_ASK_MODEL };
   try {
     process.env.ATLAS_ASK_TASK_PROFILE = "profile-x";
@@ -91,7 +91,7 @@ test("askModelSelection auto-adapts when ATLAS_ASK_TASK_PROFILE is set, else pin
     assert.deepEqual(askModelSelection(), { modelCode: "model-y" });
 
     delete process.env.ATLAS_ASK_MODEL;
-    assert.deepEqual(askModelSelection(), { modelCode: "default" });
+    assert.deepEqual(askModelSelection(), { taskProfile: "karda.ask" }, "unconfigured = the fixed profile, never a fake modelCode");
   } finally {
     if (saved.tp === undefined) delete process.env.ATLAS_ASK_TASK_PROFILE;
     else process.env.ATLAS_ASK_TASK_PROFILE = saved.tp;

@@ -67,7 +67,11 @@ test("resumeSuspended makes parked tasks runnable again", () => {
 // --- worker: outcome -> queue + document state -------------------------------
 
 const textSource = (text: string, mime = "text/markdown"): RawSource => ({ mime, fetchText: async () => text });
-const fakeEmbedder = (): EmbeddingClient => ({ async embed(texts) { return texts.map(() => [0.1]); } });
+const fakeEmbedder = (): EmbeddingClient => ({
+  async embed(texts) {
+    return { vectors: texts.map(() => [0.1]), modelCode: "m-test" };
+  },
+});
 class NullTarget implements CommitTarget { async commit() {} }
 
 class RecordingSink implements DocumentSink {

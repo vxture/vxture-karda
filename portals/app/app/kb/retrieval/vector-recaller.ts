@@ -3,10 +3,14 @@
 // via Atlas A1, cosine-rank the stored chunk vectors, return top-N RecallHits.
 //
 // Two deliberate behaviors:
-// - MODEL LOCK (KD-107): only chunk vectors whose model_code equals the query's
-//   embedding model are ranked. Chunks embedded under another model are simply
-//   not vector-recalled (BM25 still covers them) - comparing across vector
-//   spaces silently ranks garbage, which is worse than a narrower recall.
+// - MODEL LOCK (KD-107, grant-driven per KD-018): the query embeds by grant
+//   routing (or a pin) and the embedder reports WHICH model resolved; only
+//   chunk vectors stored under that same model_code are ranked. Chunks
+//   embedded under another model are simply not vector-recalled (BM25 still
+//   covers them) - comparing across vector spaces silently ranks garbage,
+//   which is worse than a narrower recall. When the Atlas-side grant moves to
+//   a new model, old chunks drop out of vector recall until reprocessed - a
+//   visible, safe degradation, never a silent space mix.
 // - SELF-DEGRADE: an Atlas failure here returns [] instead of throwing. A
 //   thrown recaller would fail the whole namespace (Promise.all in runSearch)
 //   and take the healthy BM25 path down with it; vector recall being down must
@@ -14,10 +18,12 @@
 import type { Recaller, RecallQuery, RecallHit } from "./search";
 import { passesVerificationFilter } from "../lib/state";
 import type { VectorCorpus } from "./vector-corpus";
+import type { EmbedResult } from "../processing/orchestrator";
 
-/** Embeds one query text under a locked model. Backed by AtlasEmbedClient. */
+/** Embeds one query text and reports the resolved model. Backed by
+ *  AtlasEmbedClient (pin null = grant-routed). */
 export interface QueryEmbedder {
-  embed(texts: string[], modelVersion: string): Promise<number[][]>;
+  embed(texts: string[], modelPin: string | null): Promise<EmbedResult>;
 }
 
 export function cosineSimilarity(a: number[], b: number[]): number {
@@ -38,19 +44,18 @@ export class VectorRecaller implements Recaller {
   constructor(
     private corpus: VectorCorpus,
     private embedder: QueryEmbedder,
-    /** the query-side model lock; must match the chunks' embedding model. */
-    private modelCode: string,
   ) {}
 
   async recall(q: RecallQuery): Promise<RecallHit[]> {
     if (q.kbIds.length === 0 || !q.query.trim()) return [];
     try {
-      const [qv] = await this.embedder.embed([q.query], this.modelCode);
+      const { vectors, modelCode } = await this.embedder.embed([q.query], null);
+      const qv = vectors[0];
       if (!qv) return [];
 
       const units = (await this.corpus.vectors(q.kbIds)).filter(
         (u) =>
-          u.modelCode === this.modelCode &&
+          u.modelCode === modelCode &&
           passesVerificationFilter(q.verificationFilter, u.verificationState),
       );
 

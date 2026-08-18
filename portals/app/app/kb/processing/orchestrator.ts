@@ -22,9 +22,20 @@ export interface RawSource {
   mime: string;
 }
 
+export interface EmbedResult {
+  vectors: number[][];
+  /** The RESOLVED embedding model - the vector-space identity (KD-107). With
+   *  grant-driven routing (KD-018) the caller often does not know the model
+   *  up front; the client reports which one actually embedded these texts, and
+   *  THAT is what commit records next to the vectors. */
+  modelCode: string;
+}
+
 export interface EmbeddingClient {
-  /** Embed chunk texts. Throws on unavailability - see classifyEmbeddingError. */
-  embed(texts: string[], modelVersion: string): Promise<number[][]>;
+  /** Embed chunk texts. `modelPin` is an optional library-level lock
+   *  (KB.embedding_model); null means route by grant (taskProfile). Throws on
+   *  unavailability - see classifyEmbeddingError. */
+  embed(texts: string[], modelPin: string | null): Promise<EmbedResult>;
 }
 
 export interface CommitTarget {
@@ -93,21 +104,23 @@ export async function runPipeline(input: RunInput): Promise<StageResult> {
     return failure("chunk", "permanent", errMessage(e), attempt);
   }
 
-  // embed - the Atlas seam
-  let vectors: number[][] | null = null;
+  // embed - the Atlas seam. The pin is the KB-level lock when set; otherwise
+  // the client routes by grant (KD-018) and reports the resolved model.
+  let embedded: EmbedResult;
   try {
-    vectors = await input.embedder.embed(
+    embedded = await input.embedder.embed(
       chunks.map((c) => c.text),
-      input.embeddingModel ?? "unset",
+      input.embeddingModel,
     );
   } catch (e) {
     return failure("embed", classifyEmbeddingError(e), errMessage(e), attempt);
   }
 
-  // commit - atomic replace
+  // commit - atomic replace, recording the RESOLVED vector space next to the
+  // vectors (chunk_embedding.model_code is what recall later matches against).
   try {
-    const committed: CommittedChunk[] = chunks.map((c, i) => ({ ...c, vector: vectors ? vectors[i] : null }));
-    await input.target.commit(committed, input.embeddingModel);
+    const committed: CommittedChunk[] = chunks.map((c, i) => ({ ...c, vector: embedded.vectors[i] ?? null }));
+    await input.target.commit(committed, embedded.modelCode);
     return { done: true, committed: committed.length };
   } catch (e) {
     return failure("commit", classifyFetchError(e), errMessage(e), attempt);
@@ -153,7 +166,7 @@ function classifyEmbeddingError(e: unknown): FailureClass {
  * data and no work before the embed stage is lost.
  */
 export class UnavailableEmbeddingClient implements EmbeddingClient {
-  async embed(): Promise<number[][]> {
+  async embed(): Promise<EmbedResult> {
     throw new UnavailableError("embedding capability (Atlas A1) is not yet available");
   }
 }

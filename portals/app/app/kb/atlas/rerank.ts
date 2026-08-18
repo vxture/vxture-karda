@@ -24,25 +24,13 @@ export interface CandidateTextResolver {
   resolve(ids: string[]): Promise<{ id: string; text: string }[]>;
 }
 
-export interface RerankSelection {
-  modelCode?: string;
-  taskProfile?: string;
-}
-
-/**
- * Model selection for rerank, mirroring askModelSelection (KD-109): exactly one
- * of taskProfile / modelCode, from ATLAS_RERANK_TASK_PROFILE else
- * ATLAS_RERANK_MODEL. Returns null when neither is set - the caller then keeps
- * the UnavailableReranker and search degrades honestly instead of sending a
- * request Atlas will 400 (TARGET_SELECTOR_REQUIRED).
- */
-export function rerankSelection(): RerankSelection | null {
-  const taskProfile = process.env.ATLAS_RERANK_TASK_PROFILE;
-  if (taskProfile) return { taskProfile };
-  const modelCode = process.env.ATLAS_RERANK_MODEL;
-  if (modelCode) return { modelCode };
-  return null;
-}
+// Model selection is grant-driven (KD-018): the fixed karda.rerank taskProfile
+// by default, env pins as break-glass - see kb/atlas/selection.ts. Re-exported
+// here for the wiring; a missing grant surfaces as TASK_PROFILE_NOT_ROUTABLE
+// at call time and the chain degrades to RRF order, which is the honest state.
+export { rerankSelection } from "./selection";
+export type { ModelSelection as RerankSelection } from "./selection";
+import type { ModelSelection } from "./selection";
 
 /** Tolerant score extraction: {results:[{index,score|relevanceScore}]} or a
  *  bare {scores:[...]} aligned to the candidate order. */
@@ -78,7 +66,7 @@ export class AtlasReranker implements Reranker {
     private core: AtlasClientCore,
     private call: RerankCallContext,
     private texts: CandidateTextResolver,
-    private selection: RerankSelection,
+    private selection: ModelSelection,
     private rerankPath: string = process.env.ATLAS_RERANK_PATH || DEFAULT_ATLAS_RERANK_PATH,
   ) {}
 
