@@ -169,3 +169,51 @@ export async function verifyDocument(kbId: string, docId: string): Promise<Doc> 
   const { document } = await req<{ document: Doc }>(`/api/kb/${kbId}/documents/${docId}/verify`, { method: "POST" });
   return document;
 }
+
+// --- search / ask (the Console retrieval surface) ------------------------------
+
+export interface SearchItem {
+  id: string;
+  kbId: string;
+  score: number;
+  snippet: string;
+}
+
+export interface SearchResult {
+  items: SearchItem[];
+  degraded: null | "rerank_unavailable";
+  partial: boolean;
+  ignoredKbIds: string[];
+  scopeKbIds: string[];
+}
+
+export async function searchKbs(input: {
+  query: string;
+  kb_ids?: string[];
+  top_k?: number;
+  verification_filter?: string;
+}): Promise<SearchResult> {
+  const { result } = await req<{ result: SearchResult }>("/api/kb/search", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return result;
+}
+
+export interface AskResult {
+  answer: string;
+  citations: { id: string; kbId: string; snippet: string }[];
+  degraded: null | "rerank_unavailable";
+  partial: boolean;
+  noContext: boolean;
+}
+
+export async function askKbs(input: { question: string; kb_ids?: string[]; top_k?: number }): Promise<AskResult> {
+  const { result } = await req<{ result: AskResult }>("/api/kb/ask", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return result;
+}

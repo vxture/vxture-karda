@@ -72,7 +72,18 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   // document stays `processing` until it indexes or parks at embed (Atlas A1).
   const runtime = getProcessingRuntime();
   const result = await uploadDocument(
-    { kbId: id, workspaceId: auth.user.activeWorkspace, folderId, title, mime, bytes },
+    {
+      kbId: id,
+      workspaceId: auth.user.activeWorkspace,
+      folderId,
+      title,
+      mime,
+      bytes,
+      // Provenance: a Console upload is karda's own surface acting for the
+      // session user.
+      createdInProduct: "karda",
+      createdBy: auth.user.sub,
+    },
     content(),
     getObjectStore(),
     (doc) => {

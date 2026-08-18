@@ -70,6 +70,9 @@ export async function createEntry(
       templateVersion: tpl.version,
       fields: fields as Record<string, unknown>,
       title,
+      // Provenance: calling product + OBO user (null on a service-mode write).
+      createdInProduct: caller.callerProduct,
+      createdBy: caller.user,
     },
     tpl.preset,
   );

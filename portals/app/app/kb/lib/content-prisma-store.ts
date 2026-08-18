@@ -105,6 +105,8 @@ export class PrismaContentStore implements ContentStore {
           storageRef: input.storageRef ?? null,
           mime: input.mime ?? null,
           sizeBytes: input.sizeBytes ?? null,
+          createdInProduct: input.createdInProduct ?? null,
+          createdBy: input.createdBy ?? null,
         },
       }),
     );
@@ -198,6 +200,8 @@ export class PrismaContentStore implements ContentStore {
           contentTemplateId: input.contentTemplateId,
           templateVersion: input.templateVersion,
           fields: input.fields as object,
+          createdInProduct: input.createdInProduct ?? null,
+          createdBy: input.createdBy ?? null,
         },
       }),
     );
