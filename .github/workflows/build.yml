@@ -181,6 +181,15 @@ jobs:
           # the image entrypoint.
           target: runner
           push: true
+          # No provenance/SBOM attestation manifests: buildx attaches them as an
+          # OCI artifact (application/vnd.oci.empty.v1+json manifest class) that
+          # Aliyun personal ACR REJECTS at push ("denied: unknown manifest
+          # class") - the v0.5.0 deploy failed exactly there when the runner
+          # image's buildx started attesting by default (2026-08-18). We consume
+          # neither (health provenance is build-args, 025 section 4.2), so off
+          # is a no-loss fix that keeps the dual-registry push working.
+          provenance: false
+          sbom: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
           # @vxture/* needs a PAT (GITHUB_TOKEN lacks read_package for the
