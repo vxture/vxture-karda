@@ -50,7 +50,11 @@ export async function askTool(caller: CallerContext, args: Record<string, unknow
   const visibleSet = await deps.visibleSet.resolve({ org: caller.org, ws, product: caller.callerProduct, user: caller.user });
   const attached = await deps.attachments.listKbIds(ws, caller.user ?? "", caller.callerProduct);
   const kbIds = Array.isArray(args.kb_ids) ? (args.kb_ids as unknown[]).filter((x): x is string => typeof x === "string") : undefined;
-  const scope = resolveScope({ visibleSet, attached, kbIds });
+  // Preset merge (product_110 D5) - see search-tool.ts; the service-caller path.
+  const presetKbIds = Array.isArray(args.preset_kb_ids)
+    ? (args.preset_kb_ids as unknown[]).filter((x): x is string => typeof x === "string")
+    : undefined;
+  const scope = resolveScope({ visibleSet, attached, kbIds, presetKbIds });
 
   // One task_id keys the whole ask - recall embedding, rerank, and generation
   // are one work unit on Atlas's meter (karda#101: same task, same value).
