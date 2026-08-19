@@ -51,3 +51,26 @@ set to `db:<model_code>` at insert (chunk columns are not UPDATE-writable), so
 - **Structure change ships via db-init only**: `incr/0003_chunk_embedding.sql`
   (grants travel with the increment, the TD-010 pattern); the live DB gains the
   table on the next gated `db-init apply`.
+
+## Addendum 2026-08-19 (KD-019 changes the scale path's cost)
+
+The original rejection of option 1 (pgvector) rested on the stock
+`postgres:18-alpine` image lacking the extension. **KD-019 moves the database
+to Aliyun RDS PostgreSQL, which offers pgvector as a supported extension** -
+the image-cost argument disappears. The staged plan is therefore:
+
+1. **Now (hundreds..low-thousands of chunks per search scope)**: keep this ADR
+   as-is. The real bottleneck is not the cosine math but `PrismaVectorCorpus`
+   loading the scope's JSONB vectors per query (embedding-3 is 2048-dim,
+   ~20-40KB per chunk as JSONB).
+2. **On RDS, when a scope passes ~5k chunks or search P95 degrades**: enable
+   pgvector, add a `vector(2048)` column + HNSW index behind the SAME
+   `VectorCorpus` port (an incr + a corpus implementation swap; binary storage
+   also shrinks the rows severalfold). Same transaction domain, same
+   atomic-replace guarantees - nothing above the port changes.
+3. **A separate vector DATABASE (Milvus/DashVector/...)**: only if karda ever
+   needs global ANN over millions of chunks at high QPS. karda's retrieval is
+   whitelist-windowed (a caller's few libraries), not corpus-global, so this
+   threshold is far away - and a second store would reopen exactly the
+   consistency problem this ADR closed (vectors committing/cascading with
+   chunks in one transaction).
