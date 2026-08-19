@@ -32,6 +32,7 @@
 | KD-016 | 分类分级的落点 | "分级"落到**不同的库**,每库设发布级别(private/ws_published/org_published)作对外共享级别;**不使用**文档级 `sensitivity` 密级枚举(该列保留但 v1 不投产) | 新增 | owner 2026-07-24 |
 | KD-017 | 产品定位提升 | 定位由"企业知识能力域"提升为 **Vxture 面向 AI Agent 的共享知识基础设施**(五平台之一);owner 蓝图收编为 `30-agent-knowledge-blueprint.md` 并成为定位权威(冲突序插在平台约束之下、product-definition 之上)。**RAG 是机制不是边界,Chunk 是中间产物不是核心模型**;知识资产模型(Fact/Claim/Entity/Event/Evidence)与 Knowledge API 扩面入 v2 路线。不推翻既有 KD——结构冲突逐条在本表收口 | 新增 | owner 2026-08-18(蓝图) |
 | KD-018 | 模型选择走授权,不走配置 | karda **不逐能力配置模型码**。三个固定 taskProfile(`karda.ask` / `karda.embed` / `karda.rerank`,`kb/atlas/selection.ts` 常量)即 karda 侧契约;具体模型由 **Atlas 授权**(`model_grants.task_profile` 标签,atlas#42 机制)决定——换模型/换供应商/迁移是 Atlas 侧授权编辑,karda 零改动。env 钉码(`ATLAS_*_MODEL/_TASK_PROFILE`)降级为 break-glass;`KB.embedding_model` 保留为库级 pin。**KD-107 的向量空间锁改由提交时落库的 RESOLVED modelCode 承载**(embed 响应回显,atlas#37 实测):授权换模型后旧 chunk 退出向量召回(词法兜底、可见可控),直到重建——绝不跨空间混排。覆盖 KD-109 的 env 默认 | 新增 | owner 2026-08-19 |
+| KD-019 | 数据驻留上云(阿里云 RDS / OSS / 独立 Redis) | 业务真值迁移托管云服务:**RDS(Postgres)承载 `vx_karda_db`**(托管备份/高可用),**OSS 承载原始知识字节**(文档/表格原件;`OssObjectStore` 走既有 ObjectStore 缝,V4 签名零依赖手写、规范化锁定官方金标,内容寻址键与文件系统实现一致故 `storage_ref` 迁移零改写),**Redis 单独一套不与平台复用**(产品间无共享数据存储的原则同样适用于缓存;且会话可弃置,Redis 上云为可选项、优先级最后)。迁移步骤:`30-run-aliyun-migration.md` | 新增 | owner 2026-08-19 |
 
 **起步值语义**（KD-007/008/009/014）：这些是 v1 默认，**以召回测试/运行数据驱动调整**，改的是库级配置
 或框架常量，不涉及生产结构变更。KD-009 的精排池另受 Atlas 回函影响（见 KD-102）。
