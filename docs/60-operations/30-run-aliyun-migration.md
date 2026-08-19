@@ -1,5 +1,13 @@
 # 30-run-aliyun-migration - move karda's data to Aliyun cloud (KD-019)
 
+> **Status: HELD** (owner, 2026-08-19 evening) - networking prerequisites
+> (worker-02 <-> Aliyun connectivity) are not in place; **keep the current
+> stores** (container Postgres/Redis, filesystem objects). Do NOT execute any
+> step below until the owner lifts the hold. The KD-019 ruling itself stands -
+> this is execution timing, not a reversal. Everything code-side is dormant by
+> construction: the OSS adapter activates only when the `ALIYUN_OSS_*` keys are
+> set, and no host config has been touched.
+
 Owner direction 2026-08-19: business data moves to managed Aliyun services for
 durability. Three stores, three very different moves - in THIS order, because
 their criticality differs:
