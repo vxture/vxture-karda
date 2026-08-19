@@ -112,7 +112,18 @@ export class InMemoryObjectStore implements ObjectStore {
 
 // --- selection --------------------------------------------------------------
 
+import { getOssObjectStore } from "./oss";
+
+/**
+ * Selection order (KD-019): Aliyun OSS when its four env keys are configured
+ * (cloud residency for raw knowledge bytes) -> filesystem under
+ * KARDA_OBJECT_ROOT -> in-memory (offline/tests). OSS and filesystem use the
+ * SAME content-addressed key shape, so document.storage_ref values survive a
+ * migration verbatim (copy the tree with ossutil, flip the env).
+ */
 export function getObjectStore(): ObjectStore {
+  const oss = getOssObjectStore();
+  if (oss) return oss;
   const root = process.env.KARDA_OBJECT_ROOT;
   return root ? new FilesystemObjectStore(root) : new InMemoryObjectStore();
 }
