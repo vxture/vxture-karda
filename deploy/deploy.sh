@@ -27,7 +27,12 @@ PRODUCT_CODE="${PRODUCT_CODE:-karda}"
 PRODUCT_CODE_SNAKE="${PRODUCT_CODE//-/_}"
 IMAGE_NAME="${PRODUCT_CODE}-app"
 PROJECT_NAME="${PRODUCT_CODE}"
-APP_PORT="3000"
+# The IN-CONTAINER port verify probes (docker exec + loopback). R3: container
+# port = the allocated number, 3240. This was the SEVENTH port declaration site
+# - missed by karda#104's six-site list AND by check-port-consistency.mjs
+# (both now corrected) - and it made cmd_verify probe a port nothing listens
+# on, failing every deploy deterministically while the app was healthy.
+APP_PORT="3240"
 # Persistent data lives OUTSIDE the deploy dir (which is rsync --delete'd on every
 # deploy) - container-written data is root-owned and would otherwise break the
 # next deploy's rsync. Absolute path under the stack root.
