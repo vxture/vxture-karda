@@ -36,6 +36,10 @@ const SITES = [
   { file: "portals/app/Dockerfile", label: "ENV PORT", re: new RegExp(`\\bPORT=${PORT}\\b`) },
   { file: "portals/app/Dockerfile", label: "EXPOSE", re: new RegExp(`^EXPOSE ${PORT}$`, "m") },
   { file: "portals/app/package.json", label: "next dev -p", re: new RegExp(`next dev -p ${PORT}`) },
+  // The site the original sweep missed: deploy.sh's verify probes this port
+  // IN-CONTAINER via docker exec - a wrong value fails every deploy
+  // deterministically while the app is healthy (v0.5.0/v0.6.0, 2026-08-19).
+  { file: "deploy/deploy.sh", label: "APP_PORT", re: new RegExp(`^APP_PORT="${PORT}"$`, "m") },
 ];
 
 /** No file may declare a DIFFERENT listen port through these shapes. */
@@ -44,6 +48,7 @@ const FORBIDDEN = [
   { file: "docker-compose.dev.yml", re: /PORT: "(?!3240")\d+"/ },
   { file: "portals/app/Dockerfile", re: /\bPORT=(?!3240\b)\d+/ },
   { file: "portals/app/Dockerfile", re: /^EXPOSE (?!3240$)\d+$/m },
+  { file: "deploy/deploy.sh", re: /^APP_PORT="(?!3240")\d+"$/m },
 ];
 
 let failed = false;
