@@ -26,8 +26,19 @@ locked to Aliyun's official worked example by a golden test). Keys are
 content-addressed IDENTICALLY to the filesystem store, so every
 `document.storage_ref` survives the migration verbatim.
 
-1. Create the bucket: private ACL, **versioning ON** (the durability the move
-   is for), same region as the host's ACR (cn-beijing); block public access.
+1. Create the bucket: **`vxture-karda-objects-prod`** (owner naming ruling
+   2026-08-19: cloud resources carry symmetric `-prod`/`-beta` suffixes -
+   bucket names are globally unique, so the env MUST live in the name here;
+   this is the deliberate ADR-007 exception at the instance layer. **Also
+   create `vxture-karda-objects-beta` now** to reserve the name against the
+   global namespace - the beta tier is dormant (TD-001) but an empty bucket
+   costs nothing and a squatted name later breaks the symmetry. Same pattern
+   for the other cloud instances: RDS alias `vx-karda-db-prod` - the database
+   INSIDE stays `vx_karda_db` per ADR-007 - and Redis `vx-karda-redis-prod`.)
+   Private ACL, **versioning ON** (the durability the move is for), same
+   region as the host's ACR (cn-beijing); block public access. After creation
+   confirms availability, register the final names in CLAUDE.md's cascade
+   table.
 2. Create a RAM user scoped to THIS bucket only (least privilege - the same
    posture as `karda_svc`); note AK/SK.
 3. Copy the existing tree (idempotent, re-runnable):
