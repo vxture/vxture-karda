@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getOidcConfig } from "../../auth/lib/config";
 import { getAuthUser } from "../../auth/lib/session";
+import { devLoginEnabled, decodeDevSession, DEV_LOGIN_COOKIE } from "../../auth/lib/dev-login";
 import type { AuthUser } from "../../auth/lib/claims";
 
 export type Authed =
@@ -21,6 +22,18 @@ export type Authed =
 export async function requireAuth(): Promise<Authed> {
   const cfg = getOidcConfig();
   const jar = await cookies();
+
+  // Dev virtual login (local feature browsing; triple-gated fail-closed in
+  // dev-login.ts - with the gate off this branch is unreachable and the cookie
+  // is inert). Checked FIRST only because when the gate is on there is no real
+  // RP to consult.
+  if (devLoginEnabled(cfg.enabled)) {
+    const dev = decodeDevSession(jar.get(DEV_LOGIN_COOKIE)?.value);
+    if (dev?.activeWorkspace) {
+      return { ok: true, user: dev as AuthUser & { activeWorkspace: string } };
+    }
+  }
+
   const rpsid = jar.get(cfg.cookieName)?.value;
   const user = rpsid ? await getAuthUser(cfg, rpsid).catch(() => null) : null;
   if (!user || !user.activeWorkspace) {
