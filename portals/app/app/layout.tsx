@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { themeBootstrapScript } from "@vxture/design-system/server";
 import { Providers } from "./providers";
 import { BRAND } from "@karda/shared/brand";
 import "@vxture/design-system/styles/fonts.css";
@@ -10,20 +11,18 @@ export const metadata = {
 };
 
 // Root layout wired to the design system (KD-020): DS globals + the vxture
-// brand entry (globals.css), DS fonts, and the client provider stack
-// (providers.tsx - the umbrella must not be imported from a server component
-// until platform#320 fixes the published barrel).
-//
-// suppressHydrationWarning is required, not cosmetic: ThemeProvider resolves
-// the theme client-side and stamps <html>, so server markup and the first
-// client render legitimately differ on that attribute. The pre-paint
-// themeBootstrapScript is NOT mounted yet - it is only exported through the
-// broken client barrel; platform#320 asks for a server-safe export, and until
-// then a brief first-paint theme flash is the accepted cost (same call yucer
-// made).
+// brand entry (globals.css), DS fonts, the client provider stack
+// (providers.tsx), and the pre-paint theme bootstrap - since DS 6.1.0 the
+// script is exported from the server-safe /server entry (platform#320), so the
+// server layout can mount it in <head> and the first paint carries the right
+// theme (no flash). suppressHydrationWarning stays: ThemeProvider still stamps
+// <html> client-side, so that one attribute legitimately differs.
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang={BRAND.defaultLocale} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+      </head>
       <body>
         <Providers>{children}</Providers>
       </body>

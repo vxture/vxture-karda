@@ -25,3 +25,6 @@ allowBuilds:
   prisma: true
   esbuild: true
   sharp: true
+
+minimumReleaseAgeExclude:
+  - '@vxture/design-system@6.1.0'
