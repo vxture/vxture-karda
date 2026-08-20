@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getOidcConfig } from "../lib/config";
 import { getAuthUser } from "../lib/session";
+import { devLoginEnabled, decodeDevSession, DEV_LOGIN_COOKIE } from "../lib/dev-login";
 
 // GET /auth/session (080-rp section 2.2): read the cookie, resolve the RP session
 // (silent-refreshing a near-expiry access token), return the bootstrap claims.
@@ -11,6 +12,13 @@ export const dynamic = "force-dynamic";
 export async function GET(): Promise<Response> {
   const cfg = getOidcConfig();
   const jar = await cookies();
+
+  // Dev virtual login (triple-gated, see auth/lib/dev-login.ts).
+  if (devLoginEnabled(cfg.enabled)) {
+    const dev = decodeDevSession(jar.get(DEV_LOGIN_COOKIE)?.value);
+    if (dev) return NextResponse.json({ authenticated: true, user: dev });
+  }
+
   const rpsid = jar.get(cfg.cookieName)?.value;
   if (!rpsid) return NextResponse.json({ authenticated: false });
 

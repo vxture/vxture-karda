@@ -1,9 +1,26 @@
 import type { ReactNode } from "react";
-import { themeBootstrapScript } from "@vxture/design-system/server";
 import { Providers } from "./providers";
 import { BRAND } from "@karda/shared/brand";
 import "@vxture/design-system/styles/fonts.css";
 import "./globals.css";
+
+/**
+ * The pre-paint theme script, imported EVALUATION-SAFELY. The /server entry's
+ * import chain drags @vxture/design-ui/server -> @phosphor-icons/react, whose
+ * module scope calls createContext - fatal in the RSC runtime. Production
+ * webpack tree-shakes the unused chain away (verified live), but `next dev`
+ * does no DCE and evaluates everything, so a static import 500s every page
+ * locally. Dynamic import + catch keeps prod exact and lets dev degrade to a
+ * brief theme flash. Upstream ask (platform#320 follow-up): make design-ui's
+ * /server entry evaluation-safe, then this collapses back to a static import.
+ */
+async function themeScript(): Promise<string> {
+  try {
+    return (await import("@vxture/design-system/server")).themeBootstrapScript;
+  } catch {
+    return "";
+  }
+}
 
 export const metadata = {
   title: BRAND.displayName,
@@ -17,11 +34,12 @@ export const metadata = {
 // server layout can mount it in <head> and the first paint carries the right
 // theme (no flash). suppressHydrationWarning stays: ThemeProvider still stamps
 // <html> client-side, so that one attribute legitimately differs.
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const bootstrap = await themeScript();
   return (
     <html lang={BRAND.defaultLocale} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+        {bootstrap && <script dangerouslySetInnerHTML={{ __html: bootstrap }} />}
       </head>
       <body>
         <Providers>{children}</Providers>
