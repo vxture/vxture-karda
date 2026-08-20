@@ -1,0 +1,6 @@
+/* karda global styles - import-only, per the DS standard (01-usage.md section 5):
+ * DS globals first, then exactly ONE brand entry. karda is a platform product,
+ * so the platform-level vxture brand entry applies; a karda product-level brand
+ * css would be added in the DS package first, never copied here. */
+@import "@vxture/design-system/styles/globals.css";
+@import "@vxture/design-system/styles/brands/vxture.css";
