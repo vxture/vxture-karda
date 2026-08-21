@@ -183,9 +183,12 @@ export function OverviewClient() {
     [data, activeTag],
   );
 
+  // DS's bare max-w-* utilities resolve against the density spacing scale
+  // (--space-md etc.), not Tailwind's default container scale - arbitrary
+  // values below sidestep that collision entirely.
   if (needsAuth) {
     return (
-      <div className="mx-auto flex max-w-md flex-col items-center gap-4 py-24">
+      <div className="mx-auto flex max-w-[28rem] flex-col items-center gap-4 py-24">
         <EmptyState
           icon="lock"
           title="需要登录"
@@ -202,7 +205,7 @@ export function OverviewClient() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-2xl py-16">
+      <div className="mx-auto max-w-[42rem] py-16">
         <Banner tone="danger" title={error} />
       </div>
     );
