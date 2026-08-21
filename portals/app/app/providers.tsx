@@ -12,6 +12,14 @@ import { ThemeProvider } from "@vxture/design-system";
  * imported from anywhere; this module simply remains the right place for
  * providers.)
  */
+// Shell preference baseline (owner, 2026-08-21): theme defaults to LIGHT (not
+// system), density and font size stay at DS defaults. The user can change all
+// of them from the header's preference panel; ThemeProvider persists choices
+// under the DS contract keys (vx-density / vx-fontsize / next-themes theme).
 export function Providers({ children }: { children: ReactNode }) {
-  return <ThemeProvider>{children}</ThemeProvider>;
+  return (
+    <ThemeProvider defaultMode="light" defaultDensity="default">
+      {children}
+    </ThemeProvider>
+  );
 }

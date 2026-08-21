@@ -34,11 +34,19 @@ export const metadata = {
 // server layout can mount it in <head> and the first paint carries the right
 // theme (no flash). suppressHydrationWarning stays: ThemeProvider still stamps
 // <html> client-side, so that one attribute legitimately differs.
+// First-visit theme default is LIGHT (owner, 2026-08-21), while the DS
+// bootstrap falls back to "system" when nothing is persisted. Seeding the
+// storage key before the DS script runs makes the very first paint light on a
+// dark-OS machine too, without overriding a choice the user has already made.
+const lightDefaultScript =
+  "try{if(!localStorage.getItem('theme-storage'))localStorage.setItem('theme-storage','light')}catch(e){}";
+
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const bootstrap = await themeScript();
   return (
     <html lang={BRAND.defaultLocale} suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: lightDefaultScript }} />
         {bootstrap && <script dangerouslySetInnerHTML={{ __html: bootstrap }} />}
       </head>
       <body>
