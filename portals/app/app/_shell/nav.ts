@@ -1,5 +1,9 @@
 import type { IconName } from "@vxture/design-system";
 
+/** DOM id of the portal content column - the fullscreen target. Shared so the
+ *  header's toggle and the element it expands can never drift apart. */
+export const PORTAL_FULLSCREEN_ID = "karda-portal-content";
+
 // The product's top-level functional domains (owner, 2026-08-21). They render
 // as the header menu area, left-aligned after the brand - the four entries ARE
 // the product's information architecture, so this list is the single source

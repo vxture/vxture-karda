@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Icon,
   ShellBrand,
+  ShellFullscreenToggle,
   ShellHeader,
   ShellIconButton,
   ShellIconGroup,
@@ -17,7 +18,7 @@ import {
 } from "@vxture/design-system";
 import { BRAND } from "@karda/shared/brand";
 import { getSession, loginHref, type SessionUser } from "../console/_lib/api";
-import { NAV_ITEMS, activeNavKey } from "./nav";
+import { NAV_ITEMS, PORTAL_FULLSCREEN_ID, activeNavKey } from "./nav";
 import { isLocale, useLocale } from "./locale";
 import { ScopePanel } from "./ScopePanel";
 
@@ -174,11 +175,18 @@ export function AppHeader({
           </span>
         )}
       </span>
-      {/* 系统工具三元,与 console 一致:帮助 / 通知 / 设置 */}
+      {/* 系统工具组:帮助 / 通知 / 设置 (console 的三元) + 全屏。全屏走 DS 的
+          ShellFullscreenToggle,目标是内容区(PORTAL_FULLSCREEN_ID),所以进入
+          全屏后留下的是内容本身,不是连同外壳一起放大。 */}
       <ShellIconGroup label="系统">
         <ShellIconButton icon="help" label="帮助" />
         <ShellIconButton icon="bell" label="通知" />
         <ShellIconButton icon="settings" label="设置" onClick={() => router.push("/console")} />
+        <ShellFullscreenToggle
+          targetId={PORTAL_FULLSCREEN_ID}
+          enterLabel="全屏"
+          exitLabel="退出全屏"
+        />
       </ShellIconGroup>
       <ShellUserMenu
           user={{

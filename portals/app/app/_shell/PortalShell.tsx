@@ -6,7 +6,7 @@ import { AppHeader } from "./AppHeader";
 import { NavRail } from "./NavRail";
 import { ShellBackdrop } from "./ShellBackdrop";
 import { StewardDock } from "./StewardDock";
-import { activeNavKey } from "./nav";
+import { PORTAL_FULLSCREEN_ID, activeNavKey } from "./nav";
 import type { ShellData } from "../kb/demo/shell-types";
 
 // The V3 指挥台 portal shell (owner 2026-08-24): header (48px) over a
@@ -91,7 +91,10 @@ export function PortalShell({ children }: { children: ReactNode }) {
         <NavRail active={active} pathname={pathname} shell={shell} collapsed={navCollapsed} />
         {/* Content column: the global edge padding + section rhythm live here
             (moved from the old single-column layout), scrolling on its own. */}
-        <main className="min-w-0 flex-1 overflow-y-auto">
+        {/* id marks the fullscreen target: expanding puts the CONTENT on the
+            viewport, not the whole shell blown up. bg-background so the
+            pseudo-fullscreen layer is opaque over the page beneath it. */}
+        <main id={PORTAL_FULLSCREEN_ID} className="min-w-0 flex-1 overflow-y-auto bg-background">
           <div className="flex w-full flex-col gap-lg px-xl pb-6xl pt-lg">{children}</div>
         </main>
         {dockOpen && <StewardDock shell={shell} onClose={toggleDock} />}
