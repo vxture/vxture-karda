@@ -74,7 +74,12 @@ export function PortalShell({ children }: { children: ReactNode }) {
     <div className="flex h-screen flex-col bg-background text-foreground">
       <AppHeader pending={shell?.steward.pending ?? 0} dockOpen={dockOpen} onToggleDock={toggleDock} />
       <div className="flex min-h-0 flex-1">
-        <NavRail active={active} pathname={pathname} shell={shell} collapsed={navCollapsed} onToggle={toggleNav} />
+        {/* Rails carry the shell surface (bg-card), the content column keeps
+            the page ground (bg-background) - the DS layering rule: separate by
+            colour step, not by hairline borders. */}
+        <div className="flex shrink-0 border-r border-primary/10 bg-card dark:border-primary/20">
+          <NavRail active={active} pathname={pathname} shell={shell} collapsed={navCollapsed} onToggle={toggleNav} />
+        </div>
         {/* Content column: the global edge padding + section rhythm live here
             (moved from the old single-column layout), scrolling on its own. */}
         <main className="min-w-0 flex-1 overflow-y-auto">

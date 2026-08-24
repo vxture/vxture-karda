@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Button, Icon } from "@vxture/design-system";
+import { Button, Icon, ShellIconButton } from "@vxture/design-system";
 import type { ShellData } from "../kb/demo/shell-types";
 import type { StewardProposal } from "../kb/demo/pipeline-types";
 
@@ -25,13 +25,8 @@ export function StewardDock({ shell, onClose }: { shell: ShellData | null; onClo
         <Icon name="sparkles" size="sm" className="text-ai-text" />
         <span className="flex-1 text-body-sm font-semibold">管家值班台</span>
         <span className="size-2xs rounded-full bg-success" aria-label="在岗" />
-        <button
-          onClick={onClose}
-          aria-label="收起值班台"
-          className="flex size-icon-xl items-center justify-center rounded-md text-muted-foreground transition-colors duration-fast ease-standard hover:bg-accent hover:text-foreground"
-        >
-          <Icon name="chevron-right" size="xs" />
-        </button>
+        {/* Ghost icon button, the DS shell idiom - no boxed background. */}
+        <ShellIconButton icon="chevron-right" label="收起值班台" onClick={onClose} />
       </div>
 
       {!s ? (
