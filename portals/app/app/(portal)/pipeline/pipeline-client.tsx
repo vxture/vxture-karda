@@ -91,7 +91,10 @@ export function PipelineClient() {
         actions={
           <>
             <Button variant="outline" asChild>
-              <a href="/console">上传文档</a>
+              <a href="/pipeline/tasks">任务与队列</a>
+            </Button>
+            <Button variant="outline" asChild>
+              <a href="/pipeline/rebuild">受控重建</a>
             </Button>
             <Button>批量确认预验</Button>
           </>
