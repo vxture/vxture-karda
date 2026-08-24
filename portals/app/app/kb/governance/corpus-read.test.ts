@@ -71,7 +71,7 @@ test("an empty corpus reports 0%, not NaN", () => {
   assert.deepEqual(r.belowFloor, []);
 });
 
-test("belowFloor is capped and ties break by name so the list is deterministic", () => {
+test("belowFloor is capped, and the tie-break is locale-FREE so CI and a dev box agree", () => {
   const kbs: KbRef[] = [
     { id: "1", name: "乙" },
     { id: "2", name: "甲" },
@@ -80,11 +80,27 @@ test("belowFloor is capped and ties break by name so the list is deterministic",
   const rows = kbs.flatMap((k) => [row(k.id, "verified", 1), row(k.id, "unverified", 9)]);
   const r = tallyCorpus(kbs, rows, 80, 2);
   assert.equal(r.belowFloor.length, 2);
-  // all three sit at 10%; the tie-break is by name, so the result is stable
+  // All three sit at 10%, so the tie-break decides. It must be CODE-UNIT order
+  // (丙 U+4E19 < 乙 U+4E59 < 甲 U+7532), not `localeCompare` - the latter put
+  // 甲 second on a Windows dev box and 乙 second on the Linux CI runner, which
+  // means the same data would have been listed in two different orders.
   assert.deepEqual(
     r.belowFloor.map((x) => x.name),
-    ["丙", "甲"],
+    ["丙", "乙"],
   );
+});
+
+test("same coverage AND same name still orders deterministically, by kb id", () => {
+  const kbs: KbRef[] = [
+    { id: "kb-b", name: "同名库" },
+    { id: "kb-a", name: "同名库" },
+  ];
+  const rows = kbs.flatMap((k) => [row(k.id, "verified", 1), row(k.id, "unverified", 9)]);
+  const r = tallyCorpus(kbs, rows, 80);
+  assert.equal(r.belowFloor.length, 2);
+  // Insertion order was b then a; the id tie-break has to reorder them.
+  assert.deepEqual(r.belowFloor.map((x) => x.staleCount), [0, 0]);
+  assert.equal(r.belowFloor[0].name, "同名库");
 });
 
 test("the default floor is the one the demo overlay's classification implies", () => {

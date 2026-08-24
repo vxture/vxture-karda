@@ -72,8 +72,8 @@ export function tallyCorpus(
   let verified = 0;
   let stale = 0;
   let total = 0;
-  const belowFloor: VerificationState["belowFloor"] = [];
-  for (const t of tally.values()) {
+  const belowFloor: (VerificationState["belowFloor"][number] & { id: string })[] = [];
+  for (const [id, t] of tally.entries()) {
     verified += t.verified;
     stale += t.stale;
     total += t.total;
@@ -82,9 +82,20 @@ export function tallyCorpus(
     // bury the ones that actually regressed.
     if (t.total === 0) continue;
     const pct = Math.round((t.verified / t.total) * 100);
-    if (pct < floorPct) belowFloor.push({ name: t.name, coveragePct: pct, staleCount: t.stale });
+    if (pct < floorPct) belowFloor.push({ id, name: t.name, coveragePct: pct, staleCount: t.stale });
   }
-  belowFloor.sort((a, b) => a.coveragePct - b.coveragePct || a.name.localeCompare(b.name));
+  // Tie-break must be LOCALE-FREE. `localeCompare` orders CJK names differently
+  // depending on the ICU collation the runtime happens to carry - it put 甲
+  // before 乙 on a Windows dev box and after it on the Linux CI runner, i.e.
+  // the "deterministic" ordering would have differed between a developer's
+  // screen and the server. Code-unit comparison is the same everywhere, and the
+  // kb id closes the last gap because two assets may share a name.
+  belowFloor.sort(
+    (a, b) =>
+      a.coveragePct - b.coveragePct ||
+      (a.name < b.name ? -1 : a.name > b.name ? 1 : 0) ||
+      (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+  );
 
   return {
     verified,
@@ -92,7 +103,8 @@ export function tallyCorpus(
     unverified: total - verified - stale,
     coveragePct: total === 0 ? 0 : Math.round((verified / total) * 100),
     floorPct,
-    belowFloor: belowFloor.slice(0, limit),
+    // `id` was only a sort key - it does not belong in the published shape.
+    belowFloor: belowFloor.slice(0, limit).map(({ name, coveragePct, staleCount }) => ({ name, coveragePct, staleCount })),
   };
 }
 
