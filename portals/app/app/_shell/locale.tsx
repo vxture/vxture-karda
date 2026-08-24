@@ -22,7 +22,10 @@ const LocaleContext = createContext<LocaleContextValue>({
   setLocale: () => {},
 });
 
-function isLocale(value: string | null): value is Locale {
+/** Narrow an untrusted string to a supported Locale. Exported because the DS
+ *  preference panel hands back a bare `string` (its locale list is open), so the
+ *  shell re-narrows before touching state. */
+export function isLocale(value: string | null | undefined): value is Locale {
   return value === "zh-CN" || value === "en-US";
 }
 

@@ -43,8 +43,12 @@ export async function POST(req: Request): Promise<Response> {
   // Presets first: entries need a content template to reference.
   await seedPresets();
   const p = await getPrismaClient();
+  // "general" is a ProcessingTemplate code (109-processing), not a
+  // ContentTemplate one - KD-002's v1 preset list is FAQ/glossary/SOP only.
+  // Demo entries store their own freeform `fields` JSON regardless of which
+  // template they reference, so any preset works as the required FK target.
   const template = await p.contentTemplate.findFirst({
-    where: { scope: "platform", workspaceId: null, templateCode: "general", version: 1 },
+    where: { scope: "platform", workspaceId: null, templateCode: "faq", version: 1 },
   });
   if (!template) {
     return NextResponse.json({ error: "no_content_template" }, { status: 500 });
@@ -79,8 +83,11 @@ export async function POST(req: Request): Promise<Response> {
       const rows = [];
       for (let i = haveDocs; i < spec.docCount; i++) {
         let contentState = "indexed";
+        // Document content_state has no "draft" (100-kb-model.md#5.1: Document
+        // 无 draft, 文件到达即进 processing) - "parked" is the explicit resident
+        // failed state (stuck import, visible + retryable), not a fifth state.
         if (spec.processing) {
-          if (i >= spec.processing.indexed + spec.processing.processing) contentState = "draft"; // parked
+          if (i >= spec.processing.indexed + spec.processing.processing) contentState = "failed"; // parked
           else if (i >= spec.processing.indexed) contentState = "processing";
         }
         rows.push({
@@ -90,6 +97,7 @@ export async function POST(req: Request): Promise<Response> {
           source: spec.source === "sync" ? "connector" : "upload",
           connectorCode: spec.source === "sync" ? "arda" : null,
           contentState,
+          failureReason: contentState === "failed" ? "seed-demo: parked for demo purposes" : null,
           verificationState: contentState === "indexed" && i < verifiedTarget ? "verified" : "unverified",
           verifier: contentState === "indexed" && i < verifiedTarget ? "verifier-demo" : null,
           verifiedAt: contentState === "indexed" && i < verifiedTarget ? new Date() : null,

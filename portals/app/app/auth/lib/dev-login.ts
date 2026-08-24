@@ -22,8 +22,8 @@ export const DEV_LOGIN_COOKIE = "vx_dev_session";
 /** Stable defaults so locally created data keeps its owner across restarts. */
 export const DEV_DEFAULTS = {
   sub: "usr_dev-local-owner",
-  org: "00000000-0000-4000-8000-0000000000or",
-  ws: "00000000-0000-4000-8000-0000000000ws",
+  org: "00000000-0000-4000-8000-000000000001",
+  ws: "00000000-0000-4000-8000-000000000002",
 } as const;
 
 export function devLoginEnabled(rpEnabled: boolean): boolean {

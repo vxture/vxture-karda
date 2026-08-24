@@ -11,7 +11,13 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
     <LocaleProvider>
       <div className="flex min-h-screen flex-col bg-background text-foreground">
         <AppHeader />
-        <main className="flex-1">{children}</main>
+        {/* Global content track (owner 2026-08-24): edge padding px-xl (32px)
+            and the top/bottom breathing room are defined HERE, once - pages
+            must not re-add their own edge padding. Full-bleed by design (no
+            max-width cap); vertical rhythm inside a page is flex-col gap-lg. */}
+        <main className="flex-1">
+          <div className="flex w-full flex-col gap-lg px-xl pb-6xl pt-lg">{children}</div>
+        </main>
       </div>
     </LocaleProvider>
   );

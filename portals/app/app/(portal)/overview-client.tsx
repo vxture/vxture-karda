@@ -1,8 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Banner, Button, Card, CardContent, EmptyState, Icon, Progress, StatusBadge } from "@vxture/design-system";
+import {
+  Banner,
+  Button,
+  Card,
+  CardContent,
+  EmptyState,
+  Icon,
+  MetricGrid,
+  Progress,
+  StatusBadge,
+  type IconName,
+} from "@vxture/design-system";
 import { loginHref } from "../console/_lib/api";
+import { PageHead } from "../_shell/PageHead";
 import type { OverviewAsset, OverviewData } from "../kb/demo/overview-types";
 
 // 资产总览 client. Layout follows the approved V2 design translated to the
@@ -28,6 +40,17 @@ const SPARK_COLOR: Record<OverviewAsset["sparkTone"], string> = {
   primary: "var(--color-primary)",
   ai: "var(--color-ai)",
   warning: "var(--color-warning)",
+};
+
+/** Default card-level icon per source kind (owner 2026-08-24): every asset
+ *  card leads with an icon, DS list-card header idiom (icon + title/subtitle).
+ *  Names from the DS icon dictionary - agent-built / platform co-built /
+ *  business sync / external authority. */
+const SOURCE_ICON: Record<OverviewAsset["source"], IconName> = {
+  agent: "agent",
+  platform: "building-library",
+  sync: "database",
+  external: "certificate",
 };
 
 /** Verification coverage ring (conic gradient over the card surface). */
@@ -81,14 +104,22 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
   const health = HEALTH_META[asset.health];
   const warn = asset.health === "attention";
   return (
-    <Card className={warn ? "border-warning/40" : undefined}>
-      <CardContent className="flex h-full flex-col gap-3 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="truncate text-[15px] font-semibold">{asset.name}</div>
-            <div className={`mt-0.5 text-xs ${asset.source === "agent" ? "text-ai-text" : "text-muted-foreground"}`}>
+    // Tone via the DS rule (02-visual-spec §3): semantic colour walks the top
+    // edge as a 2px bar, never a full tinted border - the card's own hairline
+    // (veil skeleton) stays untouched so a warn card doesn't read "heavier".
+    // Density follows MetricCard's precedent for stat-strip-adjacent cards:
+    // py-lg/px-lg instead of the Card default py-xl/px-xl.
+    <Card className={`py-lg${warn ? " border-t-medium border-t-warning-border" : ""}`}>
+      <CardContent className="flex h-full flex-col gap-md px-lg">
+        {/* Header per the DS list-card idiom (MetricListCard): leading icon +
+            title/subtitle column, publish-scope glyph kept at the row's end. */}
+        <div className="flex min-w-0 items-start gap-sm">
+          <Icon name={SOURCE_ICON[asset.source]} size="lg" fallback="placeholder" className="shrink-0 text-muted-foreground" />
+          <div className="flex min-w-0 flex-1 flex-col gap-2xs">
+            <span className="truncate text-label-lg text-foreground">{asset.name}</span>
+            <span className={`truncate text-body-sm ${asset.source === "agent" ? "text-ai-text" : "text-muted-foreground"}`}>
               {asset.sourceLabel} · {asset.entryCount > 0 ? `${asset.entryCount} 条目` : `${asset.docCount} 文档`}
-            </div>
+            </span>
           </div>
           <VisibilityGlyph state={asset.publishState} />
         </div>
@@ -140,7 +171,9 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
           )}
         </div>
 
-        <div className="mt-auto flex items-center gap-1.5 pt-1">
+        {/* Action row opens with the DS field hairline (CardFooter recipe):
+            dashed = row/field separation, brand @10% (light) / @20% (dark). */}
+        <div className="mt-auto flex items-center gap-1.5 border-t border-dashed border-primary/10 pt-md dark:border-primary/20">
           {asset.tags.map((t) => (
             <span key={t} className="rounded bg-primary/10 px-2 py-0.5 text-[10.5px] text-primary">
               {t}
@@ -223,89 +256,85 @@ export function OverviewClient() {
   const { totals } = data;
 
   return (
-    <div className="mx-auto max-w-[1400px] px-8 pb-10">
-      {/* page head */}
-      <div className="flex items-end justify-between pb-4 pt-6">
-        <div>
-          <h1 className="text-[22px] font-semibold">资产总览</h1>
-          <p className="mt-1 text-[13px] text-muted-foreground">
-            {totals.assetCount} 个知识资产 · {totals.entryCount.toLocaleString()} 条知识 · 供给 {totals.topAgents.length + 1} 个
-            Agent
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <a href="/console/search">检验台</a>
-          </Button>
-          <Button asChild>
-            <a href="/console">新建资产</a>
-          </Button>
-        </div>
-      </div>
+    // Sections render as a fragment: the portal layout owns the edge padding
+    // and the flex-col gap-lg rhythm, so each block below is a direct child of
+    // that global column - no page-local container, no per-section margins.
+    <>
+      <PageHead
+        title="资产总览"
+        description="知识资产的统计、运营与健康"
+        meta={`${totals.assetCount} 资产 · ${totals.entryCount.toLocaleString()} 条知识 · 验证覆盖 ${totals.coveragePct}%`}
+        actions={
+          <>
+            <Button variant="outline" asChild>
+              <a href="/console/search">检验台</a>
+            </Button>
+            <Button asChild>
+              <a href="/console">新建资产</a>
+            </Button>
+          </>
+        }
+      />
 
-      {/* stats strip */}
-      <div className="grid grid-cols-4 gap-3.5">
-        <Card>
-          <CardContent className="flex items-center gap-4 p-4">
-            <CoverageRing pct={totals.coveragePct} size={52} />
-            <div>
-              <div className="text-xs text-muted-foreground">验证覆盖</div>
-              <div className="mt-0.5 text-[13px]">
-                {totals.verifiedCount.toLocaleString()} / {totals.entryCount.toLocaleString()} 条
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex flex-col justify-center gap-1 p-4">
-            <div className="text-xs text-muted-foreground">今日供给调用</div>
-            <div className="flex items-baseline gap-3">
-              <div className="text-[22px] font-semibold">{totals.todayCalls.toLocaleString()}</div>
-              <div className="w-20">
-                <Sparkline series={[35, 30, 45, 40, 60, 52, 70, 62, 82]} color="var(--color-primary)" height={22} />
-              </div>
-              <span className="text-xs text-success-text">+{totals.deltaPct}%</span>
-            </div>
-            <div className="text-[11px] text-muted-foreground">
-              直供 {totals.directCalls} · Runos {totals.runosCalls}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex flex-col justify-center gap-1.5 p-4">
-            <div className="text-xs text-muted-foreground">调用 TOP 3 · 今日</div>
-            {totals.topAgents.map((a, i) => (
-              <div key={a.code} className="flex items-center gap-2 text-xs">
-                <span className="w-10 truncate">{a.code}</span>
-                <div className="h-1 flex-1 rounded-full bg-muted">
-                  <div
-                    className={`h-full rounded-full ${i === 0 ? "bg-ai" : "bg-primary"}`}
-                    style={{ width: `${Math.round((a.calls / totals.topAgents[0].calls) * 100)}%` }}
-                  />
-                </div>
-                <span className="w-8 text-right font-mono text-muted-foreground">{a.calls}</span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-        <Card className="border-ai-border/40 bg-ai-muted/30">
-          <CardContent className="flex flex-col justify-center gap-1 p-4">
-            <div className="flex items-center gap-1.5 text-xs text-ai-text">
-              <Icon name="sparkles" size="sm" />
-              知识管家 · 今日
-            </div>
-            <div className="text-[13px]">
-              预验 {totals.steward.preVerified} · 冲突 {totals.steward.conflicts} · 回流萃取 {totals.steward.refluxDrafts}
-            </div>
-            <a href="/pipeline" className="text-[11.5px] text-ai-text">
-              {totals.steward.pending} 项待确认 →
-            </a>
-          </CardContent>
-        </Card>
-      </div>
+      {/* stats strip: the DS standard metric row (MetricGrid -> MetricCard,
+          watermark backdrop + tone top-edge + label/value rows), replacing the
+          hand-rolled Cards. MetricGrid owns the elastic ladder (1 -> 2 -> 4). */}
+      <MetricGrid
+        aria-label="资产总览统计"
+        columns={4}
+        // Match the asset grid's gap-lg below (MetricGrid defaults gap-md);
+        // the two 板块 must share one rhythm.
+        className="gap-lg"
+        items={[
+          {
+            id: "coverage",
+            label: "验证覆盖",
+            value: `${totals.coveragePct}%`,
+            icon: "shield-check",
+            tone: "success",
+            tags: [`${totals.verifiedCount.toLocaleString()} / ${totals.entryCount.toLocaleString()} 条`],
+          },
+          {
+            id: "calls",
+            label: "今日供给调用",
+            value: totals.todayCalls.toLocaleString(),
+            icon: "lightning",
+            tone: "brand",
+            trend: `+${totals.deltaPct}%`,
+            trendTone: "success",
+            tags: [`直供 ${totals.directCalls}`, `Runos ${totals.runosCalls}`],
+          },
+          {
+            id: "top-agents",
+            label: "调用 TOP 3 · 今日",
+            value: totals.topAgents[0] ? `${totals.topAgents[0].code} ${totals.topAgents[0].calls}` : "—",
+            icon: "agent",
+            tone: "info",
+            tags: totals.topAgents.slice(1).map((a) => `${a.code} ${a.calls}`),
+          },
+          {
+            id: "steward",
+            label: "知识管家 · 今日",
+            value: totals.steward.pending,
+            icon: "sparkles",
+            tone: "brand",
+            description: (
+              <a href="/pipeline" className="text-primary">
+                项待确认 →
+              </a>
+            ),
+            tags: [
+              `预验 ${totals.steward.preVerified}`,
+              `冲突 ${totals.steward.conflicts}`,
+              `回流萃取 ${totals.steward.refluxDrafts}`,
+            ],
+          },
+        ]}
+      />
 
-      {/* tag filter bar */}
-      <div className="flex items-center gap-2 py-4">
+      {/* tag filter bar - no own vertical padding: the global gap-lg rhythm
+          spaces sections; gap-xs between chips. */}
+      <div className="flex items-center gap-xs">
         <button
           onClick={() => setActiveTag(null)}
           className={
@@ -338,12 +367,17 @@ export function OverviewClient() {
       {visible.length === 0 ? (
         <EmptyState icon="folder-open" title="没有匹配的资产" description="换一个标签,或清除筛选。" />
       ) : (
-        <div className="grid grid-cols-3 gap-3.5">
+        // Elastic asset grid (owner 2026-08-24): ladder follows the DS
+        // MetricGrid convention (1 -> 2 -> N by breakpoint), topping out at
+        // FOUR per row - five made the cards too cramped at 1920 (owner).
+        // Breathing room comes from the gap (gap-lg), not the edge padding,
+        // which stays at the page's px-xl.
+        <div className="grid grid-cols-1 gap-lg sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {visible.map((a) => (
             <AssetCard key={a.id} asset={a} />
           ))}
         </div>
       )}
-    </div>
+    </>
   );
 }

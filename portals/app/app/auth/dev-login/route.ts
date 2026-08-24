@@ -20,7 +20,11 @@ export async function GET(req: Request): Promise<Response> {
   const returnTo = url.searchParams.get("returnTo") ?? "/console";
   // Same-origin relative paths only - never an open redirect, even in dev.
   const target = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/console";
-  const res = NextResponse.redirect(new URL(target, url.origin));
+  // Prefer the configured app origin over url.origin (same as the callback
+  // route): standalone Next reconstructs req.url from the server bind address
+  // (HOSTNAME, "0.0.0.0" under Docker), not the client's Host header, so
+  // url.origin resolves to an address the browser can't reach.
+  const res = NextResponse.redirect(new URL(target, getOidcConfig().appOrigin || url.origin));
 
   if (url.searchParams.get("clear")) {
     res.cookies.set(DEV_LOGIN_COOKIE, "", { path: "/", maxAge: 0 });

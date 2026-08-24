@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ShellBrand,
+  ShellHeader,
   ShellIconButton,
   ShellIconGroup,
   ShellLauncher,
@@ -16,15 +17,20 @@ import {
 import { BRAND } from "@karda/shared/brand";
 import { getSession, loginHref, type SessionUser } from "../console/_lib/api";
 import { NAV_ITEMS, activeNavKey } from "./nav";
-import { useLocale } from "./locale";
+import { isLocale, useLocale } from "./locale";
 
 // The unified product header (owner, 2026-08-21). Structure follows the
-// arda-header shell: launcher + brand + menu area (left) / search (flex end) /
-// assistant + system icons + user menu (right). Composition, however, is the
-// DS 6.x way - Shell* components + token utilities - because the 5.x
-// shell-template.css that arda imports was retired from the 6.x package.
-// Height is the smallest header token (h-header-md = 48px): the header must
-// not eat content space.
+// arda-header shell: launcher + brand + menu area (left) / search (center slot,
+// pushed to the tool edge) / system icons + user menu (right).
+//
+// The container is the DS `ShellHeader` (design-ui layout) rather than a
+// hand-rolled <header>: it owns the height token and the SHELL MATERIAL, and
+// that material is a deliberate DS rule (ShellLayout.tsx header note) - header,
+// popovers and cards all sit on `--card` while the page body is one step
+// darker, so the layers separate by colour + `shadow-sticky`, NEVER by a
+// hairline border. The previous `border-b border-border bg-background` did the
+// opposite on both counts: same colour as the body, separated by a rule.
+// Height stays `md` = --spacing-header-md = 12 * 4px = 48px.
 //
 // Preferences (theme / density / font size / language) live in the user
 // panel's settings section via ShellPreferencePanel. Theme + density + font
@@ -98,60 +104,58 @@ export function AppHeader() {
 
   const displayName = user?.sub ?? "未登录";
 
-  return (
-    <header className="flex h-header-md shrink-0 items-center gap-3 border-b border-border bg-background px-3">
-      <div className="flex min-w-0 items-center gap-1">
-        <ShellLauncher
-          buttonLabel="切换功能域"
-          panelLabel="功能域"
-          items={NAV_ITEMS.map((n) => ({
-            key: n.key,
-            icon: n.icon,
-            label: n.label,
-            description: n.description,
-            active: n.key === active,
-          }))}
-          onSelect={(key) => {
-            const item = NAV_ITEMS.find((n) => n.key === key);
-            if (item) router.push(item.href);
-          }}
-        />
-        <ShellBrand href="/" label={BRAND.shortName} tag="知识服务平台" />
-        <span aria-hidden="true" className="mx-2 h-4 w-px bg-border" />
-        <nav aria-label="产品导航" className="flex items-center gap-0.5">
-          {NAV_ITEMS.map((n) => (
-            <Link
-              key={n.key}
-              href={n.href}
-              aria-current={n.key === active ? "page" : undefined}
-              className={
-                n.key === active
-                  ? "rounded-md bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary"
-                  : "rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
-              }
-            >
-              {n.label}
-            </Link>
-          ))}
-        </nav>
-      </div>
+  const leading = (
+    <>
+      <ShellLauncher
+        buttonLabel="切换功能域"
+        panelLabel="功能域"
+        items={NAV_ITEMS.map((n) => ({
+          key: n.key,
+          icon: n.icon,
+          label: n.label,
+          description: n.description,
+          active: n.key === active,
+        }))}
+        onSelect={(key) => {
+          const item = NAV_ITEMS.find((n) => n.key === key);
+          if (item) router.push(item.href);
+        }}
+      />
+      <ShellBrand href="/" label={BRAND.shortName} tag="知识服务平台" />
+      {/* Brand/menu divider: the one hairline the shell keeps, because it
+          separates WITHIN a surface rather than between two layers. */}
+      <span aria-hidden="true" className="mx-2xs h-icon-sm w-px bg-border" />
+      <nav aria-label="产品导航" className="flex items-center gap-2xs">
+        {NAV_ITEMS.map((n) => (
+          <Link
+            key={n.key}
+            href={n.href}
+            aria-current={n.key === active ? "page" : undefined}
+            // Scale utilities, not bare numerics: px-md/py-2xs and text-body-sm
+            // follow the density + font-size preference axes, which `px-3
+            // py-1.5 text-sm` did not - at compact density the old chips kept
+            // desktop padding while everything around them tightened.
+            className={
+              n.key === active
+                ? "rounded-md bg-primary/10 px-md py-2xs text-body-sm font-medium text-primary"
+                : "rounded-md px-md py-2xs text-body-sm text-muted-foreground transition-colors duration-fast ease-standard hover:bg-accent hover:text-foreground"
+            }
+          >
+            {n.label}
+          </Link>
+        ))}
+      </nav>
+    </>
+  );
 
-      <div className="ml-auto w-64 max-w-[40vw]">
-        <ShellSearchBox
-          query={query}
-          onQueryChange={setQuery}
-          groups={searchGroups}
-          labels={{ placeholder: "搜索资产、条目", empty: "没有匹配的结果", resultsLabel: "搜索结果" }}
-        />
-      </div>
-
-      <div className="flex items-center gap-1">
-        <ShellIconGroup label="系统">
-          <ShellIconButton icon="sparkles" label="知识管家" onClick={() => router.push("/pipeline")} />
-          <ShellIconButton icon="bell" label="通知" />
-          <ShellIconButton icon="help" label="帮助" />
-        </ShellIconGroup>
-        <ShellUserMenu
+  const trailing = (
+    <>
+      <ShellIconGroup label="系统">
+        <ShellIconButton icon="sparkles" label="知识管家" onClick={() => router.push("/pipeline")} />
+        <ShellIconButton icon="bell" label="通知" />
+        <ShellIconButton icon="help" label="帮助" />
+      </ShellIconGroup>
+      <ShellUserMenu
           user={{
             displayName,
             uniqueLine: user?.activeWorkspace ? `工作区 ${user.activeWorkspace.slice(0, 8)}` : undefined,
@@ -169,7 +173,11 @@ export function AppHeader() {
               showDensity
               showFontSize
               labels={PREF_LABELS}
-              onLocaleChange={setLocale}
+              // The DS panel hands back a bare string (its locale list is open);
+              // re-narrow before it reaches shell state.
+              onLocaleChange={(next) => {
+                if (isLocale(next)) setLocale(next);
+              }}
               onThemeChange={(t) => setMode(t)}
               onDensityChange={setDensity}
               onFontSizeChange={setFontSize}
@@ -196,7 +204,28 @@ export function AppHeader() {
               : []
           }
         />
-      </div>
-    </header>
+    </>
+  );
+
+  return (
+    <ShellHeader
+      height="md"
+      // The search is a tool, not the visual focus of this product's header -
+      // the four functional domains are. `end` reads the header as "identity
+      // left, tools right" and groups the search with the right-hand cluster.
+      centerAlign="end"
+      leading={leading}
+      center={
+        <div className="w-[18rem] max-w-[40vw]">
+          <ShellSearchBox
+            query={query}
+            onQueryChange={setQuery}
+            groups={searchGroups}
+            labels={{ placeholder: "搜索资产、条目", empty: "没有匹配的结果", resultsLabel: "搜索结果" }}
+          />
+        </div>
+      }
+      trailing={trailing}
+    />
   );
 }
