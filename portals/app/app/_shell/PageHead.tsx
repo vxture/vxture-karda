@@ -7,9 +7,9 @@ import type { ReactNode } from "react";
 // page's actions. Every top-level portal page opens with this - do not
 // hand-roll a page head per page.
 //
-// Spacing note: the head carries NO outer margins; the page's section rhythm
-// (flex-col gap-lg on the page root) owns vertical spacing, and the portal
-// layout owns the edge padding - both are global, keep them out of here.
+// Spacing note: the head carries NO outer margins. The 内容区's own section
+// rhythm owns vertical spacing, and PortalShell owns the window margin and the
+// content inset - both are global, keep them out of here.
 export function PageHead({
   title,
   description,
@@ -23,13 +23,13 @@ export function PageHead({
   actions?: ReactNode;
 }) {
   return (
-    // The head sits in its own container so the three columns share ONE top
-    // edge (owner 2026-08-24): the nav card, this panel and the steward dock
-    // all start at the same y and repeat the same radius, instead of a card on
-    // the left facing bare text in the middle. Surface is a translucent
-    // gradient - the product backdrop reads through it, the content does not
-    // have to fight it.
-    <div className="flex items-center justify-between gap-lg rounded-lg border border-primary/10 bg-gradient-to-b from-card/70 to-card/35 px-lg py-md dark:border-primary/20">
+    // The head sits in its own container so all three panes share ONE top edge
+    // (owner 2026-08-24): the nav card, this panel and the 值班台 all start at
+    // the same y and repeat the same radius, instead of a card on the left
+    // facing bare text in the middle. Surface is a translucent gradient - the
+    // product backdrop reads through it, the content does not have to fight
+    // it.
+    <div className="flex items-center justify-between gap-lg rounded-lg border border-primary/[0.06] bg-gradient-to-b from-card/80 to-card/30 px-lg py-md dark:border-primary/10">
       <div className="flex min-w-0 items-baseline gap-md">
         <h1 className="shrink-0 text-title-lg">{title}</h1>
         {description ? (
@@ -37,7 +37,7 @@ export function PageHead({
         ) : null}
       </div>
       <div className="flex shrink-0 items-center gap-md">
-        {meta ? <span className="font-mono text-xs text-muted-foreground">{meta}</span> : null}
+        {meta ? <span className="font-mono text-code-sm text-muted-foreground">{meta}</span> : null}
         {actions ? <div className="flex items-center gap-sm">{actions}</div> : null}
       </div>
     </div>

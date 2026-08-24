@@ -40,7 +40,7 @@ export function EvaluationClient() {
   }
   if (!data) {
     return (
-      <div className="flex items-center justify-center py-24 text-sm text-muted-foreground">
+      <div className="flex items-center justify-center py-24 text-body-md text-muted-foreground">
         <Icon name="spinner" className="mr-2 animate-spin" />
         正在加载验证评测…
       </div>
@@ -107,7 +107,7 @@ export function EvaluationClient() {
         ]}
       />
 
-      <div className="flex flex-col gap-lg xl:flex-row">
+      <div className="flex flex-col gap-lg @min-[52rem]:flex-row">
         {/* governance half */}
         <div className="flex min-w-0 flex-1 flex-col gap-md">
           <h2 className="text-title-sm">验证治理</h2>
@@ -134,7 +134,10 @@ export function EvaluationClient() {
             </CardContent>
           </Card>
 
-          <h3 className="text-label-lg text-muted-foreground">低于覆盖基线的资产</h3>
+          <h3 className="text-label-lg text-muted-foreground">
+            低于覆盖基线的资产
+            <span className="ml-xs font-mono text-body-sm">&lt; {v.floorPct}%</span>
+          </h3>
           <div className="flex flex-col gap-md">
             {v.belowFloor.map((a) => (
               <Card key={a.name} className="py-md">
@@ -143,7 +146,7 @@ export function EvaluationClient() {
                   <span className="w-[8rem] shrink-0">
                     <Progress value={a.coveragePct} />
                   </span>
-                  <span className="w-[3rem] shrink-0 text-right font-mono text-xs text-warning-text">
+                  <span className="w-[3rem] shrink-0 text-right font-mono text-code-sm text-warning-text">
                     {a.coveragePct}%
                   </span>
                   {a.staleCount > 0 && (
@@ -162,7 +165,7 @@ export function EvaluationClient() {
           <h2 className="text-title-sm">质量评测</h2>
           <Card className="py-md">
             <CardContent className="flex flex-col gap-sm px-lg">
-              <span className="font-mono text-[10px] tracking-widest text-muted-foreground">
+              <span className="font-mono text-code-sm tracking-widest text-muted-foreground">
                 {data.baselineLabel}
               </span>
               <div className="flex flex-col gap-sm border-t border-dashed border-primary/10 pt-sm dark:border-primary/20">
@@ -170,10 +173,10 @@ export function EvaluationClient() {
                   <span key={m.key} className="flex items-baseline gap-sm">
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className="text-body-sm">{m.label}</span>
-                      <span className="text-xs text-muted-foreground">{m.hint}</span>
+                      <span className="text-body-sm text-muted-foreground">{m.hint}</span>
                     </span>
                     <span className="shrink-0 font-mono text-title-sm">{m.value}</span>
-                    <span className={`w-[3.5rem] shrink-0 text-right font-mono text-xs ${DELTA_TONE[m.deltaTone]}`}>
+                    <span className={`w-[3.5rem] shrink-0 text-right font-mono text-code-sm ${DELTA_TONE[m.deltaTone]}`}>
                       {m.delta}
                     </span>
                   </span>
@@ -190,9 +193,9 @@ export function EvaluationClient() {
                 return (
                   <span key={s.id} className="flex items-center gap-sm text-body-sm">
                     <span className="min-w-0 flex-1 truncate">{s.name}</span>
-                    <span className="shrink-0 font-mono text-xs text-muted-foreground">{s.questionCount} 题</span>
+                    <span className="shrink-0 font-mono text-code-sm text-muted-foreground">{s.questionCount} 题</span>
                     <span
-                      className={`w-[3rem] shrink-0 text-right font-mono text-xs ${
+                      className={`w-[3rem] shrink-0 text-right font-mono text-code-sm ${
                         never ? "text-muted-foreground" : s.passPct >= 85 ? "text-success-text" : "text-warning-text"
                       }`}
                     >
@@ -211,9 +214,14 @@ export function EvaluationClient() {
         </div>
       </div>
 
-      {data.demoOps && (
-        <span className="text-[11px] text-muted-foreground">评测口径为演示数据 · 评测运行器建设中</span>
-      )}
+      {/* Provenance, per group. A single page-wide "demo" line would now be a
+          lie: 验证治理 reads live off document/entry verification_state while
+          评测 is still the overlay. See EvaluationData.sources. */}
+      <span className="text-body-sm text-muted-foreground">
+        {data.sources.corpus === "live" ? "验证治理为实时数据" : "验证治理为演示数据"}
+        {" · 管家预验为演示数据 · "}
+        {data.sources.evaluation === "live" ? "评测为实时数据" : "评测口径为演示数据,评测运行器建设中"}
+      </span>
     </>
   );
 }

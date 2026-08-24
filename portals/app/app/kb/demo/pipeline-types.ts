@@ -97,7 +97,7 @@ export interface TaskDetail {
   meta: string[];
   badge: string;
   stages: TaskStage[];
-  /** [label, value] rows for the three rail cards. */
+  /** [label, value] rows for the three 页内副栏 cards. */
   config: [string, string][];
   configNote: string;
   lineage: [string, string][];

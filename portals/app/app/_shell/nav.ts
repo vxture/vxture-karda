@@ -1,13 +1,13 @@
 import type { IconName } from "@vxture/design-system";
 
-/** DOM id of the portal content column - the fullscreen target. Shared so the
+/** DOM id of the 内容区 (main pane) - the fullscreen target. Shared so the
  *  header's toggle and the element it expands can never drift apart. */
 export const PORTAL_FULLSCREEN_ID = "karda-portal-content";
 
 // The product's top-level functional domains (owner, 2026-08-21). They render
-// as the header menu area, left-aligned after the brand - the four entries ARE
-// the product's information architecture, so this list is the single source
-// both the header links and the launcher panel read from.
+// as the 导航栏 cards and the header launcher - the four entries ARE the
+// product's information architecture, so this list is the single source both
+// of them read from.
 export interface NavSubItem {
   key: string;
   href: string;
@@ -20,7 +20,7 @@ export interface NavItem {
   label: string;
   icon: IconName;
   description: string;
-  /** Second-level views, shown under the active domain's nav card. */
+  /** Second-level views, shown under the domain's card in the 导航栏. */
   sub?: readonly NavSubItem[];
 }
 

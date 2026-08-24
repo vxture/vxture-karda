@@ -55,7 +55,7 @@ export function ChannelsClient() {
   }
   if (!data) {
     return (
-      <div className="flex items-center justify-center py-24 text-sm text-muted-foreground">
+      <div className="flex items-center justify-center py-24 text-body-md text-muted-foreground">
         <Icon name="spinner" className="mr-2 animate-spin" />
         正在加载供给通道…
       </div>
@@ -101,7 +101,7 @@ export function ChannelsClient() {
       {/* channel health */}
       <div className="flex flex-col gap-md">
         <h2 className="text-title-sm">通道健康</h2>
-        <div className="grid grid-cols-1 gap-lg xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-lg @min-[52rem]:grid-cols-2">
           {data.channels.map((c) => {
             const off = c.state === "off";
             return (
@@ -110,7 +110,7 @@ export function ChannelsClient() {
                   <div className="flex items-start justify-between gap-md">
                     <span className="flex min-w-0 flex-col gap-2xs">
                       <span className="text-label-lg">{c.name}</span>
-                      <span className="truncate font-mono text-xs text-muted-foreground">{c.endpoint}</span>
+                      <span className="truncate font-mono text-code-sm text-muted-foreground">{c.endpoint}</span>
                     </span>
                     <StatusBadge tone={STATE_TONE[c.state]} dot>
                       {c.stateLabel}
@@ -135,7 +135,7 @@ export function ChannelsClient() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-lg xl:flex-row">
+      <div className="flex flex-col gap-lg @min-[52rem]:flex-row">
         {/* capabilities */}
         <div className="flex min-w-0 flex-1 flex-col gap-md">
           <h2 className="text-title-sm">能力契约</h2>
@@ -150,7 +150,7 @@ export function ChannelsClient() {
                         {cap.risk === "write" ? "写" : "读"}
                       </StatusBadge>
                     </span>
-                    <span className="truncate font-mono text-xs text-muted-foreground">
+                    <span className="truncate font-mono text-code-sm text-muted-foreground">
                       {cap.operations.join(" · ")}
                     </span>
                   </span>
@@ -158,7 +158,7 @@ export function ChannelsClient() {
                     <StatusBadge tone={cap.status === "stable" ? "success" : "warning"} dot>
                       {cap.statusLabel}
                     </StatusBadge>
-                    <span className="font-mono text-xs text-muted-foreground">
+                    <span className="font-mono text-code-sm text-muted-foreground">
                       今日 {cap.todayCalls.toLocaleString()}
                     </span>
                   </span>
@@ -179,10 +179,10 @@ export function ChannelsClient() {
                       style={{ width: `${c.sharePct}%` }}
                     />
                   </span>
-                  <span className="w-[3.5rem] shrink-0 text-right font-mono text-xs text-muted-foreground">
+                  <span className="w-[3.5rem] shrink-0 text-right font-mono text-code-sm text-muted-foreground">
                     {c.calls}
                   </span>
-                  <span className="hidden w-[9rem] shrink-0 truncate text-xs text-muted-foreground sm:block">
+                  <span className="hidden w-[9rem] shrink-0 truncate text-body-sm text-muted-foreground @min-[40rem]:block">
                     {c.topAsset}
                   </span>
                 </span>
@@ -210,7 +210,7 @@ export function ChannelsClient() {
                     />
                     <span className="flex min-w-0 flex-col">
                       <span className={a.done ? "text-muted-foreground line-through" : "text-foreground"}>{a.label}</span>
-                      <span className="text-xs text-muted-foreground">{a.note}</span>
+                      <span className="text-body-sm text-muted-foreground">{a.note}</span>
                     </span>
                   </span>
                 ))}
@@ -221,7 +221,7 @@ export function ChannelsClient() {
       </div>
 
       {data.demoOps && (
-        <span className="text-[11px] text-muted-foreground">调用与消费为演示口径 · 供给账本随通道里程碑交付</span>
+        <span className="text-body-sm text-muted-foreground">调用与消费为演示口径 · 供给账本随通道里程碑交付</span>
       )}
     </>
   );

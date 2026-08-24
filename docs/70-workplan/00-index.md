@@ -317,3 +317,73 @@ platform needs before it can publish karda's five DRAFT plans.
 
 Earlier "Later" rows (domain schema / application surfaces / online integration)
 are replaced by the batches above, now that the designs exist to plan against.
+
+## Batch 3-8 - the product build (plan from `#18`, merged 2026-07-23)
+
+`#18` set the batch plan and it was never carried into this tracker - the file
+stopped at Batch 2 while a month of work shipped (`v0.2.0` -> `v0.8.0`).
+Reconstructed here from merged PRs and the live production build, 2026-08-25.
+
+**One premise of `#18` has since been removed.** It argued Atlas gated two of the
+four largest domains and that no karda-Atlas contract existed anywhere. The
+contract landed (`#67`/`#68`/`#71`/`#74`/`#81`) and `karda.ask` went live
+2026-07-28 (`v0.2.3`). Atlas is no longer the long pole; **the read models are**
+(see Batch 9).
+
+| # | Scope (`#18`) | State |
+|---|---------------|-------|
+| 3 | Domain data model - schema doc + DDL + Prisma lockstep + column locks | **done** - 22 tables, `check-data-architecture` green as a hard gate |
+| 4 | Asset layer CRUD, dual templates, both state machines | **done** - Console 库/文档管理, upload -> 分级库 -> 逐库分享 + 治理开关 (`v0.2.0`) |
+| 5 | Processing pipeline | **done** - 入队即处理 + 可抽干 tick (`v0.2.0`); 5b vectorize (`#105`); provenance on every write (`#108`) |
+| 6 | Retrieval | **done** - 6b vector recall/rerank (`#105`); Console retrieval surface (`#108`); `karda.ask` <-> Atlas A4 live 2026-07-28 |
+| 7 | Arda content channel | **blocked** - `200-arda-channel` still v0.1, awaiting the arda line (letter `30`, sent 2026-07-22) |
+| 8 | Tool surface + Console | **partial** - seven-tool surface + `write_document`/`create_entry` + Console shipped; the four-domain portal shell shipped but three domains render the demo overlay (Batch 9) |
+
+**Shipped outside `#18`'s plan** (the plan predates them, they are not scope creep):
+Runos supplier channel `#106`; positioning uplift KD-017 `#107`; grant-driven
+model selection KD-018 `#111`; Aliyun OSS object store KD-019 `#114`; design
+system adoption KD-020 `#118`-`#120`.
+
+## Batch 9 - the read models (in progress)
+
+**The finding that opens this batch:** three of the four portal domains query no
+database at all. `/api/channels`, `/api/evaluation`, `/api/pipeline` (+ tasks,
+rebuild) were 100% demo overlay; `/api/overview` is half live. The overlay is
+honestly labelled (`demoOps: true` reaches production), but the portal shell now
+renders those domains as finished product - and **the more finished the shell
+looks, the more expensive the mistake of reading demo as real becomes.**
+
+Prisma holds 22 tables and none of them is a task, a call ledger, or an
+evaluation run. So the batch splits by what each domain needs:
+
+| Domain | Needs | Cost |
+|--------|-------|------|
+| 验证治理 (half of 验证评测) | nothing - `document.verification_state` / `entry.verification_state` exist since the baseline DDL | **done 2026-08-25** - `kb/governance/corpus-read.ts`, 8 unit tests; read by BOTH `/api/evaluation` and the 导航栏 card so they cannot disagree |
+| 加工管道 (流水 / 任务与队列) | a task/queue table - the processing runtime runs but leaves no readable record | DDL -> `db-init`, the gated path |
+| 供给通道 | a supply ledger - karda emits `karda.ingest` to the platform but keeps no local record to read back | DDL -> `db-init` |
+| 质量评测 (other half of 验证评测) | eval-set + eval-run tables, and a runner | DDL + the runner; KD-011 ruled out synthetic QA generation, so sets are authored |
+| 知识资产 ops figures (引用热度 / TOP 消费方) | the same supply ledger as 供给通道 | rides on that one |
+
+**Provenance contract, set by the first one done.** A page-wide `demoOps` flag
+cannot survive a domain going half-live, so `EvaluationData` now carries
+`sources: { corpus, steward, evaluation }` of type `FigureSource = "live" |
+"demo"`, and the page's footnote renders per group. The other three payloads
+adopt the same shape when their ledgers land - **do not let a section go live
+under a page-wide flag**, that is how a demo figure gets read as real.
+
+**Sequencing.** 验证治理 first because it cost no DDL. The remaining three all
+need `db-init`, which is the one irreversible-ish step in the chain, so they
+should land as ONE schema increment rather than three - and the schema doc
+(`30-design/2xx` band) must land with it: `lint:data-design` is a hard gate on
+DDL/Prisma lockstep.
+
+## Decision track (owner)
+
+| ID | State |
+|----|-------|
+| KD-201 首个 P 级知识包选型 | open |
+| KD-202 private 库离职后保留期 | **ruled 2026-08-25 - 90 天** (see `20-specs/20-decisions.md` §1.1); unblocked yucer `#103` |
+| KD-203 实例化/归档计量口径 | open - still blocks the platform publishing the five DRAFT plans, so C2 resolves every workspace as unsubscribed |
+| KD-204 archived 保留策略 | open - now touches KD-206 (does 全域回收 reach archived snapshots?) |
+| KD-205 图谱实例归属 | open, v2 |
+| KD-206 客户删除请求波及已发布内容 | **ruled 2026-08-25 - 全域回收** (newly registered the same day); design landing still owed in `100-kb-model`'s content state machine |

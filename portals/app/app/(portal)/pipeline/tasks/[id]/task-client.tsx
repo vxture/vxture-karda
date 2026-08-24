@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Banner, Button, Icon } from "@vxture/design-system";
-import { KVRows, RailCard } from "../../_ui";
+import { KVRows, AsideCard } from "../../_ui";
 import type { TaskDetail, TaskStage } from "../../../../kb/demo/pipeline-types";
 
 // 任务详情 (design canvas: PipelineDoc board). Five-stage timeline with
 // per-stage artifacts on the left (阶段产物留存: raw/IR/块/向量), the steward
-// presence strip under it, and the three rail cards (加工配置 / 血缘与幂等 /
+// presence strip under it, and the three 页内副栏 cards (加工配置 / 血缘与幂等 /
 // 成本) on the right.
 
 const CHIP_CLASS: Record<NonNullable<TaskStage["chips"]>[number]["tone"], string> = {
@@ -32,7 +32,7 @@ function StageNode({ stage, last }: { stage: TaskStage; last: boolean }) {
           </span>
         ) : (
           <span className="flex size-icon-lg items-center justify-center rounded-full border border-border">
-            <span className="font-mono text-[9px] text-muted-foreground">{stage.kicker.slice(0, 2)}</span>
+            <span className="font-mono text-code-sm text-muted-foreground">{stage.kicker.slice(0, 2)}</span>
           </span>
         )}
         {!last && (
@@ -45,15 +45,15 @@ function StageNode({ stage, last }: { stage: TaskStage; last: boolean }) {
       <div className={`flex min-w-0 flex-1 flex-col gap-2xs ${last ? "" : "pb-md"}`}>
         <div className="flex items-baseline gap-sm">
           <span
-            className={`font-mono text-[10px] tracking-widest ${stage.state === "active" ? "text-primary" : "text-muted-foreground"}`}
+            className={`font-mono text-code-sm tracking-widest ${stage.state === "active" ? "text-primary" : "text-muted-foreground"}`}
           >
             {stage.kicker}
           </span>
           <span className={`text-body-sm font-semibold ${stage.state === "todo" ? "text-muted-foreground" : ""}`}>
             {stage.label}
           </span>
-          {stage.progressPct !== undefined && <span className="text-xs text-primary">{stage.progressPct}%</span>}
-          {stage.timing && <span className="ml-auto font-mono text-[10.5px] text-muted-foreground">{stage.timing}</span>}
+          {stage.progressPct !== undefined && <span className="text-body-sm text-primary">{stage.progressPct}%</span>}
+          {stage.timing && <span className="ml-auto font-mono text-code-sm text-muted-foreground">{stage.timing}</span>}
         </div>
         {stage.progressPct !== undefined && (
           <div className="h-[4px] max-w-[32rem] rounded-full bg-muted">
@@ -66,7 +66,7 @@ function StageNode({ stage, last }: { stage: TaskStage; last: boolean }) {
         {stage.chips && (
           <span className="flex flex-wrap gap-sm pt-2xs">
             {stage.chips.map((c) => (
-              <span key={c.label} className={`rounded-md border px-sm py-2xs font-mono text-[10.5px] ${CHIP_CLASS[c.tone]}`}>
+              <span key={c.label} className={`rounded-md border px-sm py-2xs font-mono text-code-sm ${CHIP_CLASS[c.tone]}`}>
                 {c.label}
               </span>
             ))}
@@ -99,7 +99,7 @@ export function TaskClient({ id }: { id: string }) {
   }
   if (!data) {
     return (
-      <div className="flex items-center justify-center py-24 text-sm text-muted-foreground">
+      <div className="flex items-center justify-center py-24 text-body-md text-muted-foreground">
         <Icon name="spinner" className="mr-2 animate-spin" />
         正在加载任务详情…
       </div>
@@ -110,7 +110,7 @@ export function TaskClient({ id }: { id: string }) {
     <>
       {/* breadcrumb + task head (the PageHead pattern, task-flavoured) */}
       <div className="flex flex-col gap-xs">
-        <div className="text-[11.5px] text-muted-foreground">
+        <div className="text-body-sm text-muted-foreground">
           <Link href="/pipeline" className="hover:text-foreground">加工管道</Link>
           {" / "}
           <Link href="/pipeline/tasks" className="hover:text-foreground">任务与队列</Link>
@@ -120,7 +120,7 @@ export function TaskClient({ id }: { id: string }) {
         <div className="flex items-start justify-between gap-lg">
           <div className="flex min-w-0 flex-col gap-2xs">
             <h1 className="truncate text-title-lg">{data.title}</h1>
-            <div className="flex items-center gap-md font-mono text-xs text-muted-foreground">
+            <div className="flex items-center gap-md font-mono text-code-sm text-muted-foreground">
               {data.meta.map((m) => (
                 <span key={m}>{m}</span>
               ))}
@@ -134,7 +134,7 @@ export function TaskClient({ id }: { id: string }) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-lg xl:flex-row">
+      <div className="flex flex-col gap-lg @min-[52rem]:flex-row">
         {/* stage timeline + steward strip */}
         <div className="flex min-w-0 flex-1 flex-col">
           {data.stages.map((s, i) => (
@@ -148,7 +148,7 @@ export function TaskClient({ id }: { id: string }) {
             <span className="flex min-w-0 flex-col gap-2xs">
               <span className="flex items-center gap-sm">
                 <span className="text-body-sm font-semibold">知识管家 · 全程在场</span>
-                <span className="font-mono text-[9px] tracking-widest text-ai-text">AI AGENT</span>
+                <span className="font-mono text-code-sm tracking-widest text-ai-text">AI AGENT</span>
               </span>
               <span className="text-body-sm leading-relaxed text-muted-foreground">
                 解析中已做语义修复 2 处;入藏后自动萃取知识单元、关联既有条目并交叉预验——低置信内容标注待人工,
@@ -158,23 +158,23 @@ export function TaskClient({ id }: { id: string }) {
           </div>
         </div>
 
-        {/* rail */}
+        {/* 页内副栏 */}
         <div className="flex w-full shrink-0 flex-col gap-md xl:w-[23rem]">
-          <RailCard title="加工配置">
+          <AsideCard title="加工配置">
             <KVRows rows={data.config} />
-            <div className="border-t border-dashed border-primary/10 pt-sm text-[11px] text-muted-foreground dark:border-primary/20">
+            <div className="border-t border-dashed border-primary/10 pt-sm text-body-sm text-muted-foreground dark:border-primary/20">
               {data.configNote}
             </div>
-          </RailCard>
-          <RailCard title="血缘与幂等">
+          </AsideCard>
+          <AsideCard title="血缘与幂等">
             <KVRows rows={data.lineage} />
-            <div className="border-t border-dashed border-primary/10 pt-sm text-[11px] text-muted-foreground dark:border-primary/20">
+            <div className="border-t border-dashed border-primary/10 pt-sm text-body-sm text-muted-foreground dark:border-primary/20">
               {data.lineageNote}
             </div>
-          </RailCard>
-          <RailCard title="成本 · 经 Atlas 计量" aside="记账 → 库归属 WS">
+          </AsideCard>
+          <AsideCard title="成本 · 经 Atlas 计量" aside="记账 → 库归属 WS">
             <KVRows rows={data.cost} />
-          </RailCard>
+          </AsideCard>
         </div>
       </div>
     </>

@@ -27,8 +27,11 @@ export function StageDots({ dots }: { dots: readonly StageDot[] }) {
   );
 }
 
-/** Right-rail card: title row + content, compact density. */
-export function RailCard({
+/** 页内副栏 (page aside) card: title row + content, compact density.
+ *  The aside is a page's OWN secondary column inside the 内容区 - not to be
+ *  confused with 值班台, which is a shell pane. Shell vocabulary is defined in
+ *  docs/30-design/130-portal-shell.md. */
+export function AsideCard({
   title,
   aside,
   children,
@@ -42,7 +45,7 @@ export function RailCard({
       <CardContent className="flex flex-col gap-sm px-lg">
         <div className="flex items-baseline justify-between gap-sm">
           <span className="text-label-lg">{title}</span>
-          {aside ? <span className="font-mono text-[10px] text-muted-foreground">{aside}</span> : null}
+          {aside ? <span className="font-mono text-code-sm text-muted-foreground">{aside}</span> : null}
         </div>
         {children}
       </CardContent>
@@ -50,14 +53,14 @@ export function RailCard({
   );
 }
 
-/** Label/value rows for rail cards. */
+/** Label/value rows for aside cards. */
 export function KVRows({ rows }: { rows: readonly [string, string][] }) {
   return (
     <div className="flex flex-col gap-xs text-body-sm">
       {rows.map(([k, v]) => (
         <div key={k} className="flex items-baseline justify-between gap-md">
           <span className="shrink-0 text-muted-foreground">{k}</span>
-          <span className="min-w-0 truncate text-right font-mono text-xs">{v}</span>
+          <span className="min-w-0 truncate text-right font-mono text-code-sm">{v}</span>
         </div>
       ))}
     </div>
@@ -69,7 +72,7 @@ export function SectionRow({ title, aside }: { title: string; aside?: ReactNode 
   return (
     <div className="flex items-baseline justify-between">
       <h2 className="text-title-sm">{title}</h2>
-      {aside ? <span className="text-[11px] text-muted-foreground">{aside}</span> : null}
+      {aside ? <span className="text-body-sm text-muted-foreground">{aside}</span> : null}
     </div>
   );
 }

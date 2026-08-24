@@ -121,11 +121,11 @@ export function AppHeader({
   const displayName = user?.sub ?? "未登录";
   const roleLabel = user?.isWorkspaceOwner ? "工作区属主" : user?.canManage ? "管理员" : "成员";
 
-  // V3 指挥台 shell: domain navigation moved to the left nav-rail cards, so
-  // the header keeps only launcher + brand - two navs must not coexist.
+  // Domain navigation lives in the 导航栏 cards, so the 顶栏 keeps only
+  // launcher + brand - two navs must not coexist.
   const leading = (
     <>
-      {/* Rail toggle, leftmost in the header (owner 2026-08-24) - everything
+      {/* 导航栏 toggle, leftmost in the 顶栏 (owner 2026-08-24) - everything
           else shifts right behind it. Kept very light: it governs chrome, not
           content, so it must not compete with the brand beside it. */}
       <ShellIconButton
@@ -169,7 +169,7 @@ export function AppHeader({
         {pending > 0 && !dockOpen && (
           <span
             aria-label={`${pending} 项待裁决`}
-            className="pointer-events-none absolute -right-0.5 -top-0.5 flex h-[14px] min-w-[14px] items-center justify-center rounded-full bg-destructive px-2xs font-mono text-[9px] font-semibold text-white"
+            className="pointer-events-none absolute -right-0.5 -top-0.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-destructive px-2xs font-mono text-code-sm font-semibold text-white"
           >
             {pending}
           </span>

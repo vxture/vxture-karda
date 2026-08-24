@@ -13,6 +13,7 @@ export const DEMO_EVALUATION: EvaluationData = {
     stale: 26,
     unverified: 573,
     coveragePct: 82,
+    floorPct: 80,
     belowFloor: [
       { name: "应急预案库", coveragePct: 61, staleCount: 17 },
       { name: "会议纪要与决议", coveragePct: 58, staleCount: 9 },
@@ -21,6 +22,9 @@ export const DEMO_EVALUATION: EvaluationData = {
     preVerifiedPending: S.preVerified,
   },
   baselineLabel: "基线 · bge-m3@v2 · 2026-08-18",
+  // The offline default. /api/evaluation overrides `corpus` to "live" whenever
+  // a DB is attached - this constant is what the page shows with none.
+  sources: { corpus: "demo", steward: "demo", evaluation: "demo" },
   metrics: [
     {
       key: "recall",

@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import { Banner, Button, Card, CardContent, Icon, StatusBadge } from "@vxture/design-system";
 import { PageHead } from "../../../_shell/PageHead";
-import { KVRows, RailCard } from "../_ui";
+import { KVRows, AsideCard } from "../_ui";
 import type { RebuildData } from "../../../kb/demo/pipeline-types";
 
 // 受控重建 (design canvas: PipelineRebuild board, light-theme translation).
 // build-then-swap: active rebuild (4-step progress, old index keeps serving),
 // a switched library inside its rollback window, a queued package
-// instantiation; rail = triggers, safety constraints, the steward's advice.
+// instantiation; 页内副栏 = triggers, safety constraints, the steward's advice.
 
 const STEPS = ["声明变更", "影子索引构建", "原子切换", "回退窗口 24h"];
 
@@ -35,7 +35,7 @@ export function RebuildClient() {
   }
   if (!data) {
     return (
-      <div className="flex items-center justify-center py-24 text-sm text-muted-foreground">
+      <div className="flex items-center justify-center py-24 text-body-md text-muted-foreground">
         <Icon name="spinner" className="mr-2 animate-spin" />
         正在加载重建状态…
       </div>
@@ -51,7 +51,7 @@ export function RebuildClient() {
         actions={<Button>发起重建</Button>}
       />
 
-      <div className="flex flex-col gap-lg xl:flex-row">
+      <div className="flex flex-col gap-lg @min-[52rem]:flex-row">
         <div className="flex min-w-0 flex-1 flex-col gap-md">
           {/* active rebuild */}
           <Card className="py-md border-t-medium border-t-primary">
@@ -61,7 +61,7 @@ export function RebuildClient() {
                   <span className="flex items-center gap-sm">
                     <span className="text-label-lg">{data.active.kbName}</span>
                     <StatusBadge tone="brand" dot>
-                      <span className="font-mono text-[10px]">REBUILDING</span>
+                      <span className="font-mono text-code-sm">REBUILDING</span>
                     </StatusBadge>
                   </span>
                   <span className="text-body-sm text-muted-foreground">触发:{data.active.trigger}</span>
@@ -94,7 +94,7 @@ export function RebuildClient() {
                         <span className="size-icon-md rounded-full border border-border" />
                       )}
                       <span
-                        className={`text-xs ${i === data.active.stepIndex ? "font-semibold" : "text-muted-foreground"}`}
+                        className={`text-body-sm ${i === data.active.stepIndex ? "font-semibold" : "text-muted-foreground"}`}
                       >
                         {s}
                       </span>
@@ -105,14 +105,14 @@ export function RebuildClient() {
 
               <div className="flex items-center gap-lg">
                 <div className="flex min-w-0 flex-1 flex-col gap-2xs">
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-body-sm">
                     <span className="text-muted-foreground">影子构建进度 · bulk 队列</span>
                     <span className="font-mono text-primary">{data.active.progressLabel}</span>
                   </div>
                   <div className="h-[5px] rounded-full bg-muted">
                     <div className="h-full rounded-full bg-primary" style={{ width: `${data.active.progressPct}%` }} />
                   </div>
-                  <div className="flex gap-md font-mono text-[10.5px] text-muted-foreground">
+                  <div className="flex gap-md font-mono text-code-sm text-muted-foreground">
                     {data.active.facts.map((f) => (
                       <span key={f}>{f}</span>
                     ))}
@@ -135,13 +135,13 @@ export function RebuildClient() {
                 <span className="flex items-center gap-sm">
                   <span className="text-label-lg">{data.switched.kbName}</span>
                   <StatusBadge tone="success" dot={false}>
-                    <span className="font-mono text-[10px]">SWITCHED</span>
+                    <span className="font-mono text-code-sm">SWITCHED</span>
                   </StatusBadge>
                 </span>
                 <span className="text-body-sm text-muted-foreground">{data.switched.changeNote}</span>
               </span>
               <span className="flex shrink-0 flex-col items-end gap-2xs">
-                <span className="font-mono text-xs text-muted-foreground">
+                <span className="font-mono text-code-sm text-muted-foreground">
                   回退窗口剩 <span className="text-foreground">{data.switched.windowLeft}</span>
                 </span>
                 <span className="h-[4px] w-[8rem] rounded-full bg-muted">
@@ -164,12 +164,12 @@ export function RebuildClient() {
                 <span className="flex items-center gap-sm">
                   <span className="text-label-lg">{data.instantiation.title}</span>
                   <StatusBadge tone="neutral" dot={false}>
-                    <span className="font-mono text-[10px]">QUEUED · BULK</span>
+                    <span className="font-mono text-code-sm">QUEUED · BULK</span>
                   </StatusBadge>
                 </span>
                 <span className="text-body-sm text-muted-foreground">{data.instantiation.flowNote}</span>
               </span>
-              <span className="flex shrink-0 flex-col items-end gap-2xs font-mono text-xs text-muted-foreground">
+              <span className="flex shrink-0 flex-col items-end gap-2xs font-mono text-code-sm text-muted-foreground">
                 <span>{data.instantiation.estimate}</span>
                 <span>{data.instantiation.costNote}</span>
               </span>
@@ -180,9 +180,9 @@ export function RebuildClient() {
           </Card>
         </div>
 
-        {/* rail */}
+        {/* 页内副栏 */}
         <div className="flex w-full shrink-0 flex-col gap-md xl:w-[22rem]">
-          <RailCard title="什么会触发重建">
+          <AsideCard title="什么会触发重建">
             <div className="flex flex-col gap-xs text-body-sm text-muted-foreground">
               {data.triggers.map((t) => (
                 <span key={t} className="flex gap-sm">
@@ -191,10 +191,10 @@ export function RebuildClient() {
                 </span>
               ))}
             </div>
-          </RailCard>
-          <RailCard title="安全约束">
+          </AsideCard>
+          <AsideCard title="安全约束">
             <KVRows rows={data.constraints} />
-          </RailCard>
+          </AsideCard>
           <Card className="py-md border-t-medium border-t-ai-border">
             <CardContent className="flex flex-col gap-xs px-lg">
               <span className="flex items-center gap-sm">

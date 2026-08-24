@@ -126,7 +126,7 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
 
         {asset.processing ? (
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center justify-between text-body-sm text-muted-foreground">
               <span>管家加工中</span>
               <span className="font-mono">
                 {asset.processing.indexed} / {asset.processing.total}
@@ -134,14 +134,14 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
             </div>
             <Progress value={(asset.processing.indexed / Math.max(asset.processing.total, 1)) * 100} />
             {asset.processing.parked > 0 && (
-              <div className="text-xs text-muted-foreground">{asset.processing.parked} 份停放待向量化</div>
+              <div className="text-body-sm text-muted-foreground">{asset.processing.parked} 份停放待向量化</div>
             )}
           </div>
         ) : (
           <div className="flex items-center gap-3">
             <CoverageRing pct={asset.coveragePct} tone={warn ? "warning" : "success"} />
             <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center justify-between text-body-sm">
                 <span className={asset.topConsumers.length > 1 ? "text-ai-text" : "text-muted-foreground"}>
                   {asset.topConsumers.length > 0 ? `${asset.topConsumers.join(" · ")} 高频引用` : "引用热度 · 7 日"}
                 </span>
@@ -153,7 +153,7 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
         )}
 
         <div
-          className={`rounded-lg px-3 py-2 text-xs leading-relaxed ${
+          className={`rounded-lg px-3 py-2 text-body-sm leading-relaxed ${
             warn
               ? "border border-warning/30 bg-warning-muted/40 text-muted-foreground"
               : asset.highlight.kind === "steward"
@@ -175,11 +175,11 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
             dashed = row/field separation, brand @10% (light) / @20% (dark). */}
         <div className="mt-auto flex items-center gap-1.5 border-t border-dashed border-primary/10 pt-md dark:border-primary/20">
           {asset.tags.map((t) => (
-            <span key={t} className="rounded bg-primary/10 px-2 py-0.5 text-[10.5px] text-primary">
+            <span key={t} className="rounded bg-primary/10 px-2 py-0.5 text-body-sm text-primary">
               {t}
             </span>
           ))}
-          <span className="ml-auto text-[11px] text-muted-foreground">{PUBLISH_LABEL[asset.publishState]}</span>
+          <span className="ml-auto shrink-0 text-body-sm text-muted-foreground">{PUBLISH_LABEL[asset.publishState]}</span>
           <StatusBadge tone={health.tone} dot>
             {health.label}
           </StatusBadge>
@@ -246,7 +246,7 @@ export function OverviewClient() {
 
   if (!data) {
     return (
-      <div className="flex items-center justify-center py-24 text-sm text-muted-foreground">
+      <div className="flex items-center justify-center py-24 text-body-md text-muted-foreground">
         <Icon name="spinner" className="mr-2 animate-spin" />
         正在加载知识资产…
       </div>
@@ -332,15 +332,18 @@ export function OverviewClient() {
         ]}
       />
 
-      {/* tag filter bar - no own vertical padding: the global gap-lg rhythm
-          spaces sections; gap-xs between chips. */}
-      <div className="flex items-center gap-xs">
+      {/* Tag filter bar - no own vertical padding: the section rhythm spaces
+          it, gap-xs separates the chips. It WRAPS and every chip is
+          shrink-0/nowrap: as a single non-wrapping row the chips compressed
+          instead of overflowing, and each label collapsed to one character per
+          line once the 内容区 narrowed (owner 2026-08-25). */}
+      <div className="flex flex-wrap items-center gap-xs">
         <button
           onClick={() => setActiveTag(null)}
           className={
             activeTag === null
-              ? "rounded-full border border-primary/40 bg-primary/10 px-3.5 py-1 text-xs font-medium text-primary"
-              : "rounded-full border border-border px-3.5 py-1 text-xs text-muted-foreground hover:bg-accent"
+              ? "shrink-0 whitespace-nowrap rounded-full border border-primary/40 bg-primary/10 px-3.5 py-1 text-label-sm text-primary"
+              : "shrink-0 whitespace-nowrap rounded-full border border-border px-3.5 py-1 text-body-sm text-muted-foreground hover:bg-accent"
           }
         >
           全部 {data.assets.length}
@@ -351,14 +354,14 @@ export function OverviewClient() {
             onClick={() => setActiveTag(activeTag === tag ? null : tag)}
             className={
               activeTag === tag
-                ? "rounded-full border border-primary/40 bg-primary/10 px-3.5 py-1 text-xs font-medium text-primary"
-                : "rounded-full border border-border px-3.5 py-1 text-xs text-muted-foreground hover:bg-accent"
+                ? "shrink-0 whitespace-nowrap rounded-full border border-primary/40 bg-primary/10 px-3.5 py-1 text-label-sm text-primary"
+                : "shrink-0 whitespace-nowrap rounded-full border border-border px-3.5 py-1 text-body-sm text-muted-foreground hover:bg-accent"
             }
           >
             {tag} {count}
           </button>
         ))}
-        <span className="ml-auto text-[11px] text-muted-foreground">
+        <span className="ml-auto text-body-sm text-muted-foreground">
           {data.demoOps ? "调用与引用为演示口径 · 供给账本建设中" : ""}
         </span>
       </div>
@@ -367,12 +370,19 @@ export function OverviewClient() {
       {visible.length === 0 ? (
         <EmptyState icon="folder-open" title="没有匹配的资产" description="换一个标签,或清除筛选。" />
       ) : (
-        // Elastic asset grid (owner 2026-08-24): ladder follows the DS
-        // MetricGrid convention (1 -> 2 -> N by breakpoint), topping out at
-        // FOUR per row - five made the cards too cramped at 1920 (owner).
-        // Breathing room comes from the gap (gap-lg), not the edge padding,
-        // which stays at the page's px-xl.
-        <div className="grid grid-cols-1 gap-lg sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        // Elastic asset grid, driven by the 内容区's OWN width, not the
+        // viewport (owner 2026-08-25). PortalShell marks the 内容区 as an
+        // @container; a viewport breakpoint cannot see whether 导航栏 and
+        // 值班台 are open, which is how a 1600px window used to draw four
+        // columns into an 840px pane.
+        //
+        // The 内容区 measures (viewport - 48 window margin - 280 导航栏 -
+        // 320 值班台 - 48 pane spacers - 64 content inset):
+        //   both panes open   1440 -> 42rem   1600 -> 52rem   1920 -> 72rem
+        //   both collapsed    1440 -> 83rem   1600 -> 93rem
+        // so 76rem is the four-column gate: three columns is the default
+        // whenever both side panes are open, four only once they are not.
+        <div className="grid grid-cols-1 gap-lg @min-[26rem]:grid-cols-2 @min-[40rem]:grid-cols-3 @min-[76rem]:grid-cols-4">
           {visible.map((a) => (
             <AssetCard key={a.id} asset={a} />
           ))}

@@ -5,14 +5,27 @@
 //   · 评测 (evaluation): retrieval and answer quality measured against a
 //     baseline, which is what tells you whether a change helped.
 
+/** Where a group of figures came from on THIS request. `live` = read out of the
+ *  database; `demo` = the demo overlay, because no ledger stands behind it yet.
+ *  Sections go live one at a time, so the marker is per group, never per page -
+ *  a single page-wide flag would have to lie about whichever half moved first. */
+export type FigureSource = "live" | "demo";
+
 export interface VerificationState {
   verified: number;
   stale: number;
   unverified: number;
   coveragePct: number;
-  /** Assets whose coverage sits below the workspace policy floor. */
+  /** Coverage percentage below which an asset is listed in `belowFloor`.
+   *  Carried in the payload rather than hardcoded in the UI: it is a policy
+   *  number, and when a workspace-level policy config lands this is the field
+   *  that starts varying. */
+  floorPct: number;
+  /** Assets whose coverage sits below `floorPct`. */
   belowFloor: { name: string; coveragePct: number; staleCount: number }[];
-  /** Steward pre-verification waiting on a human decision. */
+  /** Steward pre-verification waiting on a human decision. Stays on the demo
+   *  overlay even when the corpus figures are live - there is no steward
+   *  ledger yet (see EvaluationData.sources.steward). */
   preVerifiedPending: number;
 }
 
@@ -47,5 +60,15 @@ export interface EvaluationData {
   sets: EvalSet[];
   /** Baseline the metrics compare against. */
   baselineLabel: string;
+  /** Per-group provenance - see FigureSource. Three groups, because they go
+   *  live on three different dependencies:
+   *    corpus     verified/stale/unverified/coverage/belowFloor - LIVE off
+   *               document.verification_state + entry.verification_state,
+   *               which already exist; no DDL was needed.
+   *    steward    preVerifiedPending - waits on a steward ledger.
+   *    evaluation metrics + sets - waits on the evaluation runner. */
+  sources: { corpus: FigureSource; steward: FigureSource; evaluation: FigureSource };
+  /** True while the EVALUATION half is the demo overlay. Kept as its own field
+   *  (rather than derived) because it is what the page's footnote renders. */
   demoOps: boolean;
 }

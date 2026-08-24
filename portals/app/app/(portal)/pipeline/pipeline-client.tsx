@@ -75,7 +75,7 @@ export function PipelineClient() {
 
   if (!data) {
     return (
-      <div className="flex items-center justify-center py-24 text-sm text-muted-foreground">
+      <div className="flex items-center justify-center py-24 text-body-md text-muted-foreground">
         <Icon name="spinner" className="mr-2 animate-spin" />
         正在加载加工管道…
       </div>
@@ -110,7 +110,7 @@ export function PipelineClient() {
             <span className="flex min-w-0 flex-col gap-2xs">
               <span className="flex items-baseline gap-sm">
                 <span className="text-label-lg">知识管家</span>
-                <span className="font-mono text-[10px] tracking-widest text-ai-text">AI AGENT · 在岗</span>
+                <span className="font-mono text-code-sm tracking-widest text-ai-text">AI AGENT · 在岗</span>
               </span>
               <span className="text-body-sm text-muted-foreground">
                 负责理解、萃取、编织、验证与纠错的全程加工;需要裁决的事项才会来找你。
@@ -120,7 +120,7 @@ export function PipelineClient() {
           <div className="ml-auto flex flex-wrap items-center gap-lg">
             {data.report.map((r) => (
               <span key={r.label} className="flex flex-col gap-2xs">
-                <span className="text-xs text-muted-foreground">{r.label}</span>
+                <span className="text-body-sm text-muted-foreground">{r.label}</span>
                 <span className={`font-mono text-body-sm ${r.tone ? REPORT_TONE[r.tone] : "text-foreground"}`}>
                   {r.value}
                 </span>
@@ -134,24 +134,24 @@ export function PipelineClient() {
       <div className="flex flex-col gap-md">
         <div className="flex items-baseline justify-between">
           <h2 className="text-title-sm">加工流水 · 全程 AI 驱动</h2>
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-body-sm text-muted-foreground">
             {data.demoOps ? "演示口径 · 管线里程碑建设中" : ""}
           </span>
         </div>
-        <div className="grid grid-cols-2 gap-lg xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-lg @min-[44rem]:grid-cols-5">
           {data.stages.map((s) => (
             <Card key={s.key} className={`py-md${s.active ? " border-t-medium border-t-ai-border" : ""}`}>
               <CardContent className="flex h-full flex-col gap-2xs px-lg">
-                <span className={`font-mono text-[10px] tracking-widest ${s.active ? "text-ai-text" : "text-muted-foreground"}`}>
+                <span className={`font-mono text-code-sm tracking-widest ${s.active ? "text-ai-text" : "text-muted-foreground"}`}>
                   {s.kicker}
                 </span>
                 <span className="text-label-lg">{s.label}</span>
-                <span className="text-xs leading-relaxed text-muted-foreground">{s.desc}</span>
+                <span className="text-body-sm leading-relaxed text-muted-foreground">{s.desc}</span>
                 <span className="mt-auto flex items-baseline gap-sm pt-2xs">
                   <span className="font-mono text-title-sm">{s.value}</span>
-                  <span className="text-xs text-muted-foreground">{s.unit}</span>
+                  <span className="text-body-sm text-muted-foreground">{s.unit}</span>
                   {s.aside && (
-                    <span className={`text-xs ${s.asideTone === "warning" ? "text-warning-text" : "text-muted-foreground"}`}>
+                    <span className={`text-body-sm ${s.asideTone === "warning" ? "text-warning-text" : "text-muted-foreground"}`}>
                       {s.aside}
                     </span>
                   )}
@@ -166,7 +166,7 @@ export function PipelineClient() {
       <div className="flex flex-col gap-md">
         <div className="flex items-baseline justify-between">
           <h2 className="text-title-sm">待你确认 · {data.pendingTotal} 项</h2>
-          <span className="text-[11px] text-muted-foreground">管家已给出建议与依据,采纳即生效</span>
+          <span className="text-body-sm text-muted-foreground">管家已给出建议与依据,采纳即生效</span>
         </div>
         <div className="flex flex-col gap-md">
           {data.proposals.map((p) => {
@@ -194,7 +194,7 @@ export function PipelineClient() {
                     <span className="flex items-center gap-sm">
                       <span className="text-label-lg">{p.title}</span>
                       <StatusBadge tone={meta.tone} dot={false}>
-                        <span className="font-mono text-[10px] tracking-wide">{p.tag}</span>
+                        <span className="font-mono text-code-sm tracking-wide">{p.tag}</span>
                       </StatusBadge>
                     </span>
                     <span className="text-body-sm leading-relaxed text-muted-foreground">
