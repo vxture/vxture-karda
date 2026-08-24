@@ -32,6 +32,29 @@
   }
 }
 
+/* The knowledge graph drifts as one group, and a handful of nodes pulse as if
+ * being consulted. Both are transform/opacity only - composited, no layout. */
+@keyframes karda-graph-drift {
+  from {
+    transform: translate3d(-1.2%, -0.8%, 0) scale(1.02);
+  }
+  to {
+    transform: translate3d(1.2%, 0.8%, 0) scale(1.06);
+  }
+}
+
+@keyframes karda-node-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    r: 4;
+  }
+  50% {
+    opacity: 1;
+    r: 7;
+  }
+}
+
 .karda-drift-a {
   animation: karda-drift-a 54s ease-in-out infinite alternate;
   will-change: transform;
@@ -42,10 +65,22 @@
   will-change: transform;
 }
 
+.karda-graph-drift {
+  animation: karda-graph-drift 40s ease-in-out infinite alternate;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.karda-node-pulse {
+  animation: karda-node-pulse 6.5s ease-in-out infinite;
+}
+
 /* Motion is decoration here; anyone who asked for less gets the static wash. */
 @media (prefers-reduced-motion: reduce) {
   .karda-drift-a,
-  .karda-drift-b {
+  .karda-drift-b,
+  .karda-graph-drift,
+  .karda-node-pulse {
     animation: none;
   }
 }
