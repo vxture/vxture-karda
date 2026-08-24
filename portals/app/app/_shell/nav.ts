@@ -21,7 +21,7 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: readonly NavItem[] = [
-  { key: "overview", href: "/", label: "资产总览", icon: "squares-four", description: "知识资产的统计、运营与健康" },
+  { key: "overview", href: "/", label: "知识资产", icon: "squares-four", description: "知识资产的统计、运营与健康" },
   { key: "channels", href: "/channels", label: "供给通道", icon: "plugs-connected", description: "直供与 Runos 两条供给通道" },
   {
     key: "pipeline",

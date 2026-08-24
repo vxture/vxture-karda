@@ -1,4 +1,4 @@
-// High-quality demo/seed dataset for the 资产总览 milestone (owner,
+// High-quality demo/seed dataset for the 知识资产 milestone (owner,
 // 2026-08-21: "补齐测试数据,也可以当做一些高质量seed数据").
 //
 // Two halves, deliberately separated:

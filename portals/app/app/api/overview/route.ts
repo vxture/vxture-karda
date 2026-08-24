@@ -4,7 +4,7 @@ import { prismaEnabled, getPrismaClient } from "../../lib/db";
 import { DEMO_ASSETS, DEMO_TOTALS_OPS, demoAssetByName, type DemoAssetSpec } from "../../kb/demo/seed-data";
 import type { OverviewAsset, OverviewData } from "../../kb/demo/overview-types";
 
-// GET /api/overview - the 资产总览 read model.
+// GET /api/overview - the 知识资产 read model.
 //
 // Content figures (asset list, doc/entry counts, verification coverage, stale
 // counts, processing split) are LIVE database aggregates over the session's

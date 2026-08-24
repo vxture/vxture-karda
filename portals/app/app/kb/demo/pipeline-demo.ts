@@ -1,7 +1,7 @@
 // Demo overlay for the 加工管道 page (design canvas V2 · Steward board). The
 // pipeline has no schema yet - every figure here is the demo supply-ledger
 // voice, flagged `demoOps: true` by the API exactly like the overview's ops
-// overlay. Steward figures DERIVE from DEMO_TOTALS_OPS so 资产总览 and 加工管道
+// overlay. Steward figures DERIVE from DEMO_TOTALS_OPS so 知识资产 and 加工管道
 // can never disagree about 预验/冲突/回流/待确认.
 import { DEMO_TOTALS_OPS } from "./seed-data";
 import type { PipelineData, RebuildData, TaskDetail, TasksData } from "./pipeline-types";

@@ -35,11 +35,16 @@ export async function GET(): Promise<Response> {
 
   const data: ShellData = {
     overview: { assetCount, coveragePct },
-    channels: { todayCalls: DEMO_TOTALS_OPS.todayCalls },
+    channels: {
+      todayCalls: DEMO_TOTALS_OPS.todayCalls,
+      deltaPct: DEMO_TOTALS_OPS.deltaPct,
+      spark: [35, 30, 45, 40, 60, 52, 70, 62, 82],
+    },
     pipeline: {
       pending: S.pending,
       failedResident: DEMO_TASKS.failures.permanent,
       rebuilding: 1,
+      inflight: DEMO_TASKS.counts.inflight,
     },
     steward: {
       pending: S.pending,

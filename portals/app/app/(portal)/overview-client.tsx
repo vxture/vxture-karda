@@ -17,7 +17,7 @@ import { loginHref } from "../console/_lib/api";
 import { PageHead } from "../_shell/PageHead";
 import type { OverviewAsset, OverviewData } from "../kb/demo/overview-types";
 
-// 资产总览 client. Layout follows the approved V2 design translated to the
+// 知识资产 client. Layout follows the approved V2 design translated to the
 // light-first token palette: stats strip -> tag filter bar -> asset cards.
 // Every visual signature carries over - verification conic ring, citation
 // pulse sparkline, visibility rings - drawn with DS color tokens so both
@@ -202,7 +202,7 @@ export function OverviewClient() {
         if (!res.ok) throw new Error(String(res.status));
         setData((await res.json()) as OverviewData);
       })
-      .catch(() => setError("加载资产总览失败,请稍后重试。"));
+      .catch(() => setError("加载知识资产失败,请稍后重试。"));
   }, []);
 
   const tagCounts = useMemo(() => {
@@ -225,7 +225,7 @@ export function OverviewClient() {
         <EmptyState
           icon="lock"
           title="需要登录"
-          description="登录后查看工作区的知识资产总览。"
+          description="登录后查看工作区的知识资产。"
           action={
             <Button asChild>
               <a href={loginHref("/")}>登录</a>
@@ -248,7 +248,7 @@ export function OverviewClient() {
     return (
       <div className="flex items-center justify-center py-24 text-sm text-muted-foreground">
         <Icon name="spinner" className="mr-2 animate-spin" />
-        正在加载资产总览…
+        正在加载知识资产…
       </div>
     );
   }
@@ -261,7 +261,7 @@ export function OverviewClient() {
     // that global column - no page-local container, no per-section margins.
     <>
       <PageHead
-        title="资产总览"
+        title="知识资产"
         description="知识资产的统计、运营与健康"
         meta={`${totals.assetCount} 资产 · ${totals.entryCount.toLocaleString()} 条知识 · 验证覆盖 ${totals.coveragePct}%`}
         actions={
@@ -280,7 +280,7 @@ export function OverviewClient() {
           watermark backdrop + tone top-edge + label/value rows), replacing the
           hand-rolled Cards. MetricGrid owns the elastic ladder (1 -> 2 -> 4). */}
       <MetricGrid
-        aria-label="资产总览统计"
+        aria-label="知识资产统计"
         columns={4}
         // Match the asset grid's gap-lg below (MetricGrid defaults gap-md);
         // the two 板块 must share one rhythm.

@@ -6,7 +6,7 @@ import { devLoginEnabled, DEV_DEFAULTS } from "../../../../auth/lib/dev-login";
 import { getOidcConfig } from "../../../../auth/lib/config";
 
 // POST /api/kb/admin/seed-demo: write the demo/seed content set (six knowledge
-// assets with their documents and entries) into karda_kb, for the 资产总览
+// assets with their documents and entries) into karda_kb, for the 知识资产
 // milestone. Gated like the other privileged runtime acts:
 //   - x-internal-job-token (operator / runbook), OR
 //   - the dev-login gate (local development only - AUTH_DEV_LOGIN=on, no RP,

@@ -11,10 +11,11 @@ export interface ShellActivity {
 }
 
 export interface ShellData {
-  /** Nav-card summaries. */
+  /** Nav-card summaries, each carrying what its little chart needs. */
   overview: { assetCount: number; coveragePct: number };
-  channels: { todayCalls: number };
-  pipeline: { pending: number; failedResident: number; rebuilding: number };
+  /** `spark` is a normalized 0-100 series for the call-volume sparkline. */
+  channels: { todayCalls: number; deltaPct: number; spark: number[] };
+  pipeline: { pending: number; failedResident: number; rebuilding: number; inflight: number };
   /** Steward dock payload. */
   steward: {
     pending: number;
