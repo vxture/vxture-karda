@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { useFullscreenContext } from "@vxture/design-system";
 import { AppHeader } from "./AppHeader";
 import { NavRail } from "./NavRail";
 import { ShellBackdrop } from "./ShellBackdrop";
@@ -38,6 +39,10 @@ function writePref(key: string, value: boolean) {
 export function PortalShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "/";
   const active = activeNavKey(pathname);
+  // The DS provider reports fullscreen STATE only - it never styles the target
+  // - so the pseudo-fullscreen layer is applied here, scoped to OUR target id.
+  const fs = useFullscreenContext();
+  const contentFullscreen = fs.isFullscreen && fs.targetId === PORTAL_FULLSCREEN_ID;
   const [shell, setShell] = useState<ShellData | null>(null);
   // SSR renders the default (rail expanded, dock open); the persisted
   // preference applies after mount to keep hydration consistent.
@@ -92,9 +97,19 @@ export function PortalShell({ children }: { children: ReactNode }) {
         {/* Content column: the global edge padding + section rhythm live here
             (moved from the old single-column layout), scrolling on its own. */}
         {/* id marks the fullscreen target: expanding puts the CONTENT on the
-            viewport, not the whole shell blown up. bg-background so the
-            pseudo-fullscreen layer is opaque over the page beneath it. */}
-        <main id={PORTAL_FULLSCREEN_ID} className="min-w-0 flex-1 overflow-y-auto bg-background">
+            viewport, not the whole shell blown up. NO background of its own -
+            the product backdrop must read through the whole body, not stop at
+            the nav rail (owner 2026-08-24). The DS provider only tracks
+            fullscreen STATE; the layer styling is the consumer's job, so the
+            opaque ground is applied here and only while fullscreen is on. */}
+        <main
+          id={PORTAL_FULLSCREEN_ID}
+          className={
+            contentFullscreen
+              ? "fixed inset-0 z-50 overflow-y-auto bg-background"
+              : "min-w-0 flex-1 overflow-y-auto"
+          }
+        >
           <div className="flex w-full flex-col gap-lg px-xl pb-6xl pt-lg">{children}</div>
         </main>
         {dockOpen && <StewardDock shell={shell} onClose={toggleDock} />}
