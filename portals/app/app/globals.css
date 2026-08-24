@@ -4,3 +4,48 @@
  * css would be added in the DS package first, never copied here. */
 @import "@vxture/design-system/styles/globals.css";
 @import "@vxture/design-system/styles/brands/vxture.css";
+
+/* The product backdrop's motion. The ONLY hand-written CSS in this file, and
+ * it defines no DS names: every identifier is `karda-` prefixed, so it cannot
+ * collide with the token layer (07-consumption-pitfalls section 1 - the T2
+ * semantic layer is unprefixed, and redefining one of its names here would
+ * silently overwrite the palette).
+ *
+ * Two very slow, GPU-composited drifts (transform only - no layout, no paint
+ * of the blurred areas per frame). The backdrop is fixed and non-interactive,
+ * so this costs one composited layer and nothing else. */
+@keyframes karda-drift-a {
+  from {
+    transform: translate3d(-4%, -2%, 0) scale(1.05);
+  }
+  to {
+    transform: translate3d(5%, 3%, 0) scale(1.15);
+  }
+}
+
+@keyframes karda-drift-b {
+  from {
+    transform: translate3d(4%, 3%, 0) scale(1.12);
+  }
+  to {
+    transform: translate3d(-5%, -3%, 0) scale(1);
+  }
+}
+
+.karda-drift-a {
+  animation: karda-drift-a 54s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.karda-drift-b {
+  animation: karda-drift-b 68s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* Motion is decoration here; anyone who asked for less gets the static wash. */
+@media (prefers-reduced-motion: reduce) {
+  .karda-drift-a,
+  .karda-drift-b {
+    animation: none;
+  }
+}

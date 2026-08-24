@@ -23,7 +23,13 @@ export function PageHead({
   actions?: ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-lg">
+    // The head sits in its own container so the three columns share ONE top
+    // edge (owner 2026-08-24): the nav card, this panel and the steward dock
+    // all start at the same y and repeat the same radius, instead of a card on
+    // the left facing bare text in the middle. Surface is a translucent
+    // gradient - the product backdrop reads through it, the content does not
+    // have to fight it.
+    <div className="flex items-center justify-between gap-lg rounded-lg border border-primary/10 bg-gradient-to-b from-card/70 to-card/35 px-lg py-md dark:border-primary/20">
       <div className="flex min-w-0 items-baseline gap-md">
         <h1 className="shrink-0 text-title-lg">{title}</h1>
         {description ? (

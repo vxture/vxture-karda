@@ -257,6 +257,10 @@ export function AppHeader({
   return (
     <ShellHeader
       height="md"
+      // Translucent over the product backdrop (owner 2026-08-24): the wash
+      // reads through every panel. backdrop-blur keeps the header legible
+      // while content scrolls beneath it.
+      className="bg-card/70 backdrop-blur-sm"
       // The search is a tool, not the visual focus of this product's header -
       // the four functional domains are. `end` reads the header as "identity
       // left, tools right" and groups the search with the right-hand cluster.

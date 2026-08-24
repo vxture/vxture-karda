@@ -20,7 +20,10 @@ const TAG_CLASS: Record<StewardProposal["kind"], string> = {
 export function StewardDock({ shell, onClose }: { shell: ShellData | null; onClose: () => void }) {
   const s = shell?.steward;
   return (
-    <div className="flex w-[19rem] shrink-0 flex-col gap-md overflow-y-auto border-l border-primary/10 bg-card px-md py-md dark:border-primary/20">
+    // pt-lg aligns the dock's first row with the nav card and the page head -
+    // one top edge across all three columns. Translucent like every other
+    // panel so the product backdrop carries through.
+    <div className="flex w-[19rem] shrink-0 flex-col gap-md overflow-y-auto border-l border-primary/10 bg-card/60 px-md pb-lg pt-lg dark:border-primary/20">
       <div className="flex items-center gap-sm">
         <Icon name="sparkles" size="sm" className="text-ai-text" />
         <span className="flex-1 text-body-sm font-semibold">管家值班台</span>

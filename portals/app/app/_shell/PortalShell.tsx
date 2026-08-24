@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { AppHeader } from "./AppHeader";
 import { NavRail } from "./NavRail";
+import { ShellBackdrop } from "./ShellBackdrop";
 import { StewardDock } from "./StewardDock";
 import { activeNavKey } from "./nav";
 import type { ShellData } from "../kb/demo/shell-types";
@@ -71,7 +72,10 @@ export function PortalShell({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div className="flex h-screen flex-col bg-background text-foreground">
+    // No opaque background here: the body carries the ground and ShellBackdrop
+    // washes it, so every panel above can be translucent and let it through.
+    <div className="relative flex h-screen flex-col text-foreground">
+      <ShellBackdrop />
       <AppHeader
         pending={shell?.steward.pending ?? 0}
         dockOpen={dockOpen}
