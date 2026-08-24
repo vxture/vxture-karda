@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Icon,
   ShellBrand,
   ShellHeader,
   ShellIconButton,
   ShellIconGroup,
   ShellLauncher,
+  ShellPanelSlots,
   ShellPreferencePanel,
   ShellSearchBox,
   ShellUserMenu,
@@ -17,6 +19,7 @@ import { BRAND } from "@karda/shared/brand";
 import { getSession, loginHref, type SessionUser } from "../console/_lib/api";
 import { NAV_ITEMS, activeNavKey } from "./nav";
 import { isLocale, useLocale } from "./locale";
+import { ScopePanel } from "./ScopePanel";
 
 // The unified product header (owner, 2026-08-21). Structure follows the
 // arda-header shell: launcher + brand + menu area (left) / search (center slot,
@@ -111,6 +114,7 @@ export function AppHeader({
   }, [query, router]);
 
   const displayName = user?.sub ?? "未登录";
+  const roleLabel = user?.isWorkspaceOwner ? "工作区属主" : user?.canManage ? "管理员" : "成员";
 
   // V3 指挥台 shell: domain navigation moved to the left nav-rail cards, so
   // the header keeps only launcher + brand - two navs must not coexist.
@@ -131,28 +135,37 @@ export function AppHeader({
           if (item) router.push(item.href);
         }}
       />
-      <ShellBrand href="/" label={BRAND.shortName} tag="知识服务平台" />
+      <ShellBrand href="/" label={BRAND.shortName} logoSrc="/brand/vxture-logo.png" />
+      <span className="h-lg w-px bg-border" aria-hidden="true" />
+      <ScopePanel user={user} />
     </>
   );
 
+  // Trailing follows the Console header's three blocks, gap-md between them,
+  // gap-2xs inside a group: [助手] · [系统工具组] · [账户]. Do not fold the
+  // assistant into the icon group - it is its own block, one size larger.
   const trailing = (
-    <>
+    <div className="flex items-center gap-md">
+      {/* 助手:独立入口,比工具组图标大一号(md=20px vs sm=16px)。收起时
+          红底角标标明待办数(owner 2026-08-24)。 */}
+      <span className="relative">
+        <ShellIconButton icon="sparkles" label="管家值班台" active={dockOpen} onClick={onToggleDock}>
+          <Icon name="sparkles" size="md" className="text-ai-text" />
+        </ShellIconButton>
+        {pending > 0 && !dockOpen && (
+          <span
+            aria-label={`${pending} 项待裁决`}
+            className="pointer-events-none absolute -right-0.5 -top-0.5 flex h-[14px] min-w-[14px] items-center justify-center rounded-full bg-destructive px-2xs font-mono text-[9px] font-semibold text-white"
+          >
+            {pending}
+          </span>
+        )}
+      </span>
+      {/* 系统工具三元,与 console 一致:帮助 / 通知 / 设置 */}
       <ShellIconGroup label="系统">
-        {/* The steward-dock toggle: when the dock is closed and work is
-            pending, the red count badge marks it (owner 2026-08-24). */}
-        <span className="relative">
-          <ShellIconButton icon="sparkles" label="管家值班台" active={dockOpen} onClick={onToggleDock} />
-          {pending > 0 && !dockOpen && (
-            <span
-              aria-label={`${pending} 项待裁决`}
-              className="pointer-events-none absolute -right-0.5 -top-0.5 flex h-[14px] min-w-[14px] items-center justify-center rounded-full bg-destructive px-2xs font-mono text-[9px] font-semibold text-white"
-            >
-              {pending}
-            </span>
-          )}
-        </span>
-        <ShellIconButton icon="bell" label="通知" />
         <ShellIconButton icon="help" label="帮助" />
+        <ShellIconButton icon="bell" label="通知" />
+        <ShellIconButton icon="settings" label="设置" onClick={() => router.push("/console")} />
       </ShellIconGroup>
       <ShellUserMenu
           user={{
@@ -182,6 +195,20 @@ export function AppHeader({
               onFontSizeChange={setFontSize}
             />
           }
+          // Role slots, same grammar as the Console user panel: the earned
+          // slot lights up, the rest stay locked rather than inventing a level.
+          extras={
+            <ShellPanelSlots
+              label="等级"
+              leadIcon="medal"
+              lead="row"
+              slots={[
+                { key: "role", icon: "user", label: `角色 · ${roleLabel}`, earned: Boolean(user) },
+                { key: "level", icon: "star", label: "未解锁" },
+                { key: "slot-3", icon: "medal", label: "未解锁" },
+              ]}
+            />
+          }
           links={
             user
               ? [{ key: "console", label: "知识库控制台", href: "/console", icon: "folder-open" as const }]
@@ -191,9 +218,17 @@ export function AppHeader({
             user
               ? [
                   {
-                    key: "logout",
+                    key: "switch-user",
+                    label: "切换账号",
+                    icon: "user-switch" as const,
+                    onClick: () => {
+                      window.location.href = "/auth/logout";
+                    },
+                  },
+                  {
+                    key: "sign-out",
                     label: "退出登录",
-                    icon: "power" as const,
+                    icon: "sign-out" as const,
                     danger: true,
                     onClick: () => {
                       window.location.href = "/auth/logout";
@@ -203,7 +238,7 @@ export function AppHeader({
               : []
           }
         />
-    </>
+    </div>
   );
 
   return (
