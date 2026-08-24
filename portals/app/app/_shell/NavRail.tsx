@@ -102,7 +102,9 @@ export function NavRail({
   if (collapsed) return null;
 
   return (
-    <div className="flex h-full w-[15.5rem] shrink-0 flex-col gap-sm overflow-y-auto p-xs">
+    // pt-lg matches the content column's own pt-lg, so the first card's top
+    // edge lines up with the page head beside it rather than floating above it.
+    <div className="flex h-full w-[15.5rem] shrink-0 flex-col gap-sm overflow-y-auto px-md pb-lg pt-lg">
         {NAV_ITEMS.map((item) => {
           const domainActive = isActive(item.href);
           const metrics = metricsFor(item, shell);
@@ -127,11 +129,11 @@ export function NavRail({
                 <Link
                   href={item.href}
                   aria-current={domainActive ? "page" : undefined}
-                  className={`flex min-h-control-xl min-w-0 flex-1 items-center gap-xs text-label-md ${
+                  className={`flex min-h-control-lg min-w-0 flex-1 items-center gap-xs text-label-md ${
                     domainActive ? "text-primary-text" : "text-foreground"
                   }`}
                 >
-                  <span className="flex size-control-xl shrink-0 items-center justify-center">
+                  <span className="flex size-control-lg shrink-0 items-center justify-center">
                     <Icon name={item.icon} size="sm" />
                   </span>
                   <span className="min-w-0 flex-1 truncate font-medium">{item.label}</span>
@@ -149,26 +151,23 @@ export function NavRail({
                 <span className="w-2xs shrink-0" aria-hidden="true" />
               </div>
 
-              {/* body: the domain's own figures, then its second-level views */}
+              {/* Body stays SHORT: figures read as one wrapped line (value +
+                  key inline), not stacked metric blocks - four stacked cards
+                  in a column cannot each afford two lines per figure. */}
               {hasBody && open && (
-                <div className="flex flex-col gap-sm border-t border-primary/10 px-md py-sm dark:border-primary/20">
-                  {metrics.length > 0 && (
-                    <div className="flex flex-wrap gap-md">
-                      {metrics.map((m) => (
-                        <span key={m.key} className="flex flex-col">
-                          <span
-                            className={`font-mono text-title-sm leading-tight ${m.tone ? TONE_CLASS[m.tone] : "text-foreground"}`}
-                          >
-                            {m.value}
+                <div className="flex flex-col gap-2xs border-t border-primary/10 px-md py-xs dark:border-primary/20">
+                  <span className="flex flex-wrap items-baseline gap-x-sm gap-y-2xs text-label-sm">
+                    {metrics.length > 0
+                      ? metrics.map((m) => (
+                          <span key={m.key} className="whitespace-nowrap text-muted-foreground">
+                            {m.key}
+                            <span className={`ml-2xs font-mono ${m.tone ? TONE_CLASS[m.tone] : "text-foreground"}`}>
+                              {m.value}
+                            </span>
                           </span>
-                          <span className="text-label-sm text-muted-foreground">{m.key}</span>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {metrics.length === 0 && (
-                    <span className="text-label-sm text-muted-foreground">基线建设中</span>
-                  )}
+                        ))
+                      : <span className="text-muted-foreground">基线建设中</span>}
+                  </span>
                   {item.sub && (
                     <div className="-mx-2xs flex flex-col">
                       {item.sub.map((s) => {
@@ -178,7 +177,7 @@ export function NavRail({
                             key={s.key}
                             href={s.href}
                             aria-current={subActive ? "page" : undefined}
-                            className={`flex min-h-control-md items-center rounded-md px-2xs text-label-md transition-colors duration-fast ease-standard ${
+                            className={`flex min-h-control-sm items-center rounded-md px-2xs text-label-sm transition-colors duration-fast ease-standard ${
                               subActive
                                 ? "bg-surface-selected text-primary-text"
                                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
