@@ -59,11 +59,15 @@ export function AppHeader({
   pending = 0,
   dockOpen = false,
   onToggleDock = () => {},
+  navCollapsed = false,
+  onToggleNav = () => {},
 }: {
   /** 待裁决 count for the steward-dock badge (red, shown when dock closed). */
   pending?: number;
   dockOpen?: boolean;
   onToggleDock?: () => void;
+  navCollapsed?: boolean;
+  onToggleNav?: () => void;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -120,6 +124,15 @@ export function AppHeader({
   // the header keeps only launcher + brand - two navs must not coexist.
   const leading = (
     <>
+      {/* Rail toggle, leftmost in the header (owner 2026-08-24) - everything
+          else shifts right behind it. Kept very light: it governs chrome, not
+          content, so it must not compete with the brand beside it. */}
+      <ShellIconButton
+        icon="sidebar"
+        label={navCollapsed ? "展开导航" : "收起导航"}
+        onClick={onToggleNav}
+        iconClassName="text-muted-foreground/60"
+      />
       <ShellLauncher
         buttonLabel="切换功能域"
         panelLabel="功能域"

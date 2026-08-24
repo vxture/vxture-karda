@@ -1,175 +1,200 @@
 "use client";
 
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  Icon,
-  ShellIconButton,
-  ShellSidebarFrame,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@vxture/design-system";
+import { Icon } from "@vxture/design-system";
 import { NAV_ITEMS, type NavItem } from "./nav";
 import type { ShellData } from "../kb/demo/shell-types";
 
-// LEFT rail of the V3 指挥台 shell.
+// LEFT rail of the V3 指挥台 shell: FOUR panel cards, one per functional
+// domain (owner 2026-08-24), following the Yucer 战情台 flank - the rail
+// paints nothing and the cards sit on the shared ground.
 //
-// Card-mode navigation, following the Yucer 战情台 flank pattern (owner
-// reference 2026-08-24): the RAIL itself paints nothing - it is the same
-// ground as the content column - and the navigation sits on it as ONE panel
-// card. Inside the card, each domain is a row divided from its neighbour by a
-// hairline (Yucer's `.sector` + `border-top`), reading "name left, count
-// right" with a caret where the row expands. Second-level views expand INLINE
-// inside the card under their domain: a second card would have to carry more
-// than links to earn its own surface (owner).
+// Each card is a domain: a head row that navigates (and carries the active
+// state) over a body that expands the domain's own figures and second-level
+// views. Any card can be collapsed to its title alone when its body is more
+// than the moment needs; the state persists per browser.
 //
-// The item interaction vocabulary stays DS's `NavItemRow`:
-// `bg-surface-selected` + `text-primary-text` active, `hover:bg-accent` +
-// `hover:text-foreground` otherwise.
-//
-// `ShellSidebarFrame` (design-ui) still owns the width state machine.
+// Interaction vocabulary stays DS's `NavItemRow`: `bg-surface-selected` +
+// `text-primary-text` when active, `hover:bg-accent` + `hover:text-foreground`
+// otherwise. The rail's width state machine lives in PortalShell, which also
+// owns the header toggle that drives it.
 
-/** DS NavItemRow's rail: a fixed 40px icon track that anchors the icon column. */
-function Rail({ children }: { children: React.ReactNode }) {
-  return <span className="flex size-control-xl shrink-0 items-center justify-center">{children}</span>;
+const OPEN_KEY = "karda-shell-cards-closed";
+
+interface Metric {
+  value: string;
+  key: string;
+  tone?: "warning" | "danger";
 }
 
-function summaryFor(item: NavItem, shell: ShellData | null): string | null {
-  if (!shell) return null;
+function metricsFor(item: NavItem, shell: ShellData | null): Metric[] {
+  if (!shell) return [];
   switch (item.key) {
     case "overview":
-      return `资产 ${shell.overview.assetCount}`;
+      return [
+        { value: String(shell.overview.assetCount), key: "知识资产" },
+        { value: `${shell.overview.coveragePct}%`, key: "验证覆盖" },
+      ];
     case "channels":
-      return `调用 ${shell.channels.todayCalls.toLocaleString()}`;
+      return [{ value: shell.channels.todayCalls.toLocaleString(), key: "今日调用" }];
     case "pipeline":
-      return `待确认 ${shell.pipeline.pending}`;
+      return [
+        { value: String(shell.pipeline.pending), key: "待确认", tone: "warning" },
+        { value: String(shell.pipeline.failedResident), key: "失败驻留", tone: "danger" },
+        { value: String(shell.pipeline.rebuilding), key: "重建中" },
+      ];
     default:
-      return null;
+      return [];
   }
 }
+
+const TONE_CLASS: Record<NonNullable<Metric["tone"]>, string> = {
+  warning: "text-warning-text",
+  danger: "text-destructive-text",
+};
 
 export function NavRail({
   active,
   pathname,
   shell,
   collapsed,
-  onToggle,
 }: {
   active: string | null;
   pathname: string;
   shell: ShellData | null;
   collapsed: boolean;
-  onToggle: () => void;
 }) {
+  const [closed, setClosed] = useState<Set<string>>(() => new Set());
+
+  // Read after mount only: localStorage does not exist during SSR, so the
+  // first frame must match the server (everything open).
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(OPEN_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed)) setClosed(new Set(parsed));
+    } catch {
+      // Storage unavailable: stay with everything open.
+    }
+  }, []);
+
+  const toggleCard = useCallback((key: string) => {
+    setClosed((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      try {
+        localStorage.setItem(OPEN_KEY, JSON.stringify([...next]));
+      } catch {
+        // Best-effort persistence only.
+      }
+      return next;
+    });
+  }, []);
+
   const isActive = (href: string): boolean =>
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 
+  // Collapsed = gone. Not a 64px icon rail, not width:0 - the rail unmounts
+  // entirely (owner 2026-08-24), the DS `ShellSidebarFrame` "hidden" semantics:
+  // 不加载不消耗资源. Only cards exist, and only when the rail is shown.
+  if (collapsed) return null;
+
   return (
-    <ShellSidebarFrame mode={collapsed ? "collapsed" : "expanded"}>
-      {/* TooltipProvider travels with the component that needs it: collapsed
-          rows mount Radix tooltips, which throw without a provider. */}
-      <TooltipProvider delayDuration={300}>
-        <div className="flex h-full flex-col gap-sm p-xs">
-          {/* Toggle row - no domain name, and no rule under it: the row is
-              chrome on the bare ground, a divider only made it look like an
-              empty titled section (owner). */}
-          <div className="shrink-0">
-            <ShellIconButton icon="sidebar" label={collapsed ? "展开导航" : "收起导航"} onClick={onToggle}>
-              <Icon name="sidebar" size="md" />
-            </ShellIconButton>
-          </div>
+    <div className="flex h-full w-[15.5rem] shrink-0 flex-col gap-sm overflow-y-auto p-xs">
+        {NAV_ITEMS.map((item) => {
+          const domainActive = isActive(item.href);
+          const metrics = metricsFor(item, shell);
+          const open = !closed.has(item.key);
+          const hasBody = metrics.length > 0 || Boolean(item.sub);
 
-          {/* The navigation panel: the one card on this rail. */}
-          <nav
-            aria-label="功能域"
-            className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-lg border border-primary/10 bg-card dark:border-primary/20"
-          >
-            {!collapsed && (
-              <span className="px-md py-sm text-overline text-muted-foreground">功能域</span>
-            )}
-            {NAV_ITEMS.map((n, i) => {
-              const domainActive = isActive(n.href);
-              const summary = summaryFor(n, shell);
-              const showSub = Boolean(n.sub) && n.key === active && !collapsed;
-              // Rows divide from each other with a hairline, and the first row
-              // divides from the panel title - Yucer's `.sector` border-top.
-              const divide = i > 0 || !collapsed;
-
-              const row = (
+          return (
+            // One card per domain. Active card lifts its border to the brand
+            // so the current domain reads at a glance among four panels.
+            <div
+              key={item.key}
+              className={`flex shrink-0 flex-col overflow-hidden rounded-lg border bg-card ${
+                domainActive ? "border-primary/30" : "border-primary/10 dark:border-primary/20"
+              }`}
+            >
+              {/* head: navigates; the caret collapses the body */}
+              <div
+                className={`flex items-center gap-xs transition-colors duration-fast ease-standard ${
+                  domainActive ? "bg-surface-selected" : "hover:bg-accent"
+                }`}
+              >
                 <Link
-                  href={n.href}
+                  href={item.href}
                   aria-current={domainActive ? "page" : undefined}
-                  className={`flex min-h-control-xl items-center gap-xs text-label-md transition-colors duration-fast ease-standard ${
-                    divide ? "border-t border-primary/10 dark:border-primary/20" : ""
-                  } ${
-                    domainActive
-                      ? "bg-surface-selected text-primary-text"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                  className={`flex min-h-control-xl min-w-0 flex-1 items-center gap-xs text-label-md ${
+                    domainActive ? "text-primary-text" : "text-foreground"
                   }`}
                 >
-                  <Rail>
-                    <Icon name={n.icon} size="sm" />
-                  </Rail>
-                  {!collapsed && (
-                    <>
-                      <span className={`min-w-0 flex-1 truncate font-medium ${!domainActive ? "text-foreground" : ""}`}>
-                        {n.label}
-                      </span>
-                      <span className="flex shrink-0 items-center gap-2xs pr-md">
-                        {summary && <span className="font-mono text-label-sm text-muted-foreground">{summary}</span>}
-                        {n.sub && (
-                          <Icon
-                            name={showSub ? "chevron-down" : "chevron-right"}
-                            size="xs"
-                            className="text-muted-foreground"
-                          />
-                        )}
-                      </span>
-                    </>
-                  )}
+                  <span className="flex size-control-xl shrink-0 items-center justify-center">
+                    <Icon name={item.icon} size="sm" />
+                  </span>
+                  <span className="min-w-0 flex-1 truncate font-medium">{item.label}</span>
                 </Link>
-              );
+                {hasBody && (
+                  <button
+                    onClick={() => toggleCard(item.key)}
+                    aria-expanded={open}
+                    aria-label={`${open ? "收起" : "展开"}${item.label}`}
+                    className="flex size-control-md shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors duration-fast ease-standard hover:text-foreground"
+                  >
+                    <Icon name={open ? "chevron-up" : "chevron-down"} size="xs" />
+                  </button>
+                )}
+                <span className="w-2xs shrink-0" aria-hidden="true" />
+              </div>
 
-              return (
-                <div key={n.key} className="flex flex-col">
-                  {collapsed ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>{row}</TooltipTrigger>
-                      <TooltipContent side="right">{n.label}</TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    row
+              {/* body: the domain's own figures, then its second-level views */}
+              {hasBody && open && (
+                <div className="flex flex-col gap-sm border-t border-primary/10 px-md py-sm dark:border-primary/20">
+                  {metrics.length > 0 && (
+                    <div className="flex flex-wrap gap-md">
+                      {metrics.map((m) => (
+                        <span key={m.key} className="flex flex-col">
+                          <span
+                            className={`font-mono text-title-sm leading-tight ${m.tone ? TONE_CLASS[m.tone] : "text-foreground"}`}
+                          >
+                            {m.value}
+                          </span>
+                          <span className="text-label-sm text-muted-foreground">{m.key}</span>
+                        </span>
+                      ))}
+                    </div>
                   )}
-                  {/* Second-level views, inline inside the card. Labels align
-                      to the parent's label column via an empty 40px rail, so
-                      the indent comes from the shared grid, not a magic
-                      number. */}
-                  {showSub &&
-                    n.sub?.map((s) => {
-                      const subActive = isActive(s.href);
-                      return (
-                        <Link
-                          key={s.key}
-                          href={s.href}
-                          aria-current={subActive ? "page" : undefined}
-                          className={`flex min-h-control-md items-center gap-xs text-label-md transition-colors duration-fast ease-standard ${
-                            subActive
-                              ? "bg-surface-selected text-primary-text"
-                              : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                          }`}
-                        >
-                          <span className="size-control-xl shrink-0" aria-hidden="true" />
-                          <span className="min-w-0 flex-1 truncate pr-md">{s.label}</span>
-                        </Link>
-                      );
-                    })}
+                  {metrics.length === 0 && (
+                    <span className="text-label-sm text-muted-foreground">基线建设中</span>
+                  )}
+                  {item.sub && (
+                    <div className="-mx-2xs flex flex-col">
+                      {item.sub.map((s) => {
+                        const subActive = isActive(s.href);
+                        return (
+                          <Link
+                            key={s.key}
+                            href={s.href}
+                            aria-current={subActive ? "page" : undefined}
+                            className={`flex min-h-control-md items-center rounded-md px-2xs text-label-md transition-colors duration-fast ease-standard ${
+                              subActive
+                                ? "bg-surface-selected text-primary-text"
+                                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                            }`}
+                          >
+                            {s.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              );
-            })}
-          </nav>
-        </div>
-      </TooltipProvider>
-    </ShellSidebarFrame>
+              )}
+            </div>
+          );
+        })}
+    </div>
   );
 }

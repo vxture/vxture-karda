@@ -72,13 +72,19 @@ export function PortalShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
-      <AppHeader pending={shell?.steward.pending ?? 0} dockOpen={dockOpen} onToggleDock={toggleDock} />
+      <AppHeader
+        pending={shell?.steward.pending ?? 0}
+        dockOpen={dockOpen}
+        onToggleDock={toggleDock}
+        navCollapsed={navCollapsed}
+        onToggleNav={toggleNav}
+      />
       <div className="flex min-h-0 flex-1">
         {/* The nav rail paints no surface and draws no border: it shares the
             content column's ground so the left side reads as one continuous
             plane (owner 2026-08-24). Only the steward dock keeps a surface -
             it is a panel over the page, not part of it. */}
-        <NavRail active={active} pathname={pathname} shell={shell} collapsed={navCollapsed} onToggle={toggleNav} />
+        <NavRail active={active} pathname={pathname} shell={shell} collapsed={navCollapsed} />
         {/* Content column: the global edge padding + section rhythm live here
             (moved from the old single-column layout), scrolling on its own. */}
         <main className="min-w-0 flex-1 overflow-y-auto">
