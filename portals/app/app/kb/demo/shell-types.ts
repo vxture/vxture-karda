@@ -16,6 +16,7 @@ export interface ShellData {
   /** `spark` is a normalized 0-100 series for the call-volume sparkline. */
   channels: { todayCalls: number; deltaPct: number; spark: number[] };
   pipeline: { pending: number; failedResident: number; rebuilding: number; inflight: number };
+  evaluation: { coveragePct: number; stale: number; gaps: number };
   /** Steward dock payload. */
   steward: {
     pending: number;

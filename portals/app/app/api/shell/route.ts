@@ -3,6 +3,7 @@ import { requireAuth } from "../../kb/api/http";
 import { prismaEnabled, getPrismaClient } from "../../lib/db";
 import { DEMO_TOTALS_OPS } from "../../kb/demo/seed-data";
 import { DEMO_PIPELINE, DEMO_TASKS } from "../../kb/demo/pipeline-demo";
+import { DEMO_EVALUATION } from "../../kb/demo/evaluation-demo";
 import type { ShellData } from "../../kb/demo/shell-types";
 
 // GET /api/shell - everything the portal chrome needs in one round trip: the
@@ -45,6 +46,11 @@ export async function GET(): Promise<Response> {
       failedResident: DEMO_TASKS.failures.permanent,
       rebuilding: 1,
       inflight: DEMO_TASKS.counts.inflight,
+    },
+    evaluation: {
+      coveragePct: DEMO_EVALUATION.verification.coveragePct,
+      stale: DEMO_EVALUATION.verification.stale,
+      gaps: DEMO_EVALUATION.sets.reduce((n, s) => n + s.gaps, 0),
     },
     steward: {
       pending: S.pending,

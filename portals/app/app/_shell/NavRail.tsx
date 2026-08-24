@@ -139,13 +139,25 @@ function CardBody({ item, shell }: { item: NavItem; shell: ShellData | null }) {
           />
         </span>
       );
-    default:
+    default: {
+      // 验证评测: the verified share as a single bar - the one number this
+      // domain exists to move.
+      const e = shell.evaluation;
       return (
         <span className="flex flex-col gap-2xs">
-          <span aria-hidden="true" className="h-[8px] w-full rounded-full border border-dashed border-primary/20" />
-          <span className="text-label-sm text-muted-foreground">基线建设中</span>
+          <span aria-hidden="true" className="flex h-[8px] w-full overflow-hidden rounded-full bg-muted">
+            <span className="h-full bg-success" style={{ width: `${e.coveragePct}%` }} />
+          </span>
+          <Figures
+            items={[
+              { k: "覆盖", v: `${e.coveragePct}%`, tone: "success" },
+              { k: "待复验", v: String(e.stale), tone: "warning" },
+              { k: "缺口", v: String(e.gaps) },
+            ]}
+          />
         </span>
       );
+    }
   }
 }
 
