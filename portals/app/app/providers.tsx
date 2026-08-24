@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { ThemeProvider } from "@vxture/design-system";
+import { FullscreenProvider, ThemeProvider } from "@vxture/design-system";
 
 /**
  * The provider stack, in a client module of our own - correct RSC hygiene:
@@ -12,6 +12,18 @@ import { ThemeProvider } from "@vxture/design-system";
  * imported from anywhere; this module simply remains the right place for
  * providers.)
  */
+// Shell preference baseline (owner, 2026-08-21): theme defaults to LIGHT (not
+// system), density and font size stay at DS defaults. The user can change all
+// of them from the header's preference panel; ThemeProvider persists choices
+// under the DS contract keys (vx-density / vx-fontsize / next-themes theme).
 export function Providers({ children }: { children: ReactNode }) {
-  return <ThemeProvider>{children}</ThemeProvider>;
+  // FullscreenProvider backs the header's fullscreen control (ShellFullscreen-
+  // Toggle calls useFullscreen, which throws without it). "pseudo" mode is the
+  // DS default: the target fills the viewport as a layer rather than taking
+  // the browser into real fullscreen, so the shell chrome stays reachable.
+  return (
+    <ThemeProvider defaultMode="light" defaultDensity="default">
+      <FullscreenProvider>{children}</FullscreenProvider>
+    </ThemeProvider>
+  );
 }

@@ -4,3 +4,18 @@
  * css would be added in the DS package first, never copied here. */
 @import "@vxture/design-system/styles/globals.css";
 @import "@vxture/design-system/styles/brands/vxture.css";
+
+/* Page ground, lightened (owner 2026-08-24 - the default read too dark under
+ * the backdrop). This is the ONE token this product overrides, and it is
+ * overridden deliberately rather than by accident: `--background` is a T2
+ * semantic name, so it is redefined here AFTER the DS import, scoped to the
+ * light theme only - the dark theme's ground is already correct.
+ *
+ * Nothing else in this file defines a DS name; the backdrop is canvas-drawn
+ * and needs no CSS of its own (07-consumption-pitfalls section 1: the T2 layer
+ * is unprefixed, so a stray bare name here would silently overwrite a token). */
+:root:not(.dark) {
+  /* One step up the DS neutral scale (100 -> 50), not a hand-picked literal:
+     the ground stays on the token ramp, so it still moves with the palette. */
+  --background: var(--vx-color-neutral-50);
+}
