@@ -90,11 +90,9 @@ export function PipelineClient() {
         meta={`今日 ${data.docsToday} docs · P95 ${data.p95Seconds}s/doc · 自动处理 ${data.autoRatePct}%`}
         actions={
           <>
+            {/* 二级导航(任务与队列/受控重建)在左侧导航卡下,不在这里重复 */}
             <Button variant="outline" asChild>
-              <a href="/pipeline/tasks">任务与队列</a>
-            </Button>
-            <Button variant="outline" asChild>
-              <a href="/pipeline/rebuild">受控重建</a>
+              <a href="/console">上传文档</a>
             </Button>
             <Button>批量确认预验</Button>
           </>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ShellBrand,
@@ -53,7 +52,16 @@ const LOCALE_OPTIONS = [
   { locale: "en-US" as const, nativeName: "English" },
 ];
 
-export function AppHeader() {
+export function AppHeader({
+  pending = 0,
+  dockOpen = false,
+  onToggleDock = () => {},
+}: {
+  /** 待裁决 count for the steward-dock badge (red, shown when dock closed). */
+  pending?: number;
+  dockOpen?: boolean;
+  onToggleDock?: () => void;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const { mode, setMode, density, setDensity, fontSize, setFontSize } = useTheme();
@@ -104,6 +112,8 @@ export function AppHeader() {
 
   const displayName = user?.sub ?? "未登录";
 
+  // V3 指挥台 shell: domain navigation moved to the left nav-rail cards, so
+  // the header keeps only launcher + brand - two navs must not coexist.
   const leading = (
     <>
       <ShellLauncher
@@ -122,36 +132,25 @@ export function AppHeader() {
         }}
       />
       <ShellBrand href="/" label={BRAND.shortName} tag="知识服务平台" />
-      {/* Brand/menu divider: the one hairline the shell keeps, because it
-          separates WITHIN a surface rather than between two layers. */}
-      <span aria-hidden="true" className="mx-2xs h-icon-sm w-px bg-border" />
-      <nav aria-label="产品导航" className="flex items-center gap-2xs">
-        {NAV_ITEMS.map((n) => (
-          <Link
-            key={n.key}
-            href={n.href}
-            aria-current={n.key === active ? "page" : undefined}
-            // Scale utilities, not bare numerics: px-md/py-2xs and text-body-sm
-            // follow the density + font-size preference axes, which `px-3
-            // py-1.5 text-sm` did not - at compact density the old chips kept
-            // desktop padding while everything around them tightened.
-            className={
-              n.key === active
-                ? "rounded-md bg-primary/10 px-md py-2xs text-body-sm font-medium text-primary"
-                : "rounded-md px-md py-2xs text-body-sm text-muted-foreground transition-colors duration-fast ease-standard hover:bg-accent hover:text-foreground"
-            }
-          >
-            {n.label}
-          </Link>
-        ))}
-      </nav>
     </>
   );
 
   const trailing = (
     <>
       <ShellIconGroup label="系统">
-        <ShellIconButton icon="sparkles" label="知识管家" onClick={() => router.push("/pipeline")} />
+        {/* The steward-dock toggle: when the dock is closed and work is
+            pending, the red count badge marks it (owner 2026-08-24). */}
+        <span className="relative">
+          <ShellIconButton icon="sparkles" label="管家值班台" active={dockOpen} onClick={onToggleDock} />
+          {pending > 0 && !dockOpen && (
+            <span
+              aria-label={`${pending} 项待裁决`}
+              className="pointer-events-none absolute -right-0.5 -top-0.5 flex h-[14px] min-w-[14px] items-center justify-center rounded-full bg-destructive px-2xs font-mono text-[9px] font-semibold text-white"
+            >
+              {pending}
+            </span>
+          )}
+        </span>
         <ShellIconButton icon="bell" label="通知" />
         <ShellIconButton icon="help" label="帮助" />
       </ShellIconGroup>
