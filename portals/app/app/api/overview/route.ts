@@ -161,7 +161,9 @@ export async function GET(): Promise<Response> {
       id: kb.id,
       name: kb.name,
       source: kb.ownerType === "user" ? "agent" : "platform",
-      sourceLabel: kb.ownerType === "user" ? "自建" : "平台共建",
+      // No label: the live path knows only the KIND, and `source` already
+      // carries it. Composing a Chinese word here put prose on the wire.
+      sourceLabel: null,
       publishState: kb.publishState as OverviewAsset["publishState"],
       docCount: docTotal,
       entryCount: entryTotal,
@@ -172,9 +174,11 @@ export async function GET(): Promise<Response> {
       sparkline: (h ?? NO_HEAT).sparkline,
       sparkTone: "primary",
       topConsumers: (h ?? NO_HEAT).topConsumers,
+      // The live path has a FIGURE, not a sentence. `text: null` tells the card
+      // to say it in the reader's language from `kind` + `heat7d`.
       highlight: h
-        ? { kind: "agent_usage", text: `近 7 日被引用 ${h.heat7d} 次`, strong: "", action: undefined }
-        : { kind: "steward", text: "尚无运营数据", strong: "", action: undefined },
+        ? { kind: "agent_usage", text: null, strong: "", action: undefined }
+        : { kind: "steward", text: null, strong: "", action: undefined },
       tags: [],
       stewardSuggestions: 0,
     };

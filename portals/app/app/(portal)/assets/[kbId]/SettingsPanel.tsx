@@ -29,6 +29,7 @@ import { useFormat } from "../../../_i18n/useFormat";
 import { useMessages } from "../../../_i18n/useMessages";
 import { common } from "../../../_i18n/messages/common";
 import { assets } from "../../../_i18n/messages/assets";
+import { evaluation } from "../../../_i18n/messages/evaluation";
 
 // Everything about a library that is a SETTING rather than a document. Four
 // blocks in the order an owner actually meets them: who can see it, how its
@@ -94,6 +95,7 @@ function SharingCard({
   onShare: (target: PublishState) => void | Promise<void>;
 }) {
   const m = useMessages(assets);
+  const ev = useMessages(evaluation);
   const c = useMessages(common);
   const f = useFormat();
   const share = f.sharing(kb.publishState);
@@ -135,6 +137,7 @@ function ProcessingCard({
   onTemplate: (templateId: string | null) => void | Promise<void>;
 }) {
   const m = useMessages(assets);
+  const ev = useMessages(evaluation);
   const c = useMessages(common);
   const current = templates.find((t) => t.id === kb.processingTemplateId) ?? null;
   return (
@@ -191,6 +194,7 @@ function FilterFieldsCard({
   onSave: (fields: MetadataField[]) => void | Promise<void>;
 }) {
   const m = useMessages(assets);
+  const ev = useMessages(evaluation);
   const c = useMessages(common);
   const [draft, setDraft] = useState<MetadataField[]>(fields);
   const [name, setName] = useState("");
@@ -351,6 +355,7 @@ function GovernanceCard({
   onVerifierConfig: (verifier: string | null, intervalDays: number | null) => void | Promise<void>;
 }) {
   const m = useMessages(assets);
+  const ev = useMessages(evaluation);
   const c = useMessages(common);
   const f = useFormat();
   const [verifier, setVerifier] = useState(kb.defaultVerifier ?? "");
@@ -379,7 +384,7 @@ function GovernanceCard({
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-md">
         <div>
-          <CardTitle>{m.govCardTitle}</CardTitle>
+          <CardTitle>{ev.govTitle}</CardTitle>
           <CardDescription>
             {kb.governanceEnabled
               ? m.govOn(f.interval(kb.defaultVerifyIntervalDays))
@@ -447,6 +452,7 @@ function FoldersCard({
   onDelete: (folder: Folder) => void | Promise<void>;
 }) {
   const m = useMessages(assets);
+  const ev = useMessages(evaluation);
   const c = useMessages(common);
   const [name, setName] = useState("");
   const [editing, setEditing] = useState<string | null>(null);

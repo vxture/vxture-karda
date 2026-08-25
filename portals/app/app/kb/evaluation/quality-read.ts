@@ -15,44 +15,27 @@ import type { EvalMetric, EvalSet } from "../demo/evaluation-types";
 export interface QualityRead {
   metrics: EvalMetric[];
   sets: EvalSet[];
-  baselineLabel: string;
+  /** The run's baseline name, and whether that run degraded. Composed into a
+   *  sentence at the CALL SITE - it used to be concatenated here, which put
+   *  "· 链路降级" on the wire as prose. */
+  baseline: string;
+  degraded: boolean;
 }
 
+// WHICH three metrics, and which stored field each reads. Their names and
+// one-line explanations live in `_i18n/messages/evaluation.ts` - they were
+// authored here too until 2026-08-26, which made a fixed list of three exist
+// twice.
 const METRIC_META = [
-  {
-    key: "recall",
-    label: "召回命中率",
-    hint: "评测集问题中,正确证据出现在召回结果里的比例",
-    field: "recallHitPct" as const,
-  },
-  {
-    key: "precision",
-    label: "引用准确率",
-    hint: "回答引用的条目里,真正支撑该回答的比例",
-    field: "citationPrecisionPct" as const,
-  },
-  {
-    key: "grounded",
-    label: "有据回答率",
-    hint: "回答完全由检索证据支撑、未自由发挥的比例",
-    field: "groundedAnswerPct" as const,
-  },
+  { key: "recall", field: "recallHitPct" as const },
+  { key: "precision", field: "citationPrecisionPct" as const },
+  { key: "grounded", field: "groundedAnswerPct" as const },
 ];
 
 /** A percentage the runner could not measure renders as an em dash, never as a
  *  number. "Not measured" and "measured at zero" are different findings. */
 function fmt(v: number | null): string {
   return v === null ? "—" : `${v.toFixed(1)}%`;
-}
-
-function relative(iso: string | null, now: number): string {
-  if (!iso) return "未运行";
-  const mins = Math.floor((now - new Date(iso).getTime()) / 60000);
-  if (mins < 1) return "刚刚";
-  if (mins < 60) return `${mins} 分钟前`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} 小时前`;
-  return `${Math.floor(hours / 24)} 天前`;
 }
 
 export async function readQuality(workspaceId: string, now: number = Date.now()): Promise<QualityRead | null> {
@@ -96,26 +79,25 @@ export async function readQuality(workspaceId: string, now: number = Date.now())
     const d = deltas.find((x) => x.key === m.field);
     return {
       key: m.key,
-      label: m.label,
       value: fmt(current[m.field]),
       // An unknown delta is a dash, not "+0.0%". A zero would claim the metric
       // held steady across a comparison that never happened.
       delta: d?.delta === null || d === undefined ? "—" : `${d.delta > 0 ? "+" : ""}${d.delta.toFixed(1)}%`,
       deltaTone: d?.direction === "better" ? "success" : d?.direction === "worse" ? "danger" : "neutral",
-      hint: m.hint,
     };
   });
 
   return {
     metrics,
-    baselineLabel: `${latest.run.baselineLabel}${latest.run.degraded ? " · 链路降级" : ""}`,
+    baseline: latest.run.baselineLabel,
+    degraded: latest.run.degraded,
     sets: sets.map((s) => {
       const last = s.runs[0];
       return {
         id: s.id,
         name: s.name,
         questionCount: s._count.questions,
-        lastRun: relative(last?.startedAt.toISOString() ?? null, now),
+        lastRun: last?.startedAt.toISOString() ?? null,
         // passPct is the RECALL rate: "did the corpus contain what the question
         // needed". It is the one metric measurable without generation, so it is
         // the only honest per-set headline on a host where answering is off.

@@ -51,7 +51,7 @@ export async function GET(): Promise<Response> {
     // number next to live ones under a "live" marker, which is precisely the
     // path by which a demo figure gets read as real (240 section 9).
     ...(quality
-      ? { metrics: quality.metrics, sets: quality.sets, baselineLabel: quality.baselineLabel }
+      ? { metrics: quality.metrics, sets: quality.sets, baseline: quality.baseline, degraded: quality.degraded }
       : {}),
     sources: { corpus: "live", steward: "demo", evaluation: quality ? "live" : "demo" },
   };

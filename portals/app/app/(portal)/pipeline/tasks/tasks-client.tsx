@@ -5,8 +5,9 @@ import Link from "next/link";
 import { Banner, Button, Card, CardContent, Icon } from "@vxture/design-system";
 import { PageHead } from "../../../_shell/PageHead";
 import { StageDots } from "../_ui";
-import type { PipelineTask, TasksData } from "../../../kb/demo/pipeline-types";
+import type { ProcessingStage, PipelineTask, TasksData } from "../../../kb/demo/pipeline-types";
 import { useMessages } from "../../../_i18n/useMessages";
+import type { Resolved } from "../../../_i18n";
 import { pipeline as pipelineMessages } from "../../../_i18n/messages/pipeline";
 import { shell } from "../../../_i18n/messages/shell";
 import { assets } from "../../../_i18n/messages/assets";
@@ -33,6 +34,36 @@ const ROW_EDGE: Record<PipelineTask["statusTone"], string> = {
   danger: " border-destructive-border/50",
   muted: "",
 };
+
+const PROC_STAGE_KEY = {
+  fetch: "procFetch",
+  parse: "procParse",
+  chunk: "procChunk",
+  embed: "procEmbed",
+  commit: "procCommit",
+} as const satisfies Record<ProcessingStage, keyof typeof pipelineMessages>;
+
+/** The status sentence. `detail` is per-run content and is appended verbatim -
+ *  it is the one part of this line the state itself cannot say. */
+function statusText(m: Resolved<typeof pipelineMessages>, st: PipelineTask["status"]): string {
+  const detail = "detail" in st && st.detail ? ` · ${st.detail}` : "";
+  switch (st.kind) {
+    case "running":
+      return m.statusRunning(m[PROC_STAGE_KEY[st.stage]]) + detail;
+    case "queued":
+      return m.statusQueued;
+    case "retrying":
+      return m.statusRetrying(st.attempt) + detail;
+    case "suspendedQuota":
+      return m.statusSuspendedQuota;
+    case "suspendedOther":
+      return m.statusSuspendedOther;
+    case "failed":
+      return m.statusFailed(m[PROC_STAGE_KEY[st.stage]]) + detail;
+    case "committed":
+      return m.statusCommitted + detail;
+  }
+}
 
 const TIER_KEY = {
   interactive: { name: "tierInteractive", scope: "tierInteractiveScope" },
@@ -196,7 +227,7 @@ export function TasksClient() {
                 </span>
                 <StageDots dots={t.dots} />
                 <span className={`w-[7.5rem] shrink-0 text-right text-body-sm ${STATUS_CLASS[t.statusTone]}`}>
-                  {t.statusLabel}
+                  {statusText(m, t.status)}
                 </span>
               </Link>
             ))}

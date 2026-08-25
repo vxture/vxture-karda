@@ -7,6 +7,16 @@ import type { EvaluationData } from "./evaluation-types";
 
 const S = DEMO_TOTALS_OPS.steward;
 
+/**
+ * A demo timestamp, N hours back from now.
+ *
+ * NOT a fixed ISO string: the field used to hold a rendered phrase ("2 小时前")
+ * which was relative by construction, and replacing it with a literal date made
+ * the demo drift - within a day it was reading "in 13 hours", a run that had not
+ * happened yet. A demo figure that ages has to be expressed as an age.
+ */
+const hoursAgo = (h: number): string => new Date(Date.now() - h * 3_600_000).toISOString();
+
 export const DEMO_EVALUATION: EvaluationData = {
   verification: {
     verified: 2617,
@@ -24,49 +34,42 @@ export const DEMO_EVALUATION: EvaluationData = {
     ],
     preVerifiedPending: S.preVerified,
   },
-  baselineLabel: "基线 · bge-m3@v2 · 2026-08-18",
+  baseline: "bge-m3@v2 · 2026-08-18",
+  degraded: false,
   // The offline default. /api/evaluation overrides `corpus` to "live" whenever
   // a DB is attached - this constant is what the page shows with none.
   sources: { corpus: "demo", steward: "demo", evaluation: "demo" },
   metrics: [
     {
       key: "recall",
-      label: "召回命中率",
       value: "0.86",
       delta: "+7.2%",
       deltaTone: "success",
-      hint: "评测集问题中,正确证据出现在 top-k 的比例",
     },
     {
       key: "precision",
-      label: "引用准确率",
       value: "0.91",
       delta: "+1.4%",
       deltaTone: "success",
-      hint: "回答引用的条目里,真正支撑该回答的比例",
     },
     {
       key: "grounded",
-      label: "有据回答率",
       value: "0.94",
       delta: "-0.6%",
       deltaTone: "danger",
-      hint: "回答完全由检索证据支撑、未自由发挥的比例",
     },
     {
       key: "latency",
-      label: "检索 P95",
       value: "412ms",
-      delta: "持平",
+      delta: "0.0%",
       deltaTone: "neutral",
-      hint: "自请求进入到候选集返回的端到端耗时",
     },
   ],
   sets: [
-    { id: "es-bid", name: "投标问答评测集", questionCount: 120, lastRun: "2 小时前", passPct: 88, gaps: 3 },
-    { id: "es-ops", name: "设备作业评测集", questionCount: 96, lastRun: "昨天", passPct: 92, gaps: 1 },
-    { id: "es-emg", name: "应急预案评测集", questionCount: 64, lastRun: "3 天前", passPct: 74, gaps: 6 },
-    { id: "es-reg", name: "法规引用评测集", questionCount: 48, lastRun: "未运行", passPct: 0, gaps: 0 },
+    { id: "es-bid", name: "投标问答评测集", questionCount: 120, lastRun: hoursAgo(2), passPct: 88, gaps: 3 },
+    { id: "es-ops", name: "设备作业评测集", questionCount: 96, lastRun: hoursAgo(26), passPct: 92, gaps: 1 },
+    { id: "es-emg", name: "应急预案评测集", questionCount: 64, lastRun: hoursAgo(74), passPct: 74, gaps: 6 },
+    { id: "es-reg", name: "法规引用评测集", questionCount: 48, lastRun: null, passPct: 0, gaps: 0 },
   ],
   demoOps: true,
 };

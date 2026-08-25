@@ -37,16 +37,19 @@ const APP = "portals/app/app";
 const SCOPE = [
   `${APP}/(portal)/assets`,
   `${APP}/(portal)/overview-client.tsx`,
+  `${APP}/(portal)/page.tsx`,
+  `${APP}/_lib`,
   `${APP}/(portal)/channels`,
   `${APP}/(portal)/tools`,
   `${APP}/(portal)/bench`,
   `${APP}/(portal)/pipeline`,
+  `${APP}/(portal)/evaluation`,
   `${APP}/_i18n`,
   `${APP}/_shell`,
 ];
-// NOT yet in scope, and each absence is a real debt rather than an oversight:
-//   (portal)/evaluation                 - the 验证评测 domain
-// Each of those lands in SCOPE in the PR that sweeps it.
+// Every product surface is now in scope. The list stays explicit rather than
+// becoming "the whole app": a new domain has to be ADDED here, which is the
+// moment someone notices it has not been swept.
 
 /** The catalog itself: the one place product strings are supposed to live. */
 const CATALOG = `${APP}/_i18n/messages`;

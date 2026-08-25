@@ -1,8 +1,14 @@
 import { Suspense } from "react";
 import { BRAND } from "@karda/shared/brand";
+import { t } from "../../../_i18n/catalog";
+import { shell } from "../../../_i18n/messages/shell";
 import { QueueClient } from "./queue-client";
 
-export const metadata = { title: `待复验队列 - ${BRAND.displayName}` };
+// Title from the catalog, resolved at the DEFAULT locale - see the note in
+// `(portal)/assets/[kbId]/page.tsx` and TD-014.
+export const metadata = {
+  title: `${t(shell.subQueue, BRAND.defaultLocale)} - ${BRAND.displayName}`,
+};
 
 // The re-verification workbench. `?kb=<id>` narrows it to one library, which is
 // what the 低于覆盖基线 rows on 验证评测 link to.

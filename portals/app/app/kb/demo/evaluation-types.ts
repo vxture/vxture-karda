@@ -37,14 +37,14 @@ export interface VerificationState {
 /** One quality metric against its baseline. */
 export interface EvalMetric {
   key: string;
-  label: string;
+  /** The metric's name and its one-line explanation come from the catalog,
+   *  keyed off `key`. They were authored beside the figures until 2026-08-26. */
   /** Preformatted current reading, e.g. "0.82". */
   value: string;
   /** Signed delta vs the baseline, e.g. "+7.2%". */
   delta: string;
   deltaTone: "success" | "danger" | "neutral";
   /** What this metric means, one line - these terms are not universal. */
-  hint: string;
 }
 
 /** A stored evaluation set (a question set with expected evidence). */
@@ -53,7 +53,14 @@ export interface EvalSet {
   name: string;
   questionCount: number;
   /** Last run, preformatted relative time. */
-  lastRun: string;
+  /** ISO timestamp of the last completed run, or null if it has never run.
+   *
+   *  It used to be a rendered phrase ("2 小时前" / "未运行") and the client
+   *  detected never-run by string-comparing to 「未运行」 - so translating the
+   *  phrase would have silently changed program behaviour. A timestamp cannot
+   *  do that, and `Intl.RelativeTimeFormat` renders it better than the
+   *  hand-rolled version did (it says 昨天 / yesterday where that said 1 天前). */
+  lastRun: string | null;
   passPct: number;
   /** Coverage gaps this set surfaced - questions with no answer in the corpus. */
   gaps: number;
@@ -64,7 +71,8 @@ export interface EvaluationData {
   metrics: EvalMetric[];
   sets: EvalSet[];
   /** Baseline the metrics compare against. */
-  baselineLabel: string;
+  baseline: string;
+  degraded: boolean;
   /** Per-group provenance - see FigureSource. Three groups, because they go
    *  live on three different dependencies:
    *    corpus     verified/stale/unverified/coverage/belowFloor - LIVE off

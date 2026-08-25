@@ -53,6 +53,9 @@ language at all**. Three times over, the same cut paid:
 | `_lib/format.ts` (health) | which tone an asset's health rung carries | the rung's name |
 | `kb/demo/channels-*.ts` | a channel's `state`, a capability's `status` | `stateLabel` / `statusLabel`, deleted |
 | `kb/demo/pipeline-*.ts` | the five stage keys, the six report row keys, the three tier keys, and every FIGURE | each stage's name / blurb / unit, each row's name, each tier's name |
+| `kb/processing/task-read.ts` | a task's state + stage, as codes | the status sentence |
+| `kb/evaluation/quality-read.ts` | which three metrics, and the run timestamp | each metric's name and explanation, the relative time |
+| `api/overview/route.ts` | an asset's source KIND and its citation figure | the source label and the highlight sentence |
 
 Asset health is the FOURTH state machine handled this way, after content state,
 verification state and the sharing ladder. Its tones are in the DS
@@ -207,7 +210,43 @@ aside's noun are vocabulary and moved here. `report[].unit` is now a
 The general rule: **a preformatted value that contains a word is not a value.**
 It is a sentence, and it belongs wherever sentences belong.
 
-### 3.5 One place the seam correctly stops: the tool descriptor
+### 3.5 A display string used as a state test
+
+The evaluation set list detected never-run like this:
+
+```ts
+const never = s.lastRun === "未运行";
+```
+
+`lastRun` was a rendered phrase - "2 小时前" / "昨天" / "未运行" - built on the
+server, and the client string-compared it. Translating that phrase would have
+silently changed **program behaviour**, not just wording, which is the worst
+kind of coupling this seam can produce.
+
+Three things fell out of fixing it:
+
+- `lastRun` is now `string | null` - an ISO timestamp, or null for never. A
+  timestamp cannot be mistranslated into a different meaning.
+- The relative rendering moved to `Intl.RelativeTimeFormat`, which is also more
+  correct than the hand-rolled ladder was: it says 昨天 / yesterday where
+  `Math.floor(hours / 24)` said "1 天前".
+- **Nothing had ever displayed the phrase.** The server had been formatting a
+  sentence for years that only a `===` ever read. The set list now shows it.
+
+The same pass found the mirror case in `task-read.ts`: `statusLabel` was built
+as `` `${row.currentStage} 处理中` `` - and `current_stage` is a CODE, so the
+live path rendered **"fetch 处理中"**, an English identifier against a Chinese
+word. Wrong in either language, and invisible until someone asked what the
+string was made of.
+
+### 3.6 A fixed timestamp in demo data drifts
+
+Replacing "2 小时前" with a literal ISO date looked like the obvious fix and was
+wrong: within a day the page read **"in 13 hours"** - a run that had not
+happened yet. The phrase had been relative BY CONSTRUCTION, and a literal is
+not. Demo figures that age are now expressed as an age (`hoursAgo(2)`).
+
+### 3.7 One place the seam correctly stops: the tool descriptor
 
 The 工具面 shows each tool's summary, and each channel's transport, auth and
 "what it suits", from the tool catalog - and the page states in its own copy
@@ -246,10 +285,22 @@ the whole change.
 
 ## 7. Sweep order
 
-Landed: the whole shell (`_shell`), the state vocabularies (`states`), 知识资产
-(`(portal)/assets/**` plus `overview-client.tsx`), 供给通道 (`channels` /
-`tools` / `bench`), and 加工管道 (`pipeline`).
-Remaining: 验证评测 (`evaluation`) - one PR, same shape.
+**Every product surface is swept.** `SCOPE` covers 11 entries and 49 files with
+**no exemptions**: the shell, the shared primitives (`_lib`), the catalog
+itself, and all five domains - 知识资产, 供给通道, 加工管道, 验证评测.
+
+The list stays explicit rather than becoming "the whole app": a new domain has
+to be ADDED to `SCOPE`, and that is the moment someone notices it has not been
+swept.
+
+What is left holding Chinese, and correctly so:
+
+| Where | Why |
+|---|---|
+| `kb/demo/*` | seed and demonstration CONTENT - asset names, tags, steward proposals, per-run task detail |
+| `api/tools/catalog` | the tool descriptor, which the 工具面 promises is byte-identical to `/.well-known/vxture-tools` (§3.7) |
+| `api/shell` alert text | the demo overlay's own sentence |
+| comments, everywhere | prose ABOUT the code is not a product string |
 
 **A caveat specific to 加工管道.** Those four screens are a design canvas over
 `kb/demo/pipeline-demo.ts`; the pipeline has no schema yet. Their fixed

@@ -27,6 +27,9 @@ import { SignInGate } from "../../../_lib/ui";
 import { PageHead } from "../../../_shell/PageHead";
 import { useFormat, type Failure } from "../../../_i18n/useFormat";
 import { evaluation } from "../../../_i18n/messages/evaluation";
+import { useMessages } from "../../../_i18n/useMessages";
+import { shell } from "../../../_i18n/messages/shell";
+import { common } from "../../../_i18n/messages/common";
 import type { Message } from "../../../_i18n/catalog";
 
 // 待复验队列 - batch 11's spine.
@@ -45,6 +48,9 @@ type Filter = "all" | "stale" | "unverified";
 
 export function QueueClient() {
   const f = useFormat();
+  const m = useMessages(evaluation);
+  const sh = useMessages(shell);
+  const c = useMessages(common);
   const params = useSearchParams();
   const kbId = params.get("kb") ?? undefined;
 
@@ -114,8 +120,8 @@ export function QueueClient() {
       // operator unable to tell a working sweep from a no-op one.
       setNotice(
         r.staled > 0
-          ? `续验扫描完成：扫描 ${r.scanned} 项，${r.staled} 项到期转为待复验，已加入下面的队列。`
-          : `续验扫描完成：扫描 ${r.scanned} 项，没有新到期的内容。`,
+          ? m.sweepDoneStaled(r.scanned, r.staled)
+          : m.sweepDoneClean(r.scanned),
       );
       await load();
     } catch (e) {
@@ -154,16 +160,16 @@ export function QueueClient() {
   return (
     <>
       <PageHead
-        title="待复验队列"
-        description={kbId ? `仅显示 ${scopeName ?? "该资产"} 的待办` : "工作区内需要人工确认的内容"}
-        meta={data ? `待复验 ${counts.stale} · 未验证 ${counts.unverified}` : undefined}
+        title={sh.subQueue}
+        description={kbId ? m.queueScopeOne(scopeName ?? m.thisAsset) : m.queueScopeAll}
+        meta={data ? m.queueMeta(counts.stale, counts.unverified) : undefined}
         actions={
           <>
             <Button variant="outline" disabled={sweeping} onClick={onSweep}>
-              {sweeping ? "扫描中…" : "续验扫描"}
+              {sweeping ? m.sweeping : m.sweep}
             </Button>
             <Button variant="outline" asChild>
-              <Link href="/evaluation">返回验证评测</Link>
+              <Link href="/evaluation">{m.backToEvaluation}</Link>
             </Button>
           </>
         }
@@ -175,7 +181,7 @@ export function QueueClient() {
       {data && !data.live && (
         <Banner
           tone="info"
-          title="当前未连接数据库，队列为空。这里从不显示演示数据——带着能用按钮的演示队列，正是这一批要避免的东西。"
+          title={m.noDatabase}
         />
       )}
 
@@ -184,33 +190,33 @@ export function QueueClient() {
           <CardContent className="flex flex-wrap items-center gap-md py-md">
             <SegmentedControl
               items={[
-                { value: "all", label: "全部", count: counts.stale + counts.unverified },
-                { value: "stale", label: "待复验", count: counts.stale },
-                { value: "unverified", label: "未验证", count: counts.unverified },
+                { value: "all", label: c.all, count: counts.stale + counts.unverified },
+                { value: "stale", label: f.verification("stale").label, count: counts.stale },
+                { value: "unverified", label: f.verification("unverified").label, count: counts.unverified },
               ]}
               value={filter}
               onChange={(v) => setFilter(v as Filter)}
               size="sm"
-              ariaLabel="按验证状态筛选"
+              ariaLabel={m.filterAria}
             />
             <span className="ml-auto text-body-sm text-muted-foreground">
-              {done.size > 0 && <span className="mr-md text-success-text">本次已处理 {done.size} 项</span>}
-              还剩 <span className="font-mono text-foreground">{remaining}</span> 项
-              {data.truncated && "（仅显示前 50 项）"}
+              {done.size > 0 && <span className="mr-md text-success-text">{m.doneThisSession(done.size)}</span>}
+              {m.remainingLead}<span className="font-mono text-foreground">{remaining}</span>{m.remainingTail}
+              {data.truncated && m.truncatedNote}
             </span>
           </CardContent>
         </Card>
       )}
 
       {visible === null ? (
-        <EmptyState title="正在加载队列…" />
+        <EmptyState title={m.queueLoading} />
       ) : visible.length === 0 ? (
         <EmptyState
-          title={done.size > 0 ? "这一页处理完了" : "没有待办"}
+          title={done.size > 0 ? m.pageDone : m.queueEmpty}
           description={
             done.size > 0
-              ? "刷新以取回下一页，或回到验证评测看覆盖率的变化。"
-              : "该范围内的内容都已验证，或所在库未开启验证治理。"
+              ? m.pageDoneHint
+              : m.queueEmptyHint
           }
         />
       ) : (
@@ -236,6 +242,9 @@ function QueueRow({
   onVerify: (item: QueueItem) => void | Promise<void>;
 }) {
   const f = useFormat();
+  const m = useMessages(evaluation);
+  const sh = useMessages(shell);
+  const c = useMessages(common);
   const stale = item.verificationState === "stale";
   return (
     <div className="flex items-center gap-md border-t border-border/60 py-sm first:border-t-0">
@@ -245,14 +254,14 @@ function QueueRow({
               unverified one never was. Same queue, different urgency, so they
               must not read the same. */}
           <StatusBadge tone={stale ? "warning" : "neutral"} dot={false}>
-            {stale ? "待复验" : "未验证"}
+            {stale ? f.verification("stale").label : f.verification("unverified").label}
           </StatusBadge>
           <span className="truncate text-body-md font-medium">
-            {item.title ?? <span className="text-muted-foreground">（无标题条目）</span>}
+            {item.title ?? <span className="text-muted-foreground">{m.untitledEntry}</span>}
           </span>
           {item.source === "connector" && (
             <StatusBadge tone="info" dot={false}>
-              外部同步
+              {m.externalSync}
             </StatusBadge>
           )}
         </div>
@@ -261,20 +270,20 @@ function QueueRow({
             {item.kbName}
           </Link>
           <span>·</span>
-          <span>{item.kind === "document" ? "文档" : "条目"}</span>
+          <span>{item.kind === "document" ? m.kindDocument : m.kindEntry}</span>
           {stale && item.expiresAt && (
             <>
               <span>·</span>
               {/* The lapse is the fact that matters: it says how long this has
                   been quietly missing from the default recall tier. */}
-              <span className="text-warning-text">{f.when(item.expiresAt)} 到期</span>
+              <span className="text-warning-text">{m.expiresAt(f.when(item.expiresAt))}</span>
             </>
           )}
           {item.verifiedAt && (
             <>
               <span>·</span>
               <span>
-                上次 {f.when(item.verifiedAt)}
+                {m.lastVerified(f.when(item.verifiedAt))}
                 {item.verifier ? ` · ${item.verifier}` : ""}
               </span>
             </>
@@ -282,7 +291,7 @@ function QueueRow({
         </div>
       </div>
       <Button size="sm" variant="default" disabled={busy} onClick={() => onVerify(item)}>
-        {busy ? "…" : "验证"}
+        {busy ? "…" : c.confirm}
       </Button>
     </div>
   );

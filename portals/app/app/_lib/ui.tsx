@@ -14,6 +14,8 @@
 // page-level inline layout styles migrate to DS layout/patterns page by page.
 "use client";
 
+import { useMessages } from "../_i18n/useMessages";
+import { common } from "../_i18n/messages/common";
 import type { CSSProperties, ReactNode } from "react";
 import {
   Badge as DsBadge,
@@ -116,13 +118,14 @@ export function Empty({ children }: { children: ReactNode }) {
 }
 
 export function SignInGate({ href }: { href: string }) {
+  const c = useMessages(common);
   return (
     <EmptyState
-      title="登录后使用"
-      description="登录已过期，或你还没有登录。"
+      title={c.signInTitle}
+      description={c.signInBody}
       action={
         <DsButton asChild>
-          <a href={href}>登录</a>
+          <a href={href}>{c.signIn}</a>
         </DsButton>
       }
     />

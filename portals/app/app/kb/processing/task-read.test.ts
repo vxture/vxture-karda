@@ -81,12 +81,22 @@ test("a skipped stage counts as passed - the pipeline moved through it", () => {
 test("a suspended quota task is NOT painted as an error - it resumes on its own", () => {
   const s = statusFor(task({ state: "suspended", failureClass: "quota" }));
   assert.equal(s.statusTone, "warning");
-  assert.match(s.statusLabel, /配额/);
+  assert.equal(s.status.kind, "suspendedQuota");
+});
+
+test("a running task reports its STAGE as a code, never as a sentence", () => {
+  // `current_stage` is a code, so the old `${stage} 处理中` rendered
+  // "fetch 处理中" on the live path - wrong in either language.
+  const r = statusFor(task({ state: "running", currentStage: "embed" })).status;
+  assert.equal(r.kind, "running");
+  assert.equal(r.kind === "running" && r.stage, "embed");
 });
 
 test("a retry says which attempt it is", () => {
-  assert.match(statusFor(task({ state: "queued", attempt: 3 })).statusLabel, /第 3 次/);
-  assert.equal(statusFor(task({ state: "queued", attempt: 1 })).statusLabel, "排队中");
+  const retry = statusFor(task({ state: "queued", attempt: 3 })).status;
+  assert.equal(retry.kind, "retrying");
+  assert.equal(retry.kind === "retrying" && retry.attempt, 3);
+  assert.equal(statusFor(task({ state: "queued", attempt: 1 })).status.kind, "queued");
 });
 
 // --- the tally --------------------------------------------------------------
