@@ -639,3 +639,122 @@ CREATE TABLE IF NOT EXISTS karda_kb.supply_call_asset (
 );
 CREATE INDEX IF NOT EXISTS idx_supply_call_asset_kb
   ON karda_kb.supply_call_asset (kb_id);
+
+-- --- evaluation runner (240-ops-read-models section 8, built in batch 14) -----
+--
+-- Section 8 designed these four and deliberately did NOT build them: "四张空表
+-- 进了基线" for a runner that did not exist is speculative schema. The runner
+-- exists now, so the shape from that section lands verbatim.
+--
+-- Why quality needs its own tables at all: recall hit rate, citation precision
+-- and grounded-answer rate were demo figures, so nothing could answer whether a
+-- chunking change, a model swap or a template edit made retrieval better or
+-- worse. A number nobody can reproduce is not a baseline.
+
+-- An authored question set. KD-011 ruled out synthetic QA generation for v1, so
+-- every question here is written by a person.
+CREATE TABLE IF NOT EXISTS karda_kb.eval_set (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id  UUID NOT NULL,                     -- [ref] owning workspace
+  name          VARCHAR(255) NOT NULL,
+  description   TEXT,
+  -- The libraries a run evaluates over, as a JSONB array of kb ids. NOT a join
+  -- table: the scope is a property of the set, not an entity, and section 8
+  -- specifies four tables. A kb id that no longer exists simply drops out of the
+  -- scope at run time - the set stays valid and says so in its result.
+  kb_scope      JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_by    VARCHAR(128),                      -- [ref] the author
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT uidx_eval_set_ws_name UNIQUE (workspace_id, name)
+);
+CREATE INDEX IF NOT EXISTS idx_eval_set_ws
+  ON karda_kb.eval_set (workspace_id, created_at DESC);
+
+-- One question, with the evidence a correct answer must rest on.
+CREATE TABLE IF NOT EXISTS karda_kb.eval_question (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  set_id        UUID NOT NULL,
+  question      TEXT NOT NULL,
+  -- Expected evidence as DOCUMENT / ENTRY ids, never chunk ids. A chunk id is
+  -- reborn on every rebuild (110-processing's atomic replace bumps the version
+  -- and mints new ids), so a set pinned to chunks would break on exactly the
+  -- change it exists to measure. Recall returns chunk ids; the runner maps them
+  -- back to their document before comparing.
+  expected_evidence JSONB NOT NULL DEFAULT '[]'::jsonb,
+  note          TEXT,
+  position      INTEGER NOT NULL DEFAULT 0,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT fk_eval_question_set FOREIGN KEY (set_id)
+    REFERENCES karda_kb.eval_set (id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_eval_question_set
+  ON karda_kb.eval_question (set_id, position);
+
+-- One run of one set against one baseline. The BASELINE LABEL is what makes a
+-- run comparable: "did this change help" is only answerable between two runs
+-- that name what they ran against.
+CREATE TABLE IF NOT EXISTS karda_kb.eval_run (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  set_id              UUID NOT NULL,
+  workspace_id        UUID NOT NULL,               -- [ref] denormalised for scoping
+  baseline_label      VARCHAR(128) NOT NULL,       -- e.g. bge-m3@v2 / rerank-off
+  verification_filter VARCHAR(32) NOT NULL,        -- the quality tier the run asked for
+  top_k               INTEGER NOT NULL,
+  state               VARCHAR(32) NOT NULL DEFAULT 'running'
+                        CONSTRAINT chk_eval_run_state
+                        CHECK (state IN ('running', 'completed', 'failed')),
+  -- Aggregates, written once at completion. Stored rather than recomputed so a
+  -- run stays a durable, comparable record even after its set is edited - a
+  -- before/after that silently re-derives from today's questions is not a
+  -- before/after.
+  question_count      INTEGER NOT NULL DEFAULT 0,
+  recall_hit_pct      NUMERIC(5,2),
+  citation_precision_pct NUMERIC(5,2),
+  grounded_answer_pct NUMERIC(5,2),
+  gap_count           INTEGER NOT NULL DEFAULT 0,
+  -- Honest disclosure, carried per run: a run whose rerank was unavailable
+  -- measured a different chain than one whose was, and comparing them as equals
+  -- is how a phantom regression gets reported.
+  degraded            BOOLEAN NOT NULL DEFAULT false,
+  error_code          VARCHAR(64),
+  created_by          VARCHAR(128),                -- [ref] who ran it
+  started_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  finished_at         TIMESTAMPTZ,
+  CONSTRAINT fk_eval_run_set FOREIGN KEY (set_id)
+    REFERENCES karda_kb.eval_set (id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_eval_run_set_started
+  ON karda_kb.eval_run (set_id, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_eval_run_ws_started
+  ON karda_kb.eval_run (workspace_id, started_at DESC);
+
+-- Per-question outcome. This is where a GAP is a first-class fact rather than a
+-- subtraction: a question whose expected evidence never surfaced is the one row
+-- an operator has to look at, and it names which question.
+CREATE TABLE IF NOT EXISTS karda_kb.eval_run_result (
+  run_id         UUID NOT NULL,
+  question_id    UUID NOT NULL,
+  -- Did any expected document appear in the recalled set? The recall half.
+  recall_hit     BOOLEAN NOT NULL,
+  -- Of the citations the answer actually used, how many were expected. The
+  -- precision half; both counts are kept so the ratio can be re-derived and
+  -- audited rather than trusted.
+  cited_expected INTEGER NOT NULL DEFAULT 0,
+  cited_total    INTEGER NOT NULL DEFAULT 0,
+  -- Did the run produce an answer resting on at least one citation? An
+  -- ungrounded answer is a failure even when it reads well - that is the whole
+  -- premise of a cited-answer product.
+  grounded       BOOLEAN NOT NULL DEFAULT false,
+  answer_excerpt TEXT,
+  latency_ms     INTEGER,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT pk_eval_run_result PRIMARY KEY (run_id, question_id),
+  CONSTRAINT fk_eval_run_result_run FOREIGN KEY (run_id)
+    REFERENCES karda_kb.eval_run (id) ON DELETE CASCADE,
+  CONSTRAINT fk_eval_run_result_question FOREIGN KEY (question_id)
+    REFERENCES karda_kb.eval_question (id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_eval_run_result_run
+  ON karda_kb.eval_run_result (run_id);

@@ -542,3 +542,134 @@ export interface ToolCatalog {
 export async function readToolCatalog(): Promise<ToolCatalog> {
   return req<ToolCatalog>("/api/tools/catalog");
 }
+
+// --- the evaluation runner (batch 14) -----------------------------------------
+
+export interface EvalSetRow {
+  id: string;
+  name: string;
+  description: string | null;
+  kbScope: string[];
+  questionCount: number;
+  createdAt: string;
+}
+
+export interface EvalQuestionRow {
+  id: string;
+  question: string;
+  /** DOCUMENT ids, never chunk ids - chunk ids are reborn on every rebuild. */
+  expectedEvidence: string[];
+  note: string | null;
+  position: number;
+}
+
+export interface EvalRunRow {
+  id: string;
+  setId: string;
+  baselineLabel: string;
+  verificationFilter: string;
+  topK: number;
+  state: string;
+  questionCount: number;
+  /** NULL means NOT MEASURED, never zero. */
+  recallHitPct: number | null;
+  citationPrecisionPct: number | null;
+  groundedAnswerPct: number | null;
+  gapCount: number;
+  degraded: boolean;
+  startedAt: string;
+  finishedAt: string | null;
+}
+
+export interface MetricDelta {
+  key: "recallHitPct" | "citationPrecisionPct" | "groundedAnswerPct";
+  current: number | null;
+  previous: number | null;
+  delta: number | null;
+  direction: "better" | "worse" | "flat" | "unknown";
+}
+
+export interface RunWithDelta {
+  run: EvalRunRow;
+  previousRunId: string | null;
+  deltas: MetricDelta[];
+  regression: boolean;
+}
+
+export interface GapRow {
+  questionId: string;
+  question: string;
+  recallHit: boolean;
+  citedExpected: number;
+  citedTotal: number;
+  grounded: boolean;
+  answerExcerpt: string | null;
+}
+
+export async function listEvalSets(): Promise<{ sets: EvalSetRow[]; live: boolean }> {
+  return req<{ sets: EvalSetRow[]; live: boolean }>("/api/evaluation/sets");
+}
+
+export async function createEvalSet(name: string, kbScope: string[], description?: string): Promise<EvalSetRow> {
+  const body = await req<{ set: EvalSetRow }>("/api/evaluation/sets", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ name, kb_scope: kbScope, description }),
+  });
+  return need(body, "set", "/api/evaluation/sets");
+}
+
+export async function listEvalQuestions(setId: string): Promise<EvalQuestionRow[]> {
+  const body = await req<{ questions: EvalQuestionRow[] }>(`/api/evaluation/sets/${setId}/questions`);
+  return need(body, "questions", `/api/evaluation/sets/${setId}/questions`);
+}
+
+export async function addEvalQuestion(
+  setId: string,
+  question: string,
+  expectedEvidence: string[],
+  note?: string,
+): Promise<EvalQuestionRow> {
+  const body = await req<{ question: EvalQuestionRow }>(`/api/evaluation/sets/${setId}/questions`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ question, expected_evidence: expectedEvidence, note }),
+  });
+  return need(body, "question", `/api/evaluation/sets/${setId}/questions`);
+}
+
+export async function deleteEvalQuestion(setId: string, questionId: string): Promise<void> {
+  await req<void>(`/api/evaluation/sets/${setId}/questions?id=${encodeURIComponent(questionId)}`, { method: "DELETE" });
+}
+
+export interface RunReport extends RunWithDelta {
+  previous: EvalRunRow | null;
+  /** False when Atlas A4 is unconfigured - the two citation metrics come back
+   *  NULL rather than 0, and the page must say "not measured". */
+  answeringAvailable: boolean;
+  /** Questions skipped for asserting no expected evidence. */
+  skipped: number;
+}
+
+export async function runEvalSet(
+  setId: string,
+  input: { baseline_label: string; verification_filter?: string; top_k?: number },
+): Promise<RunReport> {
+  return req<RunReport>(`/api/evaluation/sets/${setId}/run`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function listEvalRuns(setId?: string): Promise<{ runs: RunWithDelta[]; live: boolean }> {
+  return req<{ runs: RunWithDelta[]; live: boolean }>(
+    `/api/evaluation/runs${setId ? `?set=${encodeURIComponent(setId)}` : ""}`,
+  );
+}
+
+export async function readRunDetail(runId: string): Promise<{ detail?: { runId: string; results: GapRow[] } }> {
+  return req<{ detail?: { runId: string; results: GapRow[] } }>(
+    `/api/evaluation/runs?run=${encodeURIComponent(runId)}`,
+  );
+}

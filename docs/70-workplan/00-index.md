@@ -755,9 +755,42 @@ already ruled out synthetic QA generation, so eval sets are authored.
 actually operating, and batches 10-12 are what produce one. Running it against a
 seeded demo corpus would measure the seed.
 
-**Acceptance:** a change to chunking, a model swap or a template edit produces a
-before/after the team can read, and a regression is visible without anyone
-noticing it by hand.
+**Acceptance: MET, walked end to end 2026-08-25** against a throwaway Postgres.
+Authored a two-question set through the UI (evidence PICKED from real documents,
+not typed), ran it as `bm25-cjk-bigram` -> recall **100%**, then made a real
+chunking change that lost content in one document and re-ran as
+`chunk-recut-v2` -> recall **50.0%, -50.0 pp**, a **回退** badge in the history,
+and the per-question view naming the exact question whose evidence disappeared.
+验证评测's `sources.evaluation` flipped from `demo` to `live`.
+
+**The design decision that carries this batch: NOT MEASURED IS NEVER ZERO.**
+This host has no Atlas A4, so citation precision and grounded-answer rate came
+back NULL and rendered as em dashes with a banner saying so. A 0% there would
+read as a quality collapse when the truth is that generation is switched off -
+an infrastructure gap filed as a regression. The same rule runs through the
+comparison: a measured run against an unmeasured one is `unknown`, not `flat`
+and not a delta of zero, and `hasRegression` never fires on an unknown.
+
+**Schema landed as ONE increment across four files**, per 240 section 9:
+baseline + `incr/0005_eval_runner.sql` + `98_column_locks` (guarded) + four
+Prisma models, with the lockstep guardrail green at 30 tables. Both DDL paths
+were run in throwaway containers before any code was written against them -
+fresh and live end **column-for-column identical** (42 columns), 0005 re-runs
+clean (9 skipping).
+
+**The locks make a run EVIDENCE rather than a record.** Verified as `karda_svc`:
+renaming a set works, repointing its workspace is denied; completing a run and
+writing its metrics works, editing its `baseline_label` afterwards is denied;
+rewriting a result is denied; deleting a whole run cascades and is allowed,
+because an eval run is an experiment artifact rather than a record that a
+service call happened.
+
+**Other rules worth carrying forward:** expected evidence is authored at
+DOCUMENT level, never chunk level - a chunk id is reborn on every rebuild, so a
+set pinned to chunks would break on exactly the change it exists to measure.
+Precision is micro-averaged. A question asserting no evidence is skipped and
+reported, not counted as a miss. Questions run sequentially, because a fan-out
+would measure contention as much as quality.
 
 ## Batch 15 - knowledge asset model v2
 

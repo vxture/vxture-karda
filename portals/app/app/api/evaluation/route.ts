@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAuth } from "../../kb/api/http";
 import { prismaEnabled } from "../../lib/db";
 import { readCorpus } from "../../kb/governance/corpus-read";
+import { readQuality } from "../../kb/evaluation/quality-read";
 import { DEMO_EVALUATION } from "../../kb/demo/evaluation-demo";
 import type { EvaluationData } from "../../kb/demo/evaluation-types";
 
@@ -13,8 +14,11 @@ import type { EvaluationData } from "../../kb/demo/evaluation-types";
 //   验证治理 (corpus)     LIVE off document/entry verification_state - see
 //                        kb/governance/corpus-read.ts. Needed no new table.
 //   管家预验 (steward)    demo. No steward ledger yet.
-//   质量评测 (evaluation) demo. No evaluation runner yet (KD-011 ruled out
-//                        synthetic QA generation for v1 - sets are authored).
+//   质量评测 (evaluation) LIVE off eval_run once a set has been RUN; demo until
+//                        then. Batch 14 built the runner and its four tables, so
+//                        this half stopped being a constant - but a workspace
+//                        that has never run a set has no metrics, and the honest
+//                        answer there is "not measured", not a borrowed number.
 //
 // Without a DB attached the whole payload falls back to the demo overlay, same
 // contract as every other read model here.
@@ -33,6 +37,7 @@ export async function GET(): Promise<Response> {
   }
 
   const corpus = await readCorpus(auth.user.activeWorkspace);
+  const quality = await readQuality(auth.user.activeWorkspace);
   const data: EvaluationData = {
     ...DEMO_EVALUATION,
     verification: {
@@ -41,7 +46,14 @@ export async function GET(): Promise<Response> {
       // steward ledger exists. sources.steward says so.
       preVerifiedPending: DEMO_EVALUATION.verification.preVerifiedPending,
     },
-    sources: { corpus: "live", steward: "demo", evaluation: "demo" },
+    // The evaluation half goes live ONLY when there is a completed run to read.
+    // Falling back to the overlay when a metric is missing would put a demo
+    // number next to live ones under a "live" marker, which is precisely the
+    // path by which a demo figure gets read as real (240 section 9).
+    ...(quality
+      ? { metrics: quality.metrics, sets: quality.sets, baselineLabel: quality.baselineLabel }
+      : {}),
+    sources: { corpus: "live", steward: "demo", evaluation: quality ? "live" : "demo" },
   };
   return NextResponse.json(data);
 }

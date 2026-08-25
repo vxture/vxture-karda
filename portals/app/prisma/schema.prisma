@@ -507,3 +507,99 @@ model SupplyCallAsset {
   @@map("supply_call_asset")
   @@schema("karda_kb")
 }
+
+// --- evaluation runner (240 section 8, built in batch 14) ---------------------
+// DDL is the structure authority (deploy/database/ddl/); these models are only a
+// client-generation source and must stay in lockstep with it.
+
+model EvalSet {
+  id           String   @id @default(uuid()) @db.Uuid
+  workspaceId  String   @map("workspace_id") @db.Uuid
+  name         String   @db.VarChar(255)
+  description  String?
+  /// The libraries a run evaluates over. A JSONB array of kb ids, not a join
+  /// table: the scope is a property of the set, not an entity.
+  kbScope      Json     @default("[]") @map("kb_scope")
+  createdBy    String?  @map("created_by") @db.VarChar(128)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+
+  questions EvalQuestion[]
+  runs      EvalRun[]
+
+  @@unique([workspaceId, name], map: "uidx_eval_set_ws_name")
+  @@index([workspaceId, createdAt], map: "idx_eval_set_ws")
+  @@map("eval_set")
+  @@schema("karda_kb")
+}
+
+model EvalQuestion {
+  id       String @id @default(uuid()) @db.Uuid
+  setId    String @map("set_id") @db.Uuid
+  question String
+  /// DOCUMENT / ENTRY ids, never chunk ids - a chunk id is reborn on every
+  /// rebuild, so a set pinned to chunks would break on exactly the change it
+  /// exists to measure.
+  expectedEvidence Json     @default("[]") @map("expected_evidence")
+  note             String?
+  position         Int      @default(0)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt        DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+
+  set     EvalSet          @relation(fields: [setId], references: [id], onDelete: Cascade, map: "fk_eval_question_set")
+  results EvalRunResult[]
+
+  @@index([setId, position], map: "idx_eval_question_set")
+  @@map("eval_question")
+  @@schema("karda_kb")
+}
+
+model EvalRun {
+  id                 String  @id @default(uuid()) @db.Uuid
+  setId              String  @map("set_id") @db.Uuid
+  workspaceId        String  @map("workspace_id") @db.Uuid
+  baselineLabel      String  @map("baseline_label") @db.VarChar(128)
+  verificationFilter String  @map("verification_filter") @db.VarChar(32)
+  topK               Int     @map("top_k")
+  state              String  @default("running") @db.VarChar(32)
+  questionCount      Int     @default(0) @map("question_count")
+  recallHitPct       Decimal? @map("recall_hit_pct") @db.Decimal(5, 2)
+  citationPrecisionPct Decimal? @map("citation_precision_pct") @db.Decimal(5, 2)
+  groundedAnswerPct  Decimal? @map("grounded_answer_pct") @db.Decimal(5, 2)
+  gapCount           Int     @default(0) @map("gap_count")
+  /// A run whose rerank was unavailable measured a different chain; comparing it
+  /// as an equal is how a phantom regression gets reported.
+  degraded           Boolean  @default(false)
+  errorCode          String?  @map("error_code") @db.VarChar(64)
+  createdBy          String?  @map("created_by") @db.VarChar(128)
+  startedAt          DateTime @default(now()) @map("started_at") @db.Timestamptz()
+  finishedAt         DateTime? @map("finished_at") @db.Timestamptz()
+
+  set     EvalSet         @relation(fields: [setId], references: [id], onDelete: Cascade, map: "fk_eval_run_set")
+  results EvalRunResult[]
+
+  @@index([setId, startedAt], map: "idx_eval_run_set_started")
+  @@index([workspaceId, startedAt], map: "idx_eval_run_ws_started")
+  @@map("eval_run")
+  @@schema("karda_kb")
+}
+
+model EvalRunResult {
+  runId         String   @map("run_id") @db.Uuid
+  questionId    String   @map("question_id") @db.Uuid
+  recallHit     Boolean  @map("recall_hit")
+  citedExpected Int      @default(0) @map("cited_expected")
+  citedTotal    Int      @default(0) @map("cited_total")
+  grounded      Boolean  @default(false)
+  answerExcerpt String?  @map("answer_excerpt")
+  latencyMs     Int?     @map("latency_ms")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  run      EvalRun      @relation(fields: [runId], references: [id], onDelete: Cascade, map: "fk_eval_run_result_run")
+  question EvalQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade, map: "fk_eval_run_result_question")
+
+  @@id([runId, questionId], map: "pk_eval_run_result")
+  @@index([runId], map: "idx_eval_run_result_run")
+  @@map("eval_run_result")
+  @@schema("karda_kb")
+}

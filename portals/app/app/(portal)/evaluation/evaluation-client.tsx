@@ -220,7 +220,12 @@ export function EvaluationClient() {
             </CardContent>
           </Card>
 
-          <h3 className="text-label-lg text-muted-foreground">评测集</h3>
+          <h3 className="flex items-baseline gap-sm text-label-lg text-muted-foreground">
+            评测集
+            <Link href="/evaluation/sets" className="text-body-sm text-primary underline-offset-2 hover:underline">
+              编写与运行 →
+            </Link>
+          </h3>
           <Card className="py-md">
             <CardContent className="flex flex-col gap-sm px-lg">
               {data.sets.map((s) => {

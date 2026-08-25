@@ -63,6 +63,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     sub: [
       { key: "evaluation", href: "/evaluation", label: "验证与评测" },
       { key: "queue", href: "/evaluation/queue", label: "待复验队列" },
+      { key: "sets", href: "/evaluation/sets", label: "评测集" },
     ],
   },
 ] as const;
