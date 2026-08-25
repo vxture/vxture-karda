@@ -14,9 +14,10 @@ import {
   StatusBadge,
 } from "@vxture/design-system";
 import { readToolCatalog, loginHref, ApiError, type ToolCatalog } from "../../_lib/api";
-import { apiErrorMessage } from "../../_lib/format";
+
 import { SignInGate } from "../../_lib/ui";
 import { PageHead } from "../../_shell/PageHead";
+import { useFormat } from "../../_i18n/useFormat";
 
 // 工具面 - what an agent developer needs before deciding to call us.
 //
@@ -49,6 +50,7 @@ const MODE_META: Record<string, { label: string; detail: string }> = {
 };
 
 export function ToolsClient() {
+  const f = useFormat();
   const [data, setData] = useState<ToolCatalog | null>(null);
   const [needsAuth, setNeedsAuth] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +58,7 @@ export function ToolsClient() {
   useEffect(() => {
     readToolCatalog().then(setData, (e) => {
       if (e instanceof ApiError && e.status === 401) return setNeedsAuth(true);
-      setError(e instanceof ApiError ? apiErrorMessage(e.status, e.code) : "工具面加载失败。");
+      setError(e instanceof ApiError ? f.apiError(e.status, e.code) : "工具面加载失败。");
     });
   }, []);
 

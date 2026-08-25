@@ -63,20 +63,28 @@ export function isKnownConnector(code: string): boolean {
  * (section 4: "degradation must be explicitly accepted, not silently absorbed").
  * The product surface should show these to an owner before they bind a source.
  */
-export function degradations(caps: ConnectorCapabilities): string[] {
-  const out: string[] = [];
-  if (caps.changeDetection === "karda") {
-    out.push("karda polls this source; incremental latency is bounded by the poll interval.");
-  }
-  if (caps.reconcile === "none") {
-    out.push("no periodic reconcile - long-running drift can only be recovered by a full reload.");
-  }
+/**
+ * WHICH degradations a capability set implies - as codes, not sentences.
+ *
+ * These used to be English prose built here and shipped down the wire, which
+ * meant a Chinese operator read the most safety-critical text in the product
+ * in the wrong language, and no amount of client-side work could fix it. Codes
+ * keep the API contract locale-free (the same seam the error catalog uses:
+ * codes on the wire, prose at the call site) and let the judgement be made
+ * once, here, where the capability flags are.
+ */
+export type DegradationKind =
+  | "pollLatency"
+  | "noReconcile"
+  | "deletesByReconcileOnly"
+  | "deletesUndetectable";
+
+export function degradations(caps: ConnectorCapabilities): DegradationKind[] {
+  const out: DegradationKind[] = [];
+  if (caps.changeDetection === "karda") out.push("pollLatency");
+  if (caps.reconcile === "none") out.push("noReconcile");
   if (caps.deleteSignal === "absence") {
-    out.push(
-      caps.reconcile === "list"
-        ? "deletes are only found by full-list reconcile (I4's weakest form) - unsuitable for sensitive sources."
-        : "deletes CANNOT be detected (absence signal with no reconcile) - I4 is unmet; do not bind sensitive content.",
-    );
+    out.push(caps.reconcile === "list" ? "deletesByReconcileOnly" : "deletesUndetectable");
   }
   return out;
 }

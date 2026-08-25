@@ -27,7 +27,7 @@ test("a poll/karda/absence source surfaces every trade-off and the hard delete g
   };
   const warnings = degradations(weak);
   assert.equal(warnings.length, 3, "poll-latency + no-reconcile + undetectable-deletes");
-  assert.ok(warnings.some((w) => /CANNOT be detected/.test(w)));
+  assert.ok(warnings.includes("deletesUndetectable"));
   assert.equal(meetsDeleteInvariant(weak), false, "absence + no reconcile fails I4");
 });
 
@@ -40,5 +40,5 @@ test("absence deletes are met (weakly) when a reconcile list exists", () => {
     deleteSignal: "absence",
   };
   assert.equal(meetsDeleteInvariant(caps), true);
-  assert.ok(degradations(caps).some((w) => /weakest form/.test(w)));
+  assert.ok(degradations(caps).includes("deletesByReconcileOnly"));
 });

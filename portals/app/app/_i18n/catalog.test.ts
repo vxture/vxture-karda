@@ -3,24 +3,85 @@ import assert from "node:assert/strict";
 import { resolve, t } from "./index";
 import { shell } from "./messages/shell";
 import { common } from "./messages/common";
+import { NAMESPACES } from "./messages/registry";
 
 const LOCALES = ["zh-CN", "en-US"] as const;
+
+/**
+ * Arguments for the interpolated messages, keyed `namespace.key`.
+ *
+ * An entry here is REQUIRED for every function-valued message: the earlier
+ * version of these tests skipped anything that was not a string, which meant a
+ * `MessageFn` whose English half returned Chinese passed every check. Requiring
+ * a probe turns "someone added a function" into a failing test rather than a
+ * silent gap.
+ */
+const PROBES: Record<string, unknown[]> = {
+  "common.documentCount": [3],
+  "common.itemCount": [5],
+  "assets.failedCount": [2],
+  "assets.verifiedWhen": ["2026-08-25 10:00"],
+  "assets.metaDocs": [4],
+  "assets.metaFailed": [1],
+  "assets.okUpload": ["report.pdf"],
+  "assets.okVerifyDoc": ["report.pdf"],
+  "assets.okReprocess": ["report.pdf"],
+  "assets.okBind": ["Confluence", "SPACE-1"],
+  "assets.okRevoke": ["SPACE-1", 3],
+  "assets.okShare": ["Workspace"],
+  "assets.okFolderDelete": ["Policies"],
+  "assets.syncedWhen": ["2026-08-25 10:00"],
+  "assets.cursorLabel": ["c-91"],
+  "assets.revokeConsequence": [12, 3],
+  "assets.templateSpec": [512, 1024],
+  "assets.fieldsBudget": [3, 8],
+  "assets.fieldsSystemDims": [2, ["kb_id", "folder_id"]],
+  "assets.fieldFilterableAria": ["owner"],
+  "assets.govOn": ["every 30 days"],
+  "assets.folderRenameAria": ["Policies"],
+  "states.recordLapsedDays": [30],
+  "states.recordOverdueDays": [12],
+  "states.recordDueDays": [7],
+  "states.intervalEvery": [30],
+};
+
+/** Every message in every namespace, already flattened to comparable strings. */
+function* entries(): Generator<{ path: string; zh: string; en: string }> {
+  for (const [ns, table] of Object.entries(NAMESPACES)) {
+    for (const [key, msg] of Object.entries(table as Record<string, unknown>)) {
+      const path = `${ns}.${key}`;
+      const halves = msg as Record<string, unknown>;
+      const zh = halves["zh-CN"];
+      const en = halves["en-US"];
+      assert.ok(zh !== undefined && zh !== null, `${path} is missing zh-CN`);
+      assert.ok(en !== undefined && en !== null, `${path} is missing en-US`);
+
+      if (typeof zh === "function" || typeof en === "function") {
+        const args = PROBES[path];
+        assert.ok(args, `${path} is interpolated but has no PROBES entry - add one`);
+        assert.equal(typeof zh, "function", `${path} zh-CN must also be a function`);
+        assert.equal(typeof en, "function", `${path} en-US must also be a function`);
+        yield {
+          path,
+          zh: (zh as (...a: unknown[]) => string)(...args),
+          en: (en as (...a: unknown[]) => string)(...args),
+        };
+        continue;
+      }
+      yield { path, zh: zh as string, en: en as string };
+    }
+  }
+}
 
 // --- the contract the shape exists to enforce ---------------------------------
 
 test("every message carries EVERY supported locale", () => {
   // This is the whole reason the catalog is keyed message-first rather than
   // locale-first: a per-locale file lets the two drift, and a missing key is
-  // only a runtime blank. Here it is structural - but structure only helps if
-  // something also checks it at runtime for hand-written entries.
-  for (const [name, table] of [["shell", shell], ["common", common]] as const) {
-    for (const [key, msg] of Object.entries(table)) {
-      for (const loc of LOCALES) {
-        const v = (msg as Record<string, unknown>)[loc];
-        assert.ok(v !== undefined && v !== null, `${name}.${key} is missing ${loc}`);
-      }
-    }
-  }
+  // only a runtime blank. `entries()` asserts presence as it walks.
+  let n = 0;
+  for (const _ of entries()) n += 1;
+  assert.ok(n > 0, "the registry resolved to no messages at all");
 });
 
 test("no message is left as an untranslated copy of the other language", () => {
@@ -28,26 +89,34 @@ test("no message is left as an untranslated copy of the other language", () => {
   // someone pasted and meant to come back to. Punctuation-only and
   // number-only values are legitimately identical, so they are exempt.
   const exempt = /^[\s\d\p{P}]*$/u;
-  for (const [name, table] of [["shell", shell], ["common", common]] as const) {
-    for (const [key, msg] of Object.entries(table)) {
-      const zh = (msg as Record<string, unknown>)["zh-CN"];
-      const en = (msg as Record<string, unknown>)["en-US"];
-      if (typeof zh !== "string" || typeof en !== "string") continue;
-      if (exempt.test(zh)) continue;
-      assert.notEqual(zh, en, `${name}.${key} has the same text in both languages`);
-    }
+  for (const { path, zh, en } of entries()) {
+    if (exempt.test(zh)) continue;
+    assert.notEqual(zh, en, `${path} has the same text in both languages`);
   }
 });
 
 test("the English half contains no CJK", () => {
   // The failure this catches is a half-done sweep: someone adds a key, fills
-  // zh, and pastes zh into en to make it compile. Nothing else would notice.
-  for (const [name, table] of [["shell", shell], ["common", common]] as const) {
-    for (const [key, msg] of Object.entries(table)) {
-      const en = (msg as Record<string, unknown>)["en-US"];
-      if (typeof en !== "string") continue;
-      assert.ok(!/[\u4e00-\u9fff]/.test(en), `${name}.${key} en-US contains CJK: ${en}`);
-    }
+  // zh, and pastes zh into en to make it compile. Nothing else would notice -
+  // and for an interpolated message, nothing did, until PROBES.
+  for (const { path, en } of entries()) {
+    assert.ok(!/[\u4e00-\u9fff]/.test(en), `${path} en-US contains CJK: ${en}`);
+  }
+});
+
+test("the Chinese half of a product string is not left in English", () => {
+  // The mirror failure, and the likelier one now that DS ships English
+  // defaults: a key gets its English filled from the DS default and the
+  // Chinese never written. Proper nouns and pure symbols are legitimately
+  // shared, so only a zh half that is IDENTICAL to a multi-word English
+  // sentence is treated as unwritten - single tokens are exempt.
+  for (const { path, zh, en } of entries()) {
+    if (!/[a-zA-Z]/.test(zh)) continue;
+    if (/[\u4e00-\u9fff]/.test(zh)) continue;
+    assert.ok(
+      !(zh === en && en.trim().split(/\s+/).length > 1),
+      `${path} zh-CN looks unwritten: ${zh}`,
+    );
   }
 });
 

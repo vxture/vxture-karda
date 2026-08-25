@@ -20,15 +20,15 @@ export interface SharingMeta {
   help: string;
 }
 
-const SHARING: Record<PublishState, SharingMeta> = {
-  private: { label: "私有", tone: "muted", help: "只有你能看到这个库。" },
-  ws_published: { label: "工作区", tone: "info", help: "本工作区成员可读。" },
-  org_published: { label: "组织", tone: "ok", help: "组织内所有人可读。" },
+// Tone is STRUCTURE, not language: which states read as good, neutral or bad is
+// a fact about the state machine and identical in every locale. Labels moved to
+// `_i18n/messages/states` and are bound by `useFormat()`; keeping the tones here
+// means that judgement is written once instead of once per language.
+export const SHARING_TONE: Record<PublishState, Tone> = {
+  private: "muted",
+  ws_published: "info",
+  org_published: "ok",
 };
-
-export function sharingMeta(state: PublishState): SharingMeta {
-  return SHARING[state] ?? { label: state, tone: "muted", help: "" };
-}
 
 export const PUBLISH_ORDER: PublishState[] = ["private", "ws_published", "org_published"];
 
@@ -41,52 +41,26 @@ export interface StateMeta {
   tone: Tone;
 }
 
-const CONTENT_STATE: Record<ContentState, StateMeta> = {
-  draft: { label: "Draft", tone: "muted" },
-  processing: { label: "加工中", tone: "warn" },
-  indexed: { label: "已入藏", tone: "ok" },
-  failed: { label: "失败", tone: "bad" },
-  archived: { label: "已归档", tone: "muted" },
-  deleted: { label: "已删除", tone: "muted" },
+export const CONTENT_TONE: Record<ContentState, Tone> = {
+  draft: "muted",
+  processing: "warn",
+  indexed: "ok",
+  failed: "bad",
+  archived: "muted",
+  deleted: "muted",
 };
-
-export function contentStateMeta(state: string): StateMeta {
-  return CONTENT_STATE[state as ContentState] ?? { label: state, tone: "muted" };
-}
 
 // --- verification (governance) state -----------------------------------------
 
 export type VerificationState = "unverified" | "verified" | "stale";
 
-const VERIFICATION_STATE: Record<VerificationState, StateMeta> = {
-  unverified: { label: "未验证", tone: "muted" },
-  verified: { label: "已验证", tone: "ok" },
+export const VERIFICATION_TONE: Record<VerificationState, Tone> = {
+  unverified: "muted",
+  verified: "ok",
   // A stale item was verified once but its interval lapsed - the default quality
   // tier stops recalling it, so it reads as an attention state, not an error.
-  stale: { label: "Stale", tone: "warn" },
+  stale: "warn",
 };
-
-export function verificationMeta(state: string): StateMeta {
-  return VERIFICATION_STATE[state as VerificationState] ?? { label: state, tone: "muted" };
-}
-
-/** Re-verification cadence for display. null/0 = verify once, no expiry. */
-export function formatInterval(days: number | null | undefined): string {
-  if (!days || days <= 0) return "一次性（不过期）";
-  return `每 ${days} 天`;
-}
-
-/**
- * While Atlas A1 (embedding) is unavailable the pipeline is embed-before-commit,
- * so an uploaded document legitimately parks in `processing` and never reaches
- * `indexed`. The Console says so rather than letting the user read the stall as a
- * fault - the document is captured and durable, it is waiting on a dependency.
- */
-export function processingHint(state: string): string | null {
-  return state === "processing"
-    ? "已收下并入队。向量服务恢复前索引暂停——内容不会丢。"
-    : null;
-}
 
 // --- byte / date formatting ---------------------------------------------------
 
@@ -106,7 +80,12 @@ export function formatBytes(n: number | null | undefined): string {
   return `${val} ${units[i]}`;
 }
 
-/** ISO timestamp -> "YYYY-MM-DD HH:mm" in UTC. Deterministic (input-only). */
+/** ISO timestamp -> "YYYY-MM-DD HH:mm" in UTC. Deterministic (input-only).
+ *
+ *  Kept for non-component callers and for tests that need a fixed rendering.
+ *  Components use `useFormat().when()`, which formats through Intl in the
+ *  reader's locale - a timestamp is one of the few things that genuinely must
+ *  differ between zh-CN and en-US. */
 export function formatWhen(iso: string | null | undefined): string {
   if (!iso) return "-";
   const d = new Date(iso);
@@ -118,24 +97,3 @@ export function formatWhen(iso: string | null | undefined): string {
 // --- API error wording --------------------------------------------------------
 
 /** Turn an API failure (status + optional error code) into a human message. */
-export function apiErrorMessage(status: number, code?: string): string {
-  if (status === 401) return "登录已过期，请重新登录。";
-  if (status === 403) return code === "forbidden" ? "你没有执行该操作的权限。" : "这个操作被拒绝了。";
-  if (code === "illegal_transition") return "当前状态不允许这个操作——撤销是终态，无法恢复。";
-  if (code === "unknown_connector") return "未知的连接器。";
-  if (status === 404) return "没找到——它可能属于另一个工作区。";
-  if (status === 409) {
-    if (code === "duplicate_document") return "这份内容已经在库里了。";
-    if (code === "name_taken") return "这个工作区里已经有同名的库了。";
-    // Names BOTH causes, because the second is the surprising one: a revoked
-    // source keeps its row (uidx_binding_kb_connector_source has no state
-    // predicate), so it permanently occupies that identifier for this library.
-    if (code === "binding_exists") {
-      return "这个来源标识已经绑定过本库了——可能仍在用，也可能是撤销后永久占位；撤销不可逆，无法重新绑定。";
-    }
-    return "和已存在的内容冲突。";
-  }
-  if (code === "name_required") return "请填写名称。";
-  if (status >= 500) return "服务端出错了，请重试。";
-  return code ? `Request failed: ${code}` : `Request failed (HTTP ${status}).`;
-}

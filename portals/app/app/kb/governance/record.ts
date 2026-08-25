@@ -16,13 +16,33 @@
 
 export type RecordUrgency = "none" | "ok" | "soon" | "lapsed";
 
+/**
+ * WHICH phrase the clock deserves - not the phrase itself.
+ *
+ * This module decides the reading (already lapsed and swept? overdue but not
+ * yet swept? due today?); the words come from `_i18n/messages/states.ts`. The
+ * split is the same one that kept tones here and moved labels out: which of
+ * these seven readings applies is a judgement about the data and is identical
+ * in every language, whereas the sentence is nothing but language. Returning a
+ * ready-made Chinese string would have forced the judgement to be re-made,
+ * per locale, by whoever translated it.
+ */
+export type RecordPhrase =
+  | "lapsed"        // swept, no expiry recorded
+  | "lapsedDays"    // swept, N days since it lapsed
+  | "noInterval"    // verified once, never expires
+  | "overdueDays"   // past expiry but the sweep has not run yet
+  | "dueToday"
+  | "dueDays";
+
 export interface VerificationRecord {
   /** Days until expiry (positive) or since it lapsed (negative). Null when the
    *  item has no clock: never verified, or verified with no interval. */
   days: number | null;
   urgency: RecordUrgency;
-  /** Ready-to-render Chinese phrase, or null when there is nothing to say. */
-  label: string | null;
+  /** Which phrase to render, or null when there is nothing to say. The words
+   *  live in the string catalog; see `RecordPhrase`. */
+  phrase: RecordPhrase | null;
 }
 
 /** Inside this many days of expiry, an item is worth looking at BEFORE it
@@ -49,7 +69,7 @@ export function verificationRecord(
   now: Date,
 ): VerificationRecord {
   if (state === "unverified" || !verifiedAt) {
-    return { days: null, urgency: "none", label: null };
+    return { days: null, urgency: "none", phrase: null };
   }
 
   if (state === "stale") {
@@ -59,24 +79,24 @@ export function verificationRecord(
     return {
       days,
       urgency: "lapsed",
-      label: days === null ? "已过期，待复验" : `已过期 ${Math.abs(days)} 天，待复验`,
+      phrase: days === null ? "lapsed" : "lapsedDays",
     };
   }
 
   if (!expiresAt) {
     // Verified with no interval - "verify once, never expires" (policyForKb).
     // There is no clock, so a countdown would invent one.
-    return { days: null, urgency: "ok", label: "已验证 · 不设复验间隔" };
+    return { days: null, urgency: "ok", phrase: "noInterval" };
   }
 
   const days = daysBetween(new Date(expiresAt), now);
   if (days < 0) {
-    return { days, urgency: "lapsed", label: `已超期 ${Math.abs(days)} 天，等待续验扫描` };
+    return { days, urgency: "lapsed", phrase: "overdueDays" };
   }
   if (days <= EXPIRING_SOON_DAYS) {
-    return { days, urgency: "soon", label: days === 0 ? "今天到期" : `${days} 天后到期` };
+    return { days, urgency: "soon", phrase: days === 0 ? "dueToday" : "dueDays" };
   }
-  return { days, urgency: "ok", label: `${days} 天后到期` };
+  return { days, urgency: "ok", phrase: "dueDays" };
 }
 
 /** Whole days from `now` to `target`, truncated TOWARD ZERO.

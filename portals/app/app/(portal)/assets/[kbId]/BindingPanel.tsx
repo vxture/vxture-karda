@@ -22,7 +22,10 @@ import {
   type Kb,
   type RevokeImpact,
 } from "../../../_lib/api";
-import { formatWhen } from "../../../_lib/format";
+import type { DegradationKind } from "../../../kb/connectors/catalog";
+import { useFormat } from "../../../_i18n/useFormat";
+import { useMessages } from "../../../_i18n/useMessages";
+import { assets } from "../../../_i18n/messages/assets";
 
 // 外部来源 - the connector framework's face.
 //
@@ -42,16 +45,32 @@ import { formatWhen } from "../../../_lib/format";
 //      them are VERIFIED, and that the source can never be bound to this library
 //      again.
 
-const STATE_META: Record<Binding["state"], { label: string; tone: "success" | "warning" | "neutral" }> = {
-  active: { label: "同步中", tone: "success" },
-  paused: { label: "已暂停", tone: "warning" },
-  revoked: { label: "已撤销", tone: "neutral" },
+// Tone is structure - a revoked binding is neutral in every language - so it
+// stays a module constant. The labels moved to the catalog.
+const STATE_TONE: Record<Binding["state"], "success" | "warning" | "neutral"> = {
+  active: "success",
+  paused: "warning",
+  revoked: "neutral",
 };
 
-const MODE_LABEL: Record<Binding["mode"], string> = {
-  backfill: "首次回填",
-  incremental: "增量同步",
-};
+const STATE_LABEL_KEY = {
+  active: "bindStateActive",
+  paused: "bindStatePaused",
+  revoked: "bindStateRevoked",
+} as const satisfies Record<Binding["state"], keyof typeof assets>;
+
+const MODE_LABEL_KEY = {
+  backfill: "modeBackfill",
+  incremental: "modeIncremental",
+} as const satisfies Record<Binding["mode"], keyof typeof assets>;
+
+/** Degradation codes from `kb/connectors/catalog.ts` to their catalog entries. */
+const DEGRADATION_KEY = {
+  pollLatency: "degPollLatency",
+  noReconcile: "degNoReconcile",
+  deletesByReconcileOnly: "degDeletesByReconcileOnly",
+  deletesUndetectable: "degDeletesUndetectable",
+} as const satisfies Record<DegradationKind, keyof typeof assets>;
 
 export function BindingPanel({
   kb,
@@ -68,6 +87,7 @@ export function BindingPanel({
   onCreate: (connectorCode: string, externalSourceId: string) => void | Promise<void>;
   onAction: (binding: Binding, action: "pause" | "resume" | "revoke") => void | Promise<void>;
 }) {
+  const m = useMessages(assets);
   const [code, setCode] = useState("");
   const [sourceId, setSourceId] = useState("");
   /** bindingId -> its revoke cost. `undefined` = still loading, `null` = the
@@ -101,9 +121,9 @@ export function BindingPanel({
     <div className="flex flex-col gap-md">
       <Card>
         <CardHeader>
-          <CardTitle>接入外部来源</CardTitle>
+          <CardTitle>{m.bindTitle}</CardTitle>
           <CardDescription>
-            把这个库订阅到一个外部来源。首次绑定从「回填」开始，完成后转入增量同步。
+            {m.bindDesc}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-sm">
@@ -111,11 +131,11 @@ export function BindingPanel({
             <NativeSelect
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              aria-label="连接器"
+              aria-label={m.connectorAria}
               wrapperClassName="w-[16rem]"
               disabled={busy || connectors.length === 0}
             >
-              <option value="">选择连接器…</option>
+              <option value="">{m.connectorPlaceholder}</option>
               {connectors.map((c) => (
                 <option key={c.code} value={c.code}>
                   {c.name}
@@ -125,8 +145,8 @@ export function BindingPanel({
             <Input
               value={sourceId}
               onChange={(e) => setSourceId(e.target.value)}
-              placeholder="来源 id（连接器侧的范围标识）"
-              aria-label="外部来源 id"
+              placeholder={m.sourceIdPlaceholder}
+              aria-label={m.sourceIdAria}
               className="w-[22rem] max-w-full"
               disabled={busy}
             />
@@ -139,12 +159,12 @@ export function BindingPanel({
               }}
             >
               <Icon name="plus" />
-              绑定
+              {m.bindButton}
             </Button>
           </div>
 
           {connectors.length === 0 && (
-            <p className="text-body-sm text-muted-foreground">目前没有可用的连接器。</p>
+            <p className="text-body-sm text-muted-foreground">{m.noConnectors}</p>
           )}
 
           {/* Section 4: degradation must be explicitly accepted, not silently
@@ -152,21 +172,21 @@ export function BindingPanel({
           {chosen && (
             <div className="flex flex-col gap-xs rounded-md border border-border bg-muted/30 p-sm">
               <div className="flex flex-wrap items-center gap-xs text-body-sm">
-                <span className="text-muted-foreground">能力：</span>
-                <Cap label={chosen.capabilities.changeDetection === "source" ? "来源自检变更" : "karda 轮询比对"} />
-                <Cap label={chosen.capabilities.delivery === "notify" ? "来源可推送" : "karda 拉取"} />
-                <Cap label={chosen.capabilities.fetch === "direct" ? "直传字节" : "取引用再拉取"} />
-                <Cap label={chosen.capabilities.reconcile === "list" ? "可对账" : "不可对账"} />
-                <Cap label={chosen.capabilities.deleteSignal === "tombstone" ? "有删除信号" : "靠缺失推断删除"} />
+                <span className="text-muted-foreground">{m.capsLabel}</span>
+                <Cap label={chosen.capabilities.changeDetection === "source" ? m.capChangeSource : m.capChangeKarda} />
+                <Cap label={chosen.capabilities.delivery === "notify" ? m.capDeliveryNotify : m.capDeliveryPull} />
+                <Cap label={chosen.capabilities.fetch === "direct" ? m.capFetchDirect : m.capFetchRef} />
+                <Cap label={chosen.capabilities.reconcile === "list" ? m.capReconcileList : m.capReconcileNone} />
+                <Cap label={chosen.capabilities.deleteSignal === "tombstone" ? m.capDeleteTombstone : m.capDeleteAbsence} />
               </div>
               {!chosen.meetsDeleteInvariant && (
                 <p className="text-body-sm text-destructive-text">
-                  该连接器无法表达删除（不满足 I4）。这是合规缺口，不是使用不便——不要用它接入敏感内容。
+                  {m.deleteInvariantWarning}
                 </p>
               )}
               {chosen.degradations.map((d) => (
                 <p key={d} className="text-body-sm text-warning-text">
-                  {d}
+                  {m[DEGRADATION_KEY[d]]}
                 </p>
               ))}
             </div>
@@ -175,9 +195,9 @@ export function BindingPanel({
       </Card>
 
       {bindings === null ? (
-        <EmptyState title="正在加载绑定…" />
+        <EmptyState title={m.bindingsLoading} />
       ) : bindings.length === 0 ? (
-        <EmptyState title="还没有外部来源" description="这个库的内容全部来自上传或 API 写入。" />
+        <EmptyState title={m.bindingsEmpty} description={m.bindingsEmptyDesc} />
       ) : (
         <>
           {live.length > 0 && (
@@ -199,9 +219,11 @@ export function BindingPanel({
           {revoked.length > 0 && (
             <Card className="opacity-70">
               <CardHeader>
-                <CardTitle className="text-title-sm leading-[1]">已撤销</CardTitle>
+                <CardTitle className="text-title-sm leading-[1]">{m.revokedTitle}</CardTitle>
                 <CardDescription>
-                  保留在这里是因为它们占着的来源标识<strong>不能</strong>再绑定到本库；隐藏它们只会让这条约束在撞上时显得莫名其妙。
+                  {m.revokedDescPre}
+                  <strong>{m.revokedDescStrong}</strong>
+                  {m.revokedDescPost}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col py-sm">
@@ -243,7 +265,9 @@ function BindingRow({
   /** undefined = still being read, null = the read failed. */
   impact: RevokeImpact | null | undefined;
 }) {
-  const meta = STATE_META[binding.state];
+  const m = useMessages(assets);
+  const f = useFormat();
+  const meta = { tone: STATE_TONE[binding.state], label: m[STATE_LABEL_KEY[binding.state]] };
   const terminal = binding.state === "revoked";
 
   return (
@@ -257,15 +281,15 @@ function BindingRow({
           <span className="truncate font-mono text-code-sm text-muted-foreground">{binding.externalSourceId}</span>
         </div>
         <div className="mt-2xs flex flex-wrap items-center gap-sm text-body-sm text-muted-foreground">
-          <span>{MODE_LABEL[binding.mode]}</span>
+          <span>{m[MODE_LABEL_KEY[binding.mode]]}</span>
           <span>·</span>
           {/* A binding that has never synced is materially different from one
               that synced and stalled - "从未同步" says which. */}
-          <span>{binding.lastSyncedAt ? `${formatWhen(binding.lastSyncedAt)} 同步` : "从未同步"}</span>
+          <span>{binding.lastSyncedAt ? m.syncedWhen(f.when(binding.lastSyncedAt)) : m.neverSynced}</span>
           {binding.cursor && (
             <>
               <span>·</span>
-              <span className="truncate font-mono text-code-sm">游标 {binding.cursor}</span>
+              <span className="truncate font-mono text-code-sm">{m.cursorLabel(binding.cursor)}</span>
             </>
           )}
         </div>
@@ -275,42 +299,40 @@ function BindingRow({
         <div className="flex shrink-0 items-center gap-sm">
           {binding.state === "active" ? (
             <Button size="sm" disabled={busy} onClick={() => onAction(binding, "pause")}>
-              暂停
+              {m.actPause}
             </Button>
           ) : (
             <Button size="sm" disabled={busy} onClick={() => onAction(binding, "resume")}>
-              恢复
+              {m.actResume}
             </Button>
           )}
           <DestructiveButton
             size="sm"
             confirm={{
-              verb: "撤销",
+              verb: m.actRevoke,
               target: binding.externalSourceId,
               // Two consequences, and the SECOND is the severe one an API reader
               // would never guess: uidx_binding_kb_connector_source is unique
               // with no state predicate, so a revoked source can never be bound
               // to this library again.
               consequence: impact
-                ? `${impact.documents} 份文档退出检索` +
-                  (impact.verified > 0 ? `，其中 ${impact.verified} 份是已验证内容` : "") +
-                  "。撤销不可逆：该来源标识不能再绑定回本库。"
-                : "撤销不可逆：该来源标识不能再绑定回本库。",
+                ? m.revokeConsequence(impact.documents, impact.verified)
+                : m.revokeConsequenceUnknown,
               preconditions: [
                 {
-                  label: "已算清撤销影响",
+                  label: m.revokePrecondition,
                   met: impact != null,
                   // THREE states, not two. A failed read is not "unmet" - it is
                   // unknown, and the reader has to be able to tell those apart
                   // before they authorise something irreversible.
                   unknown: impact === undefined,
-                  note: impact === null ? "影响读取失败，请重试后再撤销" : undefined,
+                  note: impact === null ? m.revokePreconditionNote : undefined,
                 },
               ],
               onConfirm: () => Promise.resolve(onAction(binding, "revoke")),
             }}
           >
-            撤销
+            {m.actRevoke}
           </DestructiveButton>
         </div>
       )}

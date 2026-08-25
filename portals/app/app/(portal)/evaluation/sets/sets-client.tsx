@@ -38,9 +38,12 @@ import {
   type Kb,
   type Doc,
 } from "../../../_lib/api";
-import { apiErrorMessage, formatWhen } from "../../../_lib/format";
+
 import { SignInGate } from "../../../_lib/ui";
 import { PageHead } from "../../../_shell/PageHead";
+import { useFormat, type Failure } from "../../../_i18n/useFormat";
+import { evaluation } from "../../../_i18n/messages/evaluation";
+import type { Message } from "../../../_i18n/catalog";
 
 // 评测集 - authoring and running the question sets that make quality checkable.
 //
@@ -73,6 +76,7 @@ const DIRECTION_TONE: Record<string, string> = {
 };
 
 export function EvalSetsClient() {
+  const f = useFormat();
   const [sets, setSets] = useState<EvalSetRow[] | null>(null);
   const [live, setLive] = useState(true);
   const [kbs, setKbs] = useState<Kb[]>([]);
@@ -84,7 +88,7 @@ export function EvalSetsClient() {
   const [gaps, setGaps] = useState<GapRow[] | null>(null);
 
   const [needsAuth, setNeedsAuth] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Failure | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -94,9 +98,9 @@ export function EvalSetsClient() {
   const [qEvidence, setQEvidence] = useState<Set<string>>(new Set());
   const [baseline, setBaseline] = useState("");
 
-  const guard = useCallback((e: unknown, fallback: string) => {
+  const guard = useCallback((e: unknown, fallback: Message) => {
     if (e instanceof ApiError && e.status === 401) return setNeedsAuth(true);
-    setError(e instanceof ApiError ? apiErrorMessage(e.status, e.code) : fallback);
+    setError({ cause: e, fb: fallback });
   }, []);
 
   const loadSets = useCallback(async () => {
@@ -105,7 +109,7 @@ export function EvalSetsClient() {
       setSets(r.sets);
       setLive(r.live);
     } catch (e) {
-      guard(e, "评测集加载失败。");
+      guard(e, evaluation.errSets);
     }
   }, [guard]);
 
@@ -128,13 +132,13 @@ export function EvalSetsClient() {
         const all = await Promise.all(scope.map((id) => listDocuments(id).catch(() => [])));
         setDocs(all.flat());
       } catch (e) {
-        guard(e, "评测集详情加载失败。");
+        guard(e, evaluation.errSetDetail);
       }
     },
     [guard, kbs],
   );
 
-  async function run<T>(fallback: string, fn: () => Promise<T | string | void>) {
+  async function run<T>(fallback: Message, fn: () => Promise<T | string | void>) {
     if (busy) return;
     setBusy(true);
     setError(null);
@@ -166,7 +170,7 @@ export function EvalSetsClient() {
         }
       />
 
-      {error && <Banner tone="danger" title={error} />}
+      {error && <Banner tone="danger" title={f.failure(error) ?? ""} />}
       {notice && <Banner tone="success" title={notice} />}
       {!live && (
         <Banner
@@ -210,7 +214,7 @@ export function EvalSetsClient() {
             variant="default"
             disabled={busy || !live || !newName.trim()}
             onClick={() =>
-              run("新建失败。", async () => {
+              run(evaluation.errCreateSet, async () => {
                 await createEvalSet(newName.trim(), newScope ? [newScope] : []);
                 setNewName("");
                 await loadSets();
@@ -280,7 +284,7 @@ export function EvalSetsClient() {
                     variant="ghost"
                     disabled={busy}
                     onClick={() =>
-                      run("删除失败。", async () => {
+                      run(evaluation.errDelete, async () => {
                         await deleteEvalQuestion(activeSet.id, q.id);
                         setQuestions(await listEvalQuestions(activeSet.id));
                       })
@@ -330,7 +334,7 @@ export function EvalSetsClient() {
                   <Button
                     disabled={busy || !qText.trim()}
                     onClick={() =>
-                      run("添加失败。", async () => {
+                      run(evaluation.errAdd, async () => {
                         await addEvalQuestion(activeSet.id, qText.trim(), [...qEvidence]);
                         setQText("");
                         setQEvidence(new Set());
@@ -368,7 +372,7 @@ export function EvalSetsClient() {
                 variant="default"
                 disabled={busy || questions.length === 0}
                 onClick={() =>
-                  run("运行失败。", async () => {
+                  run(evaluation.errRun, async () => {
                     const r = await runEvalSet(activeSet.id, { baseline_label: baseline.trim() || "unlabelled" });
                     setReport(r);
                     setRuns((await listEvalRuns(activeSet.id)).runs);
@@ -398,7 +402,7 @@ export function EvalSetsClient() {
                 {runs.map((r) => (
                   <div key={r.run.id} className="flex flex-wrap items-center gap-sm border-t border-border/60 py-sm first:border-t-0">
                     <span className="w-[10rem] shrink-0 truncate font-mono text-code-sm">{r.run.baselineLabel}</span>
-                    <span className="shrink-0 text-body-sm text-muted-foreground">{formatWhen(r.run.startedAt)}</span>
+                    <span className="shrink-0 text-body-sm text-muted-foreground">{f.when(r.run.startedAt)}</span>
                     {r.run.degraded && (
                       <StatusBadge tone="warning" dot={false}>
                         链路降级
@@ -426,7 +430,7 @@ export function EvalSetsClient() {
                       size="sm"
                       variant="ghost"
                       onClick={() =>
-                        run("明细加载失败。", async () => {
+                        run(evaluation.errDetail, async () => {
                           setGaps((await readRunDetail(r.run.id)).detail?.results ?? []);
                         })
                       }
