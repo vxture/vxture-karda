@@ -45,6 +45,17 @@ ENV NODE_ENV=production PORT=3240 HOSTNAME=0.0.0.0 \
     BUILD_TIME=${BUILD_TIME} \
     DEPLOY_STAGE=${DEPLOY_STAGE}
 RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
+# The filesystem object-store root, owned by the RUNTIME user.
+#
+# It has to exist in the image, not just in a compose mount: Docker seeds a new
+# named volume from the image's directory, ownership included, so a volume
+# mounted at a path the image never created lands root-owned and the non-root
+# runtime cannot write to it. The symptom is not an error at boot - uploads
+# accept the file and every later read answers `object_missing`.
+#
+# Only the filesystem tier needs this; prod runs on OSS (KD-019 selection order
+# is OSS -> KARDA_OBJECT_ROOT -> in-memory).
+RUN mkdir -p /var/lib/karda/objects && chown -R nextjs:nodejs /var/lib/karda
 COPY --from=builder /repo/portals/app/.next/standalone ./
 COPY --from=builder /repo/portals/app/.next/static ./portals/app/.next/static
 COPY --from=builder /repo/portals/app/public ./portals/app/public
