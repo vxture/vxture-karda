@@ -184,12 +184,18 @@ export function AppHeader({
         )}
       </span>
       {/* 系统工具四元:全屏 / 帮助 / 通知 / 设置。全屏领头(owner 2026-08-24)——
-          它作用于当前视图,与后面三个"打开别处"的入口不是一类。全屏走 DS 的
-          ShellFullscreenToggle,目标是内容区(PORTAL_FULLSCREEN_ID),所以进入
-          全屏后留下的是内容本身,不是连同外壳一起放大。 */}
+          它作用于当前视图,与后面三个"打开别处"的入口不是一类。
+
+          目标是 SHELL 根(PORTAL_FULLSCREEN_ID),不再是内容区(owner
+          2026-08-25):全屏留下的是整个应用——顶栏 + 工作区——而不是把内容
+          单独摘出来放大。因此必须走 native:shell 根本来就是 h-screen,伪全屏
+          对它是空操作,唯一还能收回的是浏览器自己的边框,只有 Fullscreen API
+          拿得到。背景由 DS 的 `:fullscreen` 规则给,不必在这里补——原生全屏
+          的元素默认合成在黑底上,少了它整屏会是黑框。 */}
       <ShellIconGroup label={m.system}>
         <ShellFullscreenToggle
           targetId={PORTAL_FULLSCREEN_ID}
+          mode="native"
           enterLabel={m.fullscreen}
           exitLabel={m.exitFullscreen}
         />

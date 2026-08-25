@@ -19,3 +19,29 @@
      the ground stays on the token ramp, so it still moves with the palette. */
   --background: var(--vx-color-neutral-50);
 }
+
+/* Scrollbars are hidden product-wide, scrolling is not (owner 2026-08-25).
+ *
+ * The 导航栏 already did this locally, with the reason that generalises: the
+ * shell is chrome, and a track down the edge of a pane reads as content. The
+ * rule now lives here instead, so no pane has to remember it.
+ *
+ * `*`, not `html`/`body`: `scrollbar-width` is not inherited, and every scroll
+ * container in this app is an inner element (工作区 panes, dialog bodies, the
+ * preview frame) rather than the document.
+ *
+ * WHAT THIS DOES NOT TOUCH: wheel, trackpad, keyboard, drag-select autoscroll
+ * and programmatic scrolling all still work - only the painted track is gone.
+ * The cost is the position feedback a track gives on a long page; the
+ * compensation is that on Windows, where scrollbars are classic and occupy
+ * layout width, every scroll container now gets that width back for content.
+ */
+* {
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
