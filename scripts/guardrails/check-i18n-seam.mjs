@@ -40,11 +40,11 @@ const SCOPE = [
   `${APP}/(portal)/channels`,
   `${APP}/(portal)/tools`,
   `${APP}/(portal)/bench`,
+  `${APP}/(portal)/pipeline`,
   `${APP}/_i18n`,
   `${APP}/_shell`,
 ];
 // NOT yet in scope, and each absence is a real debt rather than an oversight:
-//   (portal)/pipeline                   - the 加工管道 domain
 //   (portal)/evaluation                 - the 验证评测 domain
 // Each of those lands in SCOPE in the PR that sweeps it.
 

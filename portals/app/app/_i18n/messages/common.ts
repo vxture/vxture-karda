@@ -11,6 +11,7 @@ export const common = {
   delete: { "zh-CN": "删除", "en-US": "Delete" },
   rename: { "zh-CN": "重命名", "en-US": "Rename" },
   retry: { "zh-CN": "重试", "en-US": "Retry" },
+  pause: { "zh-CN": "暂停", "en-US": "Pause" },
   close: { "zh-CN": "关闭", "en-US": "Close" },
   expand: { "zh-CN": "展开", "en-US": "Expand" },
   collapse: { "zh-CN": "收起", "en-US": "Collapse" },

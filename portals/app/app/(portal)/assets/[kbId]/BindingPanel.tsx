@@ -26,6 +26,7 @@ import type { DegradationKind } from "../../../kb/connectors/catalog";
 import { useFormat } from "../../../_i18n/useFormat";
 import { useMessages } from "../../../_i18n/useMessages";
 import { assets } from "../../../_i18n/messages/assets";
+import { common } from "../../../_i18n/messages/common";
 
 // 外部来源 - the connector framework's face.
 //
@@ -88,6 +89,7 @@ export function BindingPanel({
   onAction: (binding: Binding, action: "pause" | "resume" | "revoke") => void | Promise<void>;
 }) {
   const m = useMessages(assets);
+  const c = useMessages(common);
   const [code, setCode] = useState("");
   const [sourceId, setSourceId] = useState("");
   /** bindingId -> its revoke cost. `undefined` = still loading, `null` = the
@@ -266,6 +268,7 @@ function BindingRow({
   impact: RevokeImpact | null | undefined;
 }) {
   const m = useMessages(assets);
+  const c = useMessages(common);
   const f = useFormat();
   const meta = { tone: STATE_TONE[binding.state], label: m[STATE_LABEL_KEY[binding.state]] };
   const terminal = binding.state === "revoked";
@@ -299,7 +302,7 @@ function BindingRow({
         <div className="flex shrink-0 items-center gap-sm">
           {binding.state === "active" ? (
             <Button size="sm" disabled={busy} onClick={() => onAction(binding, "pause")}>
-              {m.actPause}
+              {c.pause}
             </Button>
           ) : (
             <Button size="sm" disabled={busy} onClick={() => onAction(binding, "resume")}>

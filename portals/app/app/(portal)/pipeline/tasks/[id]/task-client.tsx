@@ -5,6 +5,9 @@ import Link from "next/link";
 import { Banner, Button, Icon } from "@vxture/design-system";
 import { KVRows, AsideCard } from "../../_ui";
 import type { TaskDetail, TaskStage } from "../../../../kb/demo/pipeline-types";
+import { useMessages } from "../../../../_i18n/useMessages";
+import { pipeline as pipelineMessages } from "../../../../_i18n/messages/pipeline";
+import { shell } from "../../../../_i18n/messages/shell";
 
 // 任务详情 (design canvas: PipelineDoc board). Five-stage timeline with
 // per-stage artifacts on the left (阶段产物留存: raw/IR/块/向量), the steward
@@ -78,6 +81,8 @@ function StageNode({ stage, last }: { stage: TaskStage; last: boolean }) {
 }
 
 export function TaskClient({ id }: { id: string }) {
+  const m = useMessages(pipelineMessages);
+  const sh = useMessages(shell);
   const [data, setData] = useState<TaskDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -87,7 +92,7 @@ export function TaskClient({ id }: { id: string }) {
         if (!res.ok) throw new Error(String(res.status));
         setData((await res.json()) as TaskDetail);
       })
-      .catch(() => setError("加载任务详情失败,请稍后重试。"));
+      .catch(() => setError(m.errLoadTask));
   }, [id]);
 
   if (error) {
@@ -101,7 +106,7 @@ export function TaskClient({ id }: { id: string }) {
     return (
       <div className="flex items-center justify-center py-24 text-body-md text-muted-foreground">
         <Icon name="spinner" className="mr-2 animate-spin" />
-        正在加载任务详情…
+        {m.loadingTask}
       </div>
     );
   }
@@ -111,9 +116,9 @@ export function TaskClient({ id }: { id: string }) {
       {/* breadcrumb + task head (the PageHead pattern, task-flavoured) */}
       <div className="flex flex-col gap-xs">
         <div className="text-body-sm text-muted-foreground">
-          <Link href="/pipeline" className="hover:text-foreground">加工管道</Link>
+          <Link href="/pipeline" className="hover:text-foreground">{sh.navPipeline}</Link>
           {" / "}
-          <Link href="/pipeline/tasks" className="hover:text-foreground">任务与队列</Link>
+          <Link href="/pipeline/tasks" className="hover:text-foreground">{sh.subTasks}</Link>
           {" / "}
           <span className="font-mono">{data.id}</span>
         </div>
@@ -128,8 +133,8 @@ export function TaskClient({ id }: { id: string }) {
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-sm">
-            <Button variant="outline" size="sm">取消任务</Button>
-            <Button variant="outline" size="sm">从分块重跑</Button>
+            <Button variant="outline" size="sm">{m.cancelTask}</Button>
+            <Button variant="outline" size="sm">{m.rerunFromChunk}</Button>
           </div>
         </div>
       </div>
@@ -147,12 +152,13 @@ export function TaskClient({ id }: { id: string }) {
             </span>
             <span className="flex min-w-0 flex-col gap-2xs">
               <span className="flex items-center gap-sm">
-                <span className="text-body-sm font-semibold">知识管家 · 全程在场</span>
+                <span className="text-body-sm font-semibold">{m.stewardPresent}</span>
                 <span className="font-mono text-code-sm tracking-widest text-ai-text">AI AGENT</span>
               </span>
               <span className="text-body-sm leading-relaxed text-muted-foreground">
-                解析中已做语义修复 2 处;入藏后自动萃取知识单元、关联既有条目并交叉预验——低置信内容标注待人工,
-                <span className="text-foreground">你只在「待确认」里做裁决</span>。
+                {m.taskStewardLead}
+                <span className="text-foreground">{m.taskStewardStrong}</span>
+                {m.taskStewardEnd}
               </span>
             </span>
           </div>
@@ -160,19 +166,19 @@ export function TaskClient({ id }: { id: string }) {
 
         {/* 页内副栏 */}
         <div className="flex w-full shrink-0 flex-col gap-md xl:w-[23rem]">
-          <AsideCard title="加工配置">
+          <AsideCard title={m.asideConfig}>
             <KVRows rows={data.config} />
             <div className="border-t border-dashed border-primary/10 pt-sm text-body-sm text-muted-foreground dark:border-primary/20">
               {data.configNote}
             </div>
           </AsideCard>
-          <AsideCard title="血缘与幂等">
+          <AsideCard title={m.asideLineage}>
             <KVRows rows={data.lineage} />
             <div className="border-t border-dashed border-primary/10 pt-sm text-body-sm text-muted-foreground dark:border-primary/20">
               {data.lineageNote}
             </div>
           </AsideCard>
-          <AsideCard title="成本 · 经 Atlas 计量" aside="记账 → 库归属 WS">
+          <AsideCard title={m.asideCost} aside={m.asideCostNote}>
             <KVRows rows={data.cost} />
           </AsideCard>
         </div>

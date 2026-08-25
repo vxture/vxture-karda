@@ -52,6 +52,7 @@ language at all**. Three times over, the same cut paid:
 | `useFormat().compact` | the "show exact below 10,000" threshold | the abbreviation above it |
 | `_lib/format.ts` (health) | which tone an asset's health rung carries | the rung's name |
 | `kb/demo/channels-*.ts` | a channel's `state`, a capability's `status` | `stateLabel` / `statusLabel`, deleted |
+| `kb/demo/pipeline-*.ts` | the five stage keys, the six report row keys, the three tier keys, and every FIGURE | each stage's name / blurb / unit, each row's name, each tier's name |
 
 Asset health is the FOURTH state machine handled this way, after content state,
 verification state and the sharing ladder. Its tones are in the DS
@@ -192,7 +193,21 @@ measured against:
   `runos#156 · 两个能力的端点登记`) → it names an env var and an issue, and
   stays.
 
-### 3.4 One place the seam correctly stops: the tool descriptor
+### 3.4 A unit baked into a value is a half-translated sentence
+
+The pipeline's daily report shipped its figures preformatted - `value: "62 份"` -
+which looked harmless until the row LABEL was translated and the line read
+`Understand · documents parsed / 62 份`. English label, Chinese tail, in one
+row. The same shape sat on the stage cards as `aside: "冲突 3"`.
+
+Both were split: the figure is per-run and stays in the data, the unit and the
+aside's noun are vocabulary and moved here. `report[].unit` is now a
+`ReportUnit` code and `aside` is `{ kind, n }`.
+
+The general rule: **a preformatted value that contains a word is not a value.**
+It is a sentence, and it belongs wherever sentences belong.
+
+### 3.5 One place the seam correctly stops: the tool descriptor
 
 The 工具面 shows each tool's summary, and each channel's transport, auth and
 "what it suits", from the tool catalog - and the page states in its own copy
@@ -231,11 +246,18 @@ the whole change.
 
 ## 7. Sweep order
 
-Landed: the whole shell (`_shell`), the state vocabularies (`states`), the whole
-知识资产 domain (`(portal)/assets/**` and its root page `overview-client.tsx`),
-and the whole 供给通道 domain (`channels` / `tools` / `bench`).
-Remaining, one PR each: 加工管道 (`pipeline`), 验证评测 (`evaluation`).
-Translate the domain, add it to `SCOPE`.
+Landed: the whole shell (`_shell`), the state vocabularies (`states`), 知识资产
+(`(portal)/assets/**` plus `overview-client.tsx`), 供给通道 (`channels` /
+`tools` / `bench`), and 加工管道 (`pipeline`).
+Remaining: 验证评测 (`evaluation`) - one PR, same shape.
+
+**A caveat specific to 加工管道.** Those four screens are a design canvas over
+`kb/demo/pipeline-demo.ts`; the pipeline has no schema yet. Their fixed
+vocabulary is swept, but most of what they RENDER is per-run demo content - a
+task's status ("解析中 62% · 版面"), a stage chip ("表格 TSR · 19/31"), a cost
+row - so in `en-US` they still read largely Chinese. That is the content showing
+through, not an unfinished sweep, and it resolves when the pipeline has real
+data rather than when someone translates a fixture.
 
 ### 7.1 What is content, and stays in the language it was written in
 

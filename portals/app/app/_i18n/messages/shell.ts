@@ -29,6 +29,7 @@ export const shell = {
   subBench: { "zh-CN": "检验台", "en-US": "Retrieval bench" },
   subFlow: { "zh-CN": "加工流水", "en-US": "Processing flow" },
   subTasks: { "zh-CN": "任务与队列", "en-US": "Tasks & queue" },
+  taskDetail: { "zh-CN": "任务详情", "en-US": "Task detail" },
   subRebuild: { "zh-CN": "受控重建", "en-US": "Controlled rebuild" },
   subEvaluation: { "zh-CN": "验证与评测", "en-US": "Verify & evaluate" },
   subQueue: { "zh-CN": "待复验队列", "en-US": "Re-verification queue" },

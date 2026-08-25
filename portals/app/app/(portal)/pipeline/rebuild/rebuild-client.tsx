@@ -5,15 +5,22 @@ import { Banner, Button, Card, CardContent, Icon, StatusBadge } from "@vxture/de
 import { PageHead } from "../../../_shell/PageHead";
 import { KVRows, AsideCard } from "../_ui";
 import type { RebuildData } from "../../../kb/demo/pipeline-types";
+import { useMessages } from "../../../_i18n/useMessages";
+import { pipeline as pipelineMessages } from "../../../_i18n/messages/pipeline";
+import { shell } from "../../../_i18n/messages/shell";
+import { common } from "../../../_i18n/messages/common";
 
 // 受控重建 (design canvas: PipelineRebuild board, light-theme translation).
 // build-then-swap: active rebuild (4-step progress, old index keeps serving),
 // a switched library inside its rollback window, a queued package
 // instantiation; 页内副栏 = triggers, safety constraints, the steward's advice.
 
-const STEPS = ["声明变更", "影子索引构建", "原子切换", "回退窗口 24h"];
+const STEP_KEYS = ["stepDeclare", "stepShadow", "stepSwap", "stepWindow"] as const;
 
 export function RebuildClient() {
+  const m = useMessages(pipelineMessages);
+  const sh = useMessages(shell);
+  const c = useMessages(common);
   const [data, setData] = useState<RebuildData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +30,7 @@ export function RebuildClient() {
         if (!res.ok) throw new Error(String(res.status));
         setData((await res.json()) as RebuildData);
       })
-      .catch(() => setError("加载重建状态失败,请稍后重试。"));
+      .catch(() => setError(m.errLoadRebuild));
   }, []);
 
   if (error) {
@@ -37,7 +44,7 @@ export function RebuildClient() {
     return (
       <div className="flex items-center justify-center py-24 text-body-md text-muted-foreground">
         <Icon name="spinner" className="mr-2 animate-spin" />
-        正在加载重建状态…
+        {m.loadingRebuild}
       </div>
     );
   }
@@ -45,10 +52,10 @@ export function RebuildClient() {
   return (
     <>
       <PageHead
-        title="受控重建"
-        description="build-then-swap · 构建期检索用旧索引 · 失败不伤在线"
-        meta="org 重建并发 1/2 · 回退窗口 24h"
-        actions={<Button>发起重建</Button>}
+        title={sh.subRebuild}
+        description={m.rebuildDesc}
+        meta={m.rebuildMeta}
+        actions={<Button>{m.rebuildStart}</Button>}
       />
 
       <div className="flex flex-col gap-lg @min-[52rem]:flex-row">
@@ -64,7 +71,7 @@ export function RebuildClient() {
                       <span className="font-mono text-code-sm">REBUILDING</span>
                     </StatusBadge>
                   </span>
-                  <span className="text-body-sm text-muted-foreground">触发:{data.active.trigger}</span>
+                  <span className="text-body-sm text-muted-foreground">{m.triggerLabel(data.active.trigger)}</span>
                 </span>
                 <StatusBadge tone="success" dot>
                   {data.active.servingNote}
@@ -73,7 +80,7 @@ export function RebuildClient() {
 
               {/* 4 steps */}
               <div className="flex items-center">
-                {STEPS.map((s, i) => (
+                {STEP_KEYS.map((s, i) => (
                   <div key={s} className={`flex items-center ${i > 0 ? "flex-1" : ""}`}>
                     {i > 0 && (
                       <span
@@ -96,7 +103,7 @@ export function RebuildClient() {
                       <span
                         className={`text-body-sm ${i === data.active.stepIndex ? "font-semibold" : "text-muted-foreground"}`}
                       >
-                        {s}
+                        {m[s]}
                       </span>
                     </span>
                   </div>
@@ -106,7 +113,7 @@ export function RebuildClient() {
               <div className="flex items-center gap-lg">
                 <div className="flex min-w-0 flex-1 flex-col gap-2xs">
                   <div className="flex justify-between text-body-sm">
-                    <span className="text-muted-foreground">影子构建进度 · bulk 队列</span>
+                    <span className="text-muted-foreground">{m.shadowProgress}</span>
                     <span className="font-mono text-primary">{data.active.progressLabel}</span>
                   </div>
                   <div className="h-[5px] rounded-full bg-muted">
@@ -119,9 +126,9 @@ export function RebuildClient() {
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-sm">
-                  <Button variant="outline" size="sm">暂停</Button>
+                  <Button variant="outline" size="sm">{c.pause}</Button>
                   <Button variant="outline" size="sm" className="border-destructive-border/50 text-destructive-text">
-                    废弃影子
+                    {m.discardShadow}
                   </Button>
                 </div>
               </div>
@@ -142,7 +149,7 @@ export function RebuildClient() {
               </span>
               <span className="flex shrink-0 flex-col items-end gap-2xs">
                 <span className="font-mono text-code-sm text-muted-foreground">
-                  回退窗口剩 <span className="text-foreground">{data.switched.windowLeft}</span>
+                  {m.rollbackLeft(data.switched.windowLeft)}
                 </span>
                 <span className="h-[4px] w-[8rem] rounded-full bg-muted">
                   <span
@@ -174,7 +181,7 @@ export function RebuildClient() {
                 <span>{data.instantiation.costNote}</span>
               </span>
               <Button variant="outline" size="sm" className="shrink-0">
-                排队详情
+                {m.queueDetail}
               </Button>
             </CardContent>
           </Card>
@@ -182,7 +189,7 @@ export function RebuildClient() {
 
         {/* 页内副栏 */}
         <div className="flex w-full shrink-0 flex-col gap-md xl:w-[22rem]">
-          <AsideCard title="什么会触发重建">
+          <AsideCard title={m.whatTriggers}>
             <div className="flex flex-col gap-xs text-body-sm text-muted-foreground">
               {data.triggers.map((t) => (
                 <span key={t} className="flex gap-sm">
@@ -192,14 +199,14 @@ export function RebuildClient() {
               ))}
             </div>
           </AsideCard>
-          <AsideCard title="安全约束">
+          <AsideCard title={m.safetyLimits}>
             <KVRows rows={data.constraints} />
           </AsideCard>
           <Card className="py-md border-t-medium border-t-ai-border">
             <CardContent className="flex flex-col gap-xs px-lg">
               <span className="flex items-center gap-sm">
                 <Icon name="sparkles" size="sm" className="text-ai-text" />
-                <span className="text-label-lg">管家建议</span>
+                <span className="text-label-lg">{m.stewardSuggestion}</span>
               </span>
               <span className="text-body-sm leading-relaxed text-muted-foreground">{data.stewardAdvice}</span>
             </CardContent>

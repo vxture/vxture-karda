@@ -255,7 +255,6 @@ export const assets = {
     "zh-CN": (cursor: string) => `游标 ${cursor}`,
     "en-US": (cursor: string) => `Cursor ${cursor}`,
   } satisfies MessageFn<[string]>,
-  actPause: { "zh-CN": "暂停", "en-US": "Pause" },
   actResume: { "zh-CN": "恢复", "en-US": "Resume" },
   actRevoke: { "zh-CN": "撤销", "en-US": "Revoke" },
 
