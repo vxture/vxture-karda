@@ -426,7 +426,7 @@ deliberately not carried over.
 
 ## TD-013 - DS DialogTitle ships `leading-none`, so every dialog title is zero-height
 
-- **Status**: OPEN (worked around locally; the fix belongs in `vxture-design`)
+- **Status**: OPEN (worked around locally; filed upstream as `vxture-design`#8)
 - **Scope**: `@vxture/design-system` 6.5.1 -> every consumer, not just karda.
 - **Symptom**: a `DialogTitle` renders in the accessibility tree with the right
   text and the right colour, and is completely invisible on screen. Measured
