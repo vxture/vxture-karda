@@ -232,8 +232,16 @@ export function TasksClient() {
                 </div>
                 <div className="text-body-sm leading-relaxed text-muted-foreground">
                   「{data.alert.kbName}」{data.alert.body}
-                  <span className="text-ai-text">管家判断:</span>
-                  <span className="text-foreground">{data.alert.judgment}</span>
+                  {/* The judgment renders ONLY when the steward actually formed
+                      one. A derived alert carries the rate but no opinion, and
+                      an empty "管家判断:" label implying one exists would be the
+                      most misleading thing on this page. */}
+                  {data.alert.judgment ? (
+                    <>
+                      <span className="text-ai-text">管家判断:</span>
+                      <span className="text-foreground">{data.alert.judgment}</span>
+                    </>
+                  ) : null}
                 </div>
                 <div className="flex gap-sm pt-2xs">
                   <Button variant="outline" size="sm">
@@ -272,6 +280,13 @@ export function TasksClient() {
           </Card>
         </div>
       </div>
+      {/* Provenance, per group. Counts, queues, stage timings and the task list
+          come off karda_kb.processing_task; freshness, the concurrency caps and
+          the steward's judgment are authored - see TasksData.sources. */}
+      <span className="text-body-sm text-muted-foreground">
+        {data.sources.tasks === "live" ? "任务与队列为实时数据" : "任务与队列为演示口径"}
+        {" · 新鲜度、并发上限与管家判断为登记/演示口径"}
+      </span>
     </>
   );
 }

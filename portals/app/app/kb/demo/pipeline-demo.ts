@@ -117,6 +117,7 @@ export const DEMO_TASKS: TasksData = {
     { key: "bulk", label: "bulk · 重建 / 实例化", queued: 240, concurrency: "2 并发", pct: 78 },
   ],
   orgConcurrency: "org 并发 6/8",
+  sources: { tasks: "demo", ops: "demo" },
   alert: {
     kbName: "行业标准与法规",
     rate: "31% > 30%",
