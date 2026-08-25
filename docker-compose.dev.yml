@@ -72,6 +72,21 @@ services:
       NEXT_PUBLIC_APP_URL: http://localhost:${APP_PUBLISH_PORT:-3240}
       STATUS_PAGE: public
       STATUS_SHOW_INFRA: "on"
+      # Object storage root. WITHOUT THIS the object store falls back to the
+      # in-memory implementation, which is constructed PER REQUEST - so uploaded
+      # bytes vanish immediately and document download/preview answers
+      # `object_missing` for everything. The feature is not broken; the dev
+      # stack simply had nowhere to put the bytes.
+      KARDA_OBJECT_ROOT: /var/lib/karda/objects
+      # Machine credential for the internal job endpoints (processing tick,
+      # governance sweep, preset seeding). Without it `POST
+      # /api/kb/admin/seed-presets` is 403, `processing_template` stays empty,
+      # and the library settings template picker offers nothing to pick.
+      INTERNAL_JOB_TOKEN: ${INTERNAL_JOB_TOKEN:-karda-dev-job-token}
+    volumes:
+      # Uploaded bytes have to outlive the container, or a restart silently
+      # empties every library while the rows still say the documents exist.
+      - karda-dev-objects:/var/lib/karda/objects
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3240/api/health"]
       interval: 30s
@@ -115,6 +130,7 @@ networks:
 
 volumes:
   karda-dev-pgdata:
+  karda-dev-objects:
 
 secrets:
   node_auth_token:
