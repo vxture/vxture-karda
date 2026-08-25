@@ -390,6 +390,169 @@ None of the three is blocked on DDL we chose not to write; all three are blocked
 on a subsystem that does not exist yet, and each says so in its payload's
 `sources` marker rather than in a comment.
 
+---
+
+# Phase plan, batches 10-15 (owner direction 2026-08-25)
+
+## The finding this plan answers
+
+A capability-by-capability audit against the industry frame (14 capability areas,
+~70 features) found the platform's problem is **not** missing capability. It is
+that the capability has no operator surface.
+
+| layer | size |
+|-------|------|
+| capability | 32 API routes, 26 tables, 457 tests |
+| monitoring - the portal's four domains | complete; read models landed in batch 9 |
+| **operating - the Console** | **3 pages, 911 lines, calling 4 endpoints** |
+
+Server-side and finished, with **no operator entry point at all**: publish /
+unpublish, connector bindings and revoke-cascade, document verification, folder
+hierarchy, the re-verification sweep, queue drain and re-enqueue, entitlement
+view, usage. None of these is unbuilt. Each is built and unreachable.
+
+**能力齐、能看、不能操作.** That is the gap batches 10-13 close.
+
+## Ordering principle
+
+**Exploit before extend.** Every unsurfaced capability is sunk cost earning
+nothing, and surfacing it costs no new schema and carries no integration risk.
+So the UI batches come first even though the register names two deeper gaps (the
+knowledge-asset model, and the missing evaluation runner) - with one exception,
+noted as the parallel track below, because one of those gaps has a downstream
+line already waiting on it.
+
+A batch closes a **workflow loop for one role**, not a set of controls. A batch
+that ships six buttons nobody can complete a job with has shipped nothing.
+
+## Batch 10 - the knowledge owner can make a library correct
+
+The primary role, and today its loop is broken at the operator layer: an owner
+can create a library and upload into it, then cannot configure how it is
+processed, cannot see why a document failed, cannot verify anything, and cannot
+publish it.
+
+| Item | Backing capability | State |
+|------|-------------------|-------|
+| Library settings surface: dual-template config, filterable whitelist (KD-001 cap 16), verification policy (default verifier / interval / sync exemption), embedding-model pin | `knowledge_base` config columns, `presets.ts`, `metadata.ts` | all server-side, zero UI |
+| Failed-document view + retry / re-enqueue | `processing_task.failure_class`, `/api/kb/processing/tick` | ledger landed batch 9 |
+| Publish / unpublish | `/api/kb/[id]/publish`, `ownership.canPublish` | no UI |
+| Verify a document; verify a selection | `/api/kb/[id]/documents/[docId]/verify` | no UI |
+| Folder create / rename / move | `/api/kb/[id]/folders` | no UI |
+
+**Acceptance:** an owner creates a library, sets its templates and verification
+policy, uploads a document, sees it fail, fixes the cause, re-runs it, verifies
+it, and publishes the library - without an engineer and without an API client.
+
+**No new backend. No new schema.**
+
+## Batch 11 - governance becomes operable
+
+验证评测 is a dashboard today. The state machine, the sweep and the corpus read
+model all exist; what is missing is the ability to *act* on what they show.
+
+| Item | Backing capability | State |
+|------|-------------------|-------|
+| Re-verification work queue - the stale set, worked through, not counted | `entry/document.verification_state`, `corpus-read.ts` | read model live |
+| Below-floor asset -> that library's pending-verification list | `corpus-read.belowFloor` | live, currently a dead-end list |
+| Trigger the sweep, and show what it changed | `/api/kb/governance/sweep` | no UI |
+| Verification history on a document | `verifier` / `verified_at` / `expires_at` | columns exist |
+
+**Explicitly NOT in this batch:** the steward's pre-verification queue. The dock
+renders it, but there is no steward ledger behind it - building the UI first
+would make a demo figure look actionable, which is the exact failure mode the
+`sources` markers exist to prevent.
+
+**Acceptance:** a governance owner can drive workspace coverage up by working a
+queue, and can see the number move.
+
+## Batch 12 - external knowledge intake has a face
+
+The connector framework, binding lifecycle and revoke-cascade are complete and
+have zero UI. This is also the batch that makes the Arda channel land as
+configuration rather than as engineering the day arda answers - the framework
+carries nothing connector-specific, so Arda is one `connector_code`.
+
+| Item | Backing capability | State |
+|------|-------------------|-------|
+| Binding management: create, mode (backfill / incremental), pause, revoke | `/api/kb/[id]/bindings`, `binding-service.ts` | no UI |
+| Revoke confirmation that states the cascade in advance | `revokeCascade` | behaviour exists, consequence invisible |
+| Sync state, cursor, last-synced, per-binding failure surface | `binding.cursor` / `last_synced_at` | no UI |
+
+**Acceptance:** an admin can subscribe a library to a source, watch it backfill,
+pause it, and revoke it while being told beforehand how much content leaves
+recall.
+
+## Batch 13 - the consumer-facing surface
+
+For the other user: the agent developer deciding whether karda is worth calling.
+
+| Item | Backing capability | State |
+|------|-------------------|-------|
+| 检验台 upgrade: verification_filter, library selection, citation expansion, degraded/partial disclosure | `console/search` (minimal today), retrieval chain | partial |
+| Self-describing tool surface page | `/.well-known/vxture-tools` | endpoint only |
+| 供给通道 drill-down by consumer; abnormal-channel diagnosis | `supply_call` ledger | ledger live, page top-level only |
+
+**Acceptance:** an agent developer can answer "will karda give my agent good
+answers, and what will it cost me" without reading our source.
+
+## Batch 14 - the evaluation runner (the one systemic hole)
+
+Not a UI batch. The register named this the only systemic capability hole: the
+retrieval quality is the product's stated foundation, and **nothing can answer
+whether a change made it better or worse**. Recall hit rate, citation precision
+and grounded-answer rate are all demo figures today.
+
+Builds the four tables designed and deliberately deferred in
+`240-ops-read-models` section 8, plus the runner and the authoring UI. KD-011
+already ruled out synthetic QA generation, so eval sets are authored.
+
+**Why here and not earlier:** an evaluation runner needs a corpus somebody is
+actually operating, and batches 10-12 are what produce one. Running it against a
+seeded demo corpus would measure the seed.
+
+**Acceptance:** a change to chunking, a model swap or a template edit produces a
+before/after the team can read, and a regression is visible without anyone
+noticing it by hand.
+
+## Batch 15 - knowledge asset model v2
+
+Fact / Claim / Entity / Event / Evidence as first-class objects; assertion-level
+provenance; the Knowledge API widening (retrieve / get_context / get_evidence /
+find_entity / browse). This is the largest design-implementation gap in the
+register: the positioning was raised to "Agent 共享知识基础设施" (KD-017) and the
+model behind it has not moved.
+
+### Parallel track, starting now - not batch-ordered
+
+Assertion-level provenance has a **downstream line already waiting**: yucer made
+"据谁所说、何时、哪一版" a hard condition for external knowledge entering their
+judgment path (`#103` Q14). Row-level provenance is complete and they can build
+against it, but the assertion level is what they eventually need.
+
+So the DESIGN of batch 15 runs in parallel with batches 10-13 rather than
+queueing behind them - the design round trip is long, the UI batches do not
+compete with it for thinking time, and leaving it until batch 15 starts means
+the clock does not start for months. Implementation still lands in order.
+
+## Outside the phases: what is blocked on other lines
+
+None of these is scheduled, because none is ours to schedule. Each is ready and
+self-verified on our side.
+
+| Blocked item | Waiting on | Since |
+|---|---|---|
+| Arda content channel | arda line - 5 questions | 2026-07-22 |
+| Deep parsing (Atlas A2) | atlas line - 4 request-side questions; one of them decides whether karda must build PDF rasterisation | 2026-08-18 |
+| Runos capability registration | runos line - `runos#156`; until then the channel can receive but is never sent to | 2026-08-18 |
+| Five plan tiers, and therefore all of C2 | owner - KD-203 + product definition v1 | open |
+
+The last one is worth stating plainly: **C2 resolves every workspace as
+unsubscribed until the tiers publish**, so quota and capability gating are
+running but gating nothing. That is a decision block, not an engineering one.
+
+---
+
 ## Decision track (owner)
 
 | ID | State |
