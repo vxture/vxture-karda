@@ -20,7 +20,7 @@ deliberately not carried over.
 
 | ID | Title | Opened | Status |
 |----|-------|--------|--------|
-| TD-014 | Page titles cannot follow the locale: `metadata` is server-rendered, the locale preference is client-side | 2026-08-25 | open - needs a cookie-backed server locale; contained by the i18n seam guard's named EXEMPT entries |
+| TD-014 | Page titles cannot follow the locale: `metadata` is server-rendered, the locale preference is client-side | 2026-08-25 | open - needs a cookie-backed server locale; now one locale argument in five files, no guard exemptions |
 | TD-009 | Tool surface: ALL nine tools wired (list_kbs/search/ask/write_document/create_entry/create_kb/attach_kb/detach_kb + manifest); `ask` activates once `ATLAS_CHAT_PATH`/`ATLAS_ASK_MODEL` are set | 2026-07-24 | effectively closed - only runtime config (ATLAS_*) + Atlas-blocked recall quality remain |
 | TD-008 | BM25 recaller built + `karda.search` wired end-to-end (2026-07-27); vector recall + real rerank built 2026-08-18 (TD-004 closure) | 2026-07-24 | open - only the PLATFORM-namespace (P-tier) visible-set C2 fill remains |
 | TD-007 | Processing pipeline has no real queue worker or raw object storage yet | 2026-07-24 | open - 5a is the pure pipeline; the runtime around it is deferred |
@@ -469,9 +469,10 @@ deliberately not carried over.
   in `generateMetadata` (and eventually in the root layout, so `<html lang>` is
   correct on first paint rather than after hydration). The cookie is also what
   would let the server render the correct language without a flash.
-- **Contained by**: `scripts/guardrails/check-i18n-seam.mjs` lists the two
-  affected files in `EXEMPT` **by name and with this reason**, and fails if the
-  entry goes stale. The debt is visible in the guard rather than invisible in
-  the source.
-- **Recovery condition**: a server-readable locale exists; the two `page.tsx`
-  titles move into the catalog and their `EXEMPT` entries are deleted.
+- **Contained by** (revised 2026-08-26): the titles no longer hold a product
+  string at all. Each `page.tsx` reads its words from the catalog and resolves
+  them at `BRAND.defaultLocale`, so the seam guard's `EXEMPT` list is **empty**
+  and the debt is one locale argument in five files. It was two exempted files
+  and about to become five, which is what showed the containment was wrong.
+- **Recovery condition**: a server-readable locale exists and replaces
+  `BRAND.defaultLocale` in those five `metadata` blocks. Nothing else moves.

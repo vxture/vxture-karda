@@ -10,9 +10,15 @@ export interface ChannelHealth {
   name: string;
   /** e.g. "POST /api/tools/:tool" - what a consumer actually calls. */
   endpoint: string;
-  /** live = serving, degraded = serving with warnings, off = not provisioned. */
+  /** live = serving, degraded = serving with warnings, off = not provisioned.
+   *
+   *  There is no `stateLabel` beside it. There was, authored per channel, and
+   *  it carried nuance the badge had no business holding - "待注册 · 503 失败
+   *  关闭" for the Runos channel - which the activation card on the same page
+   *  already states in a full sentence. A label that only NAMES a state is
+   *  derivable, so it is derived (from the catalog, in the reader's language);
+   *  a note that says something specific stays content. */
   state: "live" | "degraded" | "off";
-  stateLabel: string;
   todayCalls: number;
   p95Ms: number;
   errorRatePct: number;
@@ -27,9 +33,10 @@ export interface ChannelCapability {
   code: string;
   operations: string[];
   risk: "read" | "write";
-  /** Registration/promotion state on the consuming plane. */
+  /** Registration/promotion state on the consuming plane. Same rule as
+   *  `ChannelHealth.state`: the badge names the state, the catalog supplies the
+   *  word, and per-capability nuance is not smuggled into the label. */
   status: "stable" | "pending" | "unregistered";
-  statusLabel: string;
   todayCalls: number;
 }
 

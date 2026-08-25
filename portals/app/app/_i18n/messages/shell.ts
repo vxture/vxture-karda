@@ -10,6 +10,7 @@ import type { Catalog, MessageFn } from "../catalog";
 export const shell = {
   // --- domains ---------------------------------------------------------------
   navAssets: { "zh-CN": "知识资产", "en-US": "Knowledge assets" },
+  assetDetail: { "zh-CN": "资产详情", "en-US": "Asset detail" },
   navAssetsDesc: { "zh-CN": "知识资产的统计、运营与健康", "en-US": "Asset inventory, operations and health" },
   navChannels: { "zh-CN": "供给通道", "en-US": "Supply channels" },
   navChannelsDesc: { "zh-CN": "直供与 Runos 两条供给通道", "en-US": "The direct and Runos supply channels" },
@@ -21,6 +22,10 @@ export const shell = {
   // --- sub-views -------------------------------------------------------------
   subChannelsOverview: { "zh-CN": "通道概览", "en-US": "Channel overview" },
   subTools: { "zh-CN": "工具面", "en-US": "Tool surface" },
+  subToolsDesc: {
+    "zh-CN": "Agent 可以调用的能力、计量方式与接入方式",
+    "en-US": "What an agent can call, how it meters, and how to connect",
+  },
   subBench: { "zh-CN": "检验台", "en-US": "Retrieval bench" },
   subFlow: { "zh-CN": "加工流水", "en-US": "Processing flow" },
   subTasks: { "zh-CN": "任务与队列", "en-US": "Tasks & queue" },
@@ -96,11 +101,11 @@ export const shell = {
   degradedChannels: { "zh-CN": "异常通道", "en-US": "Degraded" },
   ringAssets: { "zh-CN": "资产", "en-US": "Assets" },
   ringEntries: { "zh-CN": "知识", "en-US": "Entries" },
-  callsToday: { "zh-CN": "今日调用", "en-US": "Calls today" },
-  // Written out rather than abbreviated: 直供 / 能力 on their own do not read
-  // as channel names (owner 2026-08-24).
-  channelDirect: { "zh-CN": "直供通道", "en-US": "Direct channel" },
-  channelRunos: { "zh-CN": "能力平台", "en-US": "Capability platform" },
+  // 今日调用 / 直供通道 / 能力平台 are NOT here: they are the 供给通道 domain's
+  // vocabulary, and this card renders that domain's data. Reading them from
+  // `channels.ts` is what keeps the card and the page from disagreeing - they
+  // did, briefly, in three words. (Written out rather than abbreviated: 直供 /
+  // 能力 on their own do not read as channel names - owner 2026-08-24.)
   pipeInflight: { "zh-CN": "在制", "en-US": "In flight" },
   pipePending: { "zh-CN": "待确认", "en-US": "Awaiting review" },
   pipeFailed: { "zh-CN": "失败", "en-US": "Failed" },

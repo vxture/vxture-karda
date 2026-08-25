@@ -29,7 +29,10 @@ import {
 import { SignInGate } from "../../_lib/ui";
 import { PageHead } from "../../_shell/PageHead";
 import { useFormat, type Failure } from "../../_i18n/useFormat";
-import { bench } from "../../_i18n/messages/bench";
+import { useMessages } from "../../_i18n/useMessages";
+import { channels as channelMessages } from "../../_i18n/messages/channels";
+import { common } from "../../_i18n/messages/common";
+import { shell } from "../../_i18n/messages/shell";
 
 // 检验台 - where an agent developer answers "will karda give my agent good
 // answers" by asking it, on the same retrieval chain the agent will use.
@@ -54,13 +57,18 @@ import { bench } from "../../_i18n/messages/bench";
 type Mode = "search" | "ask";
 
 const FILTERS = [
-  { value: "verified_only", label: "仅已验证", hint: "只召回经人工验证且未过期的内容——最严，也最少" },
-  { value: "verified_and_untracked", label: "已验证 + 未纳管", hint: "默认档：已验证的，加上所在库未开治理的内容" },
-  { value: "all", label: "全部", hint: "包括过期与未验证内容——用于排查「为什么查不到」" },
+  // Structure only: WHICH tiers exist and in what order. Their names and hints
+  // come from the catalog - see `channels.ts`.
+  { value: "verified_only", labelKey: "tierVerifiedOnly", hintKey: "tierVerifiedOnlyHint" },
+  { value: "verified_and_untracked", labelKey: "tierDefault", hintKey: "tierDefaultHint" },
+  { value: "all", labelKey: "tierAll", hintKey: "tierAllHint" },
 ] as const;
 
 export function BenchClient() {
   const f = useFormat();
+  const m = useMessages(channelMessages);
+  const sh = useMessages(shell);
+  const c = useMessages(common);
   const [kbs, setKbs] = useState<Kb[] | null>(null);
   const [needsAuth, setNeedsAuth] = useState(false);
   const [error, setError] = useState<Failure | null>(null);
@@ -81,7 +89,7 @@ export function BenchClient() {
       setKbs(await listKbs());
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) return setNeedsAuth(true);
-      setError({ cause: e, fb: bench.errLoadKbs });
+      setError({ cause: e, fb: channelMessages.errLoadKbs });
     }
   }, []);
 
@@ -122,7 +130,7 @@ export function BenchClient() {
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) return setNeedsAuth(true);
       if (err instanceof ApiError && err.status === 501) setAskUnavailable(true);
-      else setError({ cause: err, fb: bench.errQuery });
+      else setError({ cause: err, fb: channelMessages.errQuery });
     } finally {
       setRunning(false);
     }
@@ -136,12 +144,12 @@ export function BenchClient() {
   return (
     <>
       <PageHead
-        title="检验台"
-        description="以 Agent 同款检索链路试问，验收供给质量"
-        meta={kbs ? `可见 ${kbs.length} 个资产${selected.size > 0 ? ` · 已选 ${selected.size}` : ""}` : undefined}
+        title={sh.subBench}
+        description={sh.benchDesc}
+        meta={kbs ? m.benchMeta(kbs.length, selected.size) : undefined}
         actions={
           <Button variant="outline" asChild>
-            <Link href="/tools">工具面</Link>
+            <Link href="/tools">{sh.subTools}</Link>
           </Button>
         }
       />
@@ -154,62 +162,62 @@ export function BenchClient() {
             <div className="flex flex-wrap items-center gap-sm">
               <SegmentedControl
                 items={[
-                  { value: "search", label: "检索" },
-                  { value: "ask", label: "问答" },
+                  { value: "search", label: m.modeSearch },
+                  { value: "ask", label: m.modeAsk },
                 ]}
                 value={mode}
                 onChange={(v) => setMode(v as Mode)}
                 size="sm"
-                ariaLabel="模式"
+                ariaLabel={m.modeAria}
               />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={mode === "search" ? "检索词" : "提问"}
-                aria-label={mode === "search" ? "检索词" : "问题"}
+                placeholder={mode === "search" ? m.queryPlaceholderSearch : m.queryPlaceholderAsk}
+                aria-label={mode === "search" ? m.queryPlaceholderSearch : m.queryAriaAsk}
                 className="min-w-[18rem] flex-1"
                 disabled={running}
               />
               <Button type="submit" variant="default" disabled={!query.trim() || running}>
-                {running ? "执行中…" : mode === "search" ? "执行检索" : "生成回答"}
+                {running ? c.running : mode === "search" ? m.runSearch : m.runAsk}
               </Button>
             </div>
 
             <div className="flex flex-wrap items-center gap-sm">
               <label className="flex items-center gap-xs text-body-sm">
-                <span className="text-muted-foreground">质量档</span>
+                <span className="text-muted-foreground">{m.tierLabel}</span>
                 <NativeSelect
                   value={filter}
                   onChange={(e) => setFilter(e.target.value)}
-                  aria-label="质量档"
+                  aria-label={m.tierLabel}
                   wrapperClassName="w-[14rem]"
                   disabled={running}
                 >
                   {FILTERS.map((f) => (
                     <option key={f.value} value={f.value}>
-                      {f.label}
+                      {m[f.labelKey]}
                     </option>
                   ))}
                 </NativeSelect>
               </label>
               <label className="flex items-center gap-xs text-body-sm">
-                <span className="text-muted-foreground">返回条数</span>
+                <span className="text-muted-foreground">{m.topK}</span>
                 <Input
                   value={topK}
                   onChange={(e) => setTopK(e.target.value)}
                   inputMode="numeric"
-                  aria-label="返回条数"
+                  aria-label={m.topK}
                   className="w-[5rem]"
                   disabled={running}
                 />
               </label>
-              {chosenFilter && <span className="text-body-sm text-muted-foreground">{chosenFilter.hint}</span>}
+              {chosenFilter && <span className="text-body-sm text-muted-foreground">{m[chosenFilter.hintKey]}</span>}
             </div>
 
             {kbs && kbs.length > 0 && (
               <div className="flex flex-wrap items-center gap-xs">
                 <span className="text-body-sm text-muted-foreground">
-                  范围{selected.size === 0 && "：可见的全部资产"}
+                  {m.scopeLabel}{selected.size === 0 && m.scopeAll}
                 </span>
                 {kbs.map((kb) => (
                   <Toggle
@@ -224,7 +232,7 @@ export function BenchClient() {
                 ))}
                 {selected.size > 0 && (
                   <Button type="button" size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
-                    清空
+                    {m.scopeClear}
                   </Button>
                 )}
               </div>
@@ -234,7 +242,7 @@ export function BenchClient() {
       </Card>
 
       {askUnavailable && (
-        <Banner tone="info" title="问答尚未接通：本机没有配置 Atlas 生成后端（A4）。检索仍可用。" />
+        <Banner tone="info" title={m.askUnavailable} />
       )}
 
       {/* The disclosures. Above the results, because a developer who reads the
@@ -245,11 +253,11 @@ export function BenchClient() {
       {search &&
         (search.items.length === 0 ? (
           <EmptyState
-            title="没有命中"
+            title={m.noHits}
             description={
               filter === "verified_only"
-                ? "当前是「仅已验证」档——放宽到「全部」再试一次，可以区分「没有内容」和「内容没验证」。"
-                : "内容需要先完成加工与索引才可被检索。"
+                ? m.noHitsStrict
+                : m.noHitsGeneric
             }
           />
         ) : (
@@ -282,21 +290,21 @@ export function BenchClient() {
       {ask &&
         (ask.noContext ? (
           <EmptyState
-            title="没有找到可作依据的内容——因此没有生成回答"
-            description="karda 不会在没有依据时编答案。放宽质量档或扩大范围再试。"
+            title={m.noGrounds}
+            description={m.noGroundsDesc}
           />
         ) : (
           <>
             <Card>
               <CardContent className="flex flex-col gap-sm py-md">
-                <span className="text-label-lg text-muted-foreground">回答</span>
+                <span className="text-label-lg text-muted-foreground">{m.answerLabel}</span>
                 <p className="whitespace-pre-wrap text-body-md">{ask.answer}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="flex flex-col py-sm">
                 <span className="px-sm py-xs text-label-lg text-muted-foreground">
-                  引用 ({ask.citations.length})
+                  {m.citationsLabel(ask.citations.length)}
                 </span>
                 {ask.citations.map((c, i) => (
                   <ResultRow
@@ -336,6 +344,7 @@ function Disclosures({
   result: SearchResult | AskResult;
   kbName: (id: string) => string;
 }) {
+  const m = useMessages(channelMessages);
   const ignored = "ignoredKbIds" in result ? result.ignoredKbIds : [];
   const scope = "scopeKbIds" in result ? result.scopeKbIds : [];
   const clean = !result.degraded && !result.partial && ignored.length === 0;
@@ -345,36 +354,37 @@ function Disclosures({
       <CardContent className="flex flex-col gap-xs py-md">
         <div className="flex flex-wrap items-center gap-sm">
           <StatusBadge tone={clean ? "success" : "warning"} dot={false}>
-            {clean ? "链路完整" : "有降级"}
+            {clean ? m.chainClean : m.chainDegraded}
           </StatusBadge>
           {scope.length > 0 && (
-            <span className="text-body-sm text-muted-foreground">实际检索了 {scope.length} 个资产</span>
+            <span className="text-body-sm text-muted-foreground">{m.scopeSearched(scope.length)}</span>
           )}
         </div>
 
         {result.degraded === "rerank_unavailable" && (
           <p className="text-body-sm text-warning-text">
             <Icon name="warning" className="mr-2xs inline align-middle" />
-            重排不可用，当前顺序来自关键词/向量融合（RRF）。结果是真的，但排序不是生产排序——不要据此判断排序质量。
+            {m.degradedRerank}
           </p>
         )}
         {result.partial && (
           <p className="text-body-sm text-warning-text">
             <Icon name="warning" className="mr-2xs inline align-middle" />
-            部分命名空间查询失败，本次结果不完整。缺的是哪一部分无法得知——这比少了几条更值得注意。
+            {m.degradedPartial}
           </p>
         )}
         {ignored.length > 0 && (
           <p className="text-body-sm text-destructive-text">
             {/* Silence here would read as "no hits there", which is a very
                 different and much more comforting conclusion. */}
-            指定的 {ignored.length} 个资产不在可见范围内，已被忽略：
-            {ignored.map((id) => kbName(id)).join("、")}。它们不是「没有命中」，是「你看不到」。
+            {m.ignoredLead(ignored.length)}
+            {ignored.map((id) => kbName(id)).join(m.ignoredJoin)}
+            {m.ignoredTail}
           </p>
         )}
         {clean && (
           <p className="text-body-sm text-muted-foreground">
-            重排可用、无命名空间失败、无被忽略的资产。这一次的结果可以按生产表现来读。
+            {m.chainCleanNote}
           </p>
         )}
       </CardContent>
@@ -401,6 +411,8 @@ function ResultRow({
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const m = useMessages(channelMessages);
+  const c = useMessages(common);
   return (
     <div className="flex flex-col gap-2xs border-t border-border/60 py-sm first:border-t-0">
       <div className="flex items-center gap-sm">
@@ -414,7 +426,7 @@ function ResultRow({
           </StatusBadge>
         )}
         <Button size="sm" variant="ghost" className="ml-auto" onClick={onToggle}>
-          {expanded ? "收起" : "展开"}
+          {expanded ? c.collapse : c.expand}
         </Button>
       </div>
       <p
