@@ -20,6 +20,7 @@ import { documentBytesHref, type Doc, type Folder, type Kb } from "../../../_lib
 import { formatBytes } from "../../../_lib/format";
 import { useFormat } from "../../../_i18n/useFormat";
 import { useMessages } from "../../../_i18n/useMessages";
+import { common } from "../../../_i18n/messages/common";
 import { assets } from "../../../_i18n/messages/assets";
 import { previewKind } from "../../../kb/lib/preview";
 import { verificationRecord } from "../../../kb/governance/record";
@@ -68,6 +69,7 @@ export function DocumentPanel({
   onDelete: (doc: Doc) => void | Promise<void>;
 }) {
   const m = useMessages(assets);
+  const c = useMessages(common);
   const [filter, setFilter] = useState<FolderFilter>("");
   const [target, setTarget] = useState<string>("");
   const [preview, setPreview] = useState<Doc | null>(null);
@@ -234,6 +236,7 @@ function DocumentRow({
 }) {
   const f = useFormat();
   const m = useMessages(assets);
+  const c = useMessages(common);
   const st = f.content(doc.contentState);
   const vr = f.verification(doc.verificationState);
   const hint = f.processingHint(doc.contentState);
@@ -280,7 +283,7 @@ function DocumentRow({
           <DestructiveButton
             size="sm"
             confirm={{
-              verb: m.actDelete,
+              verb: c.delete,
               target: doc.title,
               // `deleted` is terminal in the content state machine - there is no
               // transition back out of it. Until DS 9 this button deleted on a
@@ -290,7 +293,7 @@ function DocumentRow({
               onConfirm: () => Promise.resolve(onDelete(doc)),
             }}
           >
-            {m.actDelete}
+            {c.delete}
           </DestructiveButton>
         </div>
       </div>
@@ -327,6 +330,7 @@ function DocumentRow({
  *  rather than the only one. */
 function PreviewDialog({ kb, doc, onClose }: { kb: Kb; doc: Doc | null; onClose: () => void }) {
   const m = useMessages(assets);
+  const c = useMessages(common);
   const kind = previewKind(doc?.mime);
   const href = doc ? documentBytesHref(kb.id, doc.id, true) : "";
 
@@ -371,7 +375,7 @@ function PreviewDialog({ kb, doc, onClose }: { kb: Kb; doc: Doc | null; onClose:
             </Button>
           )}
           <Button variant="default" onClick={onClose}>
-            {m.close}
+            {c.close}
           </Button>
         </div>
       </DialogContent>

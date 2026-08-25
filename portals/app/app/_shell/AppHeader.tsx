@@ -180,7 +180,7 @@ export function AppHeader({
       {/* 助手:独立入口,比工具组图标大一号(md=20px vs sm=16px)。收起时
           红底角标标明待办数(owner 2026-08-24)。 */}
       <span className="relative">
-        <ShellIconButton icon="sparkles" label={m.dockOpen} active={dockOpen} onClick={onToggleDock}>
+        <ShellIconButton icon="sparkles" label={m.dock} active={dockOpen} onClick={onToggleDock}>
           <Icon name="sparkles" size="md" className="text-ai-text" />
         </ShellIconButton>
         {pending > 0 && !dockOpen && (

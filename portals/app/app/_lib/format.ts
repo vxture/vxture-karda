@@ -64,6 +64,33 @@ export const VERIFICATION_TONE: Record<VerificationState, Tone> = {
 
 // --- byte / date formatting ---------------------------------------------------
 
+/**
+ * An asset's overall health - a fourth state machine beside content state,
+ * verification state and the sharing ladder, and split the same way: the tone
+ * is a fact about the rung, the label is language and lives in the catalog.
+ *
+ * `gap` reads as info rather than as a warning on purpose (owner): a gap is
+ * something to fill, not something that has gone wrong.
+ */
+export type AssetHealth = "healthy" | "attention" | "processing" | "gap";
+
+/** NOT the local five-tone `Tone`: health feeds the DS `StatusBadge`, whose
+ *  tone vocabulary is its own. Two tone vocabularies is one more than ideal,
+ *  but silently mapping between them would be worse. */
+export type HealthTone = "success" | "warning" | "info" | "neutral";
+
+export interface HealthMeta {
+  label: string;
+  tone: HealthTone;
+}
+
+export const HEALTH_TONE: Record<AssetHealth, HealthTone> = {
+  healthy: "success",
+  attention: "warning",
+  processing: "info",
+  gap: "info",
+};
+
 export function formatBytes(n: number | null | undefined): string {
   if (n === null || n === undefined || !Number.isFinite(n) || n < 0) return "-";
   if (n < 1024) return `${n} B`;

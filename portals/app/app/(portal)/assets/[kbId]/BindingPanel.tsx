@@ -219,7 +219,7 @@ export function BindingPanel({
           {revoked.length > 0 && (
             <Card className="opacity-70">
               <CardHeader>
-                <CardTitle className="text-title-sm leading-[1]">{m.revokedTitle}</CardTitle>
+                <CardTitle className="text-title-sm leading-[1]">{m.bindStateRevoked}</CardTitle>
                 <CardDescription>
                   {m.revokedDescPre}
                   <strong>{m.revokedDescStrong}</strong>

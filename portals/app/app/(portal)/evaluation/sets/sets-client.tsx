@@ -43,6 +43,7 @@ import { SignInGate } from "../../../_lib/ui";
 import { PageHead } from "../../../_shell/PageHead";
 import { useFormat, type Failure } from "../../../_i18n/useFormat";
 import { evaluation } from "../../../_i18n/messages/evaluation";
+import { common } from "../../../_i18n/messages/common";
 import type { Message } from "../../../_i18n/catalog";
 
 // 评测集 - authoring and running the question sets that make quality checkable.
@@ -284,7 +285,7 @@ export function EvalSetsClient() {
                     variant="ghost"
                     disabled={busy}
                     onClick={() =>
-                      run(evaluation.errDelete, async () => {
+                      run(common.deleteFailed, async () => {
                         await deleteEvalQuestion(activeSet.id, q.id);
                         setQuestions(await listEvalQuestions(activeSet.id));
                       })
