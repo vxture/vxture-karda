@@ -82,6 +82,15 @@ export class PrismaContentStore implements ContentStore {
       })) > 0
     );
   }
+  async renameFolder(id: string, name: string): Promise<FolderRow | null> {
+    const p = await getPrismaClient();
+    // updateMany, not update: `update` throws P2025 when the row is gone, and a
+    // rename racing a delete is a 404, not a 500.
+    const r = await p.folder.updateMany({ where: { id }, data: { name } });
+    if (r.count === 0) return null;
+    const row = await p.folder.findFirst({ where: { id } });
+    return row ? toFolder(row) : null;
+  }
   async deleteFolder(id: string): Promise<boolean> {
     const p = await getPrismaClient();
     // documents/entries keep folder_id via ON DELETE SET NULL (they are not

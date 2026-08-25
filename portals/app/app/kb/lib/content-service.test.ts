@@ -31,6 +31,46 @@ test("folder names are unique within a KB", async () => {
   assert.ok((await s.createFolder("kb_2", "specs")).ok);
 });
 
+test("renaming a folder to its own current name is a no-op, not a collision", async () => {
+  // The uniqueness check must exclude the folder being renamed. A user editing a
+  // name in place and pressing enter without changing it would otherwise be told
+  // the name is taken - by itself.
+  const s = svc();
+  const made = await s.createFolder(KB, "specs");
+  assert.ok(made.ok);
+  const same = await s.renameFolder(KB, made.value.id, "specs");
+  assert.ok(same.ok);
+  assert.equal(same.value.name, "specs");
+});
+
+test("a rename still cannot collide with a DIFFERENT folder", async () => {
+  const s = svc();
+  const a = await s.createFolder(KB, "specs");
+  assert.ok(a.ok);
+  assert.ok((await s.createFolder(KB, "notes")).ok);
+  assert.deepEqual(await s.renameFolder(KB, a.value.id, "notes"), {
+    ok: false,
+    error: { code: "folder_name_taken" },
+  });
+});
+
+test("a rename is scoped by KB - the same name is free in another library", async () => {
+  const s = svc();
+  assert.ok((await s.createFolder("kb_2", "specs")).ok);
+  const mine = await s.createFolder(KB, "drafts");
+  assert.ok(mine.ok);
+  const r = await s.renameFolder(KB, mine.value.id, "specs");
+  assert.ok(r.ok, "another KB's folder named specs must not block this one");
+});
+
+test("renaming a folder that is gone is not_found, not a crash", async () => {
+  const s = svc();
+  assert.deepEqual(await s.renameFolder(KB, "fld_missing", "x"), {
+    ok: false,
+    error: { code: "not_found" },
+  });
+});
+
 // --- documents: the connector_code invariant --------------------------------
 
 test("connector documents must carry a connector_code; upload/api must not", async () => {

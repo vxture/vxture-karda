@@ -500,12 +500,12 @@ card on the homepage finally clickable.
 
 | Item | Backing capability | State |
 |------|-------------------|-------|
-| Library settings surface: dual-template config, filterable whitelist (KD-001 cap 16), verification policy (default verifier / interval / sync exemption), embedding-model pin | `knowledge_base` config columns, `presets.ts`, `metadata.ts` | all server-side, zero UI |
-| Failed-document view + retry / re-enqueue | `processing_task.failure_class`, `/api/kb/processing/tick` | ledger landed batch 9 |
-| Publish / unpublish | `/api/kb/[id]/publish`, `ownership.canPublish` | no UI |
-| Verify a document; verify a selection | `/api/kb/[id]/documents/[docId]/verify` | no UI |
-| Folder create / rename / move | `/api/kb/[id]/folders` | no UI |
-| Document preview - read the thing in place | `/api/kb/[id]/documents/[docId]/download`, object store | endpoint only; today reading a document means downloading it |
+| Library settings surface: processing-template picker, filterable whitelist (KD-001 cap 16), verification policy (default verifier / interval), sharing ladder | `knowledge_base` config columns, `presets.ts`, `metadata.ts` | **done 2026-08-25** |
+| Failed-document view + retry / re-enqueue | `processing_task.failure_class`, `POST .../documents/[docId]/reprocess` | **done 2026-08-25** |
+| Publish / unpublish | `/api/kb/[id]/publish`, `ownership.canPublish` | **done 2026-08-25** |
+| Verify a document | `/api/kb/[id]/documents/[docId]/verify` | **done 2026-08-25** |
+| Folder create / rename / delete | `/api/kb/[id]/folders`, `PATCH .../folders/[folderId]` | **done 2026-08-25** |
+| Document preview - read the thing in place | `GET .../download?inline=1`, object store | **done 2026-08-25** |
 | Retire the Console shell: rehome its three pages, drop `ConsoleHeader` and its hardcoded ground, repoint every `/console` link | - | **done 2026-08-25** |
 
 **Landed so far (the IA merge):** `/console` -> `(portal)/assets/new`,
@@ -519,16 +519,52 @@ whole batch. ~90 strings localised: the Console was English-first and the produc
 is Chinese-first, so the merge would otherwise have shipped an English detail
 view into the main product.
 
-**Still open in batch 10:** library settings (dual templates, filterable
-whitelist - `PATCH /api/kb/[id]` already accepts them), the failed-document view
-with retry/re-enqueue, folder management, and document preview.
+**Landed (the operating surface):** the asset detail view is now two tabs -
+documents and settings - both built on DS. Documents: upload into a folder,
+folder filter chips with counts, a pinned failure group carrying each failure
+reason, in-place preview, verify, re-process, delete. Settings: sharing ladder,
+processing-template picker, the filterable whitelist with its real budget,
+verification policy, and the folder catalogue.
 
-**Acceptance:** an owner creates a library, sets its templates and verification
-policy, uploads a document, reads it in place, sees it fail, fixes the cause,
-re-runs it, verifies it, and publishes the library - **without leaving the
-product shell**, without an engineer, and without an API client.
+**Acceptance: MET, walked end to end 2026-08-25** against a throwaway Postgres
+with the DDL baseline applied - create library, set template, upload, read in
+place, see the failure and its reason, re-process, rename a folder, declare a
+filterable field, publish to the workspace. Every step through the product shell,
+no API client.
 
-**No new backend. No new schema.** The only deletion is a shell.
+**"No new backend" was WRONG** (that line came from the same shallow read as the
+Console-endpoint miscount corrected in #127). Four of the six items had no
+reachable endpoint, so batch 10 added them - all thin, all over existing schema:
+
+- `POST /api/kb/[id]/documents/[docId]/reprocess` - retry needed a route of its
+  own. `/api/kb/processing/tick` is gated by `INTERNAL_JOB_TOKEN`, a machine
+  credential, and it drains the WHOLE queue; neither fits a person clicking retry
+  on one document. The transition is the state machine's (`failed -> processing`
+  was already legal) and the re-run carries a new generation so it does not dedup
+  against the task that just failed.
+- `PATCH /api/kb/[id]/folders/[folderId]` - create and delete existed, rename did
+  not. `folderNameTaken` already took an unused `exceptId` for exactly this.
+- `GET/PUT /api/kb/[id]/metadata-fields` - `kb_metadata_field` had no API at all,
+  so `validateMetadataFields` and the cap it enforces were unreachable. PUT
+  replaces the whole set: the cap and duplicate rules are set properties, and
+  `98_column_locks` revokes UPDATE on that table, so delete+insert is the only
+  legal write anyway.
+- `GET /api/kb/processing-templates` - the picker needs DB ids, since
+  `processing_template_id` is an FK; the `PROCESSING_PRESETS` constants alone
+  have nothing to PATCH with.
+
+**No new schema.** All four are routes over tables the baseline already has.
+
+**Two defects the walk-through caught, both invisible to type-check and tests:**
+
+- Inline `text/plain` with no charset renders as mojibake - the browser falls
+  back to the platform codepage, so a Chinese document previewed as garbage while
+  the stored bytes were fine. `inlineContentType()` now states UTF-8 for text/*
+  where the uploader declared none.
+- DS `DialogTitle` ships `leading-none`, which resolves to `line-height: 0` under
+  DS tokens (Tailwind v4 falls back to `--spacing-*`; DS registers
+  `--spacing-none: 0px`). Every dialog title in every consumer is zero-height.
+  Worked around locally with `leading-[1]`; **filed as TD-013 for DS.**
 
 ## Batch 11 - governance becomes operable
 

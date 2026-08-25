@@ -38,6 +38,7 @@ export interface Kb {
 export interface Doc {
   id: string;
   kbId: string;
+  folderId: string | null;
   title: string;
   source: "upload" | "api" | "connector";
   contentState: string;
@@ -80,6 +81,24 @@ async function req<T>(input: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
+/**
+ * Read a required key off a response envelope.
+ *
+ * `req<T>` casts the parsed JSON without checking it, so naming the wrong
+ * envelope key does not throw - it yields `undefined`, which flows into state
+ * and crashes several renders later somewhere unrelated. (It did: a PATCH read
+ * `kb` where every kb route sends `knowledgeBase`, and the page died in a card
+ * that had nothing to do with the request.) Failing here names the endpoint and
+ * the key instead.
+ */
+function need<T, K extends keyof T>(body: T, key: K, endpoint: string): NonNullable<T[K]> {
+  const value = body?.[key];
+  if (value === undefined || value === null) {
+    throw new ApiError(500, `malformed_response:${endpoint}:${String(key)}`);
+  }
+  return value as NonNullable<T[K]>;
+}
+
 // --- session ------------------------------------------------------------------
 
 export async function getSession(): Promise<{ authenticated: boolean; user?: SessionUser; reason?: string }> {
@@ -93,40 +112,40 @@ export function loginHref(returnTo: string): string {
 // --- libraries ----------------------------------------------------------------
 
 export async function listKbs(): Promise<Kb[]> {
-  const { knowledgeBases } = await req<{ knowledgeBases: Kb[] }>("/api/kb");
-  return knowledgeBases;
+  const body = await req<{ knowledgeBases: Kb[] }>("/api/kb");
+  return need(body, "knowledgeBases", "/api/kb");
 }
 
 export async function getKb(id: string): Promise<Kb> {
-  const { knowledgeBase } = await req<{ knowledgeBase: Kb }>(`/api/kb/${id}`);
-  return knowledgeBase;
+  const body = await req<{ knowledgeBase: Kb }>(`/api/kb/${id}`);
+  return need(body, "knowledgeBase", `/api/kb/${id}`);
 }
 
 export async function createKb(input: { name: string; description?: string }): Promise<Kb> {
-  const { knowledgeBase } = await req<{ knowledgeBase: Kb }>("/api/kb", {
+  const body = await req<{ knowledgeBase: Kb }>("/api/kb", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(input),
   });
-  return knowledgeBase;
+  return need(body, "knowledgeBase", "/api/kb");
 }
 
 export async function setSharing(id: string, target: PublishState): Promise<Kb> {
-  const { knowledgeBase } = await req<{ knowledgeBase: Kb }>(`/api/kb/${id}/publish`, {
+  const body = await req<{ knowledgeBase: Kb }>(`/api/kb/${id}/publish`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ target }),
   });
-  return knowledgeBase;
+  return need(body, "knowledgeBase", `/api/kb/${id}/publish`);
 }
 
 export async function setGovernance(id: string, governanceEnabled: boolean): Promise<Kb> {
-  const { knowledgeBase } = await req<{ knowledgeBase: Kb }>(`/api/kb/${id}`, {
+  const body = await req<{ knowledgeBase: Kb }>(`/api/kb/${id}`, {
     method: "PATCH",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ governanceEnabled }),
   });
-  return knowledgeBase;
+  return need(body, "knowledgeBase", `/api/kb/${id}`);
 }
 
 // Verifier assignment (Track 12b): the default verifier (a user sub, or null to
@@ -135,30 +154,38 @@ export async function setVerifierConfig(
   id: string,
   cfg: { defaultVerifier: string | null; defaultVerifyIntervalDays: number | null },
 ): Promise<Kb> {
-  const { knowledgeBase } = await req<{ knowledgeBase: Kb }>(`/api/kb/${id}`, {
+  const body = await req<{ knowledgeBase: Kb }>(`/api/kb/${id}`, {
     method: "PATCH",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(cfg),
   });
-  return knowledgeBase;
+  return need(body, "knowledgeBase", `/api/kb/${id}`);
 }
 
 // --- documents ----------------------------------------------------------------
 
 export async function listDocuments(kbId: string): Promise<Doc[]> {
-  const { documents } = await req<{ documents: Doc[] }>(`/api/kb/${kbId}/documents`);
-  return documents;
+  const body = await req<{ documents: Doc[] }>(`/api/kb/${kbId}/documents`);
+  return need(body, "documents", `/api/kb/${kbId}/documents`);
 }
 
-export async function uploadDocument(kbId: string, file: File, title?: string): Promise<Doc> {
+export async function uploadDocument(
+  kbId: string,
+  file: File,
+  title?: string,
+  folderId?: string | null,
+): Promise<Doc> {
   const form = new FormData();
   form.append("file", file);
   if (title) form.append("title", title);
-  const { document } = await req<{ document: Doc }>(`/api/kb/${kbId}/documents`, {
+  // The route has read `folder_id` from the start; nothing was sending it, so
+  // every upload landed unfiled regardless of where the user was working.
+  if (folderId) form.append("folder_id", folderId);
+  const body = await req<{ document: Doc }>(`/api/kb/${kbId}/documents`, {
     method: "POST",
     body: form,
   });
-  return document;
+  return need(body, "document", `/api/kb/${kbId}/documents`);
 }
 
 export async function deleteDocument(kbId: string, docId: string): Promise<void> {
@@ -166,8 +193,123 @@ export async function deleteDocument(kbId: string, docId: string): Promise<void>
 }
 
 export async function verifyDocument(kbId: string, docId: string): Promise<Doc> {
-  const { document } = await req<{ document: Doc }>(`/api/kb/${kbId}/documents/${docId}/verify`, { method: "POST" });
-  return document;
+  const body = await req<{ document: Doc }>(`/api/kb/${kbId}/documents/${docId}/verify`, { method: "POST" });
+  return need(body, "document", `/api/kb/${kbId}/documents/${docId}/verify`);
+}
+
+/** Re-run a failed document. Distinct from the queue tick, which is a machine
+ *  endpoint behind INTERNAL_JOB_TOKEN and drains everything. */
+export async function reprocessDocument(kbId: string, docId: string): Promise<Doc> {
+  const body = await req<{ document: Doc }>(`/api/kb/${kbId}/documents/${docId}/reprocess`, { method: "POST" });
+  return need(body, "document", `/api/kb/${kbId}/documents/${docId}/reprocess`);
+}
+
+/** Where the browser reads a document's bytes. `inline` asks for the disposition
+ *  that RENDERS instead of saving; the server still refuses inline for types it
+ *  will not serve that way (text/html and SVG execute script), so a caller
+ *  cannot force it - which is why the decision lives there and not here. */
+export function documentBytesHref(kbId: string, docId: string, inline = false): string {
+  return `/api/kb/${kbId}/documents/${docId}/download${inline ? "?inline=1" : ""}`;
+}
+
+// --- folders ------------------------------------------------------------------
+
+export interface Folder {
+  id: string;
+  kbId: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function listFolders(kbId: string): Promise<Folder[]> {
+  const body = await req<{ folders: Folder[] }>(`/api/kb/${kbId}/folders`);
+  return need(body, "folders", `/api/kb/${kbId}/folders`);
+}
+
+export async function createFolder(kbId: string, name: string): Promise<Folder> {
+  const body = await req<{ folder: Folder }>(`/api/kb/${kbId}/folders`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  return need(body, "folder", `/api/kb/${kbId}/folders`);
+}
+
+export async function renameFolder(kbId: string, folderId: string, name: string): Promise<Folder> {
+  const body = await req<{ folder: Folder }>(`/api/kb/${kbId}/folders/${folderId}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  return need(body, "folder", `/api/kb/${kbId}/folders/${folderId}`);
+}
+
+export async function deleteFolder(kbId: string, folderId: string): Promise<void> {
+  await req<void>(`/api/kb/${kbId}/folders/${folderId}`, { method: "DELETE" });
+}
+
+// --- library settings ---------------------------------------------------------
+
+export interface ProcessingTemplateOption {
+  id: string | null;
+  templateCode: string;
+  name: string;
+  targetTokens: number;
+  maxTokens: number;
+  note: string;
+}
+
+export async function listProcessingTemplates(): Promise<ProcessingTemplateOption[]> {
+  const body = await req<{ templates: ProcessingTemplateOption[] }>(`/api/kb/processing-templates`);
+  return need(body, "templates", `/api/kb/processing-templates`);
+}
+
+export async function setProcessingTemplate(kbId: string, processingTemplateId: string | null): Promise<Kb> {
+  // `knowledgeBase`, not `kb` - that is the key every kb route uses. Reading the
+  // wrong one returns undefined rather than throwing, so the page sets its
+  // library to undefined and crashes on the next render.
+  const body = await req<{ knowledgeBase: Kb }>(`/api/kb/${kbId}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ processingTemplateId }),
+  });
+  return need(body, "knowledgeBase", `/api/kb/${kbId}`);
+}
+
+export interface MetadataField {
+  fieldName: string;
+  valueType: "string" | "number" | "datetime" | "enum";
+  enumValues?: string[];
+  filterable: boolean;
+}
+
+/** The filterable budget as the server computes it. `used` counts the five
+ *  system dimensions, so a UI that showed `cap` as available would overstate it
+ *  by five - which is why the server sends the arithmetic rather than the cap. */
+export interface MetadataBudget {
+  cap: number;
+  used: number;
+  remaining: number;
+  systemDimensions: string[];
+}
+
+export async function listMetadataFields(kbId: string): Promise<{ fields: MetadataField[]; budget: MetadataBudget }> {
+  return req<{ fields: MetadataField[]; budget: MetadataBudget }>(`/api/kb/${kbId}/metadata-fields`);
+}
+
+/** Replaces the WHOLE set - there is no per-field write. See the route comment:
+ *  the cap and duplicate rules are set properties, and UPDATE is revoked on the
+ *  table, so delete+insert is the only legal write. */
+export async function putMetadataFields(
+  kbId: string,
+  fields: MetadataField[],
+): Promise<{ fields: MetadataField[]; budget: MetadataBudget }> {
+  return req<{ fields: MetadataField[]; budget: MetadataBudget }>(`/api/kb/${kbId}/metadata-fields`, {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ fields }),
+  });
 }
 
 // --- search / ask (the Console retrieval surface) ------------------------------
@@ -193,12 +335,12 @@ export async function searchKbs(input: {
   top_k?: number;
   verification_filter?: string;
 }): Promise<SearchResult> {
-  const { result } = await req<{ result: SearchResult }>("/api/kb/search", {
+  const body = await req<{ result: SearchResult }>("/api/kb/search", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(input),
   });
-  return result;
+  return need(body, "result", "/api/kb/search");
 }
 
 export interface AskResult {
@@ -210,10 +352,10 @@ export interface AskResult {
 }
 
 export async function askKbs(input: { question: string; kb_ids?: string[]; top_k?: number }): Promise<AskResult> {
-  const { result } = await req<{ result: AskResult }>("/api/kb/ask", {
+  const body = await req<{ result: AskResult }>("/api/kb/ask", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(input),
   });
-  return result;
+  return need(body, "result", "/api/kb/ask");
 }
