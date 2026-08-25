@@ -1,8 +1,21 @@
 import type { IconName } from "@vxture/design-system";
 
-/** DOM id of the 内容区 (main pane) - the fullscreen target. Shared so the
- *  header's toggle and the element it expands can never drift apart. */
-export const PORTAL_FULLSCREEN_ID = "karda-portal-content";
+/**
+ * DOM id of the SHELL ROOT - the fullscreen target (owner 2026-08-25).
+ *
+ * It used to be the 内容区, so expanding hid the 顶栏 and both side panes and
+ * put the reading column alone on the viewport. The owner reversed that: 全屏
+ * now means the whole application - 顶栏 + 工作区 - fills the physical screen.
+ *
+ * That reversal forces NATIVE fullscreen. Pseudo-fullscreen only pins an
+ * element to the viewport, and the shell root is already `h-screen`, so
+ * pseudo mode against this target would be a no-op: the one thing left to
+ * reclaim is the browser's own chrome, and only the Fullscreen API can take
+ * it. The header passes `mode="native"`.
+ *
+ * Shared so the toggle and the element it expands can never drift apart.
+ */
+export const PORTAL_FULLSCREEN_ID = "karda-portal-shell";
 
 // The product's top-level functional domains (owner, 2026-08-21). They render
 // as the 导航栏 cards and the header launcher - the four entries ARE the

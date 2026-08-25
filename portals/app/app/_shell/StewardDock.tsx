@@ -17,10 +17,17 @@ import type { StewardProposal } from "../kb/demo/pipeline-types";
 // preference only moves the roles) and for the `leading-none` trap.
 // 12px (`*-sm` / `text-overline`) is reserved for badges and section eyebrows.
 //
-// Frame (owner 2026-08-24): a 320px pane with a FIXED head and a FIXED foot -
+// Frame (owner 2026-08-25): a 400px pane with a FIXED head and a FIXED foot -
 // the identity line and the one bulk action never scroll away - and a
-// scrolling middle of collapsible section cards. The scrollbar is hidden: the
-// dock is chrome, a track down its edge would read as content.
+// scrolling middle of collapsible section cards. Widened from 320px so the
+// dock is a working surface rather than a summary strip; the cost is paid by
+// the 内容区, which loses those 80px (see 130-portal-shell.md section 3).
+// Scrollbars are hidden product-wide now, so this pane no longer says so
+// itself.
+//
+// The pane adds NO padding at its outer edge - the window margin owns that.
+// Its inner sections do pad, which is a different thing: this is a surfaced
+// panel, and a surface without inner padding puts text on its own border.
 
 const OPEN_KEY = "karda-shell-dock-closed";
 
@@ -109,7 +116,7 @@ export function StewardDock({ shell, onClose }: { shell: ShellData | null; onClo
     // browser edge: same hairline and radius as the nav cards and the page
     // head, translucent so the product backdrop carries through.
     // Fixed head / scrolling middle / fixed foot.
-    <aside className="flex w-[20rem] shrink-0 flex-col overflow-hidden rounded-lg border border-primary/[0.06] bg-gradient-to-b from-card/80 to-card/35 dark:border-primary/10">
+    <aside className="flex w-[25rem] shrink-0 flex-col overflow-hidden rounded-lg border border-primary/[0.06] bg-gradient-to-b from-card/80 to-card/35 dark:border-primary/10">
       <div className="flex shrink-0 items-center gap-sm border-b border-primary/[0.08] px-md py-sm dark:border-primary/10">
         <Icon name="sparkles" size="sm" className="text-ai-text" />
         <span className="flex-1 text-title-sm">管家值班台</span>
@@ -125,7 +132,7 @@ export function StewardDock({ shell, onClose }: { shell: ShellData | null; onClo
         </div>
       ) : (
         <>
-          <div className="flex min-h-0 flex-1 flex-col gap-sm overflow-y-auto px-md py-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex min-h-0 flex-1 flex-col gap-sm overflow-y-auto px-md py-md">
             <DockSection
               id="pending"
               label="待你裁决"

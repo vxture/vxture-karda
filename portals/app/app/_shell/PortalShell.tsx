@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { useFullscreenContext } from "@vxture/design-system";
 import { AppHeader } from "./AppHeader";
 import { NavPane } from "./NavPane";
 import { ShellBackdrop } from "./ShellBackdrop";
@@ -44,10 +43,6 @@ function writePref(key: string, value: boolean) {
 export function PortalShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "/";
   const active = activeNavKey(pathname);
-  // The DS provider reports fullscreen STATE only - it never styles the target
-  // - so the pseudo-fullscreen layer is applied here, scoped to OUR target id.
-  const fs = useFullscreenContext();
-  const contentFullscreen = fs.isFullscreen && fs.targetId === PORTAL_FULLSCREEN_ID;
   const [shell, setShell] = useState<ShellData | null>(null);
   // SSR renders the default (both side panes open); the persisted
   // preference applies after mount to keep hydration consistent.
@@ -84,7 +79,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
   return (
     // No opaque background here: the body carries the ground and ShellBackdrop
     // washes it, so every panel above can be translucent and let it through.
-    <div className="relative flex h-screen flex-col text-foreground">
+    <div id={PORTAL_FULLSCREEN_ID} className="relative flex h-screen flex-col text-foreground">
       <ShellBackdrop />
       <AppHeader
         pending={shell?.steward.pending ?? 0}
@@ -94,38 +89,36 @@ export function PortalShell({ children }: { children: ReactNode }) {
         onToggleNav={toggleNav}
       />
       {/* 工作区. Two spacing constants live here and nowhere else, both on the
-          Material adaptive-layout scale (owner 2026-08-24):
+          Material adaptive-layout scale (owner 2026-08-25):
             外边距 window margin  p-lg  = 24px, all four sides
-            栏间距 pane spacer    gap-lg = 24px, between panes
+            栏间距 pane spacer    gap-xl = 32px, between panes
+          Written as TOKENS, not literals, on purpose: `lg`/`xl` resolve to
+          24/32px at the default density and shrink with the user's density
+          preference. A shell frame that stayed at 24/32 while every control
+          inside it compacted would read as broken. The pane WIDTHS stay
+          literal - they are content-driven (a card column is 280px because of
+          what it holds), not rhythm-driven.
+
           No pane adds edge padding of its own - the 内容区's content inset is
           the single deliberate exception, declared below. */}
-      <div className="flex min-h-0 flex-1 gap-lg p-lg">
+      <div className="flex min-h-0 flex-1 gap-xl p-lg">
         {/* 导航栏 paints no surface and draws no border of its own: its cards
             sit straight on the shared ground (owner 2026-08-24). Only 值班台
             keeps a pane surface - it is a panel over the page, not part of
             it. */}
         <NavPane active={active} pathname={pathname} shell={shell} collapsed={navCollapsed} />
-        {/* 内容区: scrolls on its own inside the 工作区. The id marks the
-            fullscreen target - expanding puts the CONTENT on the viewport, not
-            the whole shell blown up. NO background of its own: the product
-            backdrop must read through the whole body, not stop at 导航栏. The
-            DS provider only tracks fullscreen STATE; the layer styling is the
-            consumer's job, so the opaque ground is applied here and only while
-            fullscreen is on - and so is the window margin, which the 工作区 row
-            no longer supplies. */}
-        <main
-          id={PORTAL_FULLSCREEN_ID}
-          className={
-            contentFullscreen
-              ? "fixed inset-0 z-50 overflow-y-auto bg-background p-lg"
-              : "min-w-0 flex-1 overflow-y-auto"
-          }
-        >
-          {/* 内衬 content inset: px-xl = 32px, the ONE edge padding a pane adds
-              on top of the 工作区 constants. It puts the reading column 56px
-              clear of 导航栏 and of 值班台 (24px pane spacer + 32px inset) -
+        {/* 内容区: scrolls on its own inside the 工作区. NO background of its
+            own - the product backdrop must read through the whole body, not
+            stop at 导航栏. It is no longer the fullscreen target either (that
+            moved to the shell root), so the hand-rolled `fixed inset-0` layer
+            that used to live here is gone, and with it the only place this
+            file painted a ground. */}
+        <main className="min-w-0 flex-1 overflow-y-auto">
+          {/* 内衬 content inset: px-md = 16px, the ONE edge padding a pane adds
+              on top of the 工作区 constants. It puts the reading column 48px
+              clear of 导航栏 and of 值班台 (32px pane spacer + 16px inset) -
               the side panes sit at the window margin, the content deliberately
-              does not (owner 2026-08-24). pb keeps a safe run-out under the
+              does not (owner 2026-08-25). pb keeps a safe run-out under the
               last section.
 
               @container makes this element the query context for everything
@@ -136,7 +129,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
               query it with `@min-[Nrem]:`; the arithmetic behind each
               threshold is written out at the asset grid in
               (portal)/overview-client.tsx. */}
-          <div className="@container flex w-full flex-col gap-md px-xl pb-5xl">{children}</div>
+          <div className="@container flex w-full flex-col gap-md px-md pb-5xl">{children}</div>
         </main>
         {dockOpen && <StewardDock shell={shell} onClose={toggleDock} />}
       </div>

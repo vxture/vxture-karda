@@ -10,17 +10,21 @@ import type { ShellData } from "../kb/demo/shell-types";
 // functional domain, sitting on the shared ground (the pane itself paints
 // nothing).
 //
-// Shell vocabulary, product-wide (owner 2026-08-24). Use these words and no
-// synonyms - "rail", "flank", "column", "sidebar" are all retired:
+// Shell vocabulary, product-wide (owner 2026-08-24, spacing revised
+// 2026-08-25). Use these words and no synonyms - "rail", "flank", "column",
+// "sidebar" are all retired, and so are the casual English placeholders
+// ("nav / content / action") the sizes were first discussed in:
 //   顶栏 header        the 48px bar (Material: top app bar)
 //   工作区 shell body   EVERYTHING below the header - the three panes together
-//   导航栏 nav pane     this file. Not a "rail": Material reserves that for the
-//                      80dp icon strip; a 280px card column is a pane.
-//   内容区 main pane    the middle, scrolling pane (ARIA <main>)
-//   值班台 steward dock the right pane
-//   栏间距 pane spacer  24px between panes (Material pane spacer)
+//   导航栏 nav pane     this file, 280px. Not a "rail": Material reserves that
+//                      for the 80dp icon strip; a 280px card column is a pane.
+//   内容区 main pane    the middle, scrolling pane (ARIA <main>), width follows
+//   值班台 steward dock the right pane, 400px. Named for what it IS - a duty
+//                      desk with pending items - not "action pane"; it is a
+//                      product surface, not a generic inspector.
+//   栏间距 pane spacer  32px between panes (Material pane spacer)
 //   外边距 window margin 24px from the browser edge (Material margins)
-//   内衬 content inset  32px the 内容区 adds inside its own pane
+//   内衬 content inset  16px the 内容区 adds inside its own pane
 //
 // Each card answers the SAME three questions in the same order (owner
 // 2026-08-24): what is the core figure, is it growing, what is wrong. The
@@ -438,9 +442,10 @@ export function NavPane({
   return (
     // No padding of its own: the window margin owns the outer edge and the
     // pane spacer owns the gap to the 内容区; this pane only sets the rhythm
-    // BETWEEN its cards. Scrollbar hidden - the pane is chrome, a track down
-    // its edge would read as content.
-    <div className="flex w-[17.5rem] shrink-0 flex-col gap-md overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    // BETWEEN its cards. The scrollbar-hiding that used to be spelled here is
+    // now a global rule (globals.css) - the reason it was written for turned
+    // out to apply to every surface, not just this pane.
+    <div className="flex w-[17.5rem] shrink-0 flex-col gap-md overflow-y-auto">
       {NAV_ITEMS.map((item) => {
         const domainActive = isActive(item.href);
         const open = !closed.has(item.key);
