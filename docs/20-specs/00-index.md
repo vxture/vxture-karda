@@ -19,3 +19,5 @@ repo) > `30-agent-knowledge-blueprint` (positioning and direction) >
 `docs/30-design/`. The positioning uplift (KD-017) does not silently override
 settled KD rulings - structural conflicts are reconciled one by one in the
 decision register.
+
+| `40-tier-capability-matrix.md` | tier -> feature keys / limits / quota pools; the karda-side input the platform needs before it can publish the five plan tiers | Proposal v0.1, awaiting owner ruling |

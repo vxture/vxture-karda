@@ -519,9 +519,13 @@ queue, and can see the number move.
 ## Batch 12 - external knowledge intake has a face
 
 The connector framework, binding lifecycle and revoke-cascade are complete and
-have zero UI. This is also the batch that makes the Arda channel land as
-configuration rather than as engineering the day arda answers - the framework
-carries nothing connector-specific, so Arda is one `connector_code`.
+have zero UI. The framework carries nothing connector-specific, so whichever source lands
+first is configuration rather than engineering.
+
+**Note on coupling:** this batch is about the connector FRAMEWORK's face, not
+about any one source. arda is one `connector_code` among several and is not a
+dependency (KD-104); the batch ships and is useful with whatever sources exist,
+including none.
 
 | Item | Backing capability | State |
 |------|-------------------|-------|
@@ -590,16 +594,34 @@ the clock does not start for months. Implementation still lands in order.
 None of these is scheduled, because none is ours to schedule. Each is ready and
 self-verified on our side.
 
-| Blocked item | Waiting on | Since |
-|---|---|---|
-| Arda content channel | arda line - 5 questions | 2026-07-22 |
-| Deep parsing (Atlas A2) | atlas line - 4 request-side questions; one of them decides whether karda must build PDF rasterisation | 2026-08-18 |
-| Runos capability registration | runos line - `runos#156`; until then the channel can receive but is never sent to | 2026-08-18 |
-| Five plan tiers, and therefore all of C2 | owner - KD-203 + product definition v1 | open |
+**Owner correction 2026-08-25: two of these were never blockers, and calling
+them that was a coupling error.**
 
-The last one is worth stating plainly: **C2 resolves every workspace as
-unsubscribed until the tiers publish**, so quota and capability gating are
-running but gating nothing. That is a decision block, not an engineering one.
+**Arda is not a dependency.** karda is a self-contained platform. `KD-104` already
+ratified it - arda is ONE connector reached through the `220-connector-framework`
+(an implementation-layer dependency), not a structural one, and karda closes its
+own loop. The framework carries nothing connector-specific, so a different source
+- or no source at all, with upload and the agent write path alone - is a complete
+product. The Arda channel is now tracked as **one connector among several**, not
+as a blocked requirement, and the capability register's "必须" on it was wrong.
+
+**PDF rasterisation: not built, extension point kept (owner 2026-08-25).** Deep
+parsing stays permanent-fail-for-now for MVP. That was already KD-101's ruling
+("质量增强项，不是启动门"), so the Atlas A2 questions stop being a blocker and
+become a roadmap item - the answer changes what we build later, not whether we
+ship.
+
+| Item | Waiting on | Since | Blocks MVP? |
+|---|---|---|---|
+| Runos capability registration | runos line - `runos#156`; until then the channel can receive but is never sent to | 2026-08-18 | the Runos channel only; the direct S2S channel is unaffected |
+| Five plan tiers, and therefore all of C2 | owner - see `20-specs/40-tier-capability-matrix.md` | open | **yes - the whole commercial surface** |
+| Arda content channel | arda line - 5 questions | 2026-07-22 | **no** - one connector, not a dependency |
+| Deep parsing (Atlas A2) | atlas line - 4 request-side questions | 2026-08-18 | **no** - scanned/complex layouts stay permanent-fail for MVP |
+
+Only one of these blocks the product, and it is ours to unblock: **C2 resolves
+every workspace as unsubscribed until the tiers publish**, so quota and
+capability gating run but gate nothing. `40-tier-capability-matrix.md` is the
+karda-side input that removes it; it needs an owner ruling, not engineering.
 
 ---
 
