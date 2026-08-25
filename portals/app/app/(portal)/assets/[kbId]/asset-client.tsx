@@ -10,6 +10,10 @@ import {
   listFolders,
   listMetadataFields,
   listProcessingTemplates,
+  listBindings,
+  listConnectors,
+  createBinding,
+  bindingAction,
   uploadDocument,
   deleteDocument,
   reprocessDocument,
@@ -30,12 +34,15 @@ import {
   type MetadataBudget,
   type MetadataField,
   type ProcessingTemplateOption,
+  type Binding,
+  type ConnectorInfo,
 } from "../../../_lib/api";
 import { sharingMeta, apiErrorMessage, type PublishState } from "../../../_lib/format";
 import { SignInGate } from "../../../_lib/ui";
 import { PageHead } from "../../../_shell/PageHead";
 import { DocumentPanel } from "./DocumentPanel";
 import { SettingsPanel } from "./SettingsPanel";
+import { BindingPanel } from "./BindingPanel";
 
 // One library, two tabs: what is IN it and how it BEHAVES. This page owns all
 // server state and every mutation; the two panels are presentational and take
@@ -60,6 +67,8 @@ export function AssetClient() {
   const [templates, setTemplates] = useState<ProcessingTemplateOption[]>([]);
   const [fields, setFields] = useState<MetadataField[]>([]);
   const [budget, setBudget] = useState<MetadataBudget | null>(null);
+  const [bindings, setBindings] = useState<Binding[] | null>(null);
+  const [connectors, setConnectors] = useState<(ConnectorInfo & { code: string; meetsDeleteInvariant: boolean })[]>([]);
   const [needsAuth, setNeedsAuth] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -103,6 +112,8 @@ export function AssetClient() {
         },
         (e) => guard(e, "字段声明加载失败。"),
       ),
+      listBindings(kbId).then(setBindings, (e) => guard(e, "外部来源加载失败。")),
+      listConnectors().then(setConnectors, (e) => guard(e, "连接器目录加载失败。")),
     ]);
   }, [kbId, guard, loadDocs]);
 
@@ -162,6 +173,9 @@ export function AssetClient() {
         <Tabs defaultValue="documents" className="flex flex-col gap-md">
           <TabsList>
             <TabsTrigger value="documents">文档{docs ? ` (${docs.length})` : ""}</TabsTrigger>
+            <TabsTrigger value="bindings">
+              外部来源{bindings ? ` (${bindings.filter((b) => b.state !== "revoked").length})` : ""}
+            </TabsTrigger>
             <TabsTrigger value="settings">设置</TabsTrigger>
           </TabsList>
 
@@ -199,6 +213,36 @@ export function AssetClient() {
                 run("删除失败。", async () => {
                   await deleteDocument(kbId, doc.id);
                   await loadDocs();
+                })
+              }
+            />
+          </TabsContent>
+
+          <TabsContent value="bindings">
+            <BindingPanel
+              kb={kb}
+              bindings={bindings}
+              connectors={connectors}
+              busy={busy}
+              onCreate={(connectorCode, externalSourceId) =>
+                run("绑定失败。", async () => {
+                  const r = await createBinding(kbId, connectorCode, externalSourceId);
+                  setBindings(await listBindings(kbId));
+                  return `已绑定 ${r.connector?.name ?? connectorCode} · ${externalSourceId}，将从回填开始。`;
+                })
+              }
+              onAction={(binding, action) =>
+                run("操作失败。", async () => {
+                  const r = await bindingAction(kbId, binding.id, action);
+                  setBindings(await listBindings(kbId));
+                  if (action === "revoke") {
+                    // Report what the cascade ACTUALLY did, not what the preview
+                    // predicted - if they ever diverge, the owner should see the
+                    // real number.
+                    await loadDocs();
+                    return `已撤销 ${binding.externalSourceId}，${r.cascade?.tombstoned ?? 0} 份文档已退出检索。`;
+                  }
+                  return action === "pause" ? "已暂停同步。" : "已恢复同步。";
                 })
               }
             />

@@ -617,12 +617,14 @@ or folds into 14.
   dressed as work, in the exact list this batch was making clickable. They are
   excluded from the LIST now but still count toward the coverage FIGURE.
 
-**Open question for the owner - the coverage denominator.** A library with
-governance off keeps its content in the denominator, so workspace coverage can
-never reach 100% while any such library holds documents (the walk-through
-finished at 67% with four un-verifiable drafts). Excluding them would make
-coverage drivable to 100% but quietly redefines the headline metric on three
-surfaces (总览 / 验证评测 / 导航卡). Not changed unilaterally.
+**The coverage denominator - SETTLED (KD-208, owner 2026-08-25).** A library
+with governance off keeps its content in the denominator. Coverage therefore
+cannot reach 100% while any such library holds documents, and **that is the true
+picture, not a defect**: those documents genuinely have not been verified. The
+ruling is explicitly not to move the goalposts so the number looks better.
+Consequence worth carrying forward: 覆盖率 100% must never be presented as a
+target or a scorecard item - "everything that should be verified has been" is
+answered by an EMPTY QUEUE, not by a percentage.
 
 **Also landed:** `POST /api/kb/:id/entries/:entryId/verify`. The document verify
 route has existed since Track 12; its twin did not, and ENTRIES ARE WHAT AGENTS
@@ -644,13 +646,44 @@ including none.
 
 | Item | Backing capability | State |
 |------|-------------------|-------|
-| Binding management: create, mode (backfill / incremental), pause, revoke | `/api/kb/[id]/bindings`, `binding-service.ts` | no UI |
-| Revoke confirmation that states the cascade in advance | `revokeCascade` | behaviour exists, consequence invisible |
-| Sync state, cursor, last-synced, per-binding failure surface | `binding.cursor` / `last_synced_at` | no UI |
+| Binding management: create, mode (backfill / incremental), pause, revoke | `BindingPanel.tsx` over the existing routes | **done 2026-08-25** |
+| Revoke confirmation that states the cascade in advance | `revoke-preview.ts`, `GET .../revoke-preview` | **done 2026-08-25** |
+| Sync state, cursor, last-synced, per-binding failure surface | binding row renders state / mode / cursor / last-synced | **done 2026-08-25** |
 
-**Acceptance:** an admin can subscribe a library to a source, watch it backfill,
-pause it, and revoke it while being told beforehand how much content leaves
-recall.
+**Acceptance: MET, walked end to end 2026-08-25** against a throwaway Postgres.
+Bound `arda / ops-manuals-2026` through the UI, drove a real five-document
+backfill through `POST /api/connectors/ingest`, verified three of them, opened
+the revoke confirmation - which stated **5 documents leaving recall, 3 of them
+verified, and that the source can never be re-bound** - confirmed, and the
+cascade reported the same 5. Pause and resume round-trip. Re-binding the revoked
+source is refused with `binding_exists`, exactly as the dialog promised.
+
+**The severe consequence was invisible, and it is not the document count.**
+`uidx_binding_kb_connector_source` is UNIQUE over
+(kb_id, connector_code, external_source_id) with **no state predicate**, and
+`findBySource` matches revoked rows - so once a source is revoked from a library
+it can NEVER be bound to that library again. Revoke is not "unsubscribe now,
+resubscribe later"; it is permanent for that pair. Nothing in the API says so,
+and an owner who learns it after clicking has learned it too late. The
+confirmation now states it as plainly as the count, revoked bindings stay listed
+(hiding them would make the constraint look arbitrary when it bites), and
+`binding_exists` gets wording that names this cause rather than the generic 409.
+
+**No confirm button until the cost is known.** If the preview read fails the
+dialog says so and offers no way through - a confirmation over an unknown
+consequence is not a confirmation.
+
+**Also landed:** `GET /api/connectors`, the catalogue projection. The bind form
+cannot offer a choice it has no way to enumerate, and the projection publishes
+each connector's **degradations and I4 status**, not just its name - section 4
+requires the trade-offs be explicitly accepted, which can only happen if the
+owner sees them before binding.
+
+**Coverage note.** The registry holds exactly one connector, and it is the
+strongest possible declaration (notify/source/ref/list/tombstone), so the
+degradation and I4-gap rendering paths have no live exercise. Pinned by unit
+tests over the projection instead - including the weakest possible capability
+set, which is the case that must never render as a clean bind.
 
 ## Batch 13 - the consumer-facing surface
 
