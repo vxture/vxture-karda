@@ -1,5 +1,5 @@
 import { getPrismaClient } from "../../lib/db";
-import type { StageDot, QueueTier, PipelineTask } from "../demo/pipeline-types";
+import type { ProcessingStage, StageDot, QueueTier, PipelineTask } from "../demo/pipeline-types";
 import type { Stage } from "./stages";
 
 // The 加工管道 read model (240-ops-read-models section 4.1/4.2), reading the rows
@@ -101,21 +101,33 @@ export function dotsFor(row: {
   return dots as [StageDot, StageDot, StageDot, StageDot, StageDot];
 }
 
-/** The status line for a task row - the state in the reader's vocabulary. */
-export function statusFor(row: TaskRow): { statusLabel: string; statusTone: PipelineTask["statusTone"] } {
+/**
+ * WHAT a task row is doing, and how loud to paint it.
+ *
+ * It used to return a finished Chinese sentence built from `currentStage` - a
+ * CODE - so the live path rendered "fetch 处理中". Returning the shape lets the
+ * call site say it properly in whatever language the reader chose.
+ */
+export function statusFor(row: TaskRow): Pick<PipelineTask, "status" | "statusTone"> {
+  const stage = row.currentStage as ProcessingStage;
   switch (row.state) {
     case "running":
-      return { statusLabel: `${row.currentStage} 处理中`, statusTone: "primary" };
+      return { status: { kind: "running", stage }, statusTone: "primary" };
     case "queued":
-      return { statusLabel: row.attempt > 1 ? `重试等待 · 第 ${row.attempt} 次` : "排队中", statusTone: "muted" };
+      return row.attempt > 1
+        ? { status: { kind: "retrying", attempt: row.attempt }, statusTone: "muted" }
+        : { status: { kind: "queued" }, statusTone: "muted" };
     case "suspended":
       // Quota/unavailable parks the task; it resumes on its own, so this is not
       // an error state and must not be painted as one.
-      return { statusLabel: row.failureClass === "quota" ? "挂起 · 配额" : "挂起 · 待恢复", statusTone: "warning" };
+      return {
+        status: { kind: row.failureClass === "quota" ? "suspendedQuota" : "suspendedOther" },
+        statusTone: "warning",
+      };
     case "failed":
-      return { statusLabel: `失败 · ${row.currentStage}`, statusTone: "danger" };
+      return { status: { kind: "failed", stage }, statusTone: "danger" };
     default:
-      return { statusLabel: "已入藏", statusTone: "muted" };
+      return { status: { kind: "committed" }, statusTone: "muted" };
   }
 }
 
@@ -192,7 +204,7 @@ export function tallyTasks(rows: TaskRow[], now: number): TaskTally {
     .map((r) => ({
       id: r.id.slice(0, 8),
       title: r.documentTitle,
-      detail: [r.kbName, r.tier, r.attempt > 1 ? `第 ${r.attempt} 次` : null].filter(Boolean).join(" · "),
+      detail: [r.kbName, r.tier, r.attempt > 1 ? `#${r.attempt}` : null].filter(Boolean).join(" · "),
       dots: dotsFor(r),
       ...statusFor(r),
       // Derived, never a stored boolean (240 section 4.1): a deposit is a write
@@ -253,7 +265,7 @@ export async function readTasks(workspaceId: string, now: number = Date.now()): 
     rows.map((r) => ({
       ...r,
       kbName: r.knowledgeBase?.name ?? "—",
-      documentTitle: r.document?.title ?? "(未命名文档)",
+      documentTitle: r.document?.title ?? null,
       stages: r.stages,
     })),
     now,

@@ -13,6 +13,17 @@ export const common = {
   retry: { "zh-CN": "重试", "en-US": "Retry" },
   pause: { "zh-CN": "暂停", "en-US": "Pause" },
   close: { "zh-CN": "关闭", "en-US": "Close" },
+  all: { "zh-CN": "全部", "en-US": "All" },
+
+  // --- the sign-in gate --------------------------------------------------------
+  // Rendered by `_lib/ui.tsx` on every page that needs a session, so it belongs
+  // to no domain.
+  signInTitle: { "zh-CN": "登录后使用", "en-US": "Sign in to continue" },
+  signInBody: {
+    "zh-CN": "登录已过期，或你还没有登录。",
+    "en-US": "Your session expired, or you have not signed in yet.",
+  },
+  signIn: { "zh-CN": "登录", "en-US": "Sign in" },
   expand: { "zh-CN": "展开", "en-US": "Expand" },
   collapse: { "zh-CN": "收起", "en-US": "Collapse" },
 

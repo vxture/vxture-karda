@@ -15,6 +15,7 @@ import { loginHref } from "../../_lib/api";
 import { PageHead } from "../../_shell/PageHead";
 import type { ReportUnit, ReportRowKey, StewardStageKey, PipelineData, ProposalKind } from "../../kb/demo/pipeline-types";
 import { useMessages } from "../../_i18n/useMessages";
+import { common } from "../../_i18n/messages/common";
 import { pipeline as pipelineMessages } from "../../_i18n/messages/pipeline";
 import { shell } from "../../_i18n/messages/shell";
 import { assets } from "../../_i18n/messages/assets";
@@ -71,6 +72,7 @@ const REPORT_KEY: Record<ReportRowKey, PKey> = {
 export function PipelineClient() {
   const m = useMessages(pipelineMessages);
   const sh = useMessages(shell);
+  const c = useMessages(common);
   const a = useMessages(assets);
   const [data, setData] = useState<PipelineData | null>(null);
   const [needsAuth, setNeedsAuth] = useState(false);
@@ -95,7 +97,7 @@ export function PipelineClient() {
           description={m.needSignInDesc}
           action={
             <Button asChild>
-              <a href={loginHref("/pipeline")}>{sh.signIn}</a>
+              <a href={loginHref("/pipeline")}>{c.signIn}</a>
             </Button>
           }
         />

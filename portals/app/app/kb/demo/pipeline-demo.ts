@@ -110,7 +110,7 @@ export const DEMO_TASKS: TasksData = {
       title: "GB 51427-2026 自动消防设施通用技术要求.pdf",
       detail: "行业标准与法规 · 深度解析 · legal 模板 · 交互队列",
       dots: ["done", "active", "todo", "todo", "todo"],
-      statusLabel: "解析中 62% · 版面",
+      status: { kind: "running", stage: "parse", detail: "62% · 版面" },
       statusTone: "primary",
     },
     {
@@ -118,7 +118,7 @@ export const DEMO_TASKS: TasksData = {
       title: "forge 沉淀:市政项目投标问答摘录(12 条)",
       detail: "投标知识库 · runos · karda.kb-write · 落为草稿 → 管家萃取 → 预验",
       dots: ["done", "done", "ai", "todo", "todo"],
-      statusLabel: "管家萃取中",
+      status: { kind: "running", stage: "chunk", detail: "管家萃取中" },
       statusTone: "ai",
       agentDeposit: true,
     },
@@ -127,7 +127,7 @@ export const DEMO_TASKS: TasksData = {
       title: "华东区重点客户档案(arda 增量 · 3 份变更)",
       detail: "客户与项目档案 · hash 判据 delta · 同步队列",
       dots: ["done", "done", "done", "active", "todo"],
-      statusLabel: "向量化 · 批 32",
+      status: { kind: "running", stage: "embed", detail: "批 32" },
       statusTone: "primary",
     },
     {
@@ -135,7 +135,7 @@ export const DEMO_TASKS: TasksData = {
       title: "巡检无人机作业手册 v4.docx",
       detail: "设备作业手册 · manual 模板 · 父子分块 214",
       dots: ["done", "done", "done", "done", "active"],
-      statusLabel: "原子替换 v3→v4",
+      status: { kind: "running", stage: "commit", detail: "v3→v4" },
       statusTone: "primary",
     },
     {
@@ -143,7 +143,7 @@ export const DEMO_TASKS: TasksData = {
       title: "应急救援员职业技能教材(全 4 册).pdf",
       detail: "培训与考核题库 · 加工配额尽 · 恢复自动续跑",
       dots: ["done", "done", "done", "warn", "todo"],
-      statusLabel: "挂起 · 配额",
+      status: { kind: "suspendedQuota" },
       statusTone: "warning",
     },
     {
@@ -151,7 +151,7 @@ export const DEMO_TASKS: TasksData = {
       title: "扫描版-老旧法规汇编 1998.pdf",
       detail: "行业标准与法规 · 永久失败 · 版面无法还原(损坏页 41-58)",
       dots: ["done", "fail", "todo", "todo", "todo"],
-      statusLabel: "驻留 · 修正后重试",
+      status: { kind: "failed", stage: "parse", detail: "修正后重试" },
       statusTone: "danger",
     },
     {
@@ -159,7 +159,7 @@ export const DEMO_TASKS: TasksData = {
       title: "城市综合管廊运行维护技术标准.pdf",
       detail: "行业标准与法规 · Atlas 429 退避 · 第 2/5 次 · 断点续跑自向量化",
       dots: ["done", "done", "done", "todo", "todo"],
-      statusLabel: "重试等待 42s",
+      status: { kind: "retrying", attempt: 2, detail: "42s" },
       statusTone: "muted",
     },
   ],

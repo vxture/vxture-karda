@@ -8,6 +8,7 @@ import { useMessages } from "../_i18n/useMessages";
 import { useFormat } from "../_i18n/useFormat";
 import { shell as shellMessages } from "../_i18n/messages/shell";
 import { channels as channelMessages } from "../_i18n/messages/channels";
+import { evaluation as evalMessages } from "../_i18n/messages/evaluation";
 import type { ShellData } from "../kb/demo/shell-types";
 
 // 导航栏 (nav pane) - the left pane of the shell body: one card per
@@ -260,6 +261,7 @@ function TitleTag({ count, tone, label }: { count: number; tone: "warning" | "da
 function DomainTag({ itemKey, shell }: { itemKey: string; shell: ShellData | null }) {
   const m = useMessages(shellMessages);
   const ch = useMessages(channelMessages);
+  const ev = useMessages(evalMessages);
   const f = useFormat();
   if (!shell) return null;
   if (itemKey === "overview" && shell.overview.needsAttention > 0) {
@@ -288,6 +290,7 @@ function FootFigures({ items }: { items: { k: string; v: string; tone?: string }
 function CardBody({ item, shell }: { item: NavItem; shell: ShellData | null }) {
   const m = useMessages(shellMessages);
   const ch = useMessages(channelMessages);
+  const ev = useMessages(evalMessages);
   const f = useFormat();
   if (!shell) {
     // Same height as a settled body, so the pane does not jump on arrival.
@@ -390,7 +393,7 @@ function CardBody({ item, shell }: { item: NavItem; shell: ShellData | null }) {
             items={[
               { k: f.verification("verified").label, v: f.compact(e.verified), tone: "text-success-text" },
               { k: f.verification("stale").label, v: String(e.stale), tone: "text-warning-text" },
-              { k: m.gaps, v: String(e.gaps), tone: "text-destructive-text" },
+              { k: ev.gapsLabel, v: String(e.gaps), tone: "text-destructive-text" },
             ]}
           />
         </span>
@@ -412,6 +415,7 @@ export function NavPane({
 }) {
   const m = useMessages(shellMessages);
   const ch = useMessages(channelMessages);
+  const ev = useMessages(evalMessages);
   const f = useFormat();
   const [closed, setClosed] = useState<Set<string>>(() => new Set());
 

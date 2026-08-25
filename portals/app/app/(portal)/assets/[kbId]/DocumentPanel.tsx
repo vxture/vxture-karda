@@ -97,7 +97,7 @@ export function DocumentPanel({
   // Only offer folders that exist. An empty catalogue means the filter row is
   // noise, not an empty control.
   const filterItems = [
-    { value: "", label: m.docFilterAll, count: docs?.length ?? 0 },
+    { value: "", label: c.all, count: docs?.length ?? 0 },
     ...folders.map((f) => ({ value: f.id, label: f.name, count: counts.get(f.id) ?? 0 })),
     ...(counts.get(UNFILED) ? [{ value: UNFILED, label: m.docUnfiled, count: counts.get(UNFILED) ?? 0 }] : []),
   ];

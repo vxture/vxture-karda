@@ -86,7 +86,6 @@ export const shell = {
   newAsset: { "zh-CN": "新建资产", "en-US": "New asset" },
 
   // --- account ---------------------------------------------------------------
-  signIn: { "zh-CN": "登录", "en-US": "Sign in" },
   signOut: { "zh-CN": "退出登录", "en-US": "Sign out" },
   switchAccount: { "zh-CN": "切换账号", "en-US": "Switch account" },
   signedIn: { "zh-CN": "已登录", "en-US": "Signed in" },
@@ -117,7 +116,6 @@ export const shell = {
   } satisfies MessageFn<[number]>,
   rebuilding: { "zh-CN": "重建中", "en-US": "Rebuilding" },
   verifyCoverage: { "zh-CN": "验证覆盖", "en-US": "Verification coverage" },
-  gaps: { "zh-CN": "缺口", "en-US": "Gaps" },
   collapseItem: {
     "zh-CN": (label: string) => `收起${label}`,
     "en-US": (label: string) => `Collapse ${label}`,

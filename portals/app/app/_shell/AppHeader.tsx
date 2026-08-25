@@ -21,6 +21,7 @@ import { getSession, loginHref, type SessionUser } from "../_lib/api";
 import { NAV_ITEMS, PORTAL_FULLSCREEN_ID, activeNavKey } from "./nav";
 import { isLocale, useLocale } from "./locale";
 import { useMessages } from "../_i18n/useMessages";
+import { common } from "../_i18n/messages/common";
 import { shell } from "../_i18n";
 import { ScopePanel } from "./ScopePanel";
 import { ROLE_LABEL_KEY } from "./roles";
@@ -71,6 +72,7 @@ export function AppHeader({
   const { mode, setMode, density, setDensity, fontSize, setFontSize } = useTheme();
   const { locale, setLocale } = useLocale();
   const m = useMessages(shell);
+  const c = useMessages(common);
   // The DS preference panel takes every label as a prop - DS 8.0.0 has no
   // locale context and will not acquire one, so the whole panel is translated
   // at this call site.
@@ -257,7 +259,7 @@ export function AppHeader({
           links={
             user
               ? [{ key: "assets", label: m.newAsset, href: "/assets/new", icon: "folder-open" as const }]
-              : [{ key: "login", label: m.signIn, href: loginHref(pathname ?? "/"), icon: "user" as const }]
+              : [{ key: "login", label: c.signIn, href: loginHref(pathname ?? "/"), icon: "user" as const }]
           }
           actions={
             user

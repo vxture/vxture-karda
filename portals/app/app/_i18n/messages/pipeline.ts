@@ -117,6 +117,43 @@ export const pipeline = {
   dotChunk: { "zh-CN": "块", "en-US": "chk" },
   dotEmbed: { "zh-CN": "向", "en-US": "emb" },
   dotCommit: { "zh-CN": "藏", "en-US": "cmt" },
+  // The five PROCESSING stages, full names. Distinct from the five STEWARD
+  // stages above (understand/extract/weave/verify/commit): these are the
+  // pipeline's mechanical steps and are what `processing_task.current_stage`
+  // stores.
+  procFetch: { "zh-CN": "取回", "en-US": "Fetch" },
+  procParse: { "zh-CN": "解析", "en-US": "Parse" },
+  procChunk: { "zh-CN": "分块", "en-US": "Chunk" },
+  procEmbed: { "zh-CN": "向量化", "en-US": "Embed" },
+  procCommit: { "zh-CN": "入藏", "en-US": "Commit" },
+
+  // A task's status line. It used to be composed on the server as
+  // `${row.currentStage} 处理中` - and `current_stage` is a CODE, so the live
+  // path rendered "fetch 处理中": an English identifier against a Chinese word,
+  // wrong in either language. Now the server sends the state and the stage, and
+  // the sentence is built here.
+  statusRunning: {
+    "zh-CN": (stage: string) => `${stage}处理中`,
+    "en-US": (stage: string) => `${stage} in progress`,
+  } satisfies MessageFn<[string]>,
+  statusQueued: { "zh-CN": "排队中", "en-US": "Queued" },
+  statusRetrying: {
+    "zh-CN": (attempt: number) => `重试等待 · 第 ${attempt} 次`,
+    "en-US": (attempt: number) => `Waiting to retry · attempt ${attempt}`,
+  } satisfies MessageFn<[number]>,
+  statusSuspendedQuota: { "zh-CN": "挂起 · 配额", "en-US": "Suspended · quota" },
+  statusSuspendedOther: { "zh-CN": "挂起 · 待恢复", "en-US": "Suspended · awaiting recovery" },
+  statusFailed: {
+    "zh-CN": (stage: string) => `失败 · ${stage}`,
+    "en-US": (stage: string) => `Failed · ${stage}`,
+  } satisfies MessageFn<[string]>,
+  statusCommitted: { "zh-CN": "已入藏", "en-US": "Committed" },
+  attemptNth: {
+    "zh-CN": (n: number) => `第 ${n} 次`,
+    "en-US": (n: number) => `attempt ${n}`,
+  } satisfies MessageFn<[number]>,
+  untitledDocument: { "zh-CN": "（未命名文档）", "en-US": "(untitled document)" },
+
   tileThroughput: { "zh-CN": "今日吞吐", "en-US": "THROUGHPUT TODAY" },
   tileThroughputNote: {
     "zh-CN": (p95: number) => `docs · 端到端 P95 ${p95}s`,

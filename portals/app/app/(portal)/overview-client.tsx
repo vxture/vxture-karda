@@ -17,6 +17,7 @@ import {
 } from "@vxture/design-system";
 import { loginHref } from "../_lib/api";
 import { useMessages } from "../_i18n/useMessages";
+import { common } from "../_i18n/messages/common";
 import { useFormat } from "../_i18n/useFormat";
 import { assets } from "../_i18n/messages/assets";
 import { shell } from "../_i18n/messages/shell";
@@ -129,7 +130,8 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
           <div className="flex min-w-0 flex-1 flex-col gap-2xs">
             <span className="truncate text-label-lg text-foreground">{asset.name}</span>
             <span className={`truncate text-body-sm ${asset.source === "agent" ? "text-ai-text" : "text-muted-foreground"}`}>
-              {asset.sourceLabel} · {asset.entryCount > 0 ? m.cardEntries(asset.entryCount) : m.cardDocs(asset.docCount)}
+              {asset.sourceLabel ?? (asset.source === "agent" ? m.sourceSelfBuilt : m.sourcePlatform)} ·{" "}
+              {asset.entryCount > 0 ? m.cardEntries(asset.entryCount) : m.cardDocs(asset.docCount)}
             </span>
           </div>
           <VisibilityGlyph state={asset.publishState} />
@@ -172,7 +174,8 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
                 : "bg-muted/60 text-muted-foreground"
           }`}
         >
-          {asset.highlight.text}
+          {asset.highlight.text ??
+            (asset.highlight.kind === "agent_usage" ? m.heatLast7d(asset.heat7d) : m.noOpsYet)}
           {asset.highlight.strong && <span className="text-foreground">{asset.highlight.strong}</span>}
           {asset.highlight.action && (
             <>
@@ -204,6 +207,7 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
 export function OverviewClient() {
   const m = useMessages(assets);
   const sh = useMessages(shell);
+  const c = useMessages(common);
   const f = useFormat();
   const [data, setData] = useState<OverviewData | null>(null);
   const [needsAuth, setNeedsAuth] = useState(false);
@@ -243,7 +247,7 @@ export function OverviewClient() {
           description={m.needSignInDesc}
           action={
             <Button asChild>
-              <a href={loginHref("/")}>{sh.signIn}</a>
+              <a href={loginHref("/")}>{c.signIn}</a>
             </Button>
           }
         />

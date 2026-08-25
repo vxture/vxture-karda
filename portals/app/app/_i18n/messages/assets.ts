@@ -41,7 +41,6 @@ export const assets = {
   errCreate: { "zh-CN": "创建失败。", "en-US": "Could not create the asset." },
 
   // --- documents panel -------------------------------------------------------
-  docFilterAll: { "zh-CN": "全部", "en-US": "All" },
   docUnfiled: { "zh-CN": "未归档", "en-US": "Unfiled" },
   docFilterAria: { "zh-CN": "按目录筛选", "en-US": "Filter by folder" },
   uploadTo: { "zh-CN": "上传至", "en-US": "Upload to" },
@@ -347,7 +346,6 @@ export const assets = {
   },
 
   // --- settings: verification governance -------------------------------------
-  govCardTitle: { "zh-CN": "验证治理", "en-US": "Verification governance" },
   govOn: {
     "zh-CN": (interval: string) => `已开启。${interval}续验。`,
     "en-US": (interval: string) => `On. Re-verification: ${interval}.`,
@@ -409,6 +407,17 @@ export const assets = {
     "zh-CN": (n: number) => `${n} 文档`,
     "en-US": (n: number) => `${n} doc${n === 1 ? "" : "s"}`,
   } satisfies MessageFn<[number]>,
+  // Composed on the card when the producer sent only the FIGURE. The seed data
+  // still authors a richer sentence per asset; the live path cannot, so it
+  // sends `text: null` and the card says it here.
+  sourceSelfBuilt: { "zh-CN": "自建", "en-US": "Self-built" },
+  sourcePlatform: { "zh-CN": "平台共建", "en-US": "Platform-built" },
+  heatLast7d: {
+    "zh-CN": (n: number) => `近 7 日被引用 ${n} 次`,
+    "en-US": (n: number) => `cited ${n}× in the last 7 days`,
+  } satisfies MessageFn<[number]>,
+  noOpsYet: { "zh-CN": "尚无运营数据", "en-US": "No operating data yet" },
+
   stewardProcessing: { "zh-CN": "管家加工中", "en-US": "Steward is processing" },
   parkedCount: {
     "zh-CN": (n: number) => `${n} 份停放待向量化`,

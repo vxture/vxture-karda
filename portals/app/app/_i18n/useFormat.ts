@@ -82,6 +82,14 @@ export interface FormatHelpers {
    * `n >= 10000 ? (n/10000)+"万"` produced "1.2万" for every locale. Intl
    * already knows both systems.
    */
+  /**
+   * How long ago, in the reader's language. Null in, null out - the call site
+   * says "never" in its own words.
+   *
+   * Intl beats a hand-rolled ladder on more than language: it says 昨天 /
+   * yesterday where a `Math.floor(hours / 24)` version says 1 天前.
+   */
+  relative(iso: string | null | undefined): string | null;
   compact(n: number): string;
   /** The verification clock as a sentence. null when there is nothing to say. */
   record(rec: VerificationRecord): string | null;
@@ -144,6 +152,17 @@ export function useFormat(): FormatHelpers {
       apiError(status, code) {
         const { key, withCode } = apiErrorKey(status, code);
         return withCode ? `${m[key]} (${code})` : m[key];
+      },
+      relative(iso) {
+        if (!iso) return null;
+        const then = new Date(iso).getTime();
+        if (Number.isNaN(then)) return null;
+        const rtf = new Intl.RelativeTimeFormat(locale as Locale, { numeric: "auto" });
+        const mins = Math.round((then - Date.now()) / 60_000);
+        if (Math.abs(mins) < 60) return rtf.format(mins, "minute");
+        const hours = Math.round(mins / 60);
+        if (Math.abs(hours) < 24) return rtf.format(hours, "hour");
+        return rtf.format(Math.round(hours / 24), "day");
       },
       compact(n) {
         // Below the threshold the exact number is more useful than an

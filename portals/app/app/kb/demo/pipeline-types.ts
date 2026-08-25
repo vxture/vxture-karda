@@ -5,6 +5,9 @@
 /** The five steward stages (design canvas V2: 理解/萃取/编织/验证/入藏). */
 export type StewardStageKey = "understand" | "extract" | "weave" | "verify" | "commit";
 
+/** The pipeline's mechanical stages, as stored in `processing_task.current_stage`. */
+export type ProcessingStage = "fetch" | "parse" | "chunk" | "embed" | "commit";
+
 /** The six fixed rows of 今日战报. Values are per-run; the row NAMES are not. */
 export type ReportRowKey = "parsed" | "units" | "merged" | "conflicts" | "preVerified" | "reflux";
 
@@ -54,7 +57,21 @@ export interface PipelineTask {
   detail: string;
   /** Five dots for fetch/parse/chunk/embed/commit. */
   dots: [StageDot, StageDot, StageDot, StageDot, StageDot];
-  statusLabel: string;
+  /** WHAT the task is doing, not a sentence about it. The server composed the
+   *  sentence until 2026-08-26, which is how the live path came to render
+   *  "fetch 处理中" - `current_stage` is a code, so the composed string put an
+   *  identifier against a Chinese word and read wrong in both languages.
+   *
+   *  `detail` carries anything the state itself cannot say (a percentage, a
+   *  sub-step); it is per-run content and stays as authored. */
+  status:
+    | { kind: "running"; stage: ProcessingStage; detail?: string }
+    | { kind: "queued" }
+    | { kind: "retrying"; attempt: number; detail?: string }
+    | { kind: "suspendedQuota" }
+    | { kind: "suspendedOther" }
+    | { kind: "failed"; stage: ProcessingStage; detail?: string }
+    | { kind: "committed"; detail?: string };
   statusTone: "primary" | "ai" | "warning" | "danger" | "muted";
   /** Agent deposit via the Runos channel (purple treatment + sparkle). */
   agentDeposit?: boolean;
