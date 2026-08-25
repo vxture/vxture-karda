@@ -77,5 +77,6 @@ export const DEMO_CHANNELS: ChannelsData = {
     { label: "Runos 侧注册", done: false, note: "runos#156 · 两个能力的端点登记" },
     { label: "promote 稳定档", done: false, note: "需凭证绑定先行(硬门)" },
   ],
+  sources: { traffic: "demo", registry: "demo" },
   demoOps: true,
 };

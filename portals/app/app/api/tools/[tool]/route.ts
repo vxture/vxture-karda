@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { authenticateS2S } from "../../../kb/tools/gateway";
 import { dispatchTool } from "../../../kb/tools/dispatch";
 import { buildToolBackends } from "../../../kb/tools/backends";
+import { recordSupplyCall } from "../../../kb/tools/supply-ledger";
 
 // POST /api/tools/:tool   (S2S, tailnet only)
 //
@@ -24,6 +25,20 @@ export async function POST(req: Request, ctx: { params: Promise<{ tool: string }
     // empty/invalid body -> no args
   }
 
-  const result = await dispatchTool(`karda.${tool}`, args, auth.caller, buildToolBackends());
+  const toolName = `karda.${tool}`;
+  const startedAt = Date.now();
+  const result = await dispatchTool(toolName, args, auth.caller, buildToolBackends());
+  // The supply ledger (240 section 4.3). Awaited so the row is durable before we
+  // answer - the write is a single INSERT on a local socket, and a fire-and-
+  // forget here would lose rows on serverless-style teardown. It can never fail
+  // the call: recordSupplyCall swallows everything.
+  await recordSupplyCall({
+    channel: "direct",
+    toolName,
+    args,
+    caller: auth.caller,
+    result,
+    latencyMs: Date.now() - startedAt,
+  });
   return NextResponse.json(result.body, { status: result.status });
 }

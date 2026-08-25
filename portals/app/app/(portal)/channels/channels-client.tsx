@@ -220,9 +220,15 @@ export function ChannelsClient() {
         </div>
       </div>
 
-      {data.demoOps && (
-        <span className="text-body-sm text-muted-foreground">调用与消费为演示口径 · 供给账本随通道里程碑交付</span>
-      )}
+      {/* Provenance, per group. Traffic comes off the supply ledger; the channel
+          registry (names, endpoints, serving state, the capability contract and
+          the activation checklist) is configuration and liaison state, and stays
+          authored on purpose - no amount of traffic tells you whether Runos has
+          registered the endpoint. See ChannelsData.sources. */}
+      <span className="text-body-sm text-muted-foreground">
+        {data.sources.traffic === "live" ? "调用与消费为实时账本" : "调用与消费为演示口径,供给账本随通道里程碑交付"}
+        {" · 通道状态与能力契约为登记口径(非账本推导)"}
+      </span>
     </>
   );
 }

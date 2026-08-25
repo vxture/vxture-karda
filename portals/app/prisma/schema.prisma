@@ -232,6 +232,8 @@ model KnowledgeBase {
   entries            Entry[]
   bindings           Binding[]
   attachments        KbAttachment[]
+  processingTasks    ProcessingTask[]
+  supplyCallAssets   SupplyCallAsset[]
 
   @@index([ownerType, ownerSub], map: "idx_kb_owner")
   @@map("knowledge_base")
@@ -320,6 +322,7 @@ model Document {
   folder             Folder?             @relation(fields: [folderId], references: [id], map: "fk_document_folder")
   processingTemplate ProcessingTemplate? @relation(fields: [processingTemplateId], references: [id], map: "fk_document_processing_template")
   chunks             Chunk[]
+  processingTasks    ProcessingTask[]
 
   @@index([kbId, contentState], map: "idx_document_kb_state")
   @@map("document")
@@ -410,5 +413,97 @@ model Binding {
   @@unique([kbId, connectorCode, externalSourceId], map: "uidx_binding_kb_connector_source")
   @@index([state, connectorCode], map: "idx_binding_state")
   @@map("binding")
+  @@schema("karda_kb")
+}
+
+/// The ops read models (docs/30-design/240-ops-read-models.md). Client
+/// generation only - the DDL under deploy/database/ddl/ stays the structure
+/// authority, and check-data-architecture.mjs holds these in lockstep with it.
+
+model ProcessingTask {
+  id               String    @id @default(uuid()) @db.Uuid
+  documentId       String    @map("document_id") @db.Uuid
+  kbId             String    @map("kb_id") @db.Uuid
+  tier             String    @default("interactive") @db.VarChar(32)
+  state            String    @default("queued") @db.VarChar(32)
+  currentStage     String    @default("fetch") @map("current_stage") @db.VarChar(32)
+  failureClass     String?   @map("failure_class") @db.VarChar(32)
+  failureReason    String?   @map("failure_reason")
+  attempt          Int       @default(1)
+  createdInProduct String?   @map("created_in_product") @db.VarChar(32)
+  createdBy        String?   @map("created_by") @db.VarChar(128)
+  queuedAt         DateTime  @default(now()) @map("queued_at") @db.Timestamptz()
+  startedAt        DateTime? @map("started_at") @db.Timestamptz()
+  finishedAt       DateTime? @map("finished_at") @db.Timestamptz()
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt        DateTime  @default(now()) @map("updated_at") @db.Timestamptz()
+
+  document      Document      @relation(fields: [documentId], references: [id], onDelete: Cascade, map: "fk_processing_task_document")
+  knowledgeBase KnowledgeBase @relation(fields: [kbId], references: [id], onDelete: Cascade, map: "fk_processing_task_kb")
+  stages        ProcessingTaskStage[]
+
+  // uidx_processing_task_doc_live is a PARTIAL unique index
+  // (WHERE state IN ('queued','running')) and Prisma cannot express the
+  // predicate. The DDL is the authority; declaring it here without the WHERE
+  // would be a different constraint, so it is deliberately absent.
+  @@index([kbId, state], map: "idx_processing_task_kb_state")
+  @@index([state, queuedAt], map: "idx_processing_task_state_queued")
+  @@index([kbId, finishedAt], map: "idx_processing_task_kb_finished")
+  @@map("processing_task")
+  @@schema("karda_kb")
+}
+
+model ProcessingTaskStage {
+  id        String    @id @default(uuid()) @db.Uuid
+  taskId    String    @map("task_id") @db.Uuid
+  stage     String    @db.VarChar(32)
+  outcome   String?   @db.VarChar(32)
+  startedAt DateTime  @default(now()) @map("started_at") @db.Timestamptz()
+  endedAt   DateTime? @map("ended_at") @db.Timestamptz()
+  note      String?
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+
+  task ProcessingTask @relation(fields: [taskId], references: [id], onDelete: Cascade, map: "fk_processing_task_stage_task")
+
+  @@unique([taskId, stage], map: "uidx_processing_task_stage")
+  @@index([stage, endedAt], map: "idx_processing_task_stage_p95")
+  @@map("processing_task_stage")
+  @@schema("karda_kb")
+}
+
+model SupplyCall {
+  id            String   @id @default(uuid()) @db.Uuid
+  channel       String   @db.VarChar(32)
+  capability    String   @db.VarChar(64)
+  operation     String   @db.VarChar(64)
+  consumerCode  String?  @map("consumer_code") @db.VarChar(64)
+  workspaceId   String   @map("workspace_id") @db.Uuid
+  taskIdRef     String?  @map("task_id_ref") @db.VarChar(128)
+  outcome       String   @default("ok") @db.VarChar(32)
+  errorCode     String?  @map("error_code") @db.VarChar(64)
+  latencyMs     Int?     @map("latency_ms")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  assets SupplyCallAsset[]
+
+  @@index([createdAt], map: "idx_supply_call_created")
+  @@index([channel, createdAt], map: "idx_supply_call_channel_created")
+  @@index([consumerCode, createdAt], map: "idx_supply_call_consumer_created")
+  @@map("supply_call")
+  @@schema("karda_kb")
+}
+
+model SupplyCallAsset {
+  callId     String   @map("call_id") @db.Uuid
+  kbId       String   @map("kb_id") @db.Uuid
+  citedCount Int      @map("cited_count")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  call          SupplyCall    @relation(fields: [callId], references: [id], onDelete: Cascade, map: "fk_supply_call_asset_call")
+  knowledgeBase KnowledgeBase @relation(fields: [kbId], references: [id], onDelete: Cascade, map: "fk_supply_call_asset_kb")
+
+  @@id([callId, kbId], map: "pk_supply_call_asset")
+  @@index([kbId], map: "idx_supply_call_asset_kb")
+  @@map("supply_call_asset")
   @@schema("karda_kb")
 }

@@ -44,6 +44,12 @@ export interface ChannelConsumer {
   topAsset: string;
 }
 
+/** Where a group of figures came from on THIS request - same contract as
+ *  EvaluationData.sources. Sections go live one at a time, so the marker is per
+ *  group; a single page-wide flag would have to lie about whichever half moved
+ *  first. */
+export type FigureSource = "live" | "demo";
+
 export interface ChannelsData {
   totals: {
     todayCalls: number;
@@ -57,5 +63,15 @@ export interface ChannelsData {
   consumers: ChannelConsumer[];
   /** Activation steps still outstanding before a channel is fully live. */
   activation: { label: string; done: boolean; note: string }[];
+  /** Per-group provenance:
+   *    traffic    totals / per-channel volume+latency+errors / consumers -
+   *               LIVE off karda_kb.supply_call once a DB is attached.
+   *    registry   channel names, endpoints, state, the capability contract and
+   *               the activation checklist - these are CONFIGURATION and a
+   *               liaison state, not ledger facts. They stay authored, and that
+   *               is correct, not a gap: no amount of traffic tells you whether
+   *               Runos has registered the endpoint. */
+  sources: { traffic: FigureSource; registry: FigureSource };
+  /** True while TRAFFIC is the demo overlay. */
   demoOps: boolean;
 }
