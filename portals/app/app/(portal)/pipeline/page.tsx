@@ -1,7 +1,13 @@
 import { BRAND } from "@karda/shared/brand";
+import { t } from "../../_i18n/catalog";
+import { shell } from "../../_i18n/messages/shell";
 import { PipelineClient } from "./pipeline-client";
 
-export const metadata = { title: `加工管道 - ${BRAND.displayName}` };
+// Title from the catalog, resolved at the DEFAULT locale - see the note in
+// `(portal)/assets/[kbId]/page.tsx` and TD-014.
+export const metadata = {
+  title: `${t(shell.navPipeline, BRAND.defaultLocale)} - ${BRAND.displayName}`,
+};
 
 // The steward-driven processing domain (理解/萃取/编织/验证/入藏), per the
 // approved design canvas V2 Steward board. Data comes from GET /api/pipeline

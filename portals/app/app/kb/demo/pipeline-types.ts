@@ -5,19 +5,24 @@
 /** The five steward stages (design canvas V2: 理解/萃取/编织/验证/入藏). */
 export type StewardStageKey = "understand" | "extract" | "weave" | "verify" | "commit";
 
+/** The six fixed rows of 今日战报. Values are per-run; the row NAMES are not. */
+export type ReportRowKey = "parsed" | "units" | "merged" | "conflicts" | "preVerified" | "reflux";
+
+/** The unit a figure counts in. Kept OUT of the preformatted value: a value of
+ *  "62 份" reads as English-with-a-Chinese-tail once the row label is
+ *  translated, which is the half-language failure this whole seam is about. */
+export type ReportUnit = "docs" | "entries" | "groups" | "occurrences";
+
 export interface PipelineStage {
+  /** The stage's name, description, unit and mono kicker all derive from this.
+   *  They used to sit beside it as authored fields, which made the five-stage
+   *  vocabulary a second copy of a fixed list - see `_i18n/messages/pipeline.ts`. */
   key: StewardStageKey;
-  /** Mono kicker, e.g. "01 UNDERSTAND". */
-  kicker: string;
-  label: string;
-  /** One-line what-this-stage-does. */
-  desc: string;
-  /** Headline figure, preformatted (caller owns units/locale). */
+  /** Headline figure, preformatted. Per-run content: it stays as authored. */
   value: string;
-  /** Unit/suffix rendered after the value, e.g. "份". */
-  unit: string;
-  /** Secondary figure rendered beside the value (e.g. "冲突 3"). */
-  aside?: string;
+  /** Secondary figure beside the value: WHICH figure, and how many. The word
+   *  is vocabulary and comes from the catalog; the number is per-run. */
+  aside?: { kind: "conflicts" | "pending"; n: number };
   /** Aside tone - warning gets the amber treatment. */
   asideTone?: "warning" | "muted";
   /** The stage the steward is currently most active in (ai top edge). */
@@ -56,8 +61,8 @@ export interface PipelineTask {
 }
 
 export interface QueueTier {
+  /** The tier's name and the one-line "what goes in it" both derive from this. */
   key: "interactive" | "sync" | "bulk";
-  label: string;
   queued: number;
   concurrency: string;
   /** Fill percent for the depth bar, 0-100. */
@@ -157,7 +162,7 @@ export interface PipelineData {
   /** Share of work the steward completes without a human, 0-100. */
   autoRatePct: number;
   /** 今日战报 label/value pairs (values preformatted). */
-  report: { label: string; value: string; tone?: "warning" | "success" | "ai" }[];
+  report: { key: ReportRowKey; value: string; unit: ReportUnit; tone?: "warning" | "success" | "ai" }[];
   stages: PipelineStage[];
   proposals: StewardProposal[];
   /** Total awaiting confirmation (proposals shown may be fewer). */

@@ -13,7 +13,11 @@ import {
 } from "@vxture/design-system";
 import { loginHref } from "../../_lib/api";
 import { PageHead } from "../../_shell/PageHead";
-import type { PipelineData, ProposalKind } from "../../kb/demo/pipeline-types";
+import type { ReportUnit, ReportRowKey, StewardStageKey, PipelineData, ProposalKind } from "../../kb/demo/pipeline-types";
+import { useMessages } from "../../_i18n/useMessages";
+import { pipeline as pipelineMessages } from "../../_i18n/messages/pipeline";
+import { shell } from "../../_i18n/messages/shell";
+import { assets } from "../../_i18n/messages/assets";
 
 // 加工管道 client (design canvas V2 · Steward board, light-theme translation).
 // Three 板块 under the unified PageHead, spaced by the layout's global gap-lg:
@@ -33,7 +37,41 @@ const REPORT_TONE: Record<string, string> = {
   ai: "text-ai-text",
 };
 
+type PKey = {
+  [K in keyof typeof pipelineMessages]: (typeof pipelineMessages)[K] extends { "zh-CN": string } ? K : never;
+}[keyof typeof pipelineMessages];
+
+/** The five stages: their kicker, name, blurb and unit all hang off the key.
+ *  The kicker is a mono design element in English in every locale, so it is a
+ *  literal here rather than a catalog entry. */
+const STAGE_META: Record<StewardStageKey, { kicker: string; label: PKey; desc: PKey; unit: PKey }> = {
+  understand: { kicker: "01 UNDERSTAND", label: "stageUnderstand", desc: "stageUnderstandDesc", unit: "unitDocs" },
+  extract: { kicker: "02 EXTRACT", label: "stageExtract", desc: "stageExtractDesc", unit: "unitEntries" },
+  weave: { kicker: "03 WEAVE", label: "stageWeave", desc: "stageWeaveDesc", unit: "unitGroups" },
+  verify: { kicker: "04 VERIFY", label: "stageVerify", desc: "stageVerifyDesc", unit: "unitEntries" },
+  commit: { kicker: "05 COMMIT", label: "stageCommit", desc: "stageCommitDesc", unit: "unitEntries" },
+};
+
+const UNIT_KEY: Record<ReportUnit, PKey> = {
+  docs: "unitDocs",
+  entries: "unitEntries",
+  groups: "unitGroups",
+  occurrences: "unitOccurrences",
+};
+
+const REPORT_KEY: Record<ReportRowKey, PKey> = {
+  parsed: "reportParsed",
+  units: "reportUnits",
+  merged: "reportMerged",
+  conflicts: "reportConflicts",
+  preVerified: "reportPreVerified",
+  reflux: "reportReflux",
+};
+
 export function PipelineClient() {
+  const m = useMessages(pipelineMessages);
+  const sh = useMessages(shell);
+  const a = useMessages(assets);
   const [data, setData] = useState<PipelineData | null>(null);
   const [needsAuth, setNeedsAuth] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +83,7 @@ export function PipelineClient() {
         if (!res.ok) throw new Error(String(res.status));
         setData((await res.json()) as PipelineData);
       })
-      .catch(() => setError("加载加工管道失败,请稍后重试。"));
+      .catch(() => setError(m.errLoad));
   }, []);
 
   if (needsAuth) {
@@ -53,11 +91,11 @@ export function PipelineClient() {
       <div className="mx-auto flex max-w-[28rem] flex-col items-center gap-4 py-24">
         <EmptyState
           icon="lock"
-          title="需要登录"
-          description="登录后查看知识管家的加工流水与待确认事项。"
+          title={a.needSignIn}
+          description={m.needSignInDesc}
           action={
             <Button asChild>
-              <a href={loginHref("/pipeline")}>登录</a>
+              <a href={loginHref("/pipeline")}>{sh.signIn}</a>
             </Button>
           }
         />
@@ -77,7 +115,7 @@ export function PipelineClient() {
     return (
       <div className="flex items-center justify-center py-24 text-body-md text-muted-foreground">
         <Icon name="spinner" className="mr-2 animate-spin" />
-        正在加载加工管道…
+        {m.loading}
       </div>
     );
   }
@@ -85,16 +123,16 @@ export function PipelineClient() {
   return (
     <>
       <PageHead
-        title="加工管道"
-        description="知识管家驱动的智能加工"
-        meta={`今日 ${data.docsToday} docs · P95 ${data.p95Seconds}s/doc · 自动处理 ${data.autoRatePct}%`}
+        title={sh.navPipeline}
+        description={sh.navPipelineDesc}
+        meta={m.boardMeta(data.docsToday, data.p95Seconds, data.autoRatePct)}
         actions={
           <>
             {/* 二级导航(任务与队列/受控重建)在左侧导航卡下,不在这里重复 */}
             <Button variant="outline" asChild>
-              <a href="/assets/new">上传文档</a>
+              <a href="/assets/new">{a.uploadButton}</a>
             </Button>
-            <Button>批量确认预验</Button>
+            <Button>{m.batchConfirm}</Button>
           </>
         }
       />
@@ -109,20 +147,20 @@ export function PipelineClient() {
             </span>
             <span className="flex min-w-0 flex-col gap-2xs">
               <span className="flex items-baseline gap-sm">
-                <span className="text-label-lg">知识管家</span>
-                <span className="font-mono text-code-sm tracking-widest text-ai-text">AI AGENT · 在岗</span>
+                <span className="text-label-lg">{m.stewardName}</span>
+                <span className="font-mono text-code-sm tracking-widest text-ai-text">{m.stewardOnDuty}</span>
               </span>
               <span className="text-body-sm text-muted-foreground">
-                负责理解、萃取、编织、验证与纠错的全程加工;需要裁决的事项才会来找你。
+                {m.stewardBlurb}
               </span>
             </span>
           </div>
           <div className="ml-auto flex flex-wrap items-center gap-lg">
             {data.report.map((r) => (
-              <span key={r.label} className="flex flex-col gap-2xs">
-                <span className="text-body-sm text-muted-foreground">{r.label}</span>
+              <span key={r.key} className="flex flex-col gap-2xs">
+                <span className="text-body-sm text-muted-foreground">{m[REPORT_KEY[r.key]]}</span>
                 <span className={`font-mono text-body-sm ${r.tone ? REPORT_TONE[r.tone] : "text-foreground"}`}>
-                  {r.value}
+                  {r.value} <span className="text-muted-foreground">{m[UNIT_KEY[r.unit]]}</span>
                 </span>
               </span>
             ))}
@@ -133,9 +171,9 @@ export function PipelineClient() {
       {/* stage flow */}
       <div className="flex flex-col gap-md">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-title-sm">加工流水 · 全程 AI 驱动</h2>
+          <h2 className="text-title-sm">{m.flowTitle}</h2>
           <span className="text-body-sm text-muted-foreground">
-            {data.demoOps ? "演示口径 · 管线里程碑建设中" : ""}
+            {data.demoOps ? m.demoNote : ""}
           </span>
         </div>
         <div className="grid grid-cols-2 gap-lg @min-[44rem]:grid-cols-5">
@@ -143,16 +181,16 @@ export function PipelineClient() {
             <Card key={s.key} className={`py-md${s.active ? " border-t-medium border-t-ai-border" : ""}`}>
               <CardContent className="flex h-full flex-col gap-2xs px-lg">
                 <span className={`font-mono text-code-sm tracking-widest ${s.active ? "text-ai-text" : "text-muted-foreground"}`}>
-                  {s.kicker}
+                  {STAGE_META[s.key].kicker}
                 </span>
-                <span className="text-label-lg">{s.label}</span>
-                <span className="text-body-sm leading-relaxed text-muted-foreground">{s.desc}</span>
+                <span className="text-label-lg">{m[STAGE_META[s.key].label]}</span>
+                <span className="text-body-sm leading-relaxed text-muted-foreground">{m[STAGE_META[s.key].desc]}</span>
                 <span className="mt-auto flex items-baseline gap-sm pt-2xs">
                   <span className="font-mono text-title-sm">{s.value}</span>
-                  <span className="text-body-sm text-muted-foreground">{s.unit}</span>
+                  <span className="text-body-sm text-muted-foreground">{m[STAGE_META[s.key].unit]}</span>
                   {s.aside && (
                     <span className={`text-body-sm ${s.asideTone === "warning" ? "text-warning-text" : "text-muted-foreground"}`}>
-                      {s.aside}
+                      {s.aside.kind === "conflicts" ? m.asideConflicts(s.aside.n) : m.asidePending(s.aside.n)}
                     </span>
                   )}
                 </span>
@@ -165,8 +203,8 @@ export function PipelineClient() {
       {/* proposals */}
       <div className="flex flex-col gap-md">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-title-sm">待你确认 · {data.pendingTotal} 项</h2>
-          <span className="text-body-sm text-muted-foreground">管家已给出建议与依据,采纳即生效</span>
+          <h2 className="text-title-sm">{m.pendingTitle(data.pendingTotal)}</h2>
+          <span className="text-body-sm text-muted-foreground">{m.pendingHint}</span>
         </div>
         <div className="flex flex-col gap-md">
           {data.proposals.map((p) => {
@@ -216,7 +254,7 @@ export function PipelineClient() {
         {data.pendingTotal > data.proposals.length && (
           <div className="flex justify-center">
             <a href="/pipeline" className="text-body-sm text-primary">
-              查看其余 {data.pendingTotal - data.proposals.length} 项 →
+              {m.restLink(data.pendingTotal - data.proposals.length)}
             </a>
           </div>
         )}
