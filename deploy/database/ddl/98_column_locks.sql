@@ -142,3 +142,44 @@ BEGIN
     REVOKE UPDATE, DELETE ON karda_kb.supply_call_asset FROM karda_svc;
   END IF;
 END $$;
+
+-- --- karda_kb evaluation runner (240 section 8, built in batch 14) ------------
+-- Same two-place pattern as the ops read models above, and for the same reason:
+-- these four are in 00_baseline.sql (fresh DBs get them here) AND in incr/0005
+-- (live DBs adopt them there). db-init applies baseline -> 97 -> 98 -> incr/*,
+-- so at THIS point they exist on a fresh DB and do NOT exist on a live one -
+-- hence the guard. Without it these statements fail on a live database; without
+-- them at all, a FRESH database keeps 97's blanket SELECT/INSERT/DELETE and no
+-- column lock, so a run's baseline label would be editable after the fact and a
+-- result could be rewritten - neither is evidence any more.
+-- incr/0005 repeats them unguarded for the live path; both are idempotent.
+DO $$
+BEGIN
+  IF to_regclass('karda_kb.eval_set') IS NOT NULL THEN
+    -- workspace_id / created_by are identity and authorship. Repointing an
+    -- existing set at another workspace is not an edit, it is a leak.
+    REVOKE UPDATE ON karda_kb.eval_set FROM karda_svc;
+    GRANT UPDATE (name, description, kb_scope, updated_at)
+      ON karda_kb.eval_set TO karda_svc;
+
+    -- set_id is immutable: moving a question between sets would silently change
+    -- what every past run of BOTH sets measured.
+    REVOKE UPDATE ON karda_kb.eval_question FROM karda_svc;
+    GRANT UPDATE (question, expected_evidence, note, position, updated_at)
+      ON karda_kb.eval_question TO karda_svc;
+
+    -- Everything that DEFINES the comparison is immutable - which set, which
+    -- baseline, which quality tier, which top_k, when it started. Only the
+    -- closing fields are writable: a run opens `running` and is completed once.
+    -- A run whose baseline label could be edited afterwards is not evidence.
+    REVOKE UPDATE ON karda_kb.eval_run FROM karda_svc;
+    GRANT UPDATE (state, question_count, recall_hit_pct, citation_precision_pct,
+                  grounded_answer_pct, gap_count, degraded, error_code, finished_at)
+      ON karda_kb.eval_run TO karda_svc;
+
+    -- A measurement, written once. DELETE stays (97 grants it) so a bad RUN can
+    -- be removed and cascade - unlike supply_call, an eval run is an experiment
+    -- artifact, not a record that a service call happened.
+    REVOKE UPDATE ON karda_kb.eval_run_result FROM karda_svc;
+  END IF;
+END $$;

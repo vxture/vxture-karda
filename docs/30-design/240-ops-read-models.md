@@ -176,6 +176,11 @@ REVOKE UPDATE, DELETE ON karda_kb.supply_call_asset FROM karda_svc;
 
 ## 8. 不建的东西（有意）
 
+> **2026-08-25 更新（批次 14）：本节的四张表已建。** 运行器随同一批落地，本节"不建的理由"
+> （"建四张表去等一个不存在的运行器,是投机性 schema"）随之失效。形状按本节原样落地，未改：
+> `incr/0005_eval_runner.sql` + 基线 + `98_column_locks` + Prisma 四个 model。
+> 下面的原文保留，因为它记录的是**当时为什么不建**——那条纪律仍然成立，只是这一次的条件满足了。
+
 **评测集 / 评测运行四张表（`eval_set` / `eval_question` / `eval_run` / `eval_run_result`）本轮不建。**
 
 形状已想清楚：`eval_set` 是人工编写的问题集（KD-011 已裁：v1 不做合成 QA 生成），`eval_question` 带期望
