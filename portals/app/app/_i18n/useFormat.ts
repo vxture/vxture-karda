@@ -69,6 +69,15 @@ export interface FormatHelpers {
   sharing(state: PublishState): SharingMeta;
   /** Human wording for an API failure. Codes stay on the wire; prose lives here. */
   apiError(status: number, code?: string): string;
+  /**
+   * A large count, abbreviated the way the reader's language abbreviates.
+   *
+   * Not a hand-rolled threshold: Chinese groups by 万 (10^4) and English by
+   * K/M (10^3/10^6), so the CUT POINTS differ, not just the suffix. The old
+   * `n >= 10000 ? (n/10000)+"万"` produced "1.2万" for every locale. Intl
+   * already knows both systems.
+   */
+  compact(n: number): string;
   /** The verification clock as a sentence. null when there is nothing to say. */
   record(rec: VerificationRecord): string | null;
   /** Render a held failure. Pass-through null so call sites stay one line. */
@@ -121,6 +130,17 @@ export function useFormat(): FormatHelpers {
       apiError(status, code) {
         const { key, withCode } = apiErrorKey(status, code);
         return withCode ? `${m[key]} (${code})` : m[key];
+      },
+      compact(n) {
+        // Below the threshold the exact number is more useful than an
+        // abbreviation ("1,204" beats "1.2K"), and the threshold itself is a
+        // display choice that does not vary by language. What DOES vary is the
+        // abbreviation above it, and that is Intl's job.
+        if (n < 10_000) return new Intl.NumberFormat(locale as Locale).format(n);
+        return new Intl.NumberFormat(locale as Locale, {
+          notation: "compact",
+          maximumFractionDigits: 1,
+        }).format(n);
       },
       record(rec) {
         // Day counts arrive signed - negative once expiry is behind us - and

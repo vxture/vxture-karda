@@ -182,5 +182,6 @@ pane 都被盖掉、只留阅读栏。
 | `_shell/NavPane.tsx` | 导航栏;词汇表与色表的声明处 |
 | `_shell/StewardDock.tsx` | 值班台 |
 | `_shell/PageHead.tsx` | 内容区统一页头 |
-| `_shell/nav.ts` | 功能域清单(顶栏 launcher 与导航栏共用的唯一来源)、全屏目标 id |
+| `_shell/nav.ts` | 功能域清单(顶栏 launcher 与导航栏共用的唯一来源)、全屏目标 id。**只有结构,没有文案**——每条声明自己的目录键(`labelKey`/`descKey`),文案在 `_i18n/messages/shell.ts`,见 `250-i18n-seam.md` |
+| `_shell/roles.ts` / `_lib/session.ts` | 角色梯级:判定在 session.ts(结构),名称在目录,顶栏与范围面板共用一份 |
 | `app/globals.css` | 唯一的 `--background` 覆盖;滚动条全局隐藏(§6.2) |

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Button, Icon, ShellIconButton } from "@vxture/design-system";
 import type { ShellData } from "../kb/demo/shell-types";
+import { useMessages } from "../_i18n/useMessages";
+import { shell as shellMessages } from "../_i18n/messages/shell";
 import type { StewardProposal } from "../kb/demo/pipeline-types";
 
 // 值班台 (steward dock) - the right pane of the shell body: the cross-page
@@ -80,6 +82,7 @@ function DockSection({
 }
 
 export function StewardDock({ shell, onClose }: { shell: ShellData | null; onClose: () => void }) {
+  const m = useMessages(shellMessages);
   const s = shell?.steward;
   const [closed, setClosed] = useState<Set<string>>(() => new Set());
 
@@ -119,23 +122,23 @@ export function StewardDock({ shell, onClose }: { shell: ShellData | null; onClo
     <aside className="flex w-[25rem] shrink-0 flex-col overflow-hidden rounded-lg border border-primary/[0.06] bg-gradient-to-b from-card/80 to-card/35 dark:border-primary/10">
       <div className="flex shrink-0 items-center gap-sm border-b border-primary/[0.08] px-md py-sm dark:border-primary/10">
         <Icon name="sparkles" size="sm" className="text-ai-text" />
-        <span className="flex-1 text-title-sm">管家值班台</span>
-        <span className="size-2xs rounded-full bg-success" aria-label="在岗" />
+        <span className="flex-1 text-title-sm">{m.dock}</span>
+        <span className="size-2xs rounded-full bg-success" aria-label={m.dockOnDuty} />
         {/* Ghost icon button, the DS shell idiom - no boxed background. */}
-        <ShellIconButton icon="chevron-right" label="收起值班台" onClick={onClose} />
+        <ShellIconButton icon="chevron-right" label={m.dockCollapse} onClick={onClose} />
       </div>
 
       {!s ? (
         <div className="flex flex-1 items-center justify-center text-body-md text-muted-foreground">
           <Icon name="spinner" size="xs" className="mr-2 animate-spin" />
-          正在接入…
+          {m.dockConnecting}
         </div>
       ) : (
         <>
           <div className="flex min-h-0 flex-1 flex-col gap-sm overflow-y-auto px-md py-md">
             <DockSection
               id="pending"
-              label="待你裁决"
+              label={m.dockPending}
               count={s.pending}
               tone="text-warning-text"
               open={isOpen("pending")}
@@ -171,7 +174,7 @@ export function StewardDock({ shell, onClose }: { shell: ShellData | null; onClo
               })}
               {s.pending > s.proposals.length && (
                 <Link href="/pipeline" className="text-center text-body-md text-primary">
-                  其余 {s.pending - s.proposals.length} 项 →
+                  {m.dockRest(s.pending - s.proposals.length)}
                 </Link>
               )}
             </DockSection>
@@ -179,7 +182,7 @@ export function StewardDock({ shell, onClose }: { shell: ShellData | null; onClo
             {s.alert && (
               <DockSection
                 id="alert"
-                label="告警"
+                label={m.dockAlert}
                 count={1}
                 tone="text-destructive-text"
                 open={isOpen("alert")}
@@ -190,7 +193,7 @@ export function StewardDock({ shell, onClose }: { shell: ShellData | null; onClo
                   <span>
                     {s.alert.text},
                     <Link href={s.alert.href} className="text-primary">
-                      去处理
+                      {m.dockGoHandle}
                     </Link>
                   </span>
                 </span>
@@ -199,7 +202,7 @@ export function StewardDock({ shell, onClose }: { shell: ShellData | null; onClo
 
             <DockSection
               id="activity"
-              label="Agent 活动 · 实时"
+              label={m.dockActivity}
               open={isOpen("activity")}
               onToggle={toggle}
             >
@@ -221,7 +224,7 @@ export function StewardDock({ shell, onClose }: { shell: ShellData | null; onClo
           <div className="shrink-0 border-t border-primary/[0.08] px-md py-sm dark:border-primary/10">
             <button className="flex w-full items-center justify-center gap-sm rounded-lg border border-ai-border/40 bg-ai-muted/30 px-md py-sm text-label-md text-ai-text transition-colors duration-fast ease-standard hover:bg-ai-muted/50">
               <Icon name="sparkles" size="sm" />
-              低风险项全部交给管家处理
+              {m.dockDelegate}
             </button>
           </div>
         </>

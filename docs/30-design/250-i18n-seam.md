@@ -47,6 +47,9 @@ language at all**. Three times over, the same cut paid:
 | `_lib/format.ts` | tone per state, publish-ladder order, byte maths | every label |
 | `kb/governance/record.ts` | which of seven clock readings applies, the day count | the phrase |
 | `kb/connectors/catalog.ts` | which degradations a capability set implies | the warning sentence |
+| `_shell/nav.ts` | the four domains, their hrefs, icons and sub-views | every label and description |
+| `_lib/session.ts` | which rung of the role ladder a session holds | the rung's name |
+| `useFormat().compact` | the "show exact below 10,000" threshold | the abbreviation above it |
 
 A tone is a fact about a state - `failed` is bad, `indexed` is ok - and does not
 vary by language. Leaving it in the catalog would mean maintaining the same
@@ -85,6 +88,32 @@ the locale entirely - and it is why a namespace sometimes exists ahead of its
 domain's sweep: every catch site in the app needs a catalog entry even when its
 own surface is still hardcoded.
 
+### 3.1 Two special cases the shell sweep turned up
+
+**Words that were in two places at once.** The nav labels existed BOTH in
+`nav.ts` (Chinese literals) and in the shell catalog - #136 added the catalog
+half for the header and left the old half in place. Nothing checked the two
+agreed, and nothing rendered the catalog half, so in `en-US` the entire
+navigation stayed Chinese while the header's search palette was English. The
+same shape appeared in the role ladder, computed once in the header and once in
+the scope panel, one reading the catalog and one hardcoding Chinese.
+
+The fix in both cases is one source plus a compile-time binding: each nav item
+declares `labelKey`/`descKey` (typed `keyof typeof shell`), so a new domain
+cannot ship without a label. The binding is a FIELD ON THE ITEM rather than a
+side table, because a side table keyed by `domain.sub` stopped type-checking -
+TypeScript cannot see that the `s` in `item.sub.map(s => ...)` came from THAT
+item, so the composite key widened to the full cross-product.
+
+**Numbers are language too.** `1204 -> 1,204; 12040 -> 1.2万` was hand-rolled
+and produced 万 for every locale. The cut points differ, not just the suffix:
+Chinese groups by 10^4, English by 10^3/10^6. `Intl.NumberFormat(locale,
+{ notation: "compact" })` already knows both. What stayed in code is the
+threshold below which the exact number is more useful than an abbreviation -
+that is a display choice, not a language.
+
+---
+
 ## 5. What is checked, and what cannot be
 
 - `catalog.test.ts` - every message carries every locale; no pair is an
@@ -121,6 +150,14 @@ are `EXEMPT` in the guard, by name, with that reason.
 
 ## 7. Sweep order
 
-Landed: shell header, state vocabulary (`states`), assets domain.
-Remaining: `_shell` (nav / NavPane / ScopePanel / StewardDock), 治理, 评测,
-供给, 加工. Each is one PR: translate the domain, add its directory to `SCOPE`.
+Landed: the whole shell (`_shell`), the state vocabulary (`states`), and the
+assets domain.
+Remaining: 治理, 评测, 供给, 加工 - the `(portal)` pages for channels, pipeline,
+evaluation, tools and bench. Each is one PR: translate the domain, add its
+directory to `SCOPE`.
+
+Note what a swept SHELL does not cover: `/api/shell`'s demo payload (steward
+proposals, the alert line) stays Chinese, and correctly so - it stands in for
+content the steward generates from the user's own documents, the same way a
+library's name stays in the language its owner wrote it in. Chrome is
+translated; content is not.
