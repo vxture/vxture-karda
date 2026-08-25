@@ -614,14 +614,15 @@ ship.
 | Item | Waiting on | Since | Blocks MVP? |
 |---|---|---|---|
 | Runos capability registration | runos line - `runos#156`; until then the channel can receive but is never sent to | 2026-08-18 | the Runos channel only; the direct S2S channel is unaffected |
-| Five plan tiers, and therefore all of C2 | owner - see `20-specs/40-tier-capability-matrix.md` | open | **yes - the whole commercial surface** |
+| Five plan tiers, and therefore all of C2 | **owner ruled 2026-08-25 (KD-207)**; now with the platform line - `vxture/vxture-platform#371` | 2026-08-25 | **yes - the whole commercial surface**, but no longer ours |
 | Arda content channel | arda line - 5 questions | 2026-07-22 | **no** - one connector, not a dependency |
 | Deep parsing (Atlas A2) | atlas line - 4 request-side questions | 2026-08-18 | **no** - scanned/complex layouts stay permanent-fail for MVP |
 
-Only one of these blocks the product, and it is ours to unblock: **C2 resolves
-every workspace as unsubscribed until the tiers publish**, so quota and
-capability gating run but gate nothing. `40-tier-capability-matrix.md` is the
-karda-side input that removes it; it needs an owner ruling, not engineering.
+Only one of these blocks the product. It **was** ours; as of 2026-08-25 it is
+not: owner ruled KD-207, the matrix landed in `entitlement/capability.ts` with
+tests pinning the rulings, and `vxture/vxture-platform#371` carries the publish
+request. C2 still resolves every workspace as unsubscribed until the platform
+publishes - but nothing on the karda side is now waiting on itself.
 
 ---
 
