@@ -99,12 +99,22 @@ export class KbService {
     // past setPublishState's ladder check. Copy only the allowed keys that are
     // actually present - carrying `undefined` keys through would null unspecified
     // columns under the in-memory store's Object.assign.
+    //
+    // KEEP THIS IN STEP WITH UpdateKbInput. A key present on the type but missing
+    // here is dropped SILENTLY: the route reads it, the store never sees it, and
+    // the UI reports success over a write that did not happen. That is exactly
+    // what happened to the two governance keys below - the verification policy
+    // was unsavable from the moment the whitelist was written, and nothing
+    // failed. `service.test.ts` now pins every key round-tripping so the next
+    // addition cannot be forgotten the same way.
     const ALLOWED = [
       "name",
       "description",
       "processingTemplateId",
       "governanceEnabled",
       "exemptSyncedContent",
+      "defaultVerifier",
+      "defaultVerifyIntervalDays",
     ] as const;
     const safe: Omit<UpdateKbInput, "publishState"> = {};
     for (const k of ALLOWED) {

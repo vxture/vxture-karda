@@ -134,3 +134,61 @@ test("operations on a missing / soft-deleted kb report not_found", async () => {
   });
   assert.deepEqual(await s.remove(kb.value.id), { ok: false, error: { code: "not_found" } });
 });
+
+// --- the update whitelist ----------------------------------------------------
+
+test("EVERY updatable config key actually reaches the store", async () => {
+  // The regression this pins: `defaultVerifier` and `defaultVerifyIntervalDays`
+  // were on UpdateKbInput and read by the PATCH route, but missing from the
+  // service's runtime whitelist - so they were dropped SILENTLY. The UI reported
+  // success, the columns never moved, and because a library then had no
+  // interval, nothing could ever go stale and the whole governance clock was
+  // dead. Found by walking batch 11 through, not by any test or type.
+  const svc = new KbService(new InMemoryKbStore());
+  const made = await svc.create({ workspaceId: "ws1", ownerType: "user", ownerSub: "u1", name: "L" });
+  assert.ok(made.ok);
+
+  const patch = {
+    name: "改名后",
+    description: "描述",
+    processingTemplateId: "tpl-1",
+    governanceEnabled: true,
+    exemptSyncedContent: false,
+    defaultVerifier: "usr_v",
+    defaultVerifyIntervalDays: 30,
+  } as const;
+
+  const updated = await svc.update(made.value.id, patch);
+  assert.ok(updated.ok);
+  for (const [key, want] of Object.entries(patch)) {
+    assert.equal(
+      (updated.value as unknown as Record<string, unknown>)[key],
+      want,
+      `${key} did not reach the store - add it to the ALLOWED whitelist in service.update`,
+    );
+  }
+});
+
+test("clearing the verifier config to null is a real write, not a no-op", async () => {
+  // `undefined` means "leave alone" and `null` means "clear" - a whitelist that
+  // treats them alike makes an interval impossible to remove once set.
+  const svc = new KbService(new InMemoryKbStore());
+  const made = await svc.create({ workspaceId: "ws1", ownerType: "user", ownerSub: "u1", name: "L" });
+  assert.ok(made.ok);
+  await svc.update(made.value.id, { defaultVerifier: "usr_v", defaultVerifyIntervalDays: 30 });
+
+  const cleared = await svc.update(made.value.id, { defaultVerifier: null, defaultVerifyIntervalDays: null });
+  assert.ok(cleared.ok);
+  assert.equal(cleared.value.defaultVerifier, null);
+  assert.equal(cleared.value.defaultVerifyIntervalDays, null);
+});
+
+test("publishState still cannot be smuggled through update", async () => {
+  // The reason the whitelist exists at all - it must keep doing that job.
+  const svc = new KbService(new InMemoryKbStore());
+  const made = await svc.create({ workspaceId: "ws1", ownerType: "user", ownerSub: "u1", name: "L" });
+  assert.ok(made.ok);
+  const r = await svc.update(made.value.id, { publishState: "org_published" } as never);
+  assert.ok(r.ok);
+  assert.equal(r.value.publishState, "private", "a publish must go through the ladder check, not through update");
+});

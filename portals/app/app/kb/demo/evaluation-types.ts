@@ -21,8 +21,13 @@ export interface VerificationState {
    *  number, and when a workspace-level policy config lands this is the field
    *  that starts varying. */
   floorPct: number;
-  /** Assets whose coverage sits below `floorPct`. */
-  belowFloor: { name: string; coveragePct: number; staleCount: number }[];
+  /** Assets whose coverage sits below `floorPct`.
+   *
+   *  `id` is what makes this a WAY IN rather than a dead end: the row links to
+   *  that library's own outstanding work in the re-verification queue. Nullable
+   *  because the demo overlay has no real libraries to point at, and a link to
+   *  a fabricated id would 404 - a demo row is honestly un-clickable. */
+  belowFloor: { id: string | null; name: string; coveragePct: number; staleCount: number }[];
   /** Steward pre-verification waiting on a human decision. Stays on the demo
    *  overlay even when the corpus figures are live - there is no steward
    *  ledger yet (see EvaluationData.sources.steward). */

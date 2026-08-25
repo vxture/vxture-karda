@@ -573,18 +573,63 @@ model all exist; what is missing is the ability to *act* on what they show.
 
 | Item | Backing capability | State |
 |------|-------------------|-------|
-| Re-verification work queue - the stale set, worked through, not counted | `entry/document.verification_state`, `corpus-read.ts` | read model live |
-| Below-floor asset -> that library's pending-verification list | `corpus-read.belowFloor` | live, currently a dead-end list |
-| Trigger the sweep, and show what it changed | `/api/kb/governance/sweep` | no UI |
-| Verification history on a document | `verifier` / `verified_at` / `expires_at` | columns exist |
+| Re-verification work queue - the stale set, worked through, not counted | `queue-read.ts`, `GET /api/kb/governance/queue` | **done 2026-08-25** |
+| Below-floor asset -> that library's pending-verification list | `corpus-read.belowFloor` now publishes `id` | **done 2026-08-25** |
+| Trigger the sweep, and show what it changed | `POST /api/kb/governance/sweep` (session path added) | **done 2026-08-25** |
+| Verification history on a document | `record.ts` over `verifier` / `verified_at` / `expires_at` | **done, but see "history" below** |
 
 **Explicitly NOT in this batch:** the steward's pre-verification queue. The dock
 renders it, but there is no steward ledger behind it - building the UI first
 would make a demo figure look actionable, which is the exact failure mode the
 `sources` markers exist to prevent.
 
-**Acceptance:** a governance owner can drive workspace coverage up by working a
-queue, and can see the number move.
+**Acceptance: MET, walked end to end 2026-08-25** against a throwaway Postgres.
+Three libraries (two governed, one with governance off), twelve documents seeded
+across verified / lapsed / stale / unverified. Ran the sweep (1 item lapsed and
+appeared at the top of the queue), worked the queue to empty, and watched
+workspace coverage go **33% -> 67%** on the page and in the nav card. The number
+moved, which is the whole criterion.
+
+**What "verification history" actually is.** The plan said those three columns
+back a history. They do not: each verify OVERWRITES them, so they hold exactly
+one verification - the latest. Shipping a panel labelled 验证历史 over a single
+row would be the same failure this batch's own plan warns about for the steward
+queue. What the columns honestly support is the CURRENT RECORD with its clock
+made legible - "5 天后到期" in warning tone, "已过期 30 天，待复验" - which is the
+part an operator acts on. `record.ts` does that, and its name says what it is.
+**Open: a real history needs an append-only `verification_event` ledger** (who /
+when / from-state / to-state / by sweep-or-human). It is also what
+`governance.audit` in the enterprise tier will need, and what would let the
+sweep's staling be attributable at all. Owner call whether that is its own batch
+or folds into 14.
+
+**Two defects the walk-through found, both silent:**
+
+- `KbService.update`'s runtime whitelist omitted `defaultVerifier` and
+  `defaultVerifyIntervalDays`. The PATCH route read them, the service dropped
+  them, and the UI reported success - so **the verification policy has never been
+  savable**, from the moment that whitelist was written. With no interval nothing
+  can ever expire, so the sweep could never do anything and the queue could never
+  fill: batch 11's entire premise was resting on a write that silently did not
+  happen. A test now pins every allowed key round-tripping.
+- The 低于覆盖基线 list included libraries with governance OFF. Nothing in them
+  can be verified, so the worst-covered row led to an empty queue - a dead end
+  dressed as work, in the exact list this batch was making clickable. They are
+  excluded from the LIST now but still count toward the coverage FIGURE.
+
+**Open question for the owner - the coverage denominator.** A library with
+governance off keeps its content in the denominator, so workspace coverage can
+never reach 100% while any such library holds documents (the walk-through
+finished at 67% with four un-verifiable drafts). Excluding them would make
+coverage drivable to 100% but quietly redefines the headline metric on three
+surfaces (总览 / 验证评测 / 导航卡). Not changed unilaterally.
+
+**Also landed:** `POST /api/kb/:id/entries/:entryId/verify`. The document verify
+route has existed since Track 12; its twin did not, and ENTRIES ARE WHAT AGENTS
+WRITE (`kb.create_entry` on the MCP/tool channel). They land unverified and count
+in the coverage denominator, so without this route an agent-written entry could
+drag coverage down with no way for a human to clear it - the governance ladder
+that is supposed to make agent writes safe had no rung at the top.
 
 ## Batch 12 - external knowledge intake has a face
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Banner, Button, Card, CardContent, Icon, MetricGrid, Progress, StatusBadge } from "@vxture/design-system";
 import { PageHead } from "../../_shell/PageHead";
 import type { EvalMetric, EvaluationData } from "../../kb/demo/evaluation-types";
@@ -62,7 +63,12 @@ export function EvaluationClient() {
             <Button variant="outline" asChild>
               <a href="/bench">检验台</a>
             </Button>
-            <Button>运行评测</Button>
+            {/* The page's primary act is now WORKING the queue, not running an
+                evaluation - the runner does not exist yet (batch 14), and this
+                does. */}
+            <Button asChild>
+              <Link href="/evaluation/queue">处理待复验</Link>
+            </Button>
           </>
         }
       />
@@ -138,25 +144,54 @@ export function EvaluationClient() {
             低于覆盖基线的资产
             <span className="ml-xs font-mono text-body-sm">&lt; {v.floorPct}%</span>
           </h3>
+          {/* Each row now LEADS SOMEWHERE: to exactly that library's outstanding
+              work. Until batch 11 this list named the worst-covered assets and
+              then left you to find them yourself, which is a report, not a
+              workbench. A demo row has no id and stays plainly un-clickable
+              rather than linking to a fabricated library. */}
+          {v.belowFloor.length === 0 && (
+            // An empty heading over nothing reads as a failed load. Saying it
+            // plainly is also the reward for working the queue to zero.
+            <Card className="py-md">
+              <CardContent className="px-lg text-body-sm text-muted-foreground">
+                没有低于基线的资产——已开启验证治理的库都在 {v.floorPct}% 以上。
+              </CardContent>
+            </Card>
+          )}
           <div className="flex flex-col gap-md">
-            {v.belowFloor.map((a) => (
-              <Card key={a.name} className="py-md">
-                <CardContent className="flex items-center gap-md px-lg">
-                  <span className="min-w-0 flex-1 truncate text-body-sm font-medium">{a.name}</span>
-                  <span className="w-[8rem] shrink-0">
-                    <Progress value={a.coveragePct} />
-                  </span>
-                  <span className="w-[3rem] shrink-0 text-right font-mono text-code-sm text-warning-text">
-                    {a.coveragePct}%
-                  </span>
-                  {a.staleCount > 0 && (
-                    <StatusBadge tone="warning" dot={false}>
-                      待复验 {a.staleCount}
-                    </StatusBadge>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+            {v.belowFloor.map((a) => {
+              const body = (
+                <Card className="h-full py-md transition-colors group-hover:border-primary/25">
+                  <CardContent className="flex items-center gap-md px-lg">
+                    <span className="min-w-0 flex-1 truncate text-body-sm font-medium">{a.name}</span>
+                    <span className="w-[8rem] shrink-0">
+                      <Progress value={a.coveragePct} />
+                    </span>
+                    <span className="w-[3rem] shrink-0 text-right font-mono text-code-sm text-warning-text">
+                      {a.coveragePct}%
+                    </span>
+                    {a.staleCount > 0 && (
+                      <StatusBadge tone="warning" dot={false}>
+                        待复验 {a.staleCount}
+                      </StatusBadge>
+                    )}
+                    {a.id && <Icon name="chevron-right" className="shrink-0 text-muted-foreground" />}
+                  </CardContent>
+                </Card>
+              );
+              return a.id ? (
+                <Link
+                  key={a.id}
+                  href={`/evaluation/queue?kb=${encodeURIComponent(a.id)}`}
+                  aria-label={`处理 ${a.name} 的待复验内容`}
+                  className="group block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  {body}
+                </Link>
+              ) : (
+                <div key={a.name}>{body}</div>
+              );
+            })}
           </div>
         </div>
 

@@ -45,8 +45,18 @@ test("belowFloor lists only assets under the floor, worst first, with their stal
     ],
     80,
   );
-  assert.deepEqual(r.belowFloor, [{ name: "应急预案库", coveragePct: 60, staleCount: 15 }]);
+  // `id` is published (batch 11): the row links to that library's own queue, so
+  // the list is a way in rather than a dead end.
+  assert.deepEqual(r.belowFloor, [{ id: "b", name: "应急预案库", coveragePct: 60, staleCount: 15 }]);
   assert.equal(r.floorPct, 80);
+});
+
+test("every below-floor row carries the id its link needs", () => {
+  const r = tallyCorpus(KBS, [row("a", "unverified", 10), row("b", "unverified", 10)], 80);
+  assert.ok(r.belowFloor.length > 0);
+  for (const a of r.belowFloor) {
+    assert.ok(a.id, `${a.name} has no id, so its row cannot lead anywhere`);
+  }
 });
 
 test("an EMPTY asset is not 0% - it is excluded, or every new library tops the list", () => {
@@ -108,4 +118,36 @@ test("the default floor is the one the demo overlay's classification implies", (
   // floor has to sit in (71, 84]. If this constant drifts out of that band the
   // live path stops agreeing with the overlay it replaced.
   assert.ok(COVERAGE_FLOOR_PCT > 71 && COVERAGE_FLOOR_PCT <= 84);
+});
+
+test("a governance-OFF library is excluded from the below-floor LIST", () => {
+  // It has opted out of verification, so nothing in it can be verified and the
+  // row would lead to an empty queue - a dead end dressed as work. Found by
+  // walking batch 11 through: a governance-off draft library sat at 0% on top.
+  const kbs = [
+    { id: "on", name: "作业规程库", governanceEnabled: true },
+    { id: "off", name: "草稿箱", governanceEnabled: false },
+  ];
+  const r = tallyCorpus(kbs, [row("on", "unverified", 10), row("off", "unverified", 10)], 80);
+  assert.deepEqual(r.belowFloor.map((a) => a.id), ["on"]);
+});
+
+test("...but it STILL counts toward the coverage figure", () => {
+  // Excluding it there would quietly redefine the headline metric on three
+  // surfaces. That is an owner's call, not this function's.
+  const kbs = [
+    { id: "on", name: "作业规程库", governanceEnabled: true },
+    { id: "off", name: "草稿箱", governanceEnabled: false },
+  ];
+  const r = tallyCorpus(kbs, [row("on", "verified", 10), row("off", "unverified", 10)], 80);
+  assert.equal(r.verified, 10);
+  assert.equal(r.unverified, 10);
+  assert.equal(r.coveragePct, 50, "the governance-off library is in the denominator");
+});
+
+test("an unspecified governance flag keeps the old behaviour", () => {
+  // The demo overlay and the older tests do not carry the flag; defaulting to
+  // false would silently empty the list for them.
+  const r = tallyCorpus(KBS, [row("b", "unverified", 10)], 80);
+  assert.equal(r.belowFloor.length, 1);
 });

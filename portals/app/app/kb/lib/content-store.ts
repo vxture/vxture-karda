@@ -149,8 +149,13 @@ export interface ContentStore {
   // governance (verification state machine - the orthogonal, human-driven axis)
   setDocumentVerification(id: string, patch: VerificationPatch): Promise<DocumentRow | null>;
   setEntryVerification(id: string, patch: VerificationPatch): Promise<EntryRow | null>;
-  /** Verified items whose expiresAt has passed - candidates for the stale sweep. */
-  dueForStale(now: Date, limit: number): Promise<DueItem[]>;
+  /** Verified items whose expiresAt has passed - candidates for the stale sweep.
+   *
+   *  `kbIds` narrows the scan. It is optional because the CRON sweep is global
+   *  by design, but any sweep a USER can trigger must pass it: without a filter
+   *  one tenant clicking a button would scan and re-state every other tenant's
+   *  corpus. */
+  dueForStale(now: Date, limit: number, kbIds?: string[]): Promise<DueItem[]>;
 }
 
 // --- in-memory ---------------------------------------------------------------
@@ -333,15 +338,18 @@ export class InMemoryContentStore implements ContentStore {
     e.updatedAt = new Date();
     return e;
   }
-  async dueForStale(now: Date, limit: number): Promise<DueItem[]> {
+  async dueForStale(now: Date, limit: number, kbIds?: string[]): Promise<DueItem[]> {
+    const scope = kbIds ? new Set(kbIds) : null;
     const out: DueItem[] = [];
     for (const d of this.docs.values()) {
+      if (scope && !scope.has(d.kbId)) continue;
       if (!d.deleted && d.verificationState === "verified" && d.expiresAt && d.expiresAt <= now) {
         out.push({ kind: "document", id: d.id, kbId: d.kbId });
         if (out.length >= limit) return out;
       }
     }
     for (const e of this.entries.values()) {
+      if (scope && !scope.has(e.kbId)) continue;
       if (e.contentState !== "deleted" && e.verificationState === "verified" && e.expiresAt && e.expiresAt <= now) {
         out.push({ kind: "entry", id: e.id, kbId: e.kbId });
         if (out.length >= limit) return out;
