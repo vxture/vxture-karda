@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Banner, Button, Card, CardContent, Icon, MetricGrid, StatusBadge } from "@vxture/design-system";
 import { PageHead } from "../../_shell/PageHead";
 import type { ChannelHealth, ChannelsData } from "../../kb/demo/channels-types";
+import type { ConsumerReport } from "../../kb/tools/consumer-read";
 
 // 供给通道 first cut: the two channels karda supplies knowledge through -
 // direct S2S and the Runos capability plane - as health panels, then the
@@ -34,6 +35,7 @@ function Sparkline({ series, muted }: { series: number[]; muted: boolean }) {
 }
 
 export function ChannelsClient() {
+  const [report, setReport] = useState<ConsumerReport | null>(null);
   const [data, setData] = useState<ChannelsData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,6 +46,14 @@ export function ChannelsClient() {
         setData((await res.json()) as ChannelsData);
       })
       .catch(() => setError("加载供给通道失败,请稍后重试。"));
+    // The drill-down is a SEPARATE, non-fatal fetch: the channel dashboard is
+    // still worth showing if the per-consumer query is slow or unavailable, and
+    // a failure here must not blank the page.
+    fetch("/api/channels/consumers", { cache: "no-store" })
+      .then(async (res) => {
+        if (res.ok) setReport((await res.json()) as ConsumerReport);
+      })
+      .catch(() => {});
   }, []);
 
   if (error) {
@@ -166,6 +176,40 @@ export function ChannelsClient() {
               </Card>
             ))}
           </div>
+
+          {/* Batch 13: the drill-down behind the error rate. Rendered ABOVE the
+              share bars, because a consumer that is failing is what an operator
+              needs first - the share chart says who is busy, this says who is
+              broken. */}
+          {report && report.diagnosis.length > 0 && (
+            <>
+              <h2 className="pt-xs text-title-sm">异常消费方</h2>
+              <Card className="border-t-medium border-t-destructive-border py-md">
+                <CardContent className="flex flex-col gap-sm px-lg">
+                  <span className="text-body-sm text-muted-foreground">
+                    按<strong>失败量</strong>排序，不是按失败率——4 次调用全挂是 100%，但通常无关紧要；
+                    400 次里挂 48 次才是事故。
+                  </span>
+                  {report.diagnosis.map((d) => (
+                    <span key={`${d.code}-${d.channel}`} className="flex flex-wrap items-center gap-sm text-body-sm">
+                      <span className="w-[5rem] shrink-0 truncate font-mono text-ai-text">{d.code ?? "（本产品）"}</span>
+                      <StatusBadge tone="danger" dot={false}>
+                        失败 {d.failed}
+                      </StatusBadge>
+                      <span className="font-mono text-code-sm text-destructive-text">{d.errorRatePct}%</span>
+                      <span className="text-muted-foreground">
+                        {d.channel === "runos" ? "能力平台" : "直供通道"}
+                        {d.topOperation && ` · ${d.topOperation}`}
+                      </span>
+                      {d.topErrorCode && (
+                        <span className="font-mono text-code-sm text-muted-foreground">{d.topErrorCode}</span>
+                      )}
+                    </span>
+                  ))}
+                </CardContent>
+              </Card>
+            </>
+          )}
 
           <h2 className="pt-xs text-title-sm">消费方 · 今日</h2>
           <Card className="py-md">
