@@ -404,14 +404,33 @@ that the capability has no operator surface.
 |-------|------|
 | capability | 32 API routes, 26 tables, 457 tests |
 | monitoring - the portal's four domains | complete; read models landed in batch 9 |
-| **operating - the Console** | **3 pages, 911 lines, calling 4 endpoints** |
+| **operating - the Console** | **3 pages, 911 lines, outside the product shell** |
 
-Server-side and finished, with **no operator entry point at all**: publish /
-unpublish, connector bindings and revoke-cascade, document verification, folder
-hierarchy, the re-verification sweep, queue drain and re-enqueue, entitlement
-view, usage. None of these is unbuilt. Each is built and unreachable.
+**Correction 2026-08-25.** An earlier version of this section said the Console
+"calls 4 endpoints" and listed publish/unpublish and document verification among
+capabilities with no operator entry point. Both were WRONG - the count came from
+a grep that missed template-literal URLs, and the Console does surface publish
+(the sharing ladder), governance toggles, verifier config and per-document
+verify. It calls eight endpoints, and covers more than the first pass credited.
 
-**能力齐、能看、不能操作.** That is the gap batches 10-13 close.
+What is genuinely unsurfaced anywhere - no Console page, no portal page:
+
+| Capability | Endpoint |
+|---|---|
+| Folder hierarchy | `/api/kb/[id]/folders`, `[folderId]` |
+| Connector bindings and revoke-cascade | `/api/kb/[id]/bindings`, `[bindingId]` |
+| Document preview / download | `/api/kb/[id]/documents/[docId]/download` |
+| Re-verification sweep | `/api/kb/governance/sweep` |
+| Queue drain / re-enqueue | `/api/kb/processing/tick` |
+| Entitlement view, usage | `/api/entitlement`, `/api/usage/flush` |
+| Failed-document view + retry | `processing_task` ledger (landed batch 9) |
+| Processing-template config, filterable whitelist | `PATCH /api/kb/[id]` supports it; nothing calls it |
+
+**The thesis survives the correction, and it was never mainly about missing
+buttons:** the operating surface sits OUTSIDE the product shell, and the
+product's primary object has no detail view inside it. Batch 10 is therefore
+mostly a move, not a build - with a short list of genuinely absent surfaces
+above.
 
 ### The Console is not the place to close it (owner ruling 2026-08-25)
 
