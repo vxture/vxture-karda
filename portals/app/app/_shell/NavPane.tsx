@@ -258,9 +258,10 @@ function TitleTag({ count, tone, label }: { count: number; tone: "warning" | "da
  *  rather than a plain call so it can read the catalog itself. */
 function DomainTag({ itemKey, shell }: { itemKey: string; shell: ShellData | null }) {
   const m = useMessages(shellMessages);
+  const f = useFormat();
   if (!shell) return null;
   if (itemKey === "overview" && shell.overview.needsAttention > 0) {
-    return <TitleTag count={shell.overview.needsAttention} tone="warning" label={m.needsAttention} />;
+    return <TitleTag count={shell.overview.needsAttention} tone="warning" label={f.health("attention").label} />;
   }
   if (itemKey === "channels" && shell.channels.degraded > 0) {
     return <TitleTag count={shell.channels.degraded} tone="warning" label={m.degradedChannels} />;

@@ -7,6 +7,8 @@ import { styles, Badge, Button, Notice, Empty, SignInGate, T } from "../../../_l
 import { useFormat, type Failure } from "../../../_i18n/useFormat";
 
 import { useMessages } from "../../../_i18n/useMessages";
+import { common } from "../../../_i18n/messages/common";
+import { shell } from "../../../_i18n/messages/shell";
 import { assets } from "../../../_i18n/messages/assets";
 
 // Libraries index: the workspace's libraries with their sharing grade, and a
@@ -17,6 +19,8 @@ import { assets } from "../../../_i18n/messages/assets";
 export function NewAssetClient() {
   const f = useFormat();
   const m = useMessages(assets);
+  const c = useMessages(common);
+  const sh = useMessages(shell);
   const [kbs, setKbs] = useState<Kb[] | null>(null);
   const [needsAuth, setNeedsAuth] = useState(false);
   const [error, setError] = useState<Failure | null>(null);
@@ -67,7 +71,7 @@ export function NewAssetClient() {
 
   return (
     <>
-      <h1 style={styles.h1}>{m.indexTitle}</h1>
+      <h1 style={styles.h1}>{sh.navAssets}</h1>
       <p style={styles.sub}>
         {m.indexLead}{" "}
         <a href="/bench" style={{ color: T.accent }}>
@@ -79,7 +83,7 @@ export function NewAssetClient() {
       {error && <Notice tone="bad">{f.failure(error)}</Notice>}
 
       <section style={styles.card}>
-        <h2 style={styles.h2}>{m.createTitle}</h2>
+        <h2 style={styles.h2}>{sh.newAsset}</h2>
         <form onSubmit={onCreate}>
           <div style={{ marginBottom: 10 }}>
             <input
@@ -101,7 +105,7 @@ export function NewAssetClient() {
             />
           </div>
           <Button type="submit" variant="primary" disabled={!name.trim() || creating}>
-            {creating ? m.createPending : m.createTitle}
+            {creating ? m.createPending : sh.newAsset}
           </Button>
           <span style={{ ...styles.sub, marginLeft: 12 }}>{m.createHint}</span>
         </form>

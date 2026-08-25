@@ -35,8 +35,10 @@ export const common = {
   } satisfies MessageFn<[number]>,
 
   // --- outcomes --------------------------------------------------------------
-  signInExpired: { "zh-CN": "登录已过期，请重新登录。", "en-US": "Your session expired. Please sign in again." },
-  forbidden: { "zh-CN": "你没有执行该操作的权限。", "en-US": "You do not have permission to do that." },
-  notFound: { "zh-CN": "没找到——它可能属于另一个工作区。", "en-US": "Not found - it may belong to another workspace." },
-  serverError: { "zh-CN": "服务端出错了，请重试。", "en-US": "Something went wrong on our side. Please retry." },
+  // API failure prose used to be duplicated here, verbatim, from `states.ts`.
+  // It was never read - nothing imported this namespace at all - so the product
+  // had a second, untested copy of its error catalog sitting inside the very
+  // layer that exists to stop exactly that. `states.ts` owns it; `apiErrorKey`
+  // maps to it; `states.test.ts` pins its wording. Deleted 2026-08-26.
+  deleteFailed: { "zh-CN": "删除失败。", "en-US": "Delete failed." },
 } satisfies Record<string, Message | MessageFn<never>>;

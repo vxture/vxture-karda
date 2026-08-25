@@ -44,7 +44,6 @@ export const shell = {
   noWorkspace: { "zh-CN": "未选择工作区", "en-US": "No workspace selected" },
   currentScope: { "zh-CN": "当前范围", "en-US": "Current scope" },
   navExpand: { "zh-CN": "展开导航", "en-US": "Expand navigation" },
-  dockOpen: { "zh-CN": "管家值班台", "en-US": "Steward desk" },
   exitFullscreen: { "zh-CN": "退出全屏", "en-US": "Exit fullscreen" },
   openElsewhere: { "zh-CN": "打开别处", "en-US": "Open elsewhere" },
   launcherPanel: { "zh-CN": "功能域", "en-US": "Domains" },
@@ -94,7 +93,6 @@ export const shell = {
 
   // --- 导航栏 cards ------------------------------------------------------------
   paneLoading: { "zh-CN": "读取中…", "en-US": "Loading…" },
-  needsAttention: { "zh-CN": "需关注", "en-US": "Needs attention" },
   degradedChannels: { "zh-CN": "异常通道", "en-US": "Degraded" },
   ringAssets: { "zh-CN": "资产", "en-US": "Assets" },
   ringEntries: { "zh-CN": "知识", "en-US": "Entries" },

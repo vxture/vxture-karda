@@ -64,6 +64,15 @@ export const states = {
       "That source id is already bound to this library - either still in use, or permanently held by a revoked binding. Revoke is irreversible; it cannot be bound again.",
   },
 
+  // --- asset health ----------------------------------------------------------
+  // Cross-domain by evidence: the 导航栏 card tags an asset count with 需关注
+  // and the homepage card tags one asset with it. Two copies of that word is
+  // how they end up disagreeing.
+  healthHealthy: { "zh-CN": "健康", "en-US": "Healthy" },
+  healthAttention: { "zh-CN": "需关注", "en-US": "Needs attention" },
+  healthProcessing: { "zh-CN": "加工中", "en-US": "Processing" },
+  healthGap: { "zh-CN": "有缺口", "en-US": "Has gaps" },
+
   // --- verification clock ----------------------------------------------------
   // `kb/governance/record.ts` decides WHICH of these applies; these are only
   // the words. Day counts arrive already absolute.

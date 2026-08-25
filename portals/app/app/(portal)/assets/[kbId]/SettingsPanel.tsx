@@ -27,6 +27,7 @@ import { PUBLISH_ORDER, type PublishState } from "../../../_lib/format";
 import { FIELD_NAME_RE } from "../../../kb/lib/metadata";
 import { useFormat } from "../../../_i18n/useFormat";
 import { useMessages } from "../../../_i18n/useMessages";
+import { common } from "../../../_i18n/messages/common";
 import { assets } from "../../../_i18n/messages/assets";
 
 // Everything about a library that is a SETTING rather than a document. Four
@@ -93,6 +94,7 @@ function SharingCard({
   onShare: (target: PublishState) => void | Promise<void>;
 }) {
   const m = useMessages(assets);
+  const c = useMessages(common);
   const f = useFormat();
   const share = f.sharing(kb.publishState);
   return (
@@ -133,6 +135,7 @@ function ProcessingCard({
   onTemplate: (templateId: string | null) => void | Promise<void>;
 }) {
   const m = useMessages(assets);
+  const c = useMessages(common);
   const current = templates.find((t) => t.id === kb.processingTemplateId) ?? null;
   return (
     <Card>
@@ -146,7 +149,7 @@ function ProcessingCard({
         <NativeSelect
           value={kb.processingTemplateId ?? ""}
           disabled={busy || templates.length === 0}
-          aria-label={m.templateAria}
+          aria-label={m.templateCardTitle}
           onChange={(e) => onTemplate(e.target.value || null)}
           // Width on the WRAPPER - DS anchors the arrow to the wrapper's right
           // edge, and a full-width wrapper also breaks any flex row it sits in.
@@ -188,6 +191,7 @@ function FilterFieldsCard({
   onSave: (fields: MetadataField[]) => void | Promise<void>;
 }) {
   const m = useMessages(assets);
+  const c = useMessages(common);
   const [draft, setDraft] = useState<MetadataField[]>(fields);
   const [name, setName] = useState("");
   const [type, setType] = useState<MetadataField["valueType"]>("string");
@@ -347,6 +351,7 @@ function GovernanceCard({
   onVerifierConfig: (verifier: string | null, intervalDays: number | null) => void | Promise<void>;
 }) {
   const m = useMessages(assets);
+  const c = useMessages(common);
   const f = useFormat();
   const [verifier, setVerifier] = useState(kb.defaultVerifier ?? "");
   const [interval, setInterval] = useState(
@@ -415,7 +420,7 @@ function GovernanceCard({
               />
             </label>
             <Button disabled={busy} onClick={save}>
-              {m.save}
+              {c.save}
             </Button>
           </div>
           {err && <p className="text-body-sm text-destructive">{err}</p>}
@@ -442,6 +447,7 @@ function FoldersCard({
   onDelete: (folder: Folder) => void | Promise<void>;
 }) {
   const m = useMessages(assets);
+  const c = useMessages(common);
   const [name, setName] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -482,10 +488,10 @@ function FoldersCard({
                     setEditing(null);
                   }}
                 >
-                  {m.save}
+                  {c.save}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
-                  {m.cancel}
+                  {c.cancel}
                 </Button>
               </>
             ) : (
@@ -502,10 +508,10 @@ function FoldersCard({
                     setDraft(f.name);
                   }}
                 >
-                  {m.folderRename}
+                  {c.rename}
                 </Button>
                 <Button size="sm" variant="ghost" disabled={busy} onClick={() => onDelete(f)}>
-                  {m.actDelete}
+                  {c.delete}
                 </Button>
               </>
             )}

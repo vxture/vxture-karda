@@ -50,6 +50,13 @@ language at all**. Three times over, the same cut paid:
 | `_shell/nav.ts` | the four domains, their hrefs, icons and sub-views | every label and description |
 | `_lib/session.ts` | which rung of the role ladder a session holds | the rung's name |
 | `useFormat().compact` | the "show exact below 10,000" threshold | the abbreviation above it |
+| `_lib/format.ts` (health) | which tone an asset's health rung carries | the rung's name |
+
+Asset health is the FOURTH state machine handled this way, after content state,
+verification state and the sharing ladder. Its tones are in the DS
+`StatusBadge` vocabulary rather than the local five-tone one - two tone
+vocabularies is one more than ideal, but silently mapping between them would be
+worse, so `HealthMeta` says which it is.
 
 A tone is a fact about a state - `failed` is bad, `indexed` is ok - and does not
 vary by language. Leaving it in the catalog would mean maintaining the same
@@ -112,6 +119,32 @@ Chinese groups by 10^4, English by 10^3/10^6. `Intl.NumberFormat(locale,
 threshold below which the exact number is more useful than an abbreviation -
 that is a display choice, not a language.
 
+### 3.2 The catalog had a duplication problem of its own
+
+A cross-namespace check, added after the shell sweep, found **sixteen** pairs of
+entries saying the same thing in both languages:
+
+- four API-failure sentences copied verbatim from `states.ts` into a `common`
+  namespace **that nothing imported** - a second, untested copy of the error
+  catalog living inside the layer built to prevent one;
+- six universal verbs (save / cancel / close / delete / rename / loading) that
+  each domain had grown its own copy of;
+- the sharing ladder, whose labels existed a THIRD time in the homepage as
+  `PUBLISH_LABEL`, and **worded differently** - 「工作区开放」 there against
+  「工作区」 on the asset page, for the same publish state;
+- 需关注, in the 导航栏 card tag and again as an asset health label.
+
+The rule that came out of it: **a domain namespace never defines a universal
+verb**, and a word two domains both need belongs to whichever layer already
+owns the concept - `common` for verbs, `states` for state vocabularies. The
+check now runs as a test with a `SAME_ON_PURPOSE` list: three pairs remain, each
+with a written reason (a system settings entry vs an asset's settings tab; two
+preference axes that both read "Default"; a pipeline count vs a document state).
+
+A related rule fell out of the same pass: **a string with no natural language in
+it does not belong in the catalog.** `Runos ${n}` is a proper noun and a number,
+identical in every locale; it is built at the call site instead.
+
 ---
 
 ## 5. What is checked, and what cannot be
@@ -150,11 +183,25 @@ are `EXEMPT` in the guard, by name, with that reason.
 
 ## 7. Sweep order
 
-Landed: the whole shell (`_shell`), the state vocabulary (`states`), and the
-assets domain.
-Remaining: 治理, 评测, 供给, 加工 - the `(portal)` pages for channels, pipeline,
-evaluation, tools and bench. Each is one PR: translate the domain, add its
-directory to `SCOPE`.
+Landed: the whole shell (`_shell`), the state vocabularies (`states`), and the
+whole 知识资产 domain - `(portal)/assets/**` **and** its root page
+`(portal)/overview-client.tsx`, which the first sweep missed because it sits
+outside the `assets/` directory.
+Remaining, one PR each: 供给通道 (`channels` / `tools` / `bench`), 加工管道
+(`pipeline`), 验证评测 (`evaluation`). Translate the domain, add it to `SCOPE`.
+
+### 7.1 What is content, and stays in the language it was written in
+
+`kb/demo/` is seed and demonstration CONTENT, not chrome, and it is not swept:
+asset names, tags, the steward's proposals, an asset's `sourceLabel`
+("自建 · forge"), a channel's `stateLabel` ("待注册 · 503 失败关闭"). Each of
+these stands in for something a user or the steward will actually produce, and
+translating a fixture teaches nothing about how the product behaves.
+
+The line to hold when these surfaces become live-data-backed: whatever is
+DERIVABLE from a state ships as a code and gets its prose here, exactly as
+`degradations` now does. What remains genuinely authored - a name, a note
+someone wrote - stays content.
 
 Note what a swept SHELL does not cover: `/api/shell`'s demo payload (steward
 proposals, the alert line) stays Chinese, and correctly so - it stands in for

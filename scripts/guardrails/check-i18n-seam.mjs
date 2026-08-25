@@ -28,15 +28,22 @@ import { fileURLToPath } from "node:url";
 const root = resolve(new URL("../..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
 const APP = "portals/app/app";
 
-/** Directories whose sweep has landed. Add one only in the PR that sweeps it. */
+/**
+ * What has been swept. A directory covers everything under it; a single FILE
+ * may be listed too, which is what the 知识资产 domain needs - its root page
+ * sits in `(portal)/` beside the domains that have not been swept yet, so the
+ * directory cannot be claimed while one file in it can.
+ */
 const SCOPE = [
   `${APP}/(portal)/assets`,
+  `${APP}/(portal)/overview-client.tsx`,
   `${APP}/_i18n`,
   `${APP}/_shell`,
 ];
 // NOT yet in scope, and each absence is a real debt rather than an oversight:
-//   (portal)/channels, /pipeline, /evaluation, /tools, /bench
-//                     - their domain sweeps have not run.
+//   (portal)/channels, /tools, /bench   - the 供给通道 domain
+//   (portal)/pipeline                   - the 加工管道 domain
+//   (portal)/evaluation                 - the 验证评测 domain
 // Each of those lands in SCOPE in the PR that sweeps it.
 
 /** The catalog itself: the one place product strings are supposed to live. */
@@ -133,6 +140,20 @@ export function countAllowed(src) {
 
 export { CJK, stripComments, allowedAbove };
 
+/** A SCOPE entry is a directory to walk, or a single file to scan. */
+function filesIn(entry) {
+  const abs = join(root, entry);
+  try {
+    if (!statSync(abs).isDirectory()) return [abs];
+  } catch {
+    // A SCOPE entry that no longer exists is a rename nobody finished; say so
+    // rather than silently scanning zero files.
+    console.error(`i18n seam: SCOPE entry does not exist - ${entry}`);
+    process.exit(1);
+  }
+  return walk(abs);
+}
+
 function walk(dir, out = []) {
   let names;
   try {
@@ -157,7 +178,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   let allowed = 0;
 
   for (const scope of SCOPE) {
-    for (const abs of walk(join(root, scope))) {
+    for (const abs of filesIn(scope)) {
       const rel = relative(root, abs).replace(/\\/g, "/");
       if (rel.startsWith(CATALOG)) continue;
       if (exemptSet.has(rel)) continue;

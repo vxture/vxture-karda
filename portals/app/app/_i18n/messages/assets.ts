@@ -9,7 +9,6 @@ import type { Catalog, MessageFn } from "../catalog";
 // asset surface.
 export const assets = {
   // --- library index / create ------------------------------------------------
-  indexTitle: { "zh-CN": "知识资产", "en-US": "Knowledge assets" },
   // Split around the bench link because the two languages put it in different
   // places: Chinese trails it with a clause, English opens a sentence with it.
   indexLead: {
@@ -21,7 +20,6 @@ export const assets = {
     "zh-CN": " 可跨你能看到的全部资产试问。",
     "en-US": " can query across every asset you can see.",
   },
-  createTitle: { "zh-CN": "新建资产", "en-US": "New asset" },
   createNameLabel: { "zh-CN": "资产名称", "en-US": "Asset name" },
   createDescLabel: { "zh-CN": "资产描述", "en-US": "Asset description" },
   createDescPlaceholder: { "zh-CN": "描述（可选）", "en-US": "Description (optional)" },
@@ -76,7 +74,6 @@ export const assets = {
   actReprocess: { "zh-CN": "重新加工", "en-US": "Reprocess" },
   actVerify: { "zh-CN": "验证", "en-US": "Verify" },
   actReverify: { "zh-CN": "重新验证", "en-US": "Re-verify" },
-  actDelete: { "zh-CN": "删除", "en-US": "Delete" },
   // The DELETE contract. `deleted` is terminal in the content state machine, so
   // the consequence has to say so - this is the sentence the confirm dialog
   // shows, and DS 9 makes it mandatory rather than optional.
@@ -92,10 +89,8 @@ export const assets = {
   // --- preview dialog --------------------------------------------------------
   unknownMime: { "zh-CN": "未知类型", "en-US": "Unknown type" },
   downloadOriginal: { "zh-CN": "下载原件", "en-US": "Download original" },
-  close: { "zh-CN": "关闭", "en-US": "Close" },
 
   // --- asset detail: header and tabs -----------------------------------------
-  headLoading: { "zh-CN": "载入中…", "en-US": "Loading…" },
   kbLoading: { "zh-CN": "正在加载库…", "en-US": "Loading the library…" },
   backToAssets: { "zh-CN": "返回知识资产", "en-US": "Back to knowledge assets" },
   metaDocs: {
@@ -138,7 +133,6 @@ export const assets = {
     "zh-CN": (title: string) => `「${title}」已重新排队加工。`,
     "en-US": (title: string) => `"${title}" is queued for processing again.`,
   } satisfies MessageFn<[string]>,
-  errDeleteDoc: { "zh-CN": "删除失败。", "en-US": "Delete failed." },
 
   errBind: { "zh-CN": "绑定失败。", "en-US": "Could not create the binding." },
   okBind: {
@@ -240,7 +234,6 @@ export const assets = {
     "zh-CN": "这个库的内容全部来自上传或 API 写入。",
     "en-US": "Everything in this library came from an upload or an API write.",
   },
-  revokedTitle: { "zh-CN": "已撤销", "en-US": "Revoked" },
   // Split around the emphasis: the stressed word sits mid-sentence in Chinese
   // and mid-clause in English, and a single string cannot carry the <strong>.
   revokedDescPre: {
@@ -302,7 +295,6 @@ export const assets = {
     "zh-CN": "决定文件如何被切成可检索的块。切换只影响此后加工的文档，已入库的内容需要重新加工才会跟随。",
     "en-US": "Decides how a file is split into retrievable chunks. A change applies only to documents processed afterwards; content already indexed has to be reprocessed to follow.",
   },
-  templateAria: { "zh-CN": "加工模板", "en-US": "Processing template" },
   templateDefault: { "zh-CN": "默认（通用）", "en-US": "Default (general)" },
   templateSpec: {
     "zh-CN": (target: number, max: number) => `目标 ${target} token · 上限 ${max}`,
@@ -391,11 +383,102 @@ export const assets = {
     "zh-CN": (name: string) => `重命名 ${name}`,
     "en-US": (name: string) => `Rename ${name}`,
   } satisfies MessageFn<[string]>,
-  folderRename: { "zh-CN": "重命名", "en-US": "Rename" },
   folderNewPlaceholder: { "zh-CN": "新目录名", "en-US": "New folder name" },
   folderCreate: { "zh-CN": "新建目录", "en-US": "New folder" },
 
-  // --- shared small actions --------------------------------------------------
-  save: { "zh-CN": "保存", "en-US": "Save" },
-  cancel: { "zh-CN": "取消", "en-US": "Cancel" },
+  // Universal verbs (save / cancel / close / delete / rename) are NOT here:
+  // they live in `common.ts` and every domain reads them from there. A domain
+  // that keeps its own 保存 is how two screens end up saying it differently.
+
+  // --- homepage (知识资产 domain root) -----------------------------------------
+  // The page TITLE, its description, the bench link and the new-asset button all
+  // come from `shell` - they are the domain's own name and entries, and the
+  // 导航栏 already owns those words.
+  coverageAria: {
+    "zh-CN": (pct: number) => `验证覆盖 ${pct}%`,
+    "en-US": (pct: number) => `Verification coverage ${pct}%`,
+  } satisfies MessageFn<[number]>,
+  openAsset: {
+    "zh-CN": (name: string) => `打开 ${name}`,
+    "en-US": (name: string) => `Open ${name}`,
+  } satisfies MessageFn<[string]>,
+  cardEntries: {
+    "zh-CN": (n: number) => `${n} 条目`,
+    "en-US": (n: number) => `${n} entr${n === 1 ? "y" : "ies"}`,
+  } satisfies MessageFn<[number]>,
+  cardDocs: {
+    "zh-CN": (n: number) => `${n} 文档`,
+    "en-US": (n: number) => `${n} doc${n === 1 ? "" : "s"}`,
+  } satisfies MessageFn<[number]>,
+  stewardProcessing: { "zh-CN": "管家加工中", "en-US": "Steward is processing" },
+  parkedCount: {
+    "zh-CN": (n: number) => `${n} 份停放待向量化`,
+    "en-US": (n: number) => `${n} parked, awaiting vectorization`,
+  } satisfies MessageFn<[number]>,
+  hotConsumers: {
+    "zh-CN": (names: string) => `${names} 高频引用`,
+    "en-US": (names: string) => `${names} cite it often`,
+  } satisfies MessageFn<[string]>,
+  heatFallback: { "zh-CN": "引用热度 · 7 日", "en-US": "Citation heat · 7 days" },
+  heatTimes: {
+    "zh-CN": (n: number) => `${n} 次`,
+    "en-US": (n: number) => `${n}×`,
+  } satisfies MessageFn<[number]>,
+
+  errLoadOverview: {
+    "zh-CN": "加载知识资产失败，请稍后重试。",
+    "en-US": "Could not load your knowledge assets. Please retry shortly.",
+  },
+  needSignIn: { "zh-CN": "需要登录", "en-US": "Sign-in required" },
+  needSignInDesc: {
+    "zh-CN": "登录后查看工作区的知识资产。",
+    "en-US": "Sign in to see this workspace's knowledge assets.",
+  },
+  loadingOverview: { "zh-CN": "正在加载知识资产…", "en-US": "Loading knowledge assets…" },
+  pageMeta: {
+    "zh-CN": (a: number, e: string, pct: number) => `${a} 资产 · ${e} 条知识 · 验证覆盖 ${pct}%`,
+    "en-US": (a: number, e: string, pct: number) =>
+      `${a} asset${a === 1 ? "" : "s"} · ${e} entries · ${pct}% verified`,
+  } satisfies MessageFn<[number, string, number]>,
+  statsAria: { "zh-CN": "知识资产统计", "en-US": "Knowledge asset statistics" },
+  coverageTag: {
+    "zh-CN": (v: string, t: string) => `${v} / ${t} 条`,
+    "en-US": (v: string, t: string) => `${v} / ${t} entries`,
+  } satisfies MessageFn<[string, string]>,
+  metricCalls: { "zh-CN": "今日供给调用", "en-US": "Supply calls today" },
+  directTag: {
+    "zh-CN": (n: number) => `直供 ${n}`,
+    "en-US": (n: number) => `Direct ${n}`,
+  } satisfies MessageFn<[number]>,
+  // No `runosTag`: "Runos 392" is a proper noun and a number, identical in
+  // every language. A string with no natural language in it does not belong in
+  // a translation catalog - it is built at the call site.
+  metricTopAgents: { "zh-CN": "调用 TOP 3 · 今日", "en-US": "Top 3 callers · today" },
+  metricSteward: { "zh-CN": "知识管家 · 今日", "en-US": "Knowledge steward · today" },
+  stewardPendingLink: { "zh-CN": "项待确认 →", "en-US": "awaiting confirmation →" },
+  preVerifiedTag: {
+    "zh-CN": (n: number) => `预验 ${n}`,
+    "en-US": (n: number) => `Pre-verified ${n}`,
+  } satisfies MessageFn<[number]>,
+  conflictTag: {
+    "zh-CN": (n: number) => `冲突 ${n}`,
+    "en-US": (n: number) => `Conflicts ${n}`,
+  } satisfies MessageFn<[number]>,
+  refluxTag: {
+    "zh-CN": (n: number) => `回流萃取 ${n}`,
+    "en-US": (n: number) => `Reflux drafts ${n}`,
+  } satisfies MessageFn<[number]>,
+  tagAll: {
+    "zh-CN": (n: number) => `全部 ${n}`,
+    "en-US": (n: number) => `All ${n}`,
+  } satisfies MessageFn<[number]>,
+  demoNote: {
+    "zh-CN": "调用与引用为演示口径 · 供给账本建设中",
+    "en-US": "Call and citation figures are illustrative · the supply ledger is being built",
+  },
+  emptyFiltered: { "zh-CN": "没有匹配的资产", "en-US": "No assets match" },
+  emptyFilteredDesc: {
+    "zh-CN": "换一个标签，或清除筛选。",
+    "en-US": "Try another tag, or clear the filter.",
+  },
 } satisfies Catalog;

@@ -11,8 +11,11 @@ import { ApiError } from "../_lib/api";
 import type { VerificationRecord } from "../kb/governance/record";
 import {
   CONTENT_TONE,
+  HEALTH_TONE,
   VERIFICATION_TONE,
   SHARING_TONE,
+  type AssetHealth,
+  type HealthMeta,
   type ContentState,
   type PublishState,
   type StateMeta,
@@ -66,6 +69,8 @@ export interface Failure {
 export interface FormatHelpers {
   content(state: string): StateMeta;
   verification(state: string): StateMeta;
+  /** An asset's overall health rung. */
+  health(state: AssetHealth): HealthMeta;
   sharing(state: PublishState): SharingMeta;
   /** Human wording for an API failure. Codes stay on the wire; prose lives here. */
   apiError(status: number, code?: string): string;
@@ -118,6 +123,15 @@ export function useFormat(): FormatHelpers {
         // the client has never heard of is a deploy-skew signal, and rendering
         // it verbatim is what makes that visible instead of silently neutral.
         return { label: contentLabel[state] ?? state, tone: CONTENT_TONE[state as ContentState] ?? "muted" };
+      },
+      health(state) {
+        const label: Record<AssetHealth, string> = {
+          healthy: m.healthHealthy,
+          attention: m.healthAttention,
+          processing: m.healthProcessing,
+          gap: m.healthGap,
+        };
+        return { label: label[state] ?? state, tone: HEALTH_TONE[state] ?? "neutral" };
       },
       verification(state) {
         return { label: verifLabel[state] ?? state, tone: VERIFICATION_TONE[state as VerificationState] ?? "muted" };

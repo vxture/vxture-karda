@@ -13,7 +13,6 @@ export const evaluation = {
   errSets: { "zh-CN": "评测集加载失败。", "en-US": "Could not load the evaluation sets." },
   errSetDetail: { "zh-CN": "评测集详情加载失败。", "en-US": "Could not load the evaluation set." },
   errCreateSet: { "zh-CN": "新建失败。", "en-US": "Could not create it." },
-  errDelete: { "zh-CN": "删除失败。", "en-US": "Delete failed." },
   errAdd: { "zh-CN": "添加失败。", "en-US": "Could not add it." },
   errRun: { "zh-CN": "运行失败。", "en-US": "The run failed." },
   errDetail: { "zh-CN": "明细加载失败。", "en-US": "Could not load the details." },

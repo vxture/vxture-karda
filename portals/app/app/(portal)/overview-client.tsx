@@ -16,6 +16,10 @@ import {
   type IconName,
 } from "@vxture/design-system";
 import { loginHref } from "../_lib/api";
+import { useMessages } from "../_i18n/useMessages";
+import { useFormat } from "../_i18n/useFormat";
+import { assets } from "../_i18n/messages/assets";
+import { shell } from "../_i18n/messages/shell";
 import { PageHead } from "../_shell/PageHead";
 import type { OverviewAsset, OverviewData } from "../kb/demo/overview-types";
 
@@ -25,18 +29,11 @@ import type { OverviewAsset, OverviewData } from "../kb/demo/overview-types";
 // pulse sparkline, visibility rings - drawn with DS color tokens so both
 // themes work without a repaint.
 
-const PUBLISH_LABEL: Record<OverviewAsset["publishState"], string> = {
-  private: "私有",
-  ws_published: "工作区开放",
-  org_published: "组织开放",
-};
-
-const HEALTH_META: Record<OverviewAsset["health"], { label: string; tone: "success" | "warning" | "info" | "neutral" }> = {
-  healthy: { label: "健康", tone: "success" },
-  attention: { label: "需关注", tone: "warning" },
-  processing: { label: "加工中", tone: "info" },
-  gap: { label: "有缺口", tone: "info" },
-};
+// No PUBLISH_LABEL and no HEALTH_META here any more. Both were second copies:
+// the sharing ladder's labels live in the catalog (`f.sharing`) and this file
+// had its OWN, differently worded set - 「工作区开放」 here against 「工作区」 on
+// the asset page, for the same publish state. Asset health moved to the state
+// vocabulary for the same reason: the 导航栏 card already needed 需关注.
 
 const SPARK_COLOR: Record<OverviewAsset["sparkTone"], string> = {
   primary: "var(--color-primary)",
@@ -57,11 +54,12 @@ const SOURCE_ICON: Record<OverviewAsset["source"], IconName> = {
 
 /** Verification coverage ring (conic gradient over the card surface). */
 function CoverageRing({ pct, tone, size = 48 }: { pct: number; tone?: "success" | "warning"; size?: number }) {
+  const m = useMessages(assets);
   const color = tone === "warning" ? "var(--color-warning)" : "var(--color-success)";
   const hole = size - 13;
   return (
     <div
-      aria-label={`验证覆盖 ${pct}%`}
+      aria-label={m.coverageAria(pct)}
       className="flex shrink-0 items-center justify-center rounded-full"
       style={{ width: size, height: size, background: `conic-gradient(${color} 0 ${pct}%, var(--color-muted) ${pct}% 100%)` }}
     >
@@ -89,12 +87,13 @@ function Sparkline({ series, color, width = 150, height = 24 }: { series: number
 
 /** Visibility glyph: concentric rings, outer rings dashed when not opened. */
 function VisibilityGlyph({ state }: { state: OverviewAsset["publishState"] }) {
+  const f = useFormat();
   const solid = "var(--color-primary)";
   const dash = "var(--color-border)";
   const ws = state !== "private";
   const org = state === "org_published";
   return (
-    <svg width="26" height="26" viewBox="0 0 40 40" fill="none" aria-label={PUBLISH_LABEL[state]}>
+    <svg width="26" height="26" viewBox="0 0 40 40" fill="none" aria-label={f.sharing(state).label}>
       <circle cx="20" cy="20" r="6" stroke={solid} strokeWidth="1.8" />
       <circle cx="20" cy="20" r="12" stroke={ws ? solid : dash} strokeWidth="1.2" strokeOpacity={ws ? 0.55 : 1} strokeDasharray={ws ? undefined : "3 4"} />
       <circle cx="20" cy="20" r="18" stroke={org ? solid : dash} strokeWidth="1" strokeOpacity={org ? 0.35 : 1} strokeDasharray={org ? undefined : "3 4"} />
@@ -103,7 +102,9 @@ function VisibilityGlyph({ state }: { state: OverviewAsset["publishState"] }) {
 }
 
 function AssetCard({ asset }: { asset: OverviewAsset }) {
-  const health = HEALTH_META[asset.health];
+  const m = useMessages(assets);
+  const f = useFormat();
+  const health = f.health(asset.health);
   const warn = asset.health === "attention";
   return (
     // Tone via the DS rule (02-visual-spec §3): semantic colour walks the top
@@ -116,7 +117,7 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
     // only outbound links went to a differently-shelled Console.
     <Link
       href={`/assets/${asset.id}`}
-      aria-label={`打开 ${asset.name}`}
+      aria-label={m.openAsset(asset.name)}
       className="block h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
     <Card className={`h-full py-lg transition-colors duration-fast ease-standard hover:bg-accent/40${warn ? " border-t-medium border-t-warning-border" : ""}`}>
@@ -128,7 +129,7 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
           <div className="flex min-w-0 flex-1 flex-col gap-2xs">
             <span className="truncate text-label-lg text-foreground">{asset.name}</span>
             <span className={`truncate text-body-sm ${asset.source === "agent" ? "text-ai-text" : "text-muted-foreground"}`}>
-              {asset.sourceLabel} · {asset.entryCount > 0 ? `${asset.entryCount} 条目` : `${asset.docCount} 文档`}
+              {asset.sourceLabel} · {asset.entryCount > 0 ? m.cardEntries(asset.entryCount) : m.cardDocs(asset.docCount)}
             </span>
           </div>
           <VisibilityGlyph state={asset.publishState} />
@@ -137,14 +138,14 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
         {asset.processing ? (
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between text-body-sm text-muted-foreground">
-              <span>管家加工中</span>
+              <span>{m.stewardProcessing}</span>
               <span className="font-mono">
                 {asset.processing.indexed} / {asset.processing.total}
               </span>
             </div>
             <Progress value={(asset.processing.indexed / Math.max(asset.processing.total, 1)) * 100} />
             {asset.processing.parked > 0 && (
-              <div className="text-body-sm text-muted-foreground">{asset.processing.parked} 份停放待向量化</div>
+              <div className="text-body-sm text-muted-foreground">{m.parkedCount(asset.processing.parked)}</div>
             )}
           </div>
         ) : (
@@ -153,9 +154,9 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <div className="flex items-center justify-between text-body-sm">
                 <span className={asset.topConsumers.length > 1 ? "text-ai-text" : "text-muted-foreground"}>
-                  {asset.topConsumers.length > 0 ? `${asset.topConsumers.join(" · ")} 高频引用` : "引用热度 · 7 日"}
+                  {asset.topConsumers.length > 0 ? m.hotConsumers(asset.topConsumers.join(" · ")) : m.heatFallback}
                 </span>
-                <span className="font-mono text-muted-foreground">{asset.heat7d} 次</span>
+                <span className="font-mono text-muted-foreground">{m.heatTimes(asset.heat7d)}</span>
               </div>
               <Sparkline series={asset.sparkline} color={SPARK_COLOR[asset.sparkTone]} />
             </div>
@@ -189,7 +190,7 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
               {t}
             </span>
           ))}
-          <span className="ml-auto shrink-0 text-body-sm text-muted-foreground">{PUBLISH_LABEL[asset.publishState]}</span>
+          <span className="ml-auto shrink-0 text-body-sm text-muted-foreground">{f.sharing(asset.publishState).label}</span>
           <StatusBadge tone={health.tone} dot>
             {health.label}
           </StatusBadge>
@@ -201,6 +202,9 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
 }
 
 export function OverviewClient() {
+  const m = useMessages(assets);
+  const sh = useMessages(shell);
+  const f = useFormat();
   const [data, setData] = useState<OverviewData | null>(null);
   const [needsAuth, setNeedsAuth] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -213,7 +217,7 @@ export function OverviewClient() {
         if (!res.ok) throw new Error(String(res.status));
         setData((await res.json()) as OverviewData);
       })
-      .catch(() => setError("加载知识资产失败,请稍后重试。"));
+      .catch(() => setError(m.errLoadOverview));
   }, []);
 
   const tagCounts = useMemo(() => {
@@ -235,11 +239,11 @@ export function OverviewClient() {
       <div className="mx-auto flex max-w-[28rem] flex-col items-center gap-4 py-24">
         <EmptyState
           icon="lock"
-          title="需要登录"
-          description="登录后查看工作区的知识资产。"
+          title={m.needSignIn}
+          description={m.needSignInDesc}
           action={
             <Button asChild>
-              <a href={loginHref("/")}>登录</a>
+              <a href={loginHref("/")}>{sh.signIn}</a>
             </Button>
           }
         />
@@ -259,7 +263,7 @@ export function OverviewClient() {
     return (
       <div className="flex items-center justify-center py-24 text-body-md text-muted-foreground">
         <Icon name="spinner" className="mr-2 animate-spin" />
-        正在加载知识资产…
+        {m.loadingOverview}
       </div>
     );
   }
@@ -272,16 +276,16 @@ export function OverviewClient() {
     // that global column - no page-local container, no per-section margins.
     <>
       <PageHead
-        title="知识资产"
-        description="知识资产的统计、运营与健康"
-        meta={`${totals.assetCount} 资产 · ${totals.entryCount.toLocaleString()} 条知识 · 验证覆盖 ${totals.coveragePct}%`}
+        title={sh.navAssets}
+        description={sh.navAssetsDesc}
+        meta={m.pageMeta(totals.assetCount, totals.entryCount.toLocaleString(), totals.coveragePct)}
         actions={
           <>
             <Button variant="outline" asChild>
-              <Link href="/bench">检验台</Link>
+              <Link href="/bench">{sh.subBench}</Link>
             </Button>
             <Button asChild>
-              <Link href="/assets/new">新建资产</Link>
+              <Link href="/assets/new">{sh.newAsset}</Link>
             </Button>
           </>
         }
@@ -291,7 +295,7 @@ export function OverviewClient() {
           watermark backdrop + tone top-edge + label/value rows), replacing the
           hand-rolled Cards. MetricGrid owns the elastic ladder (1 -> 2 -> 4). */}
       <MetricGrid
-        aria-label="知识资产统计"
+        aria-label={m.statsAria}
         columns={4}
         // Match the asset grid's gap-lg below (MetricGrid defaults gap-md);
         // the two 板块 must share one rhythm.
@@ -299,25 +303,25 @@ export function OverviewClient() {
         items={[
           {
             id: "coverage",
-            label: "验证覆盖",
+            label: sh.verifyCoverage,
             value: `${totals.coveragePct}%`,
             icon: "shield-check",
             tone: "success",
-            tags: [`${totals.verifiedCount.toLocaleString()} / ${totals.entryCount.toLocaleString()} 条`],
+            tags: [m.coverageTag(totals.verifiedCount.toLocaleString(), totals.entryCount.toLocaleString())],
           },
           {
             id: "calls",
-            label: "今日供给调用",
+            label: m.metricCalls,
             value: totals.todayCalls.toLocaleString(),
             icon: "lightning",
             tone: "brand",
             trend: `+${totals.deltaPct}%`,
             trendTone: "success",
-            tags: [`直供 ${totals.directCalls}`, `Runos ${totals.runosCalls}`],
+            tags: [m.directTag(totals.directCalls), `Runos ${totals.runosCalls}`],
           },
           {
             id: "top-agents",
-            label: "调用 TOP 3 · 今日",
+            label: m.metricTopAgents,
             value: totals.topAgents[0] ? `${totals.topAgents[0].code} ${totals.topAgents[0].calls}` : "—",
             icon: "agent",
             tone: "info",
@@ -325,19 +329,19 @@ export function OverviewClient() {
           },
           {
             id: "steward",
-            label: "知识管家 · 今日",
+            label: m.metricSteward,
             value: totals.steward.pending,
             icon: "sparkles",
             tone: "brand",
             description: (
               <a href="/pipeline" className="text-primary">
-                项待确认 →
+                {m.stewardPendingLink}
               </a>
             ),
             tags: [
-              `预验 ${totals.steward.preVerified}`,
-              `冲突 ${totals.steward.conflicts}`,
-              `回流萃取 ${totals.steward.refluxDrafts}`,
+              m.preVerifiedTag(totals.steward.preVerified),
+              m.conflictTag(totals.steward.conflicts),
+              m.refluxTag(totals.steward.refluxDrafts),
             ],
           },
         ]}
@@ -357,7 +361,7 @@ export function OverviewClient() {
               : "shrink-0 whitespace-nowrap rounded-full border border-border px-3.5 py-1 text-body-sm text-muted-foreground hover:bg-accent"
           }
         >
-          全部 {data.assets.length}
+          {m.tagAll(data.assets.length)}
         </button>
         {tagCounts.map(([tag, count]) => (
           <button
@@ -373,13 +377,13 @@ export function OverviewClient() {
           </button>
         ))}
         <span className="ml-auto text-body-sm text-muted-foreground">
-          {data.demoOps ? "调用与引用为演示口径 · 供给账本建设中" : ""}
+          {data.demoOps ? m.demoNote : ""}
         </span>
       </div>
 
       {/* asset cards */}
       {visible.length === 0 ? (
-        <EmptyState icon="folder-open" title="没有匹配的资产" description="换一个标签,或清除筛选。" />
+        <EmptyState icon="folder-open" title={m.emptyFiltered} description={m.emptyFilteredDesc} />
       ) : (
         // Elastic asset grid, driven by the 内容区's OWN width, not the
         // viewport (owner 2026-08-25). PortalShell marks the 内容区 as an
@@ -388,11 +392,21 @@ export function OverviewClient() {
         // columns into an 840px pane.
         //
         // The 内容区 measures (viewport - 48 window margin - 280 导航栏 -
-        // 320 值班台 - 48 pane spacers - 64 content inset):
-        //   both panes open   1440 -> 42rem   1600 -> 52rem   1920 -> 72rem
-        //   both collapsed    1440 -> 83rem   1600 -> 93rem
-        // so 76rem is the four-column gate: three columns is the default
-        // whenever both side panes are open, four only once they are not.
+        // 400 值班台 - 64 pane spacers - 32 content inset):
+        //   both panes open   1440 -> 38.5rem   1600 -> 48.5rem   1920 -> 68.5rem
+        //   both collapsed    1440 -> 85rem     1600 -> 95rem
+        //
+        // The frame changed on 2026-08-25 (值班台 320 -> 400, spacer 24 -> 32,
+        // inset 32 -> 16) and cost the open state a flat 4rem at every
+        // viewport. The GATES BELOW DID NOT MOVE, deliberately: a gate encodes
+        // how much room this content needs, and the frame getting wider does
+        // not change that. Shifting them down to preserve the old column count
+        // would be re-deriving the content's minimum to protect an appearance.
+        //
+        // What that costs, stated plainly: at 1440 with both panes open the
+        // pane is 38.5rem, under the 40rem gate, so the grid draws TWO columns
+        // where it used to draw three. Collapsing either pane returns it to
+        // three or four - which is what the collapse controls are for.
         <div className="grid grid-cols-1 gap-lg @min-[26rem]:grid-cols-2 @min-[40rem]:grid-cols-3 @min-[76rem]:grid-cols-4">
           {visible.map((a) => (
             <AssetCard key={a.id} asset={a} />

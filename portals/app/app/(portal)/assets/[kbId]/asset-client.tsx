@@ -45,6 +45,7 @@ import { SettingsPanel } from "./SettingsPanel";
 import { BindingPanel } from "./BindingPanel";
 import { useFormat, type Failure } from "../../../_i18n/useFormat";
 import { useMessages } from "../../../_i18n/useMessages";
+import { common } from "../../../_i18n/messages/common";
 import type { Message } from "../../../_i18n/catalog";
 import { assets } from "../../../_i18n/messages/assets";
 
@@ -64,6 +65,7 @@ import { assets } from "../../../_i18n/messages/assets";
 export function AssetClient() {
   const f = useFormat();
   const m = useMessages(assets);
+  const c = useMessages(common);
   const params = useParams<{ kbId: string }>();
   const kbId = params.kbId;
 
@@ -154,7 +156,7 @@ export function AssetClient() {
   return (
     <>
       <PageHead
-        title={kb?.name ?? m.headLoading}
+        title={kb?.name ?? c.loading}
         description={kb?.description ?? undefined}
         meta={
           docs
@@ -216,7 +218,7 @@ export function AssetClient() {
                 })
               }
               onDelete={(doc) =>
-                run(assets.errDeleteDoc, async () => {
+                run(common.deleteFailed, async () => {
                   await deleteDocument(kbId, doc.id);
                   await loadDocs();
                 })
