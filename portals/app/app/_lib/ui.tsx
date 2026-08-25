@@ -65,11 +65,21 @@ export function PlainBadge({ children }: { children: ReactNode }) {
   return <DsBadge variant="outline">{children}</DsBadge>;
 }
 
-const BUTTON_VARIANT: Record<string, "default" | "outline" | "ghost" | "destructive"> = {
+// `danger` was REMOVED rather than exempted (DS 9.0.0).
+//
+// It had zero call sites - a leftover from the retired Console. A blanket,
+// reason-free exemption on a WRAPPER would let any future caller reach
+// `variant="destructive"` through it without the contract, and without showing
+// up in the product's exemption census. That is precisely the back door the
+// DistributiveOmit fix closed on ActionButton. A destructive action in this
+// product goes through DestructiveButton.
+//
+// (The exemption prop is deliberately not spelled in this comment: the census is
+// a grep, and a census that counts its own documentation is broken.)
+const BUTTON_VARIANT: Record<string, "default" | "outline" | "ghost"> = {
   // local "primary" was the solid brand button - DS "default" is that.
   primary: "default",
   default: "outline",
-  danger: "destructive",
   ghost: "ghost",
 };
 
@@ -82,7 +92,7 @@ export function Button({
 }: {
   children: ReactNode;
   onClick?: () => void;
-  variant?: "default" | "primary" | "danger" | "ghost";
+  variant?: "default" | "primary" | "ghost";
   disabled?: boolean;
   type?: "button" | "submit";
 }) {
