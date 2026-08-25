@@ -13,12 +13,14 @@ import {
   type PublishState,
 } from "./ownership";
 import type { CreateKbInput, KbStore, KnowledgeBaseRow, UpdateKbInput } from "./store";
+import { validateMetadataFields, type MetadataFieldDecl, type ValidationError } from "./metadata";
 
 export type ServiceError =
   | { code: "invalid_ownership_shape" }
   | { code: "name_taken" }
   | { code: "not_found" }
-  | { code: "forbidden"; reason: string };
+  | { code: "forbidden"; reason: string }
+  | { code: "invalid_metadata_fields"; errors: ValidationError[] };
 
 export type Result<T> = { ok: true; value: T } | { ok: false; error: ServiceError };
 
@@ -36,6 +38,29 @@ function ownershipOf(row: KnowledgeBaseRow): KbOwnership {
 
 export class KbService {
   constructor(private store: KbStore) {}
+
+  // --- business metadata fields (100-kb-model 4.3) ---------------------------
+
+  async listMetadataFields(kbId: string): Promise<MetadataFieldDecl[]> {
+    return this.store.listMetadataFields(kbId);
+  }
+
+  /**
+   * Replace a library's whole field declaration set.
+   *
+   * Whole-set on purpose: `validateMetadataFields` checks the filterable cap and
+   * duplicate names, both of which are properties of the SET. A per-field
+   * endpoint would validate each addition against a set it does not yet include
+   * and let two concurrent additions cross the cap together. The store write is
+   * delete+insert in one transaction (UPDATE is revoked on this table), so the
+   * whole-set API and the only legal write shape are the same shape.
+   */
+  async replaceMetadataFields(kbId: string, fields: MetadataFieldDecl[]): Promise<Result<MetadataFieldDecl[]>> {
+    const errors = validateMetadataFields(fields);
+    if (errors.length > 0) return err({ code: "invalid_metadata_fields", errors });
+    if ((await this.store.getKb(kbId)) == null) return err({ code: "not_found" });
+    return ok(await this.store.replaceMetadataFields(kbId, fields));
+  }
 
   async create(input: CreateKbInput): Promise<Result<KnowledgeBaseRow>> {
     if (!ownershipShapeValid({ ownerType: input.ownerType, ownerSub: input.ownerSub })) {

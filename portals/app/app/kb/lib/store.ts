@@ -5,6 +5,7 @@
 import { prismaEnabled } from "../../lib/db";
 import { PrismaKbStore } from "./prisma-store";
 import type { OwnerType, PublishState } from "./ownership";
+import type { MetadataFieldDecl } from "./metadata";
 
 export interface KnowledgeBaseRow {
   id: string;
@@ -58,6 +59,17 @@ export interface KbStore {
   softDeleteKb(id: string): Promise<boolean>;
   /** True if a live library with this (workspace, name) exists, excluding `exceptId`. */
   nameTaken(workspaceId: string, name: string, exceptId?: string): Promise<boolean>;
+
+  // --- business metadata field declarations (100-kb-model 4.3) ---------------
+  //
+  // Read and REPLACE, with no per-field update - and that is not a convenience
+  // choice. 98_column_locks REVOKEs UPDATE on kb_metadata_field, so delete +
+  // insert is the only write this role can perform. It also happens to be the
+  // shape validateMetadataFields() demands: the cap and the duplicate check are
+  // properties of the whole set, and validating one field at a time is exactly
+  // how two concurrent single-field additions slip past a cap.
+  listMetadataFields(kbId: string): Promise<MetadataFieldDecl[]>;
+  replaceMetadataFields(kbId: string, fields: MetadataFieldDecl[]): Promise<MetadataFieldDecl[]>;
 }
 
 // --- in-memory ---------------------------------------------------------------
@@ -71,6 +83,7 @@ function newId(): string {
 
 export class InMemoryKbStore implements KbStore {
   private rows = new Map<string, KnowledgeBaseRow & { deletedAt: Date | null }>();
+  private meta = new Map<string, MetadataFieldDecl[]>();
 
   async createKb(input: CreateKbInput): Promise<KnowledgeBaseRow> {
     const now = new Date();
@@ -124,6 +137,14 @@ export class InMemoryKbStore implements KbStore {
     return [...this.rows.values()].some(
       (r) => r.workspaceId === workspaceId && r.name === name && !r.deletedAt && r.id !== exceptId,
     );
+  }
+
+  async listMetadataFields(kbId: string): Promise<MetadataFieldDecl[]> {
+    return [...(this.meta.get(kbId) ?? [])];
+  }
+  async replaceMetadataFields(kbId: string, fields: MetadataFieldDecl[]): Promise<MetadataFieldDecl[]> {
+    this.meta.set(kbId, [...fields]);
+    return [...fields];
   }
 }
 

@@ -4,6 +4,7 @@ import type {
   UpdateKbInput,
   KnowledgeBaseRow,
 } from "./store";
+import type { MetadataFieldDecl } from "./metadata";
 import type { OwnerType, PublishState } from "./ownership";
 import { getPrismaClient } from "../../lib/db";
 
@@ -105,5 +106,36 @@ export class PrismaKbStore implements KbStore {
       where: { workspaceId, name, deletedAt: null, id: exceptId ? { not: exceptId } : undefined },
     });
     return n > 0;
+  }
+
+  async listMetadataFields(kbId: string): Promise<MetadataFieldDecl[]> {
+    const p = await getPrismaClient();
+    const rows = await p.kbMetadataField.findMany({ where: { kbId }, orderBy: { fieldName: "asc" } });
+    return rows.map((r) => ({
+      fieldName: r.fieldName,
+      valueType: r.valueType as MetadataFieldDecl["valueType"],
+      enumValues: Array.isArray(r.enumValues) ? (r.enumValues as string[]) : undefined,
+      filterable: r.filterable,
+    }));
+  }
+
+  async replaceMetadataFields(kbId: string, fields: MetadataFieldDecl[]): Promise<MetadataFieldDecl[]> {
+    const p = await getPrismaClient();
+    // One transaction, because a delete that lands without its insert leaves the
+    // library with NO declared fields - every filter silently stops matching,
+    // and nothing reports an error.
+    await p.$transaction([
+      p.kbMetadataField.deleteMany({ where: { kbId } }),
+      p.kbMetadataField.createMany({
+        data: fields.map((f) => ({
+          kbId,
+          fieldName: f.fieldName,
+          valueType: f.valueType,
+          enumValues: (f.enumValues ?? undefined) as object | undefined,
+          filterable: f.filterable,
+        })),
+      }),
+    ]);
+    return this.listMetadataFields(kbId);
   }
 }

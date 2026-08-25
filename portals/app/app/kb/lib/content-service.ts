@@ -47,6 +47,16 @@ export class ContentService {
     return this.store.listFolders(kbId);
   }
 
+  /** Rename a folder within its KB. The uniqueness check excludes the folder
+   *  itself, so re-submitting the current name is a no-op rather than a
+   *  `folder_name_taken` refusal - which is what a user editing a name in place
+   *  and pressing enter without changing it would otherwise hit. */
+  async renameFolder(kbId: string, id: string, name: string): Promise<Result<FolderRow>> {
+    if (await this.store.folderNameTaken(kbId, name, id)) return err({ code: "folder_name_taken" });
+    const row = await this.store.renameFolder(id, name);
+    return row ? ok(row) : err({ code: "not_found" });
+  }
+
   async deleteFolder(id: string): Promise<Result<true>> {
     return (await this.store.deleteFolder(id)) ? ok(true) : err({ code: "not_found" });
   }

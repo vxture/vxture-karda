@@ -111,7 +111,10 @@ export interface ContentStore {
   // folders
   createFolder(kbId: string, name: string): Promise<FolderRow>;
   listFolders(kbId: string): Promise<FolderRow[]>;
+  /** `exceptId` excludes the folder being renamed, so keeping its own name is
+   *  not a collision with itself. */
   folderNameTaken(kbId: string, name: string, exceptId?: string): Promise<boolean>;
+  renameFolder(id: string, name: string): Promise<FolderRow | null>;
   deleteFolder(id: string): Promise<boolean>;
 
   // documents
@@ -173,6 +176,13 @@ export class InMemoryContentStore implements ContentStore {
     return [...this.folders.values()].some(
       (f) => f.kbId === kbId && f.name === name && f.id !== exceptId,
     );
+  }
+  async renameFolder(id: string, name: string): Promise<FolderRow | null> {
+    const f = this.folders.get(id);
+    if (!f) return null;
+    const row: FolderRow = { ...f, name, updatedAt: new Date() };
+    this.folders.set(id, row);
+    return row;
   }
   async deleteFolder(id: string): Promise<boolean> {
     return this.folders.delete(id);

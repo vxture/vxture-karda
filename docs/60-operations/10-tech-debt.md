@@ -423,3 +423,31 @@ deliberately not carried over.
   clean regardless.
 - **Recovery condition**: closed - fixed in the live ruleset and the artifact;
   standing rule recorded in `CLAUDE.md`.
+
+## TD-013 - DS DialogTitle ships `leading-none`, so every dialog title is zero-height
+
+- **Status**: OPEN (worked around locally; the fix belongs in `vxture-design`)
+- **Scope**: `@vxture/design-system` 6.5.1 -> every consumer, not just karda.
+- **Symptom**: a `DialogTitle` renders in the accessibility tree with the right
+  text and the right colour, and is completely invisible on screen. Measured
+  height is exactly 0.
+- **Cause**: DS's `DialogTitle` carries `text-lg font-semibold leading-none
+  tracking-tight`. Under Tailwind v4 a `leading-*` utility with no matching
+  `--leading-*` token falls back to the `--spacing-*` scale, and DS registers
+  `--spacing-none: 0px` - so `leading-none` compiles to `line-height: 0` rather
+  than the Tailwind-default `1`. This is the same trap already recorded for
+  product code; the new part is that it is inside a DS component, where a
+  consumer cannot see it and will not think to look.
+- **Why it survived**: nothing catches it. It type-checks, it renders in the DOM,
+  it is present and readable to a screen reader, and it passes every test we
+  have. Only a screenshot shows the title is missing - which is how it was found
+  (batch 10 document preview, 2026-08-25).
+- **Local workaround**: `<DialogTitle className="... leading-[1]">` in
+  `(portal)/assets/[kbId]/DocumentPanel.tsx`, with a comment pointing here.
+- **Fix upstream**: in DS, either drop `leading-none` from `DialogTitle` (and
+  audit the other components using it) or register `--leading-none: 1` in
+  `@vxture/design-tokens` so the utility resolves to what its name means. The
+  second is the better fix: it repairs every current and future use at once, and
+  `leading-none` meaning `line-height: 0` is a trap no consumer will expect.
+- **Recovery condition**: DS ships a build where `DialogTitle` has a non-zero
+  line-height; then remove the `leading-[1]` override and this entry.
