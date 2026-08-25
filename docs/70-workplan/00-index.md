@@ -413,6 +413,49 @@ view, usage. None of these is unbuilt. Each is built and unreachable.
 
 **能力齐、能看、不能操作.** That is the gap batches 10-13 close.
 
+### The Console is not the place to close it (owner ruling 2026-08-25)
+
+The first cut of this plan assumed the operating surface goes into the Console.
+The owner rejected the premise: apart from system configuration, this work
+belongs in the product's own shell - uploading a document and reading one are
+the primary act of a knowledge platform, not back-office administration.
+
+Three findings confirm it, and the third is worse than the objection:
+
+1. **The Console is a SECOND shell.** Its own header, and a hardcoded
+   `#fafafa` background that does not follow the design system's theme at all -
+   it predates the portal shell rather than living inside it.
+2. **None of its three pages is configuration.** Library list + create, library
+   detail + upload + sharing/governance toggles, and the 检验台 are all mainline
+   work.
+3. **An asset card on the 知识资产 page cannot be opened.** The page's only
+   outbound links are 检验台 and 新建资产, both jumping to the Console. The
+   product ruled 资产为核、首页即知识资产 - and then the asset has no detail view
+   inside the product. The portal header's 设置 icon routing to `/console` is
+   the same confusion admitting itself.
+
+What is genuinely configuration barely exists in the app: OIDC and runtime
+parameters are injected from the environment, the role/permission catalog is
+seeded by db-init, and integration status is already its own `/status` page. The
+workspace-level policy that remains (verification floor, default verifier,
+connector credentials once KD-106 rules, usage and entitlement) is a SETTINGS
+AREA inside the portal, not a parallel shell.
+
+**So the Console is retired, not extended.** Batch 10 opens with the IA merge;
+every batch below builds inside the portal shell.
+
+| Console today | lands as |
+|---|---|
+| `/console` - library list + create | the 知识资产 page, which already lists assets: add create, and make the cards openable |
+| `/console/[kbId]` - documents, upload, sharing, governance | `(portal)/assets/[kbId]` - the asset's own workspace, the product's primary object finally having a detail view |
+| `/console/search` - 检验台 | `(portal)/bench` - it is already in the portal header's launcher |
+| (nothing) | `(portal)/settings` - the workspace policy that is genuinely configuration; the header's 设置 icon points here instead of at `/console` |
+
+This is an information-architecture merge, not a page port: the second header
+and the hardcoded ground go away, and 911 lines get rehomed onto the shell that
+already has the vocabulary, spacing, typography and theme handling
+(`30-design/130-portal-shell.md`).
+
 ## Ordering principle
 
 **Exploit before extend.** Every unsurfaced capability is sunk cost earning
@@ -430,7 +473,11 @@ that ships six buttons nobody can complete a job with has shipped nothing.
 The primary role, and today its loop is broken at the operator layer: an owner
 can create a library and upload into it, then cannot configure how it is
 processed, cannot see why a document failed, cannot verify anything, and cannot
-publish it.
+publish it - and reaches even that much only by leaving the product shell.
+
+**Opens with the IA merge above.** The asset detail view is the batch's spine:
+everything else in this table hangs off it, and it is also what makes an asset
+card on the homepage finally clickable.
 
 | Item | Backing capability | State |
 |------|-------------------|-------|
@@ -439,12 +486,15 @@ publish it.
 | Publish / unpublish | `/api/kb/[id]/publish`, `ownership.canPublish` | no UI |
 | Verify a document; verify a selection | `/api/kb/[id]/documents/[docId]/verify` | no UI |
 | Folder create / rename / move | `/api/kb/[id]/folders` | no UI |
+| Document preview - read the thing in place | `/api/kb/[id]/documents/[docId]/download`, object store | endpoint only; today reading a document means downloading it |
+| Retire the Console shell: rehome its three pages, drop `ConsoleHeader` and its hardcoded ground, repoint the header's 设置 icon | - | - |
 
 **Acceptance:** an owner creates a library, sets its templates and verification
-policy, uploads a document, sees it fail, fixes the cause, re-runs it, verifies
-it, and publishes the library - without an engineer and without an API client.
+policy, uploads a document, reads it in place, sees it fail, fixes the cause,
+re-runs it, verifies it, and publishes the library - **without leaving the
+product shell**, without an engineer, and without an API client.
 
-**No new backend. No new schema.**
+**No new backend. No new schema.** The only deletion is a shell.
 
 ## Batch 11 - governance becomes operable
 
