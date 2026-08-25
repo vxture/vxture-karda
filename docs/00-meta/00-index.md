@@ -16,6 +16,7 @@ directory names, root-only README whitelist) on every push.
 | File | Purpose |
 |------|---------|
 | `10-docs-convention.md` | this repo's docs numbering and organization convention (local authority) |
+| `20-doc-system.md` | the PUBLISHED doc system (Claude artifacts) and how it relates to this tree |
 
 | Decade | Directory | Holds |
 |--------|-----------|-------|
