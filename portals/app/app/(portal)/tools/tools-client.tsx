@@ -18,6 +18,9 @@ import { readToolCatalog, loginHref, ApiError, type ToolCatalog } from "../../_l
 import { SignInGate } from "../../_lib/ui";
 import { PageHead } from "../../_shell/PageHead";
 import { useFormat } from "../../_i18n/useFormat";
+import { useMessages } from "../../_i18n/useMessages";
+import { channels as channelMessages } from "../../_i18n/messages/channels";
+import { shell } from "../../_i18n/messages/shell";
 
 // 工具面 - what an agent developer needs before deciding to call us.
 //
@@ -32,25 +35,35 @@ import { useFormat } from "../../_i18n/useFormat";
 // meter per document. Burying that under names and summaries answers the easy
 // question first.
 
-const METER_META: Record<string, { label: string; tone: "neutral" | "warning" | "info"; detail: string }> = {
-  none: { label: "不计费", tone: "neutral", detail: "不产生 karda 侧计量" },
-  per_call: { label: "按调用", tone: "warning", detail: "每次调用计一次" },
-  per_doc: { label: "按文档", tone: "info", detail: "按写入的文档条数计" },
+// Tone stays here, words come from the catalog - the same split as everywhere
+// else. `METER_TONE` is keyed by the metering kind the API sends.
+const METER_TONE: Record<string, "neutral" | "warning" | "info"> = {
+  none: "neutral",
+  per_call: "warning",
+  per_doc: "info",
 };
 
-const MODE_META: Record<string, { label: string; detail: string }> = {
-  obo_or_service: {
-    label: "OBO 或服务身份",
-    detail: "可代表某个用户调用，也可用服务身份调用",
-  },
-  obo_only: {
-    label: "仅 OBO",
-    detail: "必须代表一个真实用户——写入类工具不接受纯服务身份",
-  },
+/** Only the plain-string entries: indexing the bound table with a key that
+ *  might be interpolated would widen every read to `string | Function`. */
+type ChKey = {
+  [K in keyof typeof channelMessages]: (typeof channelMessages)[K] extends { "zh-CN": string } ? K : never;
+}[keyof typeof channelMessages];
+
+const METER_KEY: Record<string, { label: ChKey; detail: ChKey }> = {
+  none: { label: "meterNone", detail: "meterNoneDetail" },
+  per_call: { label: "meterPerCall", detail: "meterPerCallDetail" },
+  per_doc: { label: "meterPerDoc", detail: "meterPerDocDetail" },
+};
+
+const MODE_KEY: Record<string, { label: ChKey; detail: ChKey }> = {
+  obo_or_service: { label: "modeAny", detail: "modeAnyDetail" },
+  obo_only: { label: "modeOboOnly", detail: "modeOboOnlyDetail" },
 };
 
 export function ToolsClient() {
   const f = useFormat();
+  const m = useMessages(channelMessages);
+  const sh = useMessages(shell);
   const [data, setData] = useState<ToolCatalog | null>(null);
   const [needsAuth, setNeedsAuth] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +71,7 @@ export function ToolsClient() {
   useEffect(() => {
     readToolCatalog().then(setData, (e) => {
       if (e instanceof ApiError && e.status === 401) return setNeedsAuth(true);
-      setError(e instanceof ApiError ? f.apiError(e.status, e.code) : "工具面加载失败。");
+      setError(e instanceof ApiError ? f.apiError(e.status, e.code) : m.errLoadTools);
     });
   }, []);
 
@@ -70,12 +83,12 @@ export function ToolsClient() {
   return (
     <>
       <PageHead
-        title="工具面"
-        description="Agent 可以调用的能力、计量方式与接入方式"
-        meta={data ? `${data.tools.length} 个工具 · 协议 ${data.protocolVersion}` : undefined}
+        title={sh.subTools}
+        description={sh.subToolsDesc}
+        meta={data ? m.toolsMeta(data.tools.length, data.protocolVersion) : undefined}
         actions={
           <Button variant="outline" asChild>
-            <Link href="/bench">去检验台试问</Link>
+            <Link href="/bench">{m.toolsToBench}</Link>
           </Button>
         }
       />
@@ -83,28 +96,27 @@ export function ToolsClient() {
       {error && <Banner tone="danger" title={error} />}
 
       {data === null ? (
-        <EmptyState title="正在加载工具面…" />
+        <EmptyState title={m.toolsLoading} />
       ) : (
         <>
           <Card>
             <CardHeader>
-              <CardTitle>计量</CardTitle>
+              <CardTitle>{m.meteringTitle}</CardTitle>
               <CardDescription>
-                先看这个：{metered.length} 个工具产生计量，{free.length} 个不产生。AI 额度由平台层判定——
-                karda 这边调用进来就响应，不预检、不因额度拒绝。
+                {m.meteringLead(metered.length, free.length)}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-sm">
               {(["per_call", "per_doc", "none"] as const).map((kind) => {
                 const group = data.tools.filter((t) => t.metering.kind === kind);
                 if (group.length === 0) return null;
-                const meta = METER_META[kind];
+                const meta = METER_KEY[kind];
                 return (
                   <div key={kind} className="flex flex-wrap items-baseline gap-sm border-t border-border/60 py-sm first:border-t-0">
-                    <StatusBadge tone={meta.tone} dot={false}>
-                      {meta.label}
+                    <StatusBadge tone={METER_TONE[kind]} dot={false}>
+                      {m[meta.label]}
                     </StatusBadge>
-                    <span className="text-body-sm text-muted-foreground">{meta.detail}</span>
+                    <span className="text-body-sm text-muted-foreground">{m[meta.detail]}</span>
                     <span className="ml-auto flex flex-wrap gap-xs">
                       {group.map((t) => (
                         <code key={t.name} className="rounded-sm bg-muted px-xs py-3xs font-mono text-code-sm">
@@ -120,11 +132,11 @@ export function ToolsClient() {
 
           <Card>
             <CardHeader>
-              <CardTitle>接入方式</CardTitle>
+              <CardTitle>{m.accessTitle}</CardTitle>
               <CardDescription>
                 {data.sameBackendBothChannels
-                  ? "两道门，同一套后端——选哪道门不改变你拿到的东西。"
-                  : "两个通道。"}
+                  ? m.accessSameBackend
+                  : m.accessTwoChannels}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-md">
@@ -135,7 +147,7 @@ export function ToolsClient() {
                     <code className="rounded-sm bg-muted px-xs py-3xs font-mono text-code-sm">{c.endpoint}</code>
                   </div>
                   <span className="text-body-sm text-muted-foreground">{c.transport}</span>
-                  <span className="text-body-sm text-muted-foreground">鉴权：{c.auth}</span>
+                  <span className="text-body-sm text-muted-foreground">{m.accessAuth(c.auth)}</span>
                   <span className="text-body-sm">{c.suits}</span>
                 </div>
               ))}
@@ -144,22 +156,21 @@ export function ToolsClient() {
 
           <Card>
             <CardHeader>
-              <CardTitle>工具</CardTitle>
+              <CardTitle>{m.toolsListTitle}</CardTitle>
               <CardDescription>
-                这份清单与 <code className="font-mono text-code-sm">/.well-known/vxture-tools</code>{" "}
-                发的是同一份描述符，不会各说各话。
+                {m.toolsListLead("/.well-known/vxture-tools")}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col py-sm">
               {data.tools.map((t) => {
-                const meter = METER_META[t.metering.kind];
-                const mode = MODE_META[t.mode];
+                const meter = METER_KEY[t.metering.kind];
+                const mode = MODE_KEY[t.mode];
                 return (
                   <div key={t.name} className="flex flex-col gap-2xs border-t border-border/60 py-sm first:border-t-0">
                     <div className="flex flex-wrap items-center gap-sm">
                       <code className="font-mono text-code-md font-medium">{t.name}</code>
-                      <StatusBadge tone={meter?.tone ?? "neutral"} dot={false}>
-                        {meter?.label ?? t.metering.kind}
+                      <StatusBadge tone={METER_TONE[t.metering.kind] ?? "neutral"} dot={false}>
+                        {meter ? m[meter.label] : t.metering.kind}
                       </StatusBadge>
                       {t.metering.metric && (
                         <span className="font-mono text-code-sm text-muted-foreground">{t.metering.metric}</span>
@@ -167,10 +178,10 @@ export function ToolsClient() {
                       {/* obo_only is a real constraint on integration design, not
                           a footnote: a service-identity agent simply cannot call
                           these, and finding that out at runtime is expensive. */}
-                      <span className="text-body-sm text-muted-foreground">{mode?.label ?? t.mode}</span>
+                      <span className="text-body-sm text-muted-foreground">{mode ? m[mode.label] : t.mode}</span>
                     </div>
                     <span className="text-body-sm">{t.summary}</span>
-                    <span className="text-body-sm text-muted-foreground">{mode?.detail}</span>
+                    <span className="text-body-sm text-muted-foreground">{mode ? m[mode.detail] : ""}</span>
                     <span className="flex flex-wrap gap-xs">
                       {t.input.map((k) => (
                         <code key={k} className="rounded-sm bg-muted px-xs py-3xs font-mono text-code-sm text-muted-foreground">

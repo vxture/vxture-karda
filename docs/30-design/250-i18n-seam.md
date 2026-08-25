@@ -51,6 +51,7 @@ language at all**. Three times over, the same cut paid:
 | `_lib/session.ts` | which rung of the role ladder a session holds | the rung's name |
 | `useFormat().compact` | the "show exact below 10,000" threshold | the abbreviation above it |
 | `_lib/format.ts` (health) | which tone an asset's health rung carries | the rung's name |
+| `kb/demo/channels-*.ts` | a channel's `state`, a capability's `status` | `stateLabel` / `statusLabel`, deleted |
 
 Asset health is the FOURTH state machine handled this way, after content state,
 verification state and the sharing ladder. Its tones are in the DS
@@ -173,22 +174,68 @@ reaching a Chinese screen because nobody passed a label. Nothing in the source
 is wrong in that case - a prop is simply absent. `catalog.test.ts` covers what it
 can; the rest is a screenshot.
 
+### 3.3 A label that only names a state is derivable; a note is not
+
+The channel dashboard shipped `state` **and** `stateLabel` side by side, the
+label authored per channel: `off` on the Runos channel read
+「待注册 · 503 失败关闭」. That nuance is real, but it does not belong in a
+badge - and the activation card on the same page already states it in a full
+sentence. Both label fields were deleted from the contract; the badge now names
+the state from the catalog, in the reader's language.
+
+The line that came out of it, and that the remaining server-side prose is
+measured against:
+
+- **derivable** - a label that only names a state (`live`, `stable`, `per_call`,
+  `obo_only`) → delete it from the wire, derive from the enum, translate here;
+- **content** - a note that says something specific (`RUNOS_CHANNEL_TOKEN 待下发`,
+  `runos#156 · 两个能力的端点登记`) → it names an env var and an issue, and
+  stays.
+
+### 3.4 One place the seam correctly stops: the tool descriptor
+
+The 工具面 shows each tool's summary, and each channel's transport, auth and
+"what it suits", from the tool catalog - and the page states in its own copy
+that this list and `/.well-known/vxture-tools` **serve the same descriptor and
+cannot disagree**. Translating the UI copy of a descriptor would make that
+sentence false: the page would say one thing and the endpoint another.
+
+So the descriptor stays as authored. Making it multilingual is a change to an
+API artifact, not to a screen, and it belongs to whoever owns that contract.
+Everything AROUND the descriptor on that page is translated.
+
+---
+
 ## 6. Known limit: server-rendered metadata
 
 Locale is a client preference (`localStorage`, stamped onto `<html lang>` by the
 shell's `LocaleProvider`). Next's `export const metadata` is produced on the
-server, which cannot read it, so page titles stay Chinese in every locale. Fixing
-it means a cookie-backed server locale - see **TD-014**. The two affected files
-are `EXEMPT` in the guard, by name, with that reason.
+server, which cannot read it, so a page title cannot follow a language switch.
+Fixing that needs a cookie-backed server locale - **TD-014**, still open.
+
+What changed on 2026-08-26 is the CONTAINMENT. The titles used to be Chinese
+literals and two files sat in the guard's `EXEMPT` list; three more were about
+to join them, which is what showed the shape was wrong. A page title now reads
+its words from the catalog and resolves them at `BRAND.defaultLocale`:
+
+```tsx
+export const metadata = {
+  title: `${t(shell.navChannels, BRAND.defaultLocale)} - ${BRAND.displayName}`,
+};
+```
+
+The source holds no product string, so the guard has nothing to forgive and
+`EXEMPT` is empty. The debt is now a single locale argument in five files rather
+than five exempted files - and when the server locale arrives, that argument is
+the whole change.
 
 ## 7. Sweep order
 
-Landed: the whole shell (`_shell`), the state vocabularies (`states`), and the
-whole 知识资产 domain - `(portal)/assets/**` **and** its root page
-`(portal)/overview-client.tsx`, which the first sweep missed because it sits
-outside the `assets/` directory.
-Remaining, one PR each: 供给通道 (`channels` / `tools` / `bench`), 加工管道
-(`pipeline`), 验证评测 (`evaluation`). Translate the domain, add it to `SCOPE`.
+Landed: the whole shell (`_shell`), the state vocabularies (`states`), the whole
+知识资产 domain (`(portal)/assets/**` and its root page `overview-client.tsx`),
+and the whole 供给通道 domain (`channels` / `tools` / `bench`).
+Remaining, one PR each: 加工管道 (`pipeline`), 验证评测 (`evaluation`).
+Translate the domain, add it to `SCOPE`.
 
 ### 7.1 What is content, and stays in the language it was written in
 

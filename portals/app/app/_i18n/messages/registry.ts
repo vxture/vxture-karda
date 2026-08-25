@@ -3,8 +3,8 @@ import { shell } from "./shell";
 import { common } from "./common";
 import { states } from "./states";
 import { assets } from "./assets";
-import { bench } from "./bench";
 import { evaluation } from "./evaluation";
+import { channels } from "./channels";
 
 /**
  * Every namespace, in one place.
@@ -15,6 +15,6 @@ import { evaluation } from "./evaluation";
  * namespace is covered the moment it is imported, and the i18n guard has one
  * authority for what "the catalog" is.
  */
-export const NAMESPACES = { shell, common, states, assets, bench, evaluation } satisfies Record<string, Catalog>;
+export const NAMESPACES = { shell, common, states, assets, evaluation, channels } satisfies Record<string, Catalog>;
 
 export type NamespaceName = keyof typeof NAMESPACES;

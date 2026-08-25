@@ -37,11 +37,13 @@ const APP = "portals/app/app";
 const SCOPE = [
   `${APP}/(portal)/assets`,
   `${APP}/(portal)/overview-client.tsx`,
+  `${APP}/(portal)/channels`,
+  `${APP}/(portal)/tools`,
+  `${APP}/(portal)/bench`,
   `${APP}/_i18n`,
   `${APP}/_shell`,
 ];
 // NOT yet in scope, and each absence is a real debt rather than an oversight:
-//   (portal)/channels, /tools, /bench   - the 供给通道 domain
 //   (portal)/pipeline                   - the 加工管道 domain
 //   (portal)/evaluation                 - the 验证评测 domain
 // Each of those lands in SCOPE in the PR that sweeps it.
@@ -54,19 +56,14 @@ const CATALOG = `${APP}/_i18n/messages`;
  * cannot be swept yet. An entry here is a debt, not a dispensation - it names
  * what has to change for the line to go away.
  */
-const EXEMPT = [
-  {
-    file: `${APP}/(portal)/assets/[kbId]/page.tsx`,
-    reason:
-      "Next `metadata` is produced on the server, where the locale preference " +
-      "(client-side, localStorage) is not readable. Needs a cookie-backed " +
-      "server locale in the shell - see TD-014.",
-  },
-  {
-    file: `${APP}/(portal)/assets/new/page.tsx`,
-    reason: "Same as the asset detail page: server-rendered `metadata`, no server locale yet (TD-014).",
-  },
-];
+const EXEMPT = [];
+// Empty, and worth keeping that way. It held the two server-rendered
+// `page.tsx` titles until 2026-08-26; three more were about to join them,
+// which is what made the shape wrong. A page title now reads its words from
+// the catalog and resolves them at `BRAND.defaultLocale`, so the source holds
+// no product string and the guard has nothing to forgive. TD-014 - the title
+// not FOLLOWING a language switch - is unchanged and still open, but it is now
+// one locale argument rather than five exempted files.
 
 // Ideographs AND the fullwidth punctuation that travels with them. The
 // punctuation half was missing at first, which left a real hole: a JSX text

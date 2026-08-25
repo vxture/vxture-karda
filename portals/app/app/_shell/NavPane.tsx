@@ -7,6 +7,7 @@ import { NAV_ITEMS, type NavItem } from "./nav";
 import { useMessages } from "../_i18n/useMessages";
 import { useFormat } from "../_i18n/useFormat";
 import { shell as shellMessages } from "../_i18n/messages/shell";
+import { channels as channelMessages } from "../_i18n/messages/channels";
 import type { ShellData } from "../kb/demo/shell-types";
 
 // 导航栏 (nav pane) - the left pane of the shell body: one card per
@@ -258,6 +259,7 @@ function TitleTag({ count, tone, label }: { count: number; tone: "warning" | "da
  *  rather than a plain call so it can read the catalog itself. */
 function DomainTag({ itemKey, shell }: { itemKey: string; shell: ShellData | null }) {
   const m = useMessages(shellMessages);
+  const ch = useMessages(channelMessages);
   const f = useFormat();
   if (!shell) return null;
   if (itemKey === "overview" && shell.overview.needsAttention > 0) {
@@ -285,6 +287,7 @@ function FootFigures({ items }: { items: { k: string; v: string; tone?: string }
 
 function CardBody({ item, shell }: { item: NavItem; shell: ShellData | null }) {
   const m = useMessages(shellMessages);
+  const ch = useMessages(channelMessages);
   const f = useFormat();
   if (!shell) {
     // Same height as a settled body, so the pane does not jump on arrival.
@@ -317,7 +320,7 @@ function CardBody({ item, shell }: { item: NavItem; shell: ShellData | null }) {
         <span className="flex flex-col gap-sm">
           <span className="flex items-baseline gap-xs">
             <span className="text-title-lg font-mono text-foreground">{f.compact(c.todayCalls)}</span>
-            <span className="text-body-md text-muted-foreground">{m.callsToday}</span>
+            <span className="text-body-md text-muted-foreground">{ch.callsToday}</span>
             <span
               className={`ml-auto font-mono text-code-md ${
                 c.deltaPct >= 0 ? "text-success-text" : "text-destructive-text"
@@ -335,8 +338,8 @@ function CardBody({ item, shell }: { item: NavItem; shell: ShellData | null }) {
               ]}
             />
             <span className="flex min-w-0 flex-1 flex-col gap-xs">
-              <LegendRow tone="brand" label={m.channelDirect} value={f.compact(c.directCalls)} pct={share(c.directCalls)} />
-              <LegendRow tone="ai" label={m.channelRunos} value={f.compact(c.runosCalls)} pct={share(c.runosCalls)} />
+              <LegendRow tone="brand" label={ch.viaDirect} value={f.compact(c.directCalls)} pct={share(c.directCalls)} />
+              <LegendRow tone="ai" label={ch.viaRunos} value={f.compact(c.runosCalls)} pct={share(c.runosCalls)} />
             </span>
           </span>
         </span>
@@ -408,6 +411,7 @@ export function NavPane({
   collapsed: boolean;
 }) {
   const m = useMessages(shellMessages);
+  const ch = useMessages(channelMessages);
   const f = useFormat();
   const [closed, setClosed] = useState<Set<string>>(() => new Set());
 

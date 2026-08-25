@@ -35,8 +35,8 @@ export async function GET(): Promise<Response> {
   const data: ChannelsData = {
     ...DEMO_CHANNELS,
     totals: t.totals,
-    // Registry fields (name / endpoint / state / stateLabel) keep their authored
-    // values; only the measured ones are replaced.
+    // Registry fields (name / endpoint / state) keep their authored values;
+    // only the measured ones are replaced.
     channels: DEMO_CHANNELS.channels.map((c) => ({
       ...c,
       todayCalls: t.byChannel[c.key].todayCalls,

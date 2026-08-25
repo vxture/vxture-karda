@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { Banner, Button, Card, CardContent, Icon, MetricGrid, StatusBadge } from "@vxture/design-system";
 import { PageHead } from "../../_shell/PageHead";
-import type { ChannelHealth, ChannelsData } from "../../kb/demo/channels-types";
+import type { ChannelCapability, ChannelHealth, ChannelsData } from "../../kb/demo/channels-types";
+import { useMessages } from "../../_i18n/useMessages";
+import { channels as channelMessages } from "../../_i18n/messages/channels";
+import { shell } from "../../_i18n/messages/shell";
 import type { ConsumerReport } from "../../kb/tools/consumer-read";
 
 // 供给通道 first cut: the two channels karda supplies knowledge through -
@@ -34,7 +37,23 @@ function Sparkline({ series, muted }: { series: number[]; muted: boolean }) {
   );
 }
 
+/** Channel state -> its catalog entry. `satisfies` makes a new state fail to
+ *  compile until it has a name. */
+const STATE_KEY = {
+  live: "stateLive",
+  degraded: "stateDegraded",
+  off: "stateOff",
+} as const satisfies Record<ChannelHealth["state"], keyof typeof channelMessages>;
+
+const STATUS_KEY = {
+  stable: "statusStable",
+  pending: "statusPending",
+  unregistered: "statusUnregistered",
+} as const satisfies Record<ChannelCapability["status"], keyof typeof channelMessages>;
+
 export function ChannelsClient() {
+  const m = useMessages(channelMessages);
+  const sh = useMessages(shell);
   const [report, setReport] = useState<ConsumerReport | null>(null);
   const [data, setData] = useState<ChannelsData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +64,7 @@ export function ChannelsClient() {
         if (!res.ok) throw new Error(String(res.status));
         setData((await res.json()) as ChannelsData);
       })
-      .catch(() => setError("加载供给通道失败,请稍后重试。"));
+      .catch(() => setError(m.errLoad));
     // The drill-down is a SEPARATE, non-fatal fetch: the channel dashboard is
     // still worth showing if the per-consumer query is slow or unavailable, and
     // a failure here must not blank the page.
@@ -67,7 +86,7 @@ export function ChannelsClient() {
     return (
       <div className="flex items-center justify-center py-24 text-body-md text-muted-foreground">
         <Icon name="spinner" className="mr-2 animate-spin" />
-        正在加载供给通道…
+        {m.loading}
       </div>
     );
   }
@@ -78,39 +97,39 @@ export function ChannelsClient() {
   return (
     <>
       <PageHead
-        title="供给通道"
-        description="直供与 Runos 两条供给通道"
-        meta={`今日 ${totals.todayCalls.toLocaleString()} 次 · 直供 ${totals.directCalls} · Runos ${totals.runosCalls} · P95 ${totals.p95Ms}ms`}
+        title={sh.navChannels}
+        description={sh.navChannelsDesc}
+        meta={m.pageMeta(totals.todayCalls.toLocaleString(), totals.directCalls, totals.runosCalls, totals.p95Ms)}
         actions={
           <Button variant="outline" asChild>
-            <a href="/bench">检验台</a>
+            <a href="/bench">{sh.subBench}</a>
           </Button>
         }
       />
 
       <MetricGrid
-        aria-label="供给通道统计"
+        aria-label={m.statsAria}
         columns={4}
         className="gap-lg"
         items={[
           {
             id: "calls",
-            label: "今日供给调用",
+            label: m.callsToday,
             value: totals.todayCalls.toLocaleString(),
             icon: "lightning",
             tone: "brand",
             trend: `+${totals.deltaPct}%`,
             trendTone: "success",
           },
-          { id: "direct", label: "直供 · S2S", value: totals.directCalls.toLocaleString(), icon: "plug", tone: "info" },
+          { id: "direct", label: m.metricDirect, value: totals.directCalls.toLocaleString(), icon: "plug", tone: "info" },
           { id: "runos", label: "Runos · MCP", value: totals.runosCalls.toLocaleString(), icon: "puzzle", tone: "info" },
-          { id: "p95", label: "检索 P95", value: `${totals.p95Ms}ms`, icon: "timer", tone: "success" },
+          { id: "p95", label: m.metricP95, value: `${totals.p95Ms}ms`, icon: "timer", tone: "success" },
         ]}
       />
 
       {/* channel health */}
       <div className="flex flex-col gap-md">
-        <h2 className="text-title-sm">通道健康</h2>
+        <h2 className="text-title-sm">{m.sectionHealth}</h2>
         <div className="grid grid-cols-1 gap-lg @min-[52rem]:grid-cols-2">
           {data.channels.map((c) => {
             const off = c.state === "off";
@@ -123,19 +142,19 @@ export function ChannelsClient() {
                       <span className="truncate font-mono text-code-sm text-muted-foreground">{c.endpoint}</span>
                     </span>
                     <StatusBadge tone={STATE_TONE[c.state]} dot>
-                      {c.stateLabel}
+                      {m[STATE_KEY[c.state]]}
                     </StatusBadge>
                   </div>
                   <Sparkline series={c.spark} muted={off} />
                   <div className="flex flex-wrap gap-lg text-body-sm">
                     <span className="text-muted-foreground">
-                      今日调用<span className="ml-2xs font-mono text-foreground">{c.todayCalls.toLocaleString()}</span>
+                      {m.callsToday}<span className="ml-2xs font-mono text-foreground">{c.todayCalls.toLocaleString()}</span>
                     </span>
                     <span className="text-muted-foreground">
                       P95<span className="ml-2xs font-mono text-foreground">{off ? "—" : `${c.p95Ms}ms`}</span>
                     </span>
                     <span className="text-muted-foreground">
-                      错误率<span className="ml-2xs font-mono text-foreground">{off ? "—" : `${c.errorRatePct}%`}</span>
+                      {m.errorRate}<span className="ml-2xs font-mono text-foreground">{off ? "—" : `${c.errorRatePct}%`}</span>
                     </span>
                   </div>
                 </CardContent>
@@ -148,7 +167,7 @@ export function ChannelsClient() {
       <div className="flex flex-col gap-lg @min-[52rem]:flex-row">
         {/* capabilities */}
         <div className="flex min-w-0 flex-1 flex-col gap-md">
-          <h2 className="text-title-sm">能力契约</h2>
+          <h2 className="text-title-sm">{m.sectionCapabilities}</h2>
           <div className="flex flex-col gap-md">
             {data.capabilities.map((cap) => (
               <Card key={cap.id} className="py-md">
@@ -157,7 +176,7 @@ export function ChannelsClient() {
                     <span className="flex items-center gap-sm">
                       <span className="font-mono text-label-lg">{cap.code}</span>
                       <StatusBadge tone={cap.risk === "write" ? "warning" : "info"} dot={false}>
-                        {cap.risk === "write" ? "写" : "读"}
+                        {cap.risk === "write" ? m.riskWrite : m.riskRead}
                       </StatusBadge>
                     </span>
                     <span className="truncate font-mono text-code-sm text-muted-foreground">
@@ -166,10 +185,10 @@ export function ChannelsClient() {
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-2xs">
                     <StatusBadge tone={cap.status === "stable" ? "success" : "warning"} dot>
-                      {cap.statusLabel}
+                      {m[STATUS_KEY[cap.status]]}
                     </StatusBadge>
                     <span className="font-mono text-code-sm text-muted-foreground">
-                      今日 {cap.todayCalls.toLocaleString()}
+                      {m.capCallsToday(cap.todayCalls.toLocaleString())}
                     </span>
                   </span>
                 </CardContent>
@@ -183,22 +202,21 @@ export function ChannelsClient() {
               broken. */}
           {report && report.diagnosis.length > 0 && (
             <>
-              <h2 className="pt-xs text-title-sm">异常消费方</h2>
+              <h2 className="pt-xs text-title-sm">{m.sectionDiagnosis}</h2>
               <Card className="border-t-medium border-t-destructive-border py-md">
                 <CardContent className="flex flex-col gap-sm px-lg">
                   <span className="text-body-sm text-muted-foreground">
-                    按<strong>失败量</strong>排序，不是按失败率——4 次调用全挂是 100%，但通常无关紧要；
-                    400 次里挂 48 次才是事故。
+                    {m.diagnosisNote}
                   </span>
                   {report.diagnosis.map((d) => (
                     <span key={`${d.code}-${d.channel}`} className="flex flex-wrap items-center gap-sm text-body-sm">
-                      <span className="w-[5rem] shrink-0 truncate font-mono text-ai-text">{d.code ?? "（本产品）"}</span>
+                      <span className="w-[5rem] shrink-0 truncate font-mono text-ai-text">{d.code ?? m.ownProduct}</span>
                       <StatusBadge tone="danger" dot={false}>
-                        失败 {d.failed}
+                        {m.failedCount(d.failed)}
                       </StatusBadge>
                       <span className="font-mono text-code-sm text-destructive-text">{d.errorRatePct}%</span>
                       <span className="text-muted-foreground">
-                        {d.channel === "runos" ? "能力平台" : "直供通道"}
+                        {d.channel === "runos" ? m.viaRunos : m.viaDirect}
                         {d.topOperation && ` · ${d.topOperation}`}
                       </span>
                       {d.topErrorCode && (
@@ -211,7 +229,7 @@ export function ChannelsClient() {
             </>
           )}
 
-          <h2 className="pt-xs text-title-sm">消费方 · 今日</h2>
+          <h2 className="pt-xs text-title-sm">{m.sectionConsumers}</h2>
           <Card className="py-md">
             <CardContent className="flex flex-col gap-sm px-lg">
               {data.consumers.map((c) => (
@@ -237,12 +255,15 @@ export function ChannelsClient() {
 
         {/* activation */}
         <div className="flex w-full shrink-0 flex-col gap-md xl:w-[22rem]">
-          <h2 className="text-title-sm">通道启用</h2>
+          <h2 className="text-title-sm">{m.sectionActivation}</h2>
           <Card className={`py-md${pendingSteps > 0 ? " border-t-medium border-t-warning-border" : ""}`}>
             <CardContent className="flex flex-col gap-sm px-lg">
               <span className="text-body-sm text-muted-foreground">
-                Runos 通道端点已实现,尚未完成注册;未配置凭证时端点 <span className="font-mono">503</span> 失败关闭,
-                <span className="text-foreground">不会伪装成可用</span>。
+                {m.activationLead}
+                <span className="font-mono">503</span>
+                {m.activationTail}
+                <span className="text-foreground">{m.activationStrong}</span>
+                {m.activationEnd}
               </span>
               <div className="flex flex-col gap-sm border-t border-dashed border-primary/10 pt-sm dark:border-primary/20">
                 {data.activation.map((a) => (
@@ -270,8 +291,8 @@ export function ChannelsClient() {
           authored on purpose - no amount of traffic tells you whether Runos has
           registered the endpoint. See ChannelsData.sources. */}
       <span className="text-body-sm text-muted-foreground">
-        {data.sources.traffic === "live" ? "调用与消费为实时账本" : "调用与消费为演示口径,供给账本随通道里程碑交付"}
-        {" · 通道状态与能力契约为登记口径(非账本推导)"}
+        {data.sources.traffic === "live" ? m.provLive : m.provDemo}
+        {m.provRegistry}
       </span>
     </>
   );
