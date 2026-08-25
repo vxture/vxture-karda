@@ -26,7 +26,22 @@ export interface NavItem {
 
 export const NAV_ITEMS: readonly NavItem[] = [
   { key: "overview", href: "/", label: "知识资产", icon: "squares-four", description: "知识资产的统计、运营与健康" },
-  { key: "channels", href: "/channels", label: "供给通道", icon: "plugs-connected", description: "直供与 Runos 两条供给通道" },
+  {
+    key: "channels",
+    href: "/channels",
+    label: "供给通道",
+    icon: "plugs-connected",
+    description: "直供与 Runos 两条供给通道",
+    // 工具面 and 检验台 are the CONSUMER-facing half of this domain: what an
+    // agent developer can call, and where they try it before integrating. Both
+    // existed only as links from other pages until batch 13, which meant the
+    // one audience they are for had no way to find them.
+    sub: [
+      { key: "channels", href: "/channels", label: "通道概览" },
+      { key: "tools", href: "/tools", label: "工具面" },
+      { key: "bench", href: "/bench", label: "检验台" },
+    ],
+  },
   {
     key: "pipeline",
     href: "/pipeline",
@@ -39,13 +54,27 @@ export const NAV_ITEMS: readonly NavItem[] = [
       { key: "rebuild", href: "/pipeline/rebuild", label: "受控重建" },
     ],
   },
-  { key: "evaluation", href: "/evaluation", label: "验证评测", icon: "list-checks", description: "验证、评测与质量基线" },
+  {
+    key: "evaluation",
+    href: "/evaluation",
+    label: "验证评测",
+    icon: "list-checks",
+    description: "验证、评测与质量基线",
+    sub: [
+      { key: "evaluation", href: "/evaluation", label: "验证与评测" },
+      { key: "queue", href: "/evaluation/queue", label: "待复验队列" },
+    ],
+  },
 ] as const;
 
 /** Resolve the active nav entry from a pathname ("/" matches only exactly). */
 export function activeNavKey(pathname: string): string | null {
   for (const item of NAV_ITEMS) {
     if (item.href === "/" ? pathname === "/" : pathname.startsWith(item.href)) return item.key;
+    // A sub-view may live outside its domain's href prefix (/tools and /bench
+    // sit under 供给通道 but do not start with /channels). Without this the nav
+    // would show NO active domain on those pages.
+    if (item.sub?.some((sv) => pathname === sv.href || pathname.startsWith(`${sv.href}/`))) return item.key;
   }
   return null;
 }

@@ -16,13 +16,13 @@
 import { randomUUID } from "node:crypto";
 import { runSearch, DEFAULT_SEARCH_PARAMS, UnavailableReranker } from "./search";
 import { resolveScope } from "./scope";
+import { verificationFilterOf, topKOf } from "./params";
 import { Bm25Recaller } from "./bm25-recaller";
 import { runAsk, type GenerationClient, type ChunkText } from "./ask";
 import type { RecallCorpus, RecallTextResolver } from "./corpus";
 import type { VisibleSetInput } from "./visible-set";
 import type { ScopedKb } from "./scope";
 import { retrievalAtlas, type RetrievalAtlas } from "../atlas/wiring";
-import { VERIFICATION_FILTERS, type VerificationFilter } from "../lib/state";
 
 /** Structural port over VisibleSetResolver so tests can fake it. */
 export interface VisibleSetPort {
@@ -63,15 +63,7 @@ export interface ConsoleSearchResult {
 
 const SNIPPET_LEN = 240;
 
-function verificationFilter(v: unknown): VerificationFilter {
-  return typeof v === "string" && (VERIFICATION_FILTERS as readonly string[]).includes(v)
-    ? (v as VerificationFilter)
-    : DEFAULT_SEARCH_PARAMS.verificationFilter;
-}
 
-function topK(v: unknown): number {
-  return typeof v === "number" && Number.isInteger(v) && v > 0 && v <= 50 ? v : DEFAULT_SEARCH_PARAMS.topK;
-}
 
 function strArray(v: unknown): string[] | undefined {
   if (!Array.isArray(v)) return undefined;
@@ -125,8 +117,8 @@ export async function consoleSearch(
     reranker: atlas.reranker ?? new UnavailableReranker(),
     params: {
       ...DEFAULT_SEARCH_PARAMS,
-      topK: topK(args.top_k),
-      verificationFilter: verificationFilter(args.verification_filter),
+      topK: topKOf(args.top_k),
+      verificationFilter: verificationFilterOf(args.verification_filter),
     },
   });
 
@@ -163,6 +155,9 @@ export async function consoleAsk(
     scope,
     recallers: [new Bm25Recaller(deps.corpus), ...(atlas.vectorRecaller ? [atlas.vectorRecaller] : [])],
     reranker: atlas.reranker ?? new UnavailableReranker(),
+    // Same gap as the agent-facing ask-tool had: the 检验台 is meant to answer
+    // "what will my agent get", so it has to be able to ASK for a tier.
+    verificationFilter: verificationFilterOf(args.verification_filter),
     taskId,
     tenantId: caller.org ?? "",
     workspaceId: caller.ws,

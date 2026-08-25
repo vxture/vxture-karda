@@ -7,7 +7,8 @@
 // in the retrieved chunks. No conversation, no orchestration - that is the
 // agent's job (KD-004). The generation prompt cites the chunks so the answer is
 // traceable, which is the whole point of "cited" answering.
-import { runSearch, type SearchInput, type SearchResultItem } from "./search";
+import { runSearch, DEFAULT_SEARCH_PARAMS, type SearchInput, type SearchResultItem } from "./search";
+import type { VerificationFilter } from "../lib/state";
 
 // --- the Atlas A4 generation port (ChatRequest, 40-model-platform.md) --------
 
@@ -80,6 +81,18 @@ export interface AskInput extends Omit<SearchInput, "params"> {
   generation: GenerationClient;
   /** How many top results to ground the answer in. */
   contextK?: number;
+  /**
+   * The quality tier to ground on.
+   *
+   * A narrow field rather than the whole `params` bag, because ask genuinely
+   * does not let a caller set poolCap/perNamespaceN, and topK is expressed as
+   * `contextK`. But the verification filter it MUST honour: `karda.ask`
+   * publishes `verification_filter` in its input list, so an agent asking for
+   * `verified_only` and getting untracked content in its citations is a broken
+   * contract in a cited-answer product - the caller excluded that content and
+   * we cited it anyway.
+   */
+  verificationFilter?: VerificationFilter;
 }
 
 export interface Citation {
@@ -102,6 +115,12 @@ export async function runAsk(input: AskInput): Promise<AskResult> {
     scope: input.scope,
     recallers: input.recallers,
     reranker: input.reranker,
+    // Was omitted entirely, so every ask silently fell back to
+    // DEFAULT_SEARCH_PARAMS - `verified_only` leaked untracked content into the
+    // grounding, and `all` was quietly narrowed.
+    params: input.verificationFilter
+      ? { ...DEFAULT_SEARCH_PARAMS, verificationFilter: input.verificationFilter }
+      : undefined,
   });
 
   const contextK = input.contextK ?? 5;

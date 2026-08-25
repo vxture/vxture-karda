@@ -691,12 +691,54 @@ For the other user: the agent developer deciding whether karda is worth calling.
 
 | Item | Backing capability | State |
 |------|-------------------|-------|
-| 检验台 upgrade: verification_filter, library selection, citation expansion, degraded/partial disclosure | `console/search` (minimal today), retrieval chain | partial |
-| Self-describing tool surface page | `/.well-known/vxture-tools` | endpoint only |
-| 供给通道 drill-down by consumer; abnormal-channel diagnosis | `supply_call` ledger | ledger live, page top-level only |
+| 检验台 upgrade: verification_filter, library selection, citation expansion, degraded/partial disclosure | rebuilt on DS over the retrieval chain | **done 2026-08-25** |
+| Self-describing tool surface page | `/tools` over `GET /api/tools/catalog` | **done 2026-08-25** |
+| 供给通道 drill-down by consumer; abnormal-channel diagnosis | `consumer-read.ts`, `GET /api/channels/consumers` | **done 2026-08-25** |
 
-**Acceptance:** an agent developer can answer "will karda give my agent good
-answers, and what will it cost me" without reading our source.
+**Acceptance: MET, walked end to end 2026-08-25** against a throwaway Postgres.
+工具面 answers the cost question (8 tools grouped by metering, both channels with
+endpoints and auth); 检验台 answers the quality question by running the same query
+at two quality tiers over a corpus holding a VERIFIED current figure and an
+UNVERIFIED superseded one - the default tier returns both (with the superseded
+one ranked FIRST), 仅已验证 returns only the current one. That contrast is the
+whole product argument, and it was previously unshowable.
+
+**THE BIGGEST FINDING IS NOT A UI GAP.** `bm25.tokenize` matched `[a-z0-9]+`,
+so it discarded every CJK character. In a Chinese-first product that is not
+"weaker Chinese ranking" - a Chinese query produced ZERO tokens and therefore
+zero lexical hits against Chinese content, on the ONLY recaller currently live
+(vector recall waits on Atlas A1). Karda's entire working retrieval path was
+blind to Chinese, and the 检验台 walk-through is what surfaced it.
+
+Fixed with CJK **overlapping character bigrams** (Lucene's CJK-analyzer
+approach): 单架次时长 indexes as 单架/架次/次时/时长, so a query for 单架次 matches on
+单架+架次 with no segmentation dictionary. Chosen over word segmentation
+deliberately: a dictionary is a dependency, needs maintenance, and gets domain
+terms wrong in exactly the technical corpora karda is for. Bigrams over-generate
+slightly and BM25's IDF already discounts the common pairs.
+**No reindex is needed** - bm25Rank ranks from stored text at query time; there
+is no persisted inverted index to rebuild.
+
+**A published contract was also being violated.** `karda.ask` lists
+`verification_filter` among its inputs, the MCP channel passes it, and
+`ask-tool` never read it - `runAsk` called `runSearch` with no params at all, so
+every ask silently fell back to the default tier. An agent asking for
+`verified_only` got untracked content in its CITATIONS - content it had
+explicitly excluded, cited back at it as grounding. In a cited-answer product
+that is a broken promise, not a missing feature. Threaded through, and the
+coercion helpers (which existed as two identical copies, with ask-tool having
+none) are now one shared `retrieval/params.ts`.
+
+**Nav.** 检验台 and 工具面 existed only as links from other pages, so the one
+audience they are built for could not find them; both are now sub-views under
+供给通道, and 待复验队列 under 验证评测. `activeNavKey` had to learn that a sub-view
+may sit outside its domain's href prefix (`/tools` is not under `/channels`) -
+without that the nav showed no active domain on exactly those pages.
+
+**Diagnosis ranks by blast radius, not by rate.** A consumer with 4 calls all
+failing is 100% broken and almost always irrelevant; 400 calls with 48 failing is
+the incident. Sorting by rate puts the noise on top, which is how an operator
+learns to ignore the list.
 
 ## Batch 14 - the evaluation runner (the one systemic hole)
 

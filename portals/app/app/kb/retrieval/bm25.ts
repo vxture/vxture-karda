@@ -22,10 +22,57 @@ export interface Bm25Params {
 
 export const DEFAULT_BM25: Bm25Params = { k1: 1.5, b: 0.75 };
 
-/** Lowercase, split on non-alphanumeric. Good enough for v1; a stemmer/stopword
- *  list is a later refinement that does not change the ranking contract. */
+/**
+ * Tokenize for BM25.
+ *
+ * TWO ALPHABETS, TWO RULES, because this is a CHINESE-FIRST product and the
+ * original `[a-z0-9]+` silently dropped every CJK character. The effect was not
+ * "slightly worse Chinese ranking" - it was that a Chinese query produced ZERO
+ * tokens and therefore zero lexical hits against Chinese content, on the only
+ * recaller that is currently live (vector recall waits on Atlas A1). Found by
+ * walking batch 13's 检验台 through with real Chinese content.
+ *
+ *   · Latin/digits  - lowercase, split on non-alphanumeric, as before.
+ *   · CJK           - OVERLAPPING CHARACTER BIGRAMS. "单架次时长" indexes as
+ *                     单架 / 架次 / 次时 / 时长, so a query for 单架次 matches on
+ *                     单架 + 架次 without anyone owning a segmentation
+ *                     dictionary. This is what Lucene's CJK analyzer does, and
+ *                     it is chosen deliberately over word segmentation: a
+ *                     dictionary is a dependency, needs maintenance, and gets
+ *                     domain terms wrong in exactly the technical corpora karda
+ *                     is for. Bigrams over-generate slightly; BM25's IDF term
+ *                     already discounts the common pairs that result.
+ *
+ * A single CJK character standing alone (a one-character run) is emitted as
+ * itself - otherwise a query like 雨 would tokenize to nothing at all.
+ */
+const CJK_CLASS = "\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\u3040-\u30ff\uac00-\ud7af";
+const CJK = new RegExp(`[${CJK_CLASS}]`);
+const CJK_RUN = new RegExp(`[${CJK_CLASS}]+`, "g");
+
 export function tokenize(text: string): string[] {
-  return text.toLowerCase().match(/[a-z0-9]+/g) ?? [];
+  const out: string[] = [];
+  for (const run of text.toLowerCase().match(/[a-z0-9]+|[^a-z0-9\s]+/g) ?? []) {
+    if (!CJK.test(run)) {
+      // Latin/digit run, or punctuation-only (which yields nothing useful).
+      if (/^[a-z0-9]+$/.test(run)) out.push(run);
+      continue;
+    }
+    // Split into MAXIMAL CJK STRETCHES. Filtering the non-CJK characters out of
+    // the run instead would join what they separated: "时长，复核" would become
+    // 时长复核 and emit 长复, a bigram that spans a comma and means nothing.
+    for (const stretch of run.match(CJK_RUN) ?? []) {
+      const chars = [...stretch];
+      if (chars.length === 1) {
+        // A lone character must still be emitted, or a one-character query
+        // tokenizes to nothing and can never match.
+        out.push(chars[0]);
+        continue;
+      }
+      for (let i = 0; i < chars.length - 1; i++) out.push(chars[i] + chars[i + 1]);
+    }
+  }
+  return out;
 }
 
 export interface Scored {

@@ -351,7 +351,12 @@ export interface AskResult {
   noContext: boolean;
 }
 
-export async function askKbs(input: { question: string; kb_ids?: string[]; top_k?: number }): Promise<AskResult> {
+export async function askKbs(input: {
+  question: string;
+  kb_ids?: string[];
+  top_k?: number;
+  verification_filter?: string;
+}): Promise<AskResult> {
   const body = await req<{ result: AskResult }>("/api/kb/ask", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -502,4 +507,38 @@ export async function listConnectors(): Promise<(ConnectorInfo & { code: string;
     "/api/connectors",
   );
   return need(body, "connectors", "/api/connectors");
+}
+
+// --- the tool surface (batch 13) ----------------------------------------------
+
+export interface ToolDescriptor {
+  name: string;
+  summary: string;
+  mode: "obo_or_service" | "obo_only";
+  metering: { kind: "per_call" | "per_doc" | "none"; metric?: string };
+  input: string[];
+  authz: { asset_types: string[] };
+}
+
+export interface ToolChannel {
+  key: "runos" | "direct";
+  name: string;
+  endpoint: string;
+  transport: string;
+  auth: string;
+  suits: string;
+}
+
+export interface ToolCatalog {
+  protocolVersion: string;
+  tools: ToolDescriptor[];
+  channels: ToolChannel[];
+  sameBackendBothChannels: boolean;
+}
+
+/** The tool surface as a human can read it. Projects the same manifest as
+ *  /.well-known/vxture-tools, which is tailnet-only and S2S-authenticated - so
+ *  a browser cannot read that one at all. */
+export async function readToolCatalog(): Promise<ToolCatalog> {
+  return req<ToolCatalog>("/api/tools/catalog");
 }

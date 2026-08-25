@@ -7,6 +7,7 @@
 import { randomUUID } from "node:crypto";
 import { runAsk, type GenerationClient, type ChunkResolver, type ChunkText } from "./ask";
 import { UnavailableReranker } from "./search";
+import { verificationFilterOf } from "./params";
 import { resolveScope } from "./scope";
 import { Bm25Recaller } from "./bm25-recaller";
 import type { RecallCorpus, RecallTextResolver } from "./corpus";
@@ -68,6 +69,9 @@ export async function askTool(caller: CallerContext, args: Record<string, unknow
     scope,
     recallers: [new Bm25Recaller(deps.corpus), ...(atlas.vectorRecaller ? [atlas.vectorRecaller] : [])],
     reranker: atlas.reranker ?? new UnavailableReranker(),
+    // `karda.ask` publishes verification_filter (tools/catalog.ts); until batch
+    // 13 it was accepted and dropped on the floor.
+    verificationFilter: verificationFilterOf(args.verification_filter),
     taskId,
     tenantId: caller.org ?? "",
     workspaceId: ws,

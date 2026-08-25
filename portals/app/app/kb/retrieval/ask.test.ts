@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { runAsk, buildPrompt, type GenerationClient, type ChunkResolver, type ChatRequest } from "./ask";
 import { UnavailableReranker, type Recaller } from "./search";
 import type { ScopedKb } from "./scope";
+import { DEFAULT_VERIFICATION_FILTER } from "../lib/state";
 
 const org = (id: string): ScopedKb => ({ kbId: id, namespace: "org" });
 const scopeOf = (kbs: ScopedKb[]) => ({
@@ -120,4 +121,49 @@ test("ask only grounds in chunks the resolver can actually return", async () => 
     generation: gen,
   });
   assert.deepEqual(r.citations.map((c) => c.id), ["c1"]);
+});
+
+test("ask HONOURS the verification filter it publishes", async () => {
+  // The bug this pins: AskInput omitted `params`, so runAsk called runSearch
+  // with none and every ask fell back to DEFAULT_SEARCH_PARAMS. An agent asking
+  // `karda.ask` for `verified_only` got untracked content in its citations -
+  // content it had explicitly excluded, cited back at it as grounding. In a
+  // cited-answer product that is a broken contract, not a missing feature.
+  const seen: (string | undefined)[] = [];
+  const spyRecaller = {
+    namespace: "org",
+    async recall(q: { verificationFilter?: string }) {
+      seen.push(q.verificationFilter);
+      return [];
+    },
+  };
+
+  await runAsk({
+    query: "q",
+    scope: scopeOf([org("kb1")]),
+    recallers: [spyRecaller as never],
+    reranker: new UnavailableReranker(),
+    taskId: "t1",
+    tenantId: "org1",
+    verificationFilter: "verified_only",
+    resolver: { async resolve() { return []; } },
+    generation: { async chat() { return { text: "" }; } } as never,
+  });
+
+  assert.deepEqual(seen, ["verified_only"], "the filter must reach the recaller, not stop at runAsk");
+});
+
+test("ask with NO filter leaves the default in place", async () => {
+  const seen: (string | undefined)[] = [];
+  await runAsk({
+    query: "q",
+    scope: scopeOf([org("kb1")]),
+    recallers: [{ namespace: "org", async recall(q: { verificationFilter?: string }) { seen.push(q.verificationFilter); return []; } } as never],
+    reranker: new UnavailableReranker(),
+    taskId: "t1",
+    tenantId: "org1",
+    resolver: { async resolve() { return []; } },
+    generation: { async chat() { return { text: "" }; } } as never,
+  });
+  assert.deepEqual(seen, [DEFAULT_VERIFICATION_FILTER]);
 });

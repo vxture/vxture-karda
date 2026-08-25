@@ -7,12 +7,12 @@
 import { randomUUID } from "node:crypto";
 import { runSearch, DEFAULT_SEARCH_PARAMS, UnavailableReranker } from "./search";
 import { resolveScope } from "./scope";
+import { verificationFilterOf, topKOf } from "./params";
 import { Bm25Recaller } from "./bm25-recaller";
 import type { RecallCorpus, RecallTextResolver } from "./corpus";
 import type { VisibleSetResolver } from "./visible-set";
 import type { AttachmentStore } from "../attachments/store";
 import { recordUsage } from "../../usage/lib/buffer";
-import { VERIFICATION_FILTERS, type VerificationFilter } from "../lib/state";
 import type { CallerContext } from "../tools/s2s";
 import { retrievalAtlas, type RetrievalAtlas } from "../atlas/wiring";
 import { taskIdOr } from "../atlas/client";
@@ -32,15 +32,7 @@ export interface SearchToolResult {
   ignored_kb_ids: string[];
 }
 
-function verificationFilter(v: unknown): VerificationFilter {
-  return typeof v === "string" && (VERIFICATION_FILTERS as readonly string[]).includes(v)
-    ? (v as VerificationFilter)
-    : DEFAULT_SEARCH_PARAMS.verificationFilter;
-}
 
-function topK(v: unknown): number {
-  return typeof v === "number" && Number.isInteger(v) && v > 0 && v <= 50 ? v : DEFAULT_SEARCH_PARAMS.topK;
-}
 
 /**
  * Run a search for an authenticated caller. dispatch has already applied the mode
@@ -80,7 +72,7 @@ export async function searchTool(caller: CallerContext, args: Record<string, unk
     scope,
     recallers: [new Bm25Recaller(deps.corpus), ...(atlas.vectorRecaller ? [atlas.vectorRecaller] : [])],
     reranker: atlas.reranker ?? new UnavailableReranker(),
-    params: { ...DEFAULT_SEARCH_PARAMS, topK: topK(args.top_k), verificationFilter: verificationFilter(args.verification_filter) },
+    params: { ...DEFAULT_SEARCH_PARAMS, topK: topKOf(args.top_k), verificationFilter: verificationFilterOf(args.verification_filter) },
   });
 
   // Per-call metering (catalog: karda.search -> per_call). A random key per call
