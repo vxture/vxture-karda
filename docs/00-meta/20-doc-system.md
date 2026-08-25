@@ -27,8 +27,8 @@ document can leave before reading it.
 | 数据结构 | 30 张表，以及列锁纪律 | <https://claude.ai/code/artifact/50a07490-67b7-463e-8472-96cd4dbd9486> |
 | 接口文档 | 46 个端点，按谁能调分组 | <https://claude.ai/code/artifact/52d5508d-b0c4-43f4-b552-b874fcd1c8c0> |
 | 审计报告 | 批次 10-14 真实发生的缺陷 | <https://claude.ai/code/artifact/689dbb66-f931-466e-a8f8-aaa692f0e418> |
-| 能力登记册 | 行业能力对照与实现情况 | <https://claude.ai/code/artifact/e9da830c-334c-4297-8be5-219ef8af9e91> |
-| 设计语言 V1 | 产品外观与组件语言 | <https://claude.ai/code/artifact/dca61ae4-c30d-40b9-bd2d-9ec9978a624a> |
+| 能力登记册 | 84 项能力对照：建没建 / 该不该建 / 为什么 | <https://claude.ai/code/artifact/e9da830c-334c-4297-8be5-219ef8af9e91> |
+| 设计语言 V1 | 产品外观与组件语言（**不在本底盘上**，见下） | <https://claude.ai/code/artifact/dca61ae4-c30d-40b9-bd2d-9ec9978a624a> |
 
 ## Where each page's facts come from
 
@@ -45,8 +45,8 @@ the view is stale - that is the whole reason this table exists.
 
 ## The chassis
 
-All five karda-authored pages are generated from one shared chassis so they
-cannot drift apart visually or structurally. What it inherits, and from where:
+**Six of the seven** pages are generated from one shared chassis so they cannot
+drift apart visually or structurally. What it inherits, and from where:
 
 - **the family palette + `shell`/`rail`/`main` + `card`/`kv`/`note`/`tag`** -
   shared with the Atlas and Runos docs. Karda keeps the palette ON PURPOSE: a
@@ -71,3 +71,33 @@ same document, which is worse than one stale page.
 means 数据结构; adding routes means 接口文档; closing a batch means 产品现状; a
 defect found by walking a batch through means 审计报告. A page nobody refreshed
 after the thing it describes changed is not documentation - it is a claim.
+
+## Two document types, one chassis
+
+The chassis serves two shapes. The second is why it has a `wide` variant rather
+than the register being an exception to its own system:
+
+- **reference**（五份）- read a section at a time, look a fact up. `card` + `kv`
+  + `note`, prose capped at 62em.
+- **register**（能力登记册）- an 84-row scored matrix, scanned vertically and
+  compared across rows. It needs two things reference prose does not:
+  **filled** status chips (over 84 rows an outline `tag` does not resolve at a
+  glance, so reusing the reference vocabulary unchanged would have made the
+  register measurably worse), and **width** (a five-column matrix against a
+  252px rail). `.main.wide` lifts the cap **for tables only** - paragraphs keep
+  it, because a 1400px line of prose is unreadable whatever the page is for.
+
+The register carries a third axis, necessity, styled by **weight rather than
+colour**: a capability marked 必要 whose status is 未做 is the most important row
+on the page, and colouring necessity with the status palette would hide exactly
+that row. Of 84 capabilities, two are currently 必要 and not built - that now
+leads the page.
+
+## The one page that is NOT on the chassis
+
+**设计语言 V1** stays as it is (owner, 2026-08-25). It is not a document - it is a
+live design showcase: ~2.5MB carrying its own `--om-*` token definitions and 21
+script blocks, demonstrating the design language rather than describing it. A
+documentation chassis would break the thing it exists to show. It stays in the
+rail as a sibling without adopting the chassis; this section exists so that
+reads as a decision rather than an oversight.
