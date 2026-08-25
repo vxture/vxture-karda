@@ -11,7 +11,7 @@ import {
   ShellScopeButton,
   StatusBadge,
 } from "@vxture/design-system";
-import type { SessionUser } from "../console/_lib/api";
+import type { SessionUser } from "../_lib/api";
 
 // The header's "current scope" marker - karda's equivalent of the Console
 // TenantPanel, built the same way: business content is ours (organization /
@@ -52,8 +52,8 @@ export function ScopePanel({ user }: { user: SessionUser | null }) {
           <ShellPanelRow label="账号" value={user?.sub ?? "未登录"} />
         </ShellPanelSection>
         <ShellPanelSection>
-          <ShellPanelRow label="知识库控制台" href="/console" />
-          <ShellPanelRow label="检验台" href="/console/search" />
+          <ShellPanelRow label="新建资产" href="/assets/new" />
+          <ShellPanelRow label="检验台" href="/bench" />
         </ShellPanelSection>
       </ShellPanelContent>
     </Popover>

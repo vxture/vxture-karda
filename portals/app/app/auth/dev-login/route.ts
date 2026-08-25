@@ -17,9 +17,9 @@ export async function GET(req: Request): Promise<Response> {
   }
 
   const url = new URL(req.url);
-  const returnTo = url.searchParams.get("returnTo") ?? "/console";
+  const returnTo = url.searchParams.get("returnTo") ?? "/";
   // Same-origin relative paths only - never an open redirect, even in dev.
-  const target = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/console";
+  const target = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/";
   // Prefer the configured app origin over url.origin (same as the callback
   // route): standalone Next reconstructs req.url from the server bind address
   // (HOSTNAME, "0.0.0.0" under Docker), not the client's Host header, so

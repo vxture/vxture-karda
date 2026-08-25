@@ -60,7 +60,7 @@ export function EvaluationClient() {
         actions={
           <>
             <Button variant="outline" asChild>
-              <a href="/console/search">检验台</a>
+              <a href="/bench">检验台</a>
             </Button>
             <Button>运行评测</Button>
           </>

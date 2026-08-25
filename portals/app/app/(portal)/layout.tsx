@@ -5,9 +5,9 @@ import { PortalShell } from "../_shell/PortalShell";
 // The product portal shell (owner 2026-08-24): a 48px 顶栏 over the 工作区,
 // which holds three panes - 导航栏 / 内容区 / 值班台 - with the two side panes
 // collapsible (PortalShell owns the state). Vocabulary is defined once at the
-// top of _shell/NavPane.tsx. The Console (/console) keeps its own management
-// shell; contract-facing routes (/status, /api/*) are untouched by this
-// group.
+// top of _shell/NavPane.tsx. The Console shell was RETIRED in batch 10 - the
+// operating surface (assets, bench) lives in this group now; contract-facing
+// routes (/status, /api/*) are untouched.
 export default function PortalLayout({ children }: { children: ReactNode }) {
   return (
     <LocaleProvider>

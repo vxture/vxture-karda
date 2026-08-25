@@ -73,7 +73,7 @@ export function ChannelsClient() {
         meta={`今日 ${totals.todayCalls.toLocaleString()} 次 · 直供 ${totals.directCalls} · Runos ${totals.runosCalls} · P95 ${totals.p95Ms}ms`}
         actions={
           <Button variant="outline" asChild>
-            <a href="/console/search">检验台</a>
+            <a href="/bench">检验台</a>
           </Button>
         }
       />

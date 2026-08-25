@@ -17,7 +17,7 @@ import {
   useTheme,
 } from "@vxture/design-system";
 import { BRAND } from "@karda/shared/brand";
-import { getSession, loginHref, type SessionUser } from "../console/_lib/api";
+import { getSession, loginHref, type SessionUser } from "../_lib/api";
 import { NAV_ITEMS, PORTAL_FULLSCREEN_ID, activeNavKey } from "./nav";
 import { isLocale, useLocale } from "./locale";
 import { ScopePanel } from "./ScopePanel";
@@ -102,14 +102,14 @@ export function AppHeader({
         label: "检验台",
         description: "以 Agent 同款检索链路试问,验收供给质量",
         icon: "sparkles" as const,
-        onSelect: () => router.push("/console/search"),
+        onSelect: () => router.push("/bench"),
       },
       {
         key: "console",
         label: "知识库控制台",
         description: "库与文档的管理入口",
         icon: "folder-open" as const,
-        onSelect: () => router.push("/console"),
+        onSelect: () => router.push("/assets/new"),
       },
     ].filter((a) => !q || a.label.toLowerCase().includes(q));
     const groups = [];
@@ -187,7 +187,7 @@ export function AppHeader({
         />
         <ShellIconButton icon="help" label="帮助" />
         <ShellIconButton icon="bell" label="通知" />
-        <ShellIconButton icon="settings" label="设置" onClick={() => router.push("/console")} />
+        <ShellIconButton icon="settings" label="设置" onClick={() => router.push("/assets/new")} />
       </ShellIconGroup>
       <ShellUserMenu
           user={{
@@ -233,7 +233,7 @@ export function AppHeader({
           }
           links={
             user
-              ? [{ key: "console", label: "知识库控制台", href: "/console", icon: "folder-open" as const }]
+              ? [{ key: "assets", label: "新建资产", href: "/assets/new", icon: "folder-open" as const }]
               : [{ key: "login", label: "登录", href: loginHref(pathname ?? "/"), icon: "user" as const }]
           }
           actions={

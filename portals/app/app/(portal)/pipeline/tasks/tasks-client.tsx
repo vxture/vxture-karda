@@ -74,7 +74,7 @@ export function TasksClient() {
               <Link href="/pipeline/rebuild">受控重建</Link>
             </Button>
             <Button asChild>
-              <a href="/console">上传文档</a>
+              <a href="/assets/new">上传文档</a>
             </Button>
           </>
         }

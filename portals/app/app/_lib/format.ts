@@ -21,9 +21,9 @@ export interface SharingMeta {
 }
 
 const SHARING: Record<PublishState, SharingMeta> = {
-  private: { label: "Private", tone: "muted", help: "Only you can see this library." },
-  ws_published: { label: "Workspace", tone: "info", help: "Everyone in this workspace can read it." },
-  org_published: { label: "Organization", tone: "ok", help: "Everyone in the organization can read it." },
+  private: { label: "私有", tone: "muted", help: "只有你能看到这个库。" },
+  ws_published: { label: "工作区", tone: "info", help: "本工作区成员可读。" },
+  org_published: { label: "组织", tone: "ok", help: "组织内所有人可读。" },
 };
 
 export function sharingMeta(state: PublishState): SharingMeta {
@@ -43,11 +43,11 @@ export interface StateMeta {
 
 const CONTENT_STATE: Record<ContentState, StateMeta> = {
   draft: { label: "Draft", tone: "muted" },
-  processing: { label: "Processing", tone: "warn" },
-  indexed: { label: "Indexed", tone: "ok" },
-  failed: { label: "Failed", tone: "bad" },
-  archived: { label: "Archived", tone: "muted" },
-  deleted: { label: "Deleted", tone: "muted" },
+  processing: { label: "加工中", tone: "warn" },
+  indexed: { label: "已入藏", tone: "ok" },
+  failed: { label: "失败", tone: "bad" },
+  archived: { label: "已归档", tone: "muted" },
+  deleted: { label: "已删除", tone: "muted" },
 };
 
 export function contentStateMeta(state: string): StateMeta {
@@ -59,8 +59,8 @@ export function contentStateMeta(state: string): StateMeta {
 export type VerificationState = "unverified" | "verified" | "stale";
 
 const VERIFICATION_STATE: Record<VerificationState, StateMeta> = {
-  unverified: { label: "Unverified", tone: "muted" },
-  verified: { label: "Verified", tone: "ok" },
+  unverified: { label: "未验证", tone: "muted" },
+  verified: { label: "已验证", tone: "ok" },
   // A stale item was verified once but its interval lapsed - the default quality
   // tier stops recalling it, so it reads as an attention state, not an error.
   stale: { label: "Stale", tone: "warn" },
@@ -72,8 +72,8 @@ export function verificationMeta(state: string): StateMeta {
 
 /** Re-verification cadence for display. null/0 = verify once, no expiry. */
 export function formatInterval(days: number | null | undefined): string {
-  if (!days || days <= 0) return "once (no expiry)";
-  return `every ${days} day${days === 1 ? "" : "s"}`;
+  if (!days || days <= 0) return "一次性（不过期）";
+  return `每 ${days} 天`;
 }
 
 /**
@@ -84,7 +84,7 @@ export function formatInterval(days: number | null | undefined): string {
  */
 export function processingHint(state: string): string | null {
   return state === "processing"
-    ? "Captured and queued. Indexing is paused until the embedding service is available - nothing is lost."
+    ? "已收下并入队。向量服务恢复前索引暂停——内容不会丢。"
     : null;
 }
 
@@ -119,15 +119,15 @@ export function formatWhen(iso: string | null | undefined): string {
 
 /** Turn an API failure (status + optional error code) into a human message. */
 export function apiErrorMessage(status: number, code?: string): string {
-  if (status === 401) return "Your session has expired. Please sign in again.";
-  if (status === 403) return code === "forbidden" ? "You do not have permission for that." : "That action was refused.";
-  if (status === 404) return "Not found (it may belong to another workspace).";
+  if (status === 401) return "登录已过期，请重新登录。";
+  if (status === 403) return code === "forbidden" ? "你没有执行该操作的权限。" : "这个操作被拒绝了。";
+  if (status === 404) return "没找到——它可能属于另一个工作区。";
   if (status === 409) {
-    if (code === "duplicate_document") return "That exact content is already in this library.";
-    if (code === "name_taken") return "A library with that name already exists in this workspace.";
-    return "That conflicts with something that already exists.";
+    if (code === "duplicate_document") return "这份内容已经在库里了。";
+    if (code === "name_taken") return "这个工作区里已经有同名的库了。";
+    return "和已存在的内容冲突。";
   }
-  if (code === "name_required") return "A name is required.";
-  if (status >= 500) return "The server hit an error. Please try again.";
+  if (code === "name_required") return "请填写名称。";
+  if (status >= 500) return "服务端出错了，请重试。";
   return code ? `Request failed: ${code}` : `Request failed (HTTP ${status}).`;
 }
