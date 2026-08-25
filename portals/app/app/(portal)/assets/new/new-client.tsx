@@ -1,16 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { listKbs, createKb, loginHref, ApiError, type Kb } from "./_lib/api";
-import { sharingMeta, apiErrorMessage } from "./_lib/format";
-import { styles, Badge, Button, Notice, Empty, SignInGate, T } from "./_lib/ui";
+import { listKbs, createKb, loginHref, ApiError, type Kb } from "../../../_lib/api";
+import { sharingMeta, apiErrorMessage } from "../../../_lib/format";
+import { styles, Badge, Button, Notice, Empty, SignInGate, T } from "../../../_lib/ui";
 
 // Libraries index: the workspace's libraries with their sharing grade, and a
 // create form. "Grade" is the publish state (private / workspace / organization);
 // a document is classified by which library it is uploaded into, and each
 // library carries its own sharing - so creating the right library IS the
 // classification step (track 10: upload -> classify into graded libraries).
-export default function ConsolePage() {
+export function NewAssetClient() {
   const [kbs, setKbs] = useState<Kb[] | null>(null);
   const [needsAuth, setNeedsAuth] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export default function ConsolePage() {
       setKbs(await listKbs());
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) return setNeedsAuth(true);
-      setError(e instanceof ApiError ? apiErrorMessage(e.status, e.code) : "Failed to load libraries.");
+      setError(e instanceof ApiError ? apiErrorMessage(e.status, e.code) : "资产列表加载失败。");
     }
   }, []);
 
@@ -45,7 +45,7 @@ export default function ConsolePage() {
       await load();
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) return setNeedsAuth(true);
-      setError(err instanceof ApiError ? apiErrorMessage(err.status, err.code) : "Failed to create the library.");
+      setError(err instanceof ApiError ? apiErrorMessage(err.status, err.code) : "创建失败。");
     } finally {
       setCreating(false);
     }
@@ -53,51 +53,51 @@ export default function ConsolePage() {
 
   if (needsAuth) {
     return (
-      <main style={styles.page}>
-        <SignInGate href={loginHref("/console")} />
-      </main>
+      <>
+        <SignInGate href={loginHref("/assets/new")} />
+      </>
     );
   }
 
   return (
-    <main style={styles.page}>
-      <h1 style={styles.h1}>Libraries</h1>
+    <>
+      <h1 style={styles.h1}>知识资产</h1>
       <p style={styles.sub}>
-        Knowledge libraries in your active workspace. Upload documents into a library, then set who it is shared with.{" "}
-        <a href="/console/search" style={{ color: T.accent }}>
-          Search &amp; ask
+        当前工作区的知识资产。把文档传进某个资产，再决定它共享给谁。{" "}
+        <a href="/bench" style={{ color: T.accent }}>
+          检验台
         </a>{" "}
-        across everything you can see.
+        可跨你能看到的全部资产试问。
       </p>
 
       {error && <Notice tone="bad">{error}</Notice>}
 
       <section style={styles.card}>
-        <h2 style={styles.h2}>New library</h2>
+        <h2 style={styles.h2}>新建资产</h2>
         <form onSubmit={onCreate}>
           <div style={{ marginBottom: 10 }}>
             <input
               style={styles.input}
-              placeholder="Library name"
+              placeholder="资产名称"
               value={name}
               maxLength={255}
               onChange={(e) => setName(e.target.value)}
-              aria-label="Library name"
+              aria-label="资产名称"
             />
           </div>
           <div style={{ marginBottom: 12 }}>
             <input
               style={styles.input}
-              placeholder="Description (optional)"
+              placeholder="描述（可选）"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              aria-label="Library description"
+              aria-label="资产描述"
             />
           </div>
           <Button type="submit" variant="primary" disabled={!name.trim() || creating}>
-            {creating ? "Creating..." : "Create library"}
+            {creating ? "创建中…" : "新建资产"}
           </Button>
-          <span style={{ ...styles.sub, marginLeft: 12 }}>New libraries start Private - you can share them after.</span>
+          <span style={{ ...styles.sub, marginLeft: 12 }}>新建的资产默认私有，创建后再决定共享范围。</span>
         </form>
       </section>
 
@@ -105,12 +105,12 @@ export default function ConsolePage() {
         {kbs === null ? (
           <Empty>Loading libraries...</Empty>
         ) : kbs.length === 0 ? (
-          <Empty>No libraries yet. Create your first one above.</Empty>
+          <Empty>还没有资产。用上面的表单建第一个。</Empty>
         ) : (
           kbs.map((kb) => {
             const share = sharingMeta(kb.publishState);
             return (
-              <a key={kb.id} href={`/console/${kb.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+              <a key={kb.id} href={`/assets/${kb.id}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <div style={{ ...styles.card, cursor: "pointer" }}>
                   <div style={styles.rowBetween}>
                     <div>
@@ -118,7 +118,7 @@ export default function ConsolePage() {
                       {kb.description && <div style={{ ...styles.sub, marginTop: 2 }}>{kb.description}</div>}
                     </div>
                     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      {kb.governanceEnabled && <Badge tone="info">Governed</Badge>}
+                      {kb.governanceEnabled && <Badge tone="info">已开启治理</Badge>}
                       <Badge tone={share.tone}>{share.label}</Badge>
                     </div>
                   </div>
@@ -131,9 +131,9 @@ export default function ConsolePage() {
 
       <p style={{ ...styles.sub, marginTop: 8 }}>
         <a href="/status" style={{ color: T.accent }}>
-          Integration status
+          集成状态
         </a>
       </p>
-    </main>
+    </>
   );
 }

@@ -10,15 +10,15 @@ import {
   type Kb,
   type SearchResult,
   type AskResult,
-} from "../_lib/api";
-import { apiErrorMessage } from "../_lib/format";
-import { styles, Badge, Button, Notice, Empty, SignInGate, T } from "../_lib/ui";
+} from "../../_lib/api";
+import { apiErrorMessage } from "../../_lib/format";
+import { styles, Badge, Button, Notice, Empty, SignInGate, T } from "../../_lib/ui";
 
 // The Console retrieval surface (recall test + search + ask; product definition
 // 5.4 makes recall testing a Console staple). Scope defaults to everything the
 // session user can see; picking libraries narrows it - the server enforces
 // visibility either way, this page only chooses within it.
-export default function SearchPage() {
+export function BenchClient() {
   const [kbs, setKbs] = useState<Kb[] | null>(null);
   const [needsAuth, setNeedsAuth] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +76,7 @@ export default function SearchPage() {
       if (err instanceof ApiError && err.status === 501) {
         setAskUnavailable(true);
       } else {
-        setError(err instanceof ApiError ? apiErrorMessage(err.status, err.code) : "The query failed.");
+        setError(err instanceof ApiError ? apiErrorMessage(err.status, err.code) : "查询失败。");
       }
     } finally {
       setRunning(false);
@@ -85,17 +85,17 @@ export default function SearchPage() {
 
   if (needsAuth) {
     return (
-      <main style={styles.page}>
-        <SignInGate href={loginHref("/console/search")} />
-      </main>
+      <>
+        <SignInGate href={loginHref("/bench")} />
+      </>
     );
   }
 
   return (
-    <main style={styles.page}>
-      <h1 style={styles.h1}>Search</h1>
+    <>
+      <h1 style={styles.h1}>检验台</h1>
       <p style={styles.sub}>
-        Search or ask across the libraries you can see. Leave the library filter empty to cover everything visible.
+        以 Agent 同款检索链路试问，验收供给质量。不选库则覆盖你可见的全部资产。
       </p>
 
       {error && <Notice tone="bad">{error}</Notice>}
@@ -104,19 +104,19 @@ export default function SearchPage() {
         <form onSubmit={onRun}>
           <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
             <Button type="button" variant={mode === "search" ? "primary" : "default"} onClick={() => setMode("search")}>
-              Search
+              检索
             </Button>
             <Button type="button" variant={mode === "ask" ? "primary" : "default"} onClick={() => setMode("ask")}>
-              Ask
+              问答
             </Button>
           </div>
           <div style={{ marginBottom: 10 }}>
             <input
               style={styles.input}
-              placeholder={mode === "search" ? "Search query" : "Ask a question"}
+              placeholder={mode === "search" ? "检索词" : "提问"}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              aria-label={mode === "search" ? "Search query" : "Question"}
+              aria-label={mode === "search" ? "检索词" : "问题"}
             />
           </div>
           {kbs && kbs.length > 0 && (
@@ -141,7 +141,7 @@ export default function SearchPage() {
             </div>
           )}
           <Button type="submit" variant="primary" disabled={!query.trim() || running}>
-            {running ? "Running..." : mode === "search" ? "Run search" : "Ask"}
+            {running ? "执行中…" : mode === "search" ? "执行检索" : "Ask"}
           </Button>
         </form>
       </section>
@@ -183,7 +183,7 @@ export default function SearchPage() {
           ) : (
             <>
               <div style={styles.card}>
-                <div style={{ fontWeight: 600, marginBottom: 6 }}>Answer</div>
+                <div style={{ fontWeight: 600, marginBottom: 6 }}>回答</div>
                 <div style={{ whiteSpace: "pre-wrap", fontSize: 14 }}>{ask.answer}</div>
                 {ask.degraded && <div style={{ ...styles.sub, marginTop: 8 }}>rerank unavailable - grounded on keyword/vector order</div>}
               </div>
@@ -201,10 +201,10 @@ export default function SearchPage() {
       )}
 
       <p style={{ ...styles.sub, marginTop: 8 }}>
-        <a href="/console" style={{ color: T.accent }}>
-          Back to libraries
+        <a href="/" style={{ color: T.accent }}>
+          返回知识资产
         </a>
       </p>
-    </main>
+    </>
   );
 }

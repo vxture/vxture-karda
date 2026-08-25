@@ -1,14 +1,17 @@
-// Console presentational primitives, now DS-backed (KD-020): the local prop
-// APIs are kept (pages don't change), but every primitive renders through
+// Shared presentational primitives, DS-backed (KD-020): the local prop APIs are
+// kept so pages don't change, but every primitive renders through
 // @vxture/design-system - basic controls are L1 and belong to the DS
-// (01-usage.md section 6), so the hand-rolled Button/Badge/banner/empty-state
-// implementations are gone.
+// (01-usage.md section 6).
 //
-// STAGE-2 (tracked in the workplan): the `T` palette and the `styles` inline
-// objects below are legacy from the pre-DS console. New code must NOT add
-// design values to them - use DS components and vx-* utility classes; the
-// remaining page-level inline layout styles migrate to DS layout/patterns
-// (PageHeader / SectionCard / ...) page by page.
+// Moved out of the retired Console in batch 10. `styles.page` went with it: it
+// set a 920px width, its own padding and its own text colour, which the portal
+// shell already owns (30-design/130-portal-shell.md). The pages that used it
+// were also rendering a <main> INSIDE the shell's <main>.
+//
+// STAGE-2 (tracked in the workplan): the `T` palette and the remaining `styles`
+// objects are legacy from the pre-DS console. New code must NOT add design
+// values to them - use DS components and vx-* utility classes; the remaining
+// page-level inline layout styles migrate to DS layout/patterns page by page.
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
@@ -44,7 +47,6 @@ export const T = {
 } as const;
 
 export const styles = {
-  page: { color: T.ink, lineHeight: 1.5, maxWidth: 920, margin: "0 auto", padding: "1.5rem" } as CSSProperties,
   card: { border: `1px solid ${T.line}`, borderRadius: 10, padding: "16px 18px", margin: "0 0 14px", background: T.bg } as CSSProperties,
   h1: { fontSize: 24, margin: "0 0 4px" } as CSSProperties,
   h2: { fontSize: 16, margin: "0 0 10px" } as CSSProperties,
@@ -106,11 +108,11 @@ export function Empty({ children }: { children: ReactNode }) {
 export function SignInGate({ href }: { href: string }) {
   return (
     <EmptyState
-      title="Sign in to use the Console"
-      description="Your session has expired or you are not signed in."
+      title="登录后使用"
+      description="登录已过期，或你还没有登录。"
       action={
         <DsButton asChild>
-          <a href={href}>Sign in</a>
+          <a href={href}>登录</a>
         </DsButton>
       }
     />

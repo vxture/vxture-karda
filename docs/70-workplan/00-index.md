@@ -487,7 +487,22 @@ card on the homepage finally clickable.
 | Verify a document; verify a selection | `/api/kb/[id]/documents/[docId]/verify` | no UI |
 | Folder create / rename / move | `/api/kb/[id]/folders` | no UI |
 | Document preview - read the thing in place | `/api/kb/[id]/documents/[docId]/download`, object store | endpoint only; today reading a document means downloading it |
-| Retire the Console shell: rehome its three pages, drop `ConsoleHeader` and its hardcoded ground, repoint the header's 设置 icon | - | - |
+| Retire the Console shell: rehome its three pages, drop `ConsoleHeader` and its hardcoded ground, repoint every `/console` link | - | **done 2026-08-25** |
+
+**Landed so far (the IA merge):** `/console` -> `(portal)/assets/new`,
+`/console/[kbId]` -> `(portal)/assets/[kbId]`, `/console/search` ->
+`(portal)/bench`; `_lib` (api / format / ui) moved to `app/_lib` since the portal
+already depended on it; `ConsoleHeader`, `console/layout.tsx` and `styles.page`
+deleted - the last of those set a 920px width, its own padding and its own text
+colour, and the pages using it were rendering a `<main>` INSIDE the shell's
+`<main>`. Asset cards on the homepage are now links, which is the point of the
+whole batch. ~90 strings localised: the Console was English-first and the product
+is Chinese-first, so the merge would otherwise have shipped an English detail
+view into the main product.
+
+**Still open in batch 10:** library settings (dual templates, filterable
+whitelist - `PATCH /api/kb/[id]` already accepts them), the failed-document view
+with retry/re-enqueue, folder management, and document preview.
 
 **Acceptance:** an owner creates a library, sets its templates and verification
 policy, uploads a document, reads it in place, sees it fail, fixes the cause,

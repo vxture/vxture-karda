@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useMemo, useState } from "react";
 import {
   Banner,
@@ -13,7 +15,7 @@ import {
   StatusBadge,
   type IconName,
 } from "@vxture/design-system";
-import { loginHref } from "../console/_lib/api";
+import { loginHref } from "../_lib/api";
 import { PageHead } from "../_shell/PageHead";
 import type { OverviewAsset, OverviewData } from "../kb/demo/overview-types";
 
@@ -109,7 +111,15 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
     // (veil skeleton) stays untouched so a warn card doesn't read "heavier".
     // Density follows MetricCard's precedent for stat-strip-adjacent cards:
     // py-lg/px-lg instead of the Card default py-xl/px-xl.
-    <Card className={`py-lg${warn ? " border-t-medium border-t-warning-border" : ""}`}>
+    // The whole card is a LINK. Until batch 10 the product ruled 资产为核、首页即
+    // 知识资产 and then gave the asset no detail view to open - the homepage's
+    // only outbound links went to a differently-shelled Console.
+    <Link
+      href={`/assets/${asset.id}`}
+      aria-label={`打开 ${asset.name}`}
+      className="block h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    >
+    <Card className={`h-full py-lg transition-colors duration-fast ease-standard hover:bg-accent/40${warn ? " border-t-medium border-t-warning-border" : ""}`}>
       <CardContent className="flex h-full flex-col gap-md px-lg">
         {/* Header per the DS list-card idiom (MetricListCard): leading icon +
             title/subtitle column, publish-scope glyph kept at the row's end. */}
@@ -186,6 +196,7 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
         </div>
       </CardContent>
     </Card>
+    </Link>
   );
 }
 
@@ -267,10 +278,10 @@ export function OverviewClient() {
         actions={
           <>
             <Button variant="outline" asChild>
-              <a href="/console/search">检验台</a>
+              <Link href="/bench">检验台</Link>
             </Button>
             <Button asChild>
-              <a href="/console">新建资产</a>
+              <Link href="/assets/new">新建资产</Link>
             </Button>
           </>
         }

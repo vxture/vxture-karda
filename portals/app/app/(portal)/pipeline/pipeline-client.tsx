@@ -11,7 +11,7 @@ import {
   StatusBadge,
   type IconName,
 } from "@vxture/design-system";
-import { loginHref } from "../../console/_lib/api";
+import { loginHref } from "../../_lib/api";
 import { PageHead } from "../../_shell/PageHead";
 import type { PipelineData, ProposalKind } from "../../kb/demo/pipeline-types";
 
@@ -92,7 +92,7 @@ export function PipelineClient() {
           <>
             {/* 二级导航(任务与队列/受控重建)在左侧导航卡下,不在这里重复 */}
             <Button variant="outline" asChild>
-              <a href="/console">上传文档</a>
+              <a href="/assets/new">上传文档</a>
             </Button>
             <Button>批量确认预验</Button>
           </>

@@ -15,7 +15,7 @@ import {
   ApiError,
   type Kb,
   type Doc,
-} from "../_lib/api";
+} from "../../../_lib/api";
 import {
   sharingMeta,
   contentStateMeta,
@@ -27,15 +27,15 @@ import {
   apiErrorMessage,
   PUBLISH_ORDER,
   type PublishState,
-} from "../_lib/format";
-import { styles, Badge, Button, Notice, Empty, SignInGate, T } from "../_lib/ui";
+} from "../../../_lib/format";
+import { styles, Badge, Button, Notice, Empty, SignInGate, T } from "../../../_lib/ui";
 
 // Library detail: the documents in one library, an upload control, the sharing
 // grade (publish ladder), and the governance switch. All authorization is
 // server-side - the sharing buttons post the target and surface whatever the
 // server allows (an owner may open to the workspace; only an admin opens org-
 // wide), so a refusal shows its reason rather than being hidden.
-export default function LibraryPage() {
+export function AssetClient() {
   const params = useParams<{ kbId: string }>();
   const kbId = params.kbId;
 
@@ -69,7 +69,7 @@ export default function LibraryPage() {
     try {
       setDocs(await listDocuments(kbId));
     } catch (e) {
-      guard(e, "Failed to load documents.");
+      guard(e, "文档列表加载失败。");
     }
   }, [kbId, guard]);
 
@@ -78,7 +78,7 @@ export default function LibraryPage() {
     try {
       setKb(await getKb(kbId));
     } catch (e) {
-      guard(e, "Failed to load the library.");
+      guard(e, "库信息加载失败。");
       return;
     }
     await loadDocs();
@@ -114,7 +114,7 @@ export default function LibraryPage() {
       await deleteDocument(kbId, doc.id);
       await loadDocs();
     } catch (err) {
-      guard(err, "Delete failed.");
+      guard(err, "删除失败。");
     } finally {
       setBusy(false);
     }
@@ -129,7 +129,7 @@ export default function LibraryPage() {
       setKb(await setSharing(kbId, target));
       setNotice(`Sharing set to ${sharingMeta(target).label}.`);
     } catch (err) {
-      guard(err, "Could not change sharing.");
+      guard(err, "共享档位切换失败。");
     } finally {
       setBusy(false);
     }
@@ -142,7 +142,7 @@ export default function LibraryPage() {
     try {
       setKb(await setGovernance(kbId, !kb.governanceEnabled));
     } catch (err) {
-      guard(err, "Could not change governance.");
+      guard(err, "治理开关切换失败。");
     } finally {
       setBusy(false);
     }
@@ -153,7 +153,7 @@ export default function LibraryPage() {
     const raw = intervalInput.trim();
     const days = raw === "" ? null : Number(raw);
     if (days !== null && (!Number.isInteger(days) || days <= 0)) {
-      setError("Interval must be a positive whole number of days, or blank for verify-once.");
+      setError("间隔需为正整数天数；留空表示只验一次。");
       return;
     }
     setBusy(true);
@@ -161,9 +161,9 @@ export default function LibraryPage() {
     setNotice(null);
     try {
       setKb(await setVerifierConfig(kbId, { defaultVerifier: verifierInput.trim() || null, defaultVerifyIntervalDays: days }));
-      setNotice("Governance settings saved.");
+      setNotice("治理设置已保存。");
     } catch (err) {
-      guard(err, "Could not save governance settings.");
+      guard(err, "治理设置保存失败。");
     } finally {
       setBusy(false);
     }
@@ -179,7 +179,7 @@ export default function LibraryPage() {
       setNotice(`Verified "${doc.title}".`);
       await loadDocs();
     } catch (err) {
-      guard(err, "Could not verify the document.");
+      guard(err, "文档验证失败。");
     } finally {
       setBusy(false);
     }
@@ -187,19 +187,19 @@ export default function LibraryPage() {
 
   if (needsAuth) {
     return (
-      <main style={styles.page}>
-        <SignInGate href={loginHref(`/console/${kbId}`)} />
-      </main>
+      <>
+        <SignInGate href={loginHref(`/assets/${kbId}`)} />
+      </>
     );
   }
 
   const share = kb ? sharingMeta(kb.publishState) : null;
 
   return (
-    <main style={styles.page}>
+    <>
       <p style={{ ...styles.sub, margin: "0 0 8px" }}>
-        <a href="/console" style={{ color: T.accent }}>
-          &larr; Libraries
+        <a href="/" style={{ color: T.accent }}>
+          &larr; 返回知识资产
         </a>
       </p>
 
@@ -207,7 +207,7 @@ export default function LibraryPage() {
       {notice && <Notice tone="ok">{notice}</Notice>}
 
       {kb === null ? (
-        <Empty>Loading library...</Empty>
+        <Empty>正在加载库…</Empty>
       ) : (
         <>
           <div style={{ ...styles.rowBetween, marginBottom: 14 }}>
@@ -220,7 +220,7 @@ export default function LibraryPage() {
 
           {/* Sharing (the publish ladder) */}
           <section style={styles.card}>
-            <h2 style={styles.h2}>Sharing</h2>
+            <h2 style={styles.h2}>共享档位</h2>
             <p style={styles.sub}>{share?.help}</p>
             <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
               {PUBLISH_ORDER.map((state) => {
@@ -243,11 +243,11 @@ export default function LibraryPage() {
           <section style={styles.card}>
             <div style={styles.rowBetween}>
               <div>
-                <h2 style={{ ...styles.h2, marginBottom: 2 }}>Governance</h2>
+                <h2 style={{ ...styles.h2, marginBottom: 2 }}>验证治理</h2>
                 <p style={styles.sub}>
                   {kb.governanceEnabled
                     ? `Verification tracking is on. Re-verify ${formatInterval(kb.defaultVerifyIntervalDays)}.`
-                    : "Off - content stays untracked (the default)."}
+                    : "关闭——内容不纳入验证跟踪（默认）。"}
                 </p>
               </div>
               <Button onClick={onToggleGovernance} disabled={busy}>
@@ -265,7 +265,7 @@ export default function LibraryPage() {
                       placeholder="usr_... (leave blank for admins only)"
                       value={verifierInput}
                       onChange={(e) => setVerifierInput(e.target.value)}
-                      aria-label="Default verifier"
+                      aria-label="默认验证人"
                     />
                   </label>
                   <label style={{ flex: "0 1 160px", ...styles.sub }}>
@@ -276,7 +276,7 @@ export default function LibraryPage() {
                       inputMode="numeric"
                       value={intervalInput}
                       onChange={(e) => setIntervalInput(e.target.value)}
-                      aria-label="Re-verify interval in days"
+                      aria-label="续验间隔（天）"
                     />
                   </label>
                   <Button onClick={onSaveVerifierConfig} disabled={busy}>
@@ -293,7 +293,7 @@ export default function LibraryPage() {
 
           {/* Upload */}
           <section style={styles.card}>
-            <h2 style={styles.h2}>Add a document</h2>
+            <h2 style={styles.h2}>上传文档</h2>
             <input ref={fileRef} type="file" onChange={onUpload} disabled={busy} aria-label="Upload a document" />
             <p style={{ ...styles.sub, marginTop: 8 }}>
               The file is stored and queued for processing. Indexing is paused until the embedding service is available.
@@ -327,7 +327,7 @@ export default function LibraryPage() {
                         <Badge tone={st.tone}>{st.label}</Badge>
                         {gov && (
                           <Button onClick={() => onVerify(doc)} disabled={busy}>
-                            {doc.verificationState === "verified" ? "Re-verify" : "Verify"}
+                            {doc.verificationState === "verified" ? "重新验证" : "Verify"}
                           </Button>
                         )}
                         <Button variant="danger" onClick={() => onDelete(doc)} disabled={busy}>
@@ -353,6 +353,6 @@ export default function LibraryPage() {
           </section>
         </>
       )}
-    </main>
+    </>
   );
 }
