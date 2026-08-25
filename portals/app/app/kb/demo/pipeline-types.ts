@@ -64,6 +64,9 @@ export interface QueueTier {
   pct: number;
 }
 
+/** Same contract as EvaluationData.sources / ChannelsData.sources. */
+export type FigureSource = "live" | "demo";
+
 export interface TasksData {
   counts: { inflight: number; suspended: number; failed: number };
   throughput: { docsToday: number; p95Seconds: number; freshnessP95Min: number; docsPerMin: number };
@@ -75,6 +78,16 @@ export interface TasksData {
   orgConcurrency: string;
   alert: { kbName: string; rate: string; body: string; judgment: string } | null;
   tasks: PipelineTask[];
+  /** Per-group provenance:
+   *    tasks  counts / queue depth / failure classes / stage P95 / throughput /
+   *           the task list / the failure-rate alert - LIVE off
+   *           karda_kb.processing_task(+_stage).
+   *    ops    freshness P95 (nothing measures content age vs index age), the
+   *           org and per-tier concurrency caps (configuration, not facts), and
+   *           the steward's JUDGMENT on an alert (an opinion, not an aggregate).
+   *           Authored on purpose - a half-derived alert that invented a
+   *           judgment would be worse than an honest authored one. */
+  sources: { tasks: FigureSource; ops: FigureSource };
   demoOps: boolean;
 }
 

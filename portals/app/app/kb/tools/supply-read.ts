@@ -177,3 +177,75 @@ export async function readSupply(workspaceId: string, now: number = Date.now()):
   const capped = rows.length > ROW_CAP;
   return tallySupply(capped ? rows.slice(0, ROW_CAP) : rows, now, capped);
 }
+
+// --- per-asset heat (知识资产 ops figures) -----------------------------------
+//
+// A SECOND window: heat is a 7-day figure while the channel dashboard is a 48h
+// one, so this is its own query rather than a wider window for everything. It
+// reads the SAME rows - supply_call_asset counts citations, so a library that is
+// recalled constantly but never believed stays cold, which is the point.
+
+const HEAT_DAYS = 7;
+
+export interface AssetHeat {
+  /** Citations in the last 7 days. */
+  heat7d: number;
+  /** Normalised 0-100 daily series, oldest first. */
+  sparkline: number[];
+  /** Consumer codes that cited this library most, best first. */
+  topConsumers: string[];
+}
+
+export interface HeatRow {
+  kbId: string;
+  citedCount: number;
+  consumerCode: string | null;
+  createdAt: Date;
+}
+
+/** Pure aggregation, per library. */
+export function tallyHeat(rows: HeatRow[], now: number, days = HEAT_DAYS): Map<string, AssetHeat> {
+  const dayMs = 86_400_000;
+  const acc = new Map<string, { total: number; buckets: number[]; consumers: Map<string, number> }>();
+  for (const r of rows) {
+    const ageD = Math.floor((now - r.createdAt.getTime()) / dayMs);
+    if (ageD < 0 || ageD >= days) continue;
+    let a = acc.get(r.kbId);
+    if (!a) {
+      a = { total: 0, buckets: new Array<number>(days).fill(0), consumers: new Map() };
+      acc.set(r.kbId, a);
+    }
+    a.total += r.citedCount;
+    a.buckets[days - 1 - ageD] += r.citedCount;
+    if (r.consumerCode) a.consumers.set(r.consumerCode, (a.consumers.get(r.consumerCode) ?? 0) + r.citedCount);
+  }
+  const out = new Map<string, AssetHeat>();
+  for (const [kbId, a] of acc) {
+    out.set(kbId, {
+      heat7d: a.total,
+      sparkline: normalise(a.buckets),
+      topConsumers: [...a.consumers.entries()]
+        // Code-unit tie-break, never localeCompare - the ordering must not
+        // depend on the runtime's collation.
+        .sort((x, y) => y[1] - x[1] || (x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : 0))
+        .slice(0, 3)
+        .map(([code]) => code),
+    });
+  }
+  return out;
+}
+
+/** Read 7 days of citation attribution for a workspace. */
+export async function readAssetHeat(workspaceId: string, now: number = Date.now()): Promise<Map<string, AssetHeat>> {
+  const p = await getPrismaClient();
+  const since = new Date(now - HEAT_DAYS * 86_400_000);
+  const rows = await p.supplyCallAsset.findMany({
+    where: { call: { workspaceId, createdAt: { gte: since } } },
+    take: ROW_CAP,
+    select: { kbId: true, citedCount: true, createdAt: true, call: { select: { consumerCode: true } } },
+  });
+  return tallyHeat(
+    rows.map((r) => ({ kbId: r.kbId, citedCount: r.citedCount, createdAt: r.createdAt, consumerCode: r.call.consumerCode })),
+    now,
+  );
+}

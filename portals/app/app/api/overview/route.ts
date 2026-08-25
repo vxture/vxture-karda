@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readAssetHeat, type AssetHeat } from "../../kb/tools/supply-read";
 import { requireAuth } from "../../kb/api/http";
 import { prismaEnabled, getPrismaClient } from "../../lib/db";
 import { DEMO_ASSETS, DEMO_TOTALS_OPS, demoAssetByName, type DemoAssetSpec } from "../../kb/demo/seed-data";
@@ -132,10 +133,24 @@ export async function GET(): Promise<Response> {
     if (row.verificationState === "stale") a.entryStale += row._count._all;
   }
 
+  // Per-library citation heat off the supply ledger (240 section 4.4). It counts
+  // CITED, not recalled, so a library that gets pulled into every recall pool but
+  // is never believed stays cold - which is the figure an owner actually needs.
+  // A library with no citations yet gets no entry, and reads as 0 below rather
+  // than inheriting the demo overlay's numbers.
+  const heat = await readAssetHeat(workspaceId);
+  const NO_HEAT: AssetHeat = { heat7d: 0, sparkline: [0, 0, 0, 0, 0, 0, 0], topConsumers: [] };
+
   const assets: OverviewAsset[] = kbs.map((kb) => {
     const spec = demoAssetByName(kb.name);
     const a = aggByKb.get(kb.id) ?? null;
-    if (spec) return specToAsset(spec, kb.id, a);
+    const h = heat.get(kb.id);
+    // A seeded demo library keeps its authored ops story ONLY until it has real
+    // traffic; once the ledger has anything to say about it, the ledger wins.
+    if (spec) {
+      const base = specToAsset(spec, kb.id, a);
+      return h ? { ...base, heat7d: h.heat7d, sparkline: h.sparkline, topConsumers: h.topConsumers } : base;
+    }
     // An asset outside the demo set (user-created): real content figures,
     // neutral ops defaults.
     const docTotal = a?.docTotal ?? 0;
@@ -153,11 +168,13 @@ export async function GET(): Promise<Response> {
       coveragePct: governed === 0 ? 0 : Math.round((verified / governed) * 100),
       staleCount: a?.entryStale ?? 0,
       health: "healthy",
-      heat7d: 0,
-      sparkline: [0, 0, 0, 0, 0, 0, 0, 0, 0],
+      heat7d: (h ?? NO_HEAT).heat7d,
+      sparkline: (h ?? NO_HEAT).sparkline,
       sparkTone: "primary",
-      topConsumers: [],
-      highlight: { kind: "steward", text: "尚无运营数据", strong: "", action: undefined },
+      topConsumers: (h ?? NO_HEAT).topConsumers,
+      highlight: h
+        ? { kind: "agent_usage", text: `近 7 日被引用 ${h.heat7d} 次`, strong: "", action: undefined }
+        : { kind: "steward", text: "尚无运营数据", strong: "", action: undefined },
       tags: [],
       stewardSuggestions: 0,
     };

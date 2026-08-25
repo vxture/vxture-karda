@@ -150,3 +150,56 @@ test("an empty ledger produces a complete, zeroed payload - never undefined", ()
   assert.deepEqual(t.capabilityCalls, {});
   assert.equal(t.capped, false);
 });
+
+// --- per-asset heat ---------------------------------------------------------
+
+import { tallyHeat, type HeatRow } from "./supply-read";
+
+const DAY = 86_400_000;
+const heatRow = (over: Partial<HeatRow> = {}): HeatRow => ({
+  kbId: "kb-a",
+  citedCount: 1,
+  consumerCode: "forge",
+  createdAt: new Date(NOW - DAY),
+  ...over,
+});
+
+test("heat sums CITATIONS, not calls - two citations in one call count twice", () => {
+  const m = tallyHeat([heatRow({ citedCount: 3 }), heatRow({ citedCount: 2 })], NOW);
+  assert.equal(m.get("kb-a")?.heat7d, 5);
+});
+
+test("a library outside the 7-day window contributes nothing", () => {
+  const m = tallyHeat([heatRow({ createdAt: new Date(NOW - 8 * DAY) })], NOW);
+  assert.equal(m.get("kb-a"), undefined);
+});
+
+test("top consumers rank by citations and cap at three", () => {
+  const rows = [
+    heatRow({ consumerCode: "forge", citedCount: 5 }),
+    heatRow({ consumerCode: "scribe", citedCount: 9 }),
+    heatRow({ consumerCode: "anlan", citedCount: 1 }),
+    heatRow({ consumerCode: "raven", citedCount: 7 }),
+  ];
+  assert.deepEqual(tallyHeat(rows, NOW).get("kb-a")?.topConsumers, ["scribe", "raven", "forge"]);
+});
+
+test("a Console citation has no consumer and does not become an empty code", () => {
+  const m = tallyHeat([heatRow({ consumerCode: null, citedCount: 4 })], NOW);
+  assert.equal(m.get("kb-a")?.heat7d, 4);
+  assert.deepEqual(m.get("kb-a")?.topConsumers, []);
+});
+
+test("the sparkline is one bucket per day, oldest first, newest last", () => {
+  const m = tallyHeat([heatRow({ createdAt: new Date(NOW - 60_000), citedCount: 2 })], NOW);
+  const spark = m.get("kb-a")!.sparkline;
+  assert.equal(spark.length, 7);
+  assert.equal(spark[6], 100);
+  assert.equal(spark[0], 0);
+});
+
+test("libraries are kept apart", () => {
+  const m = tallyHeat([heatRow({ kbId: "kb-a" }), heatRow({ kbId: "kb-b", citedCount: 9 })], NOW);
+  assert.equal(m.get("kb-a")?.heat7d, 1);
+  assert.equal(m.get("kb-b")?.heat7d, 9);
+});

@@ -359,10 +359,10 @@ evaluation run. So the batch splits by what each domain needs:
 | Domain | Needs | Cost |
 |--------|-------|------|
 | 验证治理 (half of 验证评测) | nothing - `document.verification_state` / `entry.verification_state` exist since the baseline DDL | **done 2026-08-25** - `kb/governance/corpus-read.ts`, 8 unit tests; read by BOTH `/api/evaluation` and the 导航栏 card so they cannot disagree |
-| 加工管道 (流水 / 任务与队列) | a task/queue table | **tables landed + WRITES wired 2026-08-25** (`kb/processing/task-ledger.ts`, at enqueue and at every worker outcome). Read models still on the overlay - next |
+| 加工管道 (任务与队列) | a task/queue table | **DONE end to end 2026-08-25** - writes in `kb/processing/task-ledger.ts`, aggregation in `kb/processing/task-read.ts` (19 tests), `/api/pipeline/tasks` serves live with `sources: { tasks, ops }` |
 | 供给通道 | a supply ledger | **DONE end to end 2026-08-25** - `kb/tools/supply-ledger.ts` writes at the one seam BOTH channels pass through; `kb/tools/supply-read.ts` aggregates; `/api/channels` serves live traffic with `sources: { traffic, registry }` |
 | 质量评测 (other half of 验证评测) | eval-set + eval-run tables, and a runner | DDL + the runner; KD-011 ruled out synthetic QA generation, so sets are authored |
-| 知识资产 ops figures (引用热度 / TOP 消费方) | the same supply ledger as 供给通道 | the DATA now exists (`supply_call_asset` is being written); `/api/overview` does not read it yet |
+| 知识资产 ops figures (引用热度 / TOP 消费方) | the same supply ledger as 供给通道 | **DONE 2026-08-25** - `readAssetHeat` over 7 days of `supply_call_asset`; `/api/overview` serves it, and a seeded library's authored ops story is overridden the moment the ledger has anything real to say about it |
 
 **Provenance contract, set by the first one done.** A page-wide `demoOps` flag
 cannot survive a domain going half-live, so `EvaluationData` now carries
@@ -376,10 +376,19 @@ schema increment (`incr/0004`, authority `30-design/240-ops-read-models.md`),
 executed against a throwaway Postgres on both the fresh and the live path before
 merging - see 240 section 11.
 
-**Still open in this batch:** the 加工管道 read models (`/api/pipeline`,
-`/api/pipeline/tasks`, `/api/pipeline/rebuild`) and the 知识资产 ops figures.
-Their tables are written now, so these are aggregation-and-wire jobs with no
-further DDL. 质量评测 stays overlay until a runner exists (240 section 8).
+**Still open in this batch**, and each for a stated reason rather than for lack
+of time:
+
+- `/api/pipeline` (加工流水) - its figures are the STEWARD's five-stage activity
+  (理解/萃取/编织/验证/入藏) and its decision queue, not pipeline tasks. Those are
+  a steward ledger that does not exist; the task tables cannot answer them.
+- `/api/pipeline/rebuild` (受控重建) - build-then-swap rebuild jobs have no table.
+  A rebuild is not a `processing_task`; modelling it as one would misreport both.
+- 质量评测 - waits on an evaluation runner (240 section 8).
+
+None of the three is blocked on DDL we chose not to write; all three are blocked
+on a subsystem that does not exist yet, and each says so in its payload's
+`sources` marker rather than in a comment.
 
 ## Decision track (owner)
 
