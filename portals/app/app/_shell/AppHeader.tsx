@@ -20,6 +20,8 @@ import { BRAND } from "@karda/shared/brand";
 import { getSession, loginHref, type SessionUser } from "../_lib/api";
 import { NAV_ITEMS, PORTAL_FULLSCREEN_ID, activeNavKey } from "./nav";
 import { isLocale, useLocale } from "./locale";
+import { useMessages } from "../_i18n/useMessages";
+import { shell } from "../_i18n";
 import { ScopePanel } from "./ScopePanel";
 
 // The unified product header (owner, 2026-08-21). Structure follows the
@@ -39,17 +41,6 @@ import { ScopePanel } from "./ScopePanel";
 // panel's settings section via ShellPreferencePanel. Theme + density + font
 // size are DS-managed (useTheme, persisted under the DS contract keys);
 // language is the shell-local LocaleProvider (zh-CN default).
-
-const PREF_LABELS = {
-  title: "偏好设置",
-  locale: "语言",
-  theme: "主题",
-  density: "密度",
-  fontSize: "字号",
-  themeOptions: { light: "浅色", dark: "深色", system: "跟随系统" },
-  densityOptions: { compact: "紧凑", default: "默认", comfortable: "舒适" },
-  fontSizeOptions: { small: "小", default: "默认", large: "大" },
-} as const;
 
 const LOCALE_OPTIONS = [
   { locale: "zh-CN" as const, nativeName: "简体中文" },
@@ -74,6 +65,23 @@ export function AppHeader({
   const router = useRouter();
   const { mode, setMode, density, setDensity, fontSize, setFontSize } = useTheme();
   const { locale, setLocale } = useLocale();
+  const m = useMessages(shell);
+  // The DS preference panel takes every label as a prop - DS 8.0.0 has no
+  // locale context and will not acquire one, so the whole panel is translated
+  // at this call site.
+  const prefLabels = useMemo(
+    () => ({
+      title: m.prefTitle,
+      locale: m.prefLanguage,
+      theme: m.prefTheme,
+      density: m.prefDensity,
+      fontSize: m.prefFontSize,
+      themeOptions: { light: m.themeLight, dark: m.themeDark, system: m.themeSystem },
+      densityOptions: { compact: m.densityCompact, default: m.densityDefault, comfortable: m.densityComfortable },
+      fontSizeOptions: { small: m.sizeSmall, default: m.sizeDefault, large: m.sizeLarge },
+    }),
+    [m],
+  );
   const [user, setUser] = useState<SessionUser | null>(null);
   const [sessionLoaded, setSessionLoaded] = useState(false);
   const [query, setQuery] = useState("");
@@ -99,27 +107,27 @@ export function AppHeader({
     const actions = [
       {
         key: "bench",
-        label: "检验台",
-        description: "以 Agent 同款检索链路试问,验收供给质量",
+        label: m.subBench,
+        description: m.benchDesc,
         icon: "sparkles" as const,
         onSelect: () => router.push("/bench"),
       },
       {
         key: "console",
-        label: "知识库控制台",
-        description: "库与文档的管理入口",
+        label: m.kbConsole,
+        description: m.kbConsoleDesc,
         icon: "folder-open" as const,
         onSelect: () => router.push("/assets/new"),
       },
     ].filter((a) => !q || a.label.toLowerCase().includes(q));
     const groups = [];
-    if (pages.length) groups.push({ key: "pages", heading: "页面", items: pages });
-    if (actions.length) groups.push({ key: "actions", heading: "动作", items: actions });
+    if (pages.length) groups.push({ key: "pages", heading: m.groupPages, items: pages });
+    if (actions.length) groups.push({ key: "actions", heading: m.groupActions, items: actions });
     return groups;
   }, [query, router]);
 
-  const displayName = user?.sub ?? "未登录";
-  const roleLabel = user?.isWorkspaceOwner ? "工作区属主" : user?.canManage ? "管理员" : "成员";
+  const displayName = user?.sub ?? m.signedOut;
+  const roleLabel = user?.isWorkspaceOwner ? m.roleOwner : user?.canManage ? m.roleAdmin : m.roleMember;
 
   // Domain navigation lives in the 导航栏 cards, so the 顶栏 keeps only
   // launcher + brand - two navs must not coexist.
@@ -130,13 +138,13 @@ export function AppHeader({
           content, so it must not compete with the brand beside it. */}
       <ShellIconButton
         icon="sidebar"
-        label={navCollapsed ? "展开导航" : "收起导航"}
+        label={navCollapsed ? m.navExpand : m.navCollapse}
         onClick={onToggleNav}
         iconClassName="text-muted-foreground/60"
       />
       <ShellLauncher
-        buttonLabel="切换功能域"
-        panelLabel="功能域"
+        buttonLabel={m.launcherLabel}
+        panelLabel={m.launcherPanel}
         items={NAV_ITEMS.map((n) => ({
           key: n.key,
           icon: n.icon,
@@ -163,7 +171,7 @@ export function AppHeader({
       {/* 助手:独立入口,比工具组图标大一号(md=20px vs sm=16px)。收起时
           红底角标标明待办数(owner 2026-08-24)。 */}
       <span className="relative">
-        <ShellIconButton icon="sparkles" label="管家值班台" active={dockOpen} onClick={onToggleDock}>
+        <ShellIconButton icon="sparkles" label={m.dockOpen} active={dockOpen} onClick={onToggleDock}>
           <Icon name="sparkles" size="md" className="text-ai-text" />
         </ShellIconButton>
         {pending > 0 && !dockOpen && (
@@ -179,23 +187,23 @@ export function AppHeader({
           它作用于当前视图,与后面三个"打开别处"的入口不是一类。全屏走 DS 的
           ShellFullscreenToggle,目标是内容区(PORTAL_FULLSCREEN_ID),所以进入
           全屏后留下的是内容本身,不是连同外壳一起放大。 */}
-      <ShellIconGroup label="系统">
+      <ShellIconGroup label={m.system}>
         <ShellFullscreenToggle
           targetId={PORTAL_FULLSCREEN_ID}
-          enterLabel="全屏"
-          exitLabel="退出全屏"
+          enterLabel={m.fullscreen}
+          exitLabel={m.exitFullscreen}
         />
-        <ShellIconButton icon="help" label="帮助" />
-        <ShellIconButton icon="bell" label="通知" />
-        <ShellIconButton icon="settings" label="设置" onClick={() => router.push("/assets/new")} />
+        <ShellIconButton icon="help" label={m.help} />
+        <ShellIconButton icon="bell" label={m.notifications} />
+        <ShellIconButton icon="settings" label={m.settings} onClick={() => router.push("/assets/new")} />
       </ShellIconGroup>
       <ShellUserMenu
           user={{
             displayName,
             uniqueLine: user?.activeWorkspace ? `工作区 ${user.activeWorkspace.slice(0, 8)}` : undefined,
-            statusTag: sessionLoaded && user ? { label: "已登录", verified: true } : undefined,
+            statusTag: sessionLoaded && user ? { label: m.signedIn, verified: true } : undefined,
           }}
-          openLabel="账户"
+          openLabel={m.account}
           online={Boolean(user)}
           settings={
             <ShellPreferencePanel
@@ -206,7 +214,7 @@ export function AppHeader({
               fontSize={fontSize}
               showDensity
               showFontSize
-              labels={PREF_LABELS}
+              labels={prefLabels}
               // The DS panel hands back a bare string (its locale list is open);
               // re-narrow before it reaches shell state.
               onLocaleChange={(next) => {
@@ -221,27 +229,27 @@ export function AppHeader({
           // slot lights up, the rest stay locked rather than inventing a level.
           extras={
             <ShellPanelSlots
-              label="等级"
+              label={m.tier}
               leadIcon="medal"
               lead="row"
               slots={[
                 { key: "role", icon: "user", label: `角色 · ${roleLabel}`, earned: Boolean(user) },
-                { key: "level", icon: "star", label: "未解锁" },
-                { key: "slot-3", icon: "medal", label: "未解锁" },
+                { key: "level", icon: "star", label: m.locked },
+                { key: "slot-3", icon: "medal", label: m.locked },
               ]}
             />
           }
           links={
             user
-              ? [{ key: "assets", label: "新建资产", href: "/assets/new", icon: "folder-open" as const }]
-              : [{ key: "login", label: "登录", href: loginHref(pathname ?? "/"), icon: "user" as const }]
+              ? [{ key: "assets", label: m.newAsset, href: "/assets/new", icon: "folder-open" as const }]
+              : [{ key: "login", label: m.signIn, href: loginHref(pathname ?? "/"), icon: "user" as const }]
           }
           actions={
             user
               ? [
                   {
                     key: "switch-user",
-                    label: "切换账号",
+                    label: m.switchAccount,
                     icon: "user-switch" as const,
                     onClick: () => {
                       window.location.href = "/auth/logout";
@@ -249,7 +257,7 @@ export function AppHeader({
                   },
                   {
                     key: "sign-out",
-                    label: "退出登录",
+                    label: m.signOut,
                     icon: "sign-out" as const,
                     danger: true,
                     onClick: () => {
@@ -281,7 +289,7 @@ export function AppHeader({
             query={query}
             onQueryChange={setQuery}
             groups={searchGroups}
-            labels={{ placeholder: "搜索资产、条目", empty: "没有匹配的结果", resultsLabel: "搜索结果" }}
+            labels={{ placeholder: m.searchPlaceholder, empty: m.searchEmpty, resultsLabel: m.searchResults }}
           />
         </div>
       }

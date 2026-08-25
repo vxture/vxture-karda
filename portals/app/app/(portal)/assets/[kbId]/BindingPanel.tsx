@@ -2,15 +2,8 @@
 
 import { useEffect, useState } from "react";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
   Button,
+  DestructiveButton,
   Card,
   CardContent,
   CardDescription,
@@ -77,9 +70,11 @@ export function BindingPanel({
 }) {
   const [code, setCode] = useState("");
   const [sourceId, setSourceId] = useState("");
-  const [confirming, setConfirming] = useState<Binding | null>(null);
-  const [impact, setImpact] = useState<RevokeImpact | null>(null);
-  const [impactError, setImpactError] = useState(false);
+  /** bindingId -> its revoke cost. `undefined` = still loading, `null` = the
+   *  read failed. Both are surfaced as an UNKNOWN precondition rather than as a
+   *  missing button: "we could not work out what this costs" is a different
+   *  statement from "this costs nothing", and the reader must be able to tell. */
+  const [impacts, setImpacts] = useState<Record<string, RevokeImpact | null>>({});
 
   const chosen = connectors.find((c) => c.code === code) ?? null;
   // Revoked bindings are terminal and cannot be acted on; they stay visible
@@ -88,18 +83,19 @@ export function BindingPanel({
   const live = (bindings ?? []).filter((b) => b.state !== "revoked");
   const revoked = (bindings ?? []).filter((b) => b.state === "revoked");
 
-  async function askRevoke(binding: Binding) {
-    setConfirming(binding);
-    setImpact(null);
-    setImpactError(false);
-    try {
-      setImpact(await previewRevoke(kb.id, binding.id));
-    } catch {
-      // The confirmation must NOT proceed on a guess. If the cost cannot be
-      // read, the dialog says so and offers no confirm button.
-      setImpactError(true);
+  useEffect(() => {
+    let cancelled = false;
+    for (const b of bindings ?? []) {
+      if (b.state === "revoked") continue;
+      previewRevoke(kb.id, b.id).then(
+        (i) => !cancelled && setImpacts((prev) => ({ ...prev, [b.id]: i })),
+        () => !cancelled && setImpacts((prev) => ({ ...prev, [b.id]: null })),
+      );
     }
-  }
+    return () => {
+      cancelled = true;
+    };
+  }, [bindings, kb.id]);
 
   return (
     <div className="flex flex-col gap-md">
@@ -194,7 +190,7 @@ export function BindingPanel({
                     connector={connectors.find((c) => c.code === b.connectorCode) ?? null}
                     busy={busy}
                     onAction={onAction}
-                    onAskRevoke={askRevoke}
+                    impact={impacts[b.id]}
                   />
                 ))}
               </CardContent>
@@ -216,7 +212,7 @@ export function BindingPanel({
                     connector={connectors.find((c) => c.code === b.connectorCode) ?? null}
                     busy={busy}
                     onAction={onAction}
-                    onAskRevoke={askRevoke}
+                    impact={impacts[b.id]}
                   />
                 ))}
               </CardContent>
@@ -225,17 +221,6 @@ export function BindingPanel({
         </>
       )}
 
-      <RevokeDialog
-        binding={confirming}
-        impact={impact}
-        failed={impactError}
-        busy={busy}
-        onClose={() => setConfirming(null)}
-        onConfirm={(b) => {
-          void onAction(b, "revoke");
-          setConfirming(null);
-        }}
-      />
     </div>
   );
 }
@@ -249,13 +234,14 @@ function BindingRow({
   connector,
   busy,
   onAction,
-  onAskRevoke,
+  impact,
 }: {
   binding: Binding;
   connector: (ConnectorInfo & { code: string }) | null;
   busy: boolean;
   onAction: (binding: Binding, action: "pause" | "resume" | "revoke") => void | Promise<void>;
-  onAskRevoke: (binding: Binding) => void;
+  /** undefined = still being read, null = the read failed. */
+  impact: RevokeImpact | null | undefined;
 }) {
   const meta = STATE_META[binding.state];
   const terminal = binding.state === "revoked";
@@ -296,86 +282,39 @@ function BindingRow({
               恢复
             </Button>
           )}
-          <Button size="sm" variant="destructive" disabled={busy} onClick={() => onAskRevoke(binding)}>
+          <DestructiveButton
+            size="sm"
+            confirm={{
+              verb: "撤销",
+              target: binding.externalSourceId,
+              // Two consequences, and the SECOND is the severe one an API reader
+              // would never guess: uidx_binding_kb_connector_source is unique
+              // with no state predicate, so a revoked source can never be bound
+              // to this library again.
+              consequence: impact
+                ? `${impact.documents} 份文档退出检索` +
+                  (impact.verified > 0 ? `，其中 ${impact.verified} 份是已验证内容` : "") +
+                  "。撤销不可逆：该来源标识不能再绑定回本库。"
+                : "撤销不可逆：该来源标识不能再绑定回本库。",
+              preconditions: [
+                {
+                  label: "已算清撤销影响",
+                  met: impact != null,
+                  // THREE states, not two. A failed read is not "unmet" - it is
+                  // unknown, and the reader has to be able to tell those apart
+                  // before they authorise something irreversible.
+                  unknown: impact === undefined,
+                  note: impact === null ? "影响读取失败，请重试后再撤销" : undefined,
+                },
+              ],
+              onConfirm: () => Promise.resolve(onAction(binding, "revoke")),
+            }}
+          >
             撤销
-          </Button>
+          </DestructiveButton>
         </div>
       )}
     </div>
   );
 }
 
-/** Revoke confirmation that STATES THE CASCADE IN ADVANCE. The batch's whole
- *  point: the consequence has always happened, it has just never been visible
- *  until after the click. */
-function RevokeDialog({
-  binding,
-  impact,
-  failed,
-  busy,
-  onClose,
-  onConfirm,
-}: {
-  binding: Binding | null;
-  impact: RevokeImpact | null;
-  failed: boolean;
-  busy: boolean;
-  onClose: () => void;
-  onConfirm: (binding: Binding) => void;
-}) {
-  return (
-    <AlertDialog open={binding !== null} onOpenChange={(open) => !open && onClose()}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle className="leading-[1]">撤销这个来源？</AlertDialogTitle>
-          <AlertDialogDescription asChild>
-            <div className="flex flex-col gap-sm text-body-md">
-              {failed ? (
-                <span className="text-destructive-text">
-                  无法读取撤销影响，因此不能确认。请重试；在看清后果之前不应执行不可逆操作。
-                </span>
-              ) : impact === null ? (
-                <span className="text-muted-foreground">正在计算影响…</span>
-              ) : (
-                <>
-                  <span>
-                    <span className="font-mono">{impact.connectorCode}</span> ·{" "}
-                    <span className="font-mono">{impact.externalSourceId}</span>
-                  </span>
-                  <span>
-                    将有 <strong className="font-mono">{impact.documents}</strong> 份文档退出检索
-                    {impact.verified > 0 && (
-                      <>
-                        ，其中 <strong className="font-mono text-warning-text">{impact.verified}</strong> 份是
-                        <strong>已验证</strong>内容
-                      </>
-                    )}
-                    。
-                  </span>
-                  {/* The severe half, and the one an API reader would miss. */}
-                  <span className="rounded-md border border-destructive/25 bg-destructive/5 p-sm text-destructive-text">
-                    撤销不可逆：该来源标识<strong>不能</strong>再绑定回本库。这不是「先退订、以后再订」。
-                  </span>
-                </>
-              )}
-            </div>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
-          {/* No confirm button at all until the cost is known - a confirmation
-              over an unknown consequence is not a confirmation. */}
-          {impact !== null && !failed && (
-            <AlertDialogAction
-              disabled={busy}
-              onClick={() => binding && onConfirm(binding)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              确认撤销
-            </AlertDialogAction>
-          )}
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-}
