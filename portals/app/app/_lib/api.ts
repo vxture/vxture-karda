@@ -359,3 +359,59 @@ export async function askKbs(input: { question: string; kb_ids?: string[]; top_k
   });
   return need(body, "result", "/api/kb/ask");
 }
+
+// --- governance: the re-verification work queue (batch 11) --------------------
+
+export interface QueueItem {
+  kind: "document" | "entry";
+  id: string;
+  kbId: string;
+  kbName: string;
+  /** Null for an untitled entry - the UI shows a placeholder rather than
+   *  inventing one. */
+  title: string | null;
+  verificationState: "stale" | "unverified";
+  verifier: string | null;
+  verifiedAt: string | null;
+  expiresAt: string | null;
+  source: string | null;
+}
+
+export interface QueueResult {
+  items: QueueItem[];
+  /** Totals for the whole eligible queue, not the returned page. */
+  staleTotal: number;
+  unverifiedTotal: number;
+  truncated: boolean;
+  /** False offline, where there is no corpus to queue. */
+  live: boolean;
+}
+
+export async function readGovernanceQueue(kbId?: string): Promise<QueueResult> {
+  return req<QueueResult>(`/api/kb/governance/queue${kbId ? `?kb=${encodeURIComponent(kbId)}` : ""}`);
+}
+
+/** Verify one queue item. Documents and entries take different routes because
+ *  they are different tables with different exemption rules - the queue carries
+ *  `kind` precisely so the caller does not have to guess. */
+export async function verifyQueueItem(item: Pick<QueueItem, "kind" | "kbId" | "id">): Promise<void> {
+  const path =
+    item.kind === "document"
+      ? `/api/kb/${item.kbId}/documents/${item.id}/verify`
+      : `/api/kb/${item.kbId}/entries/${item.id}/verify`;
+  await req<unknown>(path, { method: "POST" });
+}
+
+export interface SweepSummary {
+  scanned: number;
+  staled: number;
+  scope: "workspace" | "global";
+  live?: boolean;
+}
+
+/** Run the interval-expiry sweep over the caller's OWN workspace. Sending no
+ *  job token is what selects the scoped path; the global sweep is the cron
+ *  caller's, and a user must not be able to reach it. */
+export async function runGovernanceSweep(): Promise<SweepSummary> {
+  return req<SweepSummary>("/api/kb/governance/sweep", { method: "POST" });
+}

@@ -4,9 +4,7 @@ import { getKbStore } from "../../../../../../kb/lib/store";
 import { getContentStore } from "../../../../../../kb/lib/content-store";
 import { GovernanceService } from "../../../../../../kb/governance/service";
 import { requireAuth } from "../../../../../../kb/api/http";
-import { actorForKb } from "../../../../../../kb/api/actor";
-import type { AuthUser } from "../../../../../../auth/lib/claims";
-import type { KnowledgeBaseRow } from "../../../../../../kb/lib/store";
+import { mayVerify } from "../../../../../../kb/api/may-verify";
 
 // POST /api/kb/:id/documents/:docId/verify   mark a document verified (Track 12)
 //
@@ -47,16 +45,4 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string; d
     return NextResponse.json({ error: r.error.code }, { status });
   }
   return NextResponse.json({ document: r.value });
-}
-
-/** The assigned verifier, or an admin/owner of the library, may verify. */
-function mayVerify(user: AuthUser & { activeWorkspace: string }, kb: KnowledgeBaseRow): boolean {
-  const actor = actorForKb(user, {
-    ownerType: kb.ownerType,
-    ownerSub: kb.ownerSub,
-    workspaceId: kb.workspaceId,
-    publishState: kb.publishState,
-  });
-  if (actor.role === "owner" || actor.role === "ws_admin" || actor.role === "org_admin") return true;
-  return kb.defaultVerifier != null && kb.defaultVerifier === user.sub;
 }

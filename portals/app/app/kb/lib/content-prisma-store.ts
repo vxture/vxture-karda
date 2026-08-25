@@ -279,9 +279,17 @@ export class PrismaContentStore implements ContentStore {
     if (res.count === 0) return null;
     return this.getEntry(id);
   }
-  async dueForStale(now: Date, limit: number): Promise<DueItem[]> {
+  async dueForStale(now: Date, limit: number, kbIds?: string[]): Promise<DueItem[]> {
     const p = await getPrismaClient();
-    const where = { verificationState: "verified", expiresAt: { lte: now }, contentState: { not: "deleted" } };
+    // An EMPTY kbIds is not "no filter" - it is a scope with nothing in it, and
+    // `{ in: [] }` correctly matches nothing. Collapsing it to undefined would
+    // turn a workspace with no libraries into a global sweep.
+    const where = {
+      verificationState: "verified",
+      expiresAt: { lte: now },
+      contentState: { not: "deleted" },
+      ...(kbIds ? { kbId: { in: kbIds } } : {}),
+    };
     const [docs, entries] = await Promise.all([
       p.document.findMany({ where, select: { id: true, kbId: true }, take: limit, orderBy: { expiresAt: "asc" } }),
       p.entry.findMany({ where, select: { id: true, kbId: true }, take: limit, orderBy: { expiresAt: "asc" } }),

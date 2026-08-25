@@ -76,9 +76,14 @@ export class GovernanceService {
    * `stale`. evaluateExpiry is the authority (it re-checks governanceApplies and
    * the current interval), so an item in a library that has since turned
    * governance off is left alone - the sweep never fabricates a stale.
+   *
+   * `kbIds` narrows the scan. The cron caller omits it and sweeps globally,
+   * which is correct for a job running as the system. Anything a USER can
+   * trigger must pass it: unscoped, one tenant pressing a button would scan and
+   * re-state every other tenant's corpus.
    */
-  async sweep(now: Date, limit = 200): Promise<SweepSummary> {
-    const due = await this.content.dueForStale(now, limit);
+  async sweep(now: Date, limit = 200, kbIds?: string[]): Promise<SweepSummary> {
+    const due = await this.content.dueForStale(now, limit, kbIds);
     const policyCache = new Map<string, GovernancePolicy | null>();
     let staled = 0;
 

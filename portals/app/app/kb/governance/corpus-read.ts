@@ -36,6 +36,11 @@ export type VerifState = "verified" | "stale" | "unverified";
 export interface KbRef {
   id: string;
   name: string;
+  /** Whether the library has verification governance switched on.
+   *
+   *  Only affects the 低于覆盖基线 LIST, never the coverage figure. See the note
+   *  on `belowFloor` in tallyCorpus for why those two are treated differently. */
+  governanceEnabled?: boolean;
 }
 
 /** One `GROUP BY kb_id, verification_state` row, from either table. */
@@ -47,6 +52,7 @@ export interface VerifCount {
 
 interface KbTally {
   name: string;
+  governanceEnabled: boolean;
   total: number;
   verified: number;
   stale: number;
@@ -60,7 +66,12 @@ export function tallyCorpus(
   floorPct: number = COVERAGE_FLOOR_PCT,
   limit: number = BELOW_FLOOR_LIMIT,
 ): Omit<VerificationState, "preVerifiedPending"> {
-  const tally = new Map<string, KbTally>(kbs.map((k) => [k.id, { name: k.name, total: 0, verified: 0, stale: 0 }]));
+  const tally = new Map<string, KbTally>(
+    // Default TRUE for the governance flag: a caller that does not supply it
+    // (the pure tests, the demo overlay) keeps the old behaviour rather than
+    // silently emptying the list.
+    kbs.map((k) => [k.id, { name: k.name, governanceEnabled: k.governanceEnabled ?? true, total: 0, verified: 0, stale: 0 }]),
+  );
   for (const row of rows) {
     const t = tally.get(row.kbId);
     if (!t) continue; // a row under a kb outside the population (deleted, other ws)
@@ -72,7 +83,7 @@ export function tallyCorpus(
   let verified = 0;
   let stale = 0;
   let total = 0;
-  const belowFloor: (VerificationState["belowFloor"][number] & { id: string })[] = [];
+  const belowFloor: VerificationState["belowFloor"] = [];
   for (const [id, t] of tally.entries()) {
     verified += t.verified;
     stale += t.stale;
@@ -81,6 +92,15 @@ export function tallyCorpus(
     // every freshly created library at the top of the "look here" list and
     // bury the ones that actually regressed.
     if (t.total === 0) continue;
+    // A library with governance OFF has opted out of verification: nothing in it
+    // can be verified, so listing it as "below the floor, go fix it" hands the
+    // operator a row that leads to an empty queue. It still counts toward the
+    // coverage FIGURE above - excluding it there would quietly redefine the
+    // headline metric, which is an owner's call, not this function's. The list
+    // is explicitly a "look here next" list, so it is the half that must only
+    // contain actionable rows. (Found by walking batch 11 through: a
+    // governance-off draft library sat at 0% at the top of the list.)
+    if (!t.governanceEnabled) continue;
     const pct = Math.round((t.verified / t.total) * 100);
     if (pct < floorPct) belowFloor.push({ id, name: t.name, coveragePct: pct, staleCount: t.stale });
   }
@@ -94,7 +114,9 @@ export function tallyCorpus(
     (a, b) =>
       a.coveragePct - b.coveragePct ||
       (a.name < b.name ? -1 : a.name > b.name ? 1 : 0) ||
-      (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+      // In the live path `id` is always present; the null case belongs to the
+      // demo overlay, which never reaches this sort.
+      ((a.id ?? "") < (b.id ?? "") ? -1 : (a.id ?? "") > (b.id ?? "") ? 1 : 0),
   );
 
   return {
@@ -103,8 +125,9 @@ export function tallyCorpus(
     unverified: total - verified - stale,
     coveragePct: total === 0 ? 0 : Math.round((verified / total) * 100),
     floorPct,
-    // `id` was only a sort key - it does not belong in the published shape.
-    belowFloor: belowFloor.slice(0, limit).map(({ name, coveragePct, staleCount }) => ({ name, coveragePct, staleCount })),
+    // `id` is published (batch 11): it was only a sort key while the list was a
+    // dead end, and it is the link target now that the row leads somewhere.
+    belowFloor: belowFloor.slice(0, limit),
   };
 }
 
@@ -113,7 +136,7 @@ export async function readCorpus(workspaceId: string): Promise<Omit<Verification
   const p = await getPrismaClient();
   const kbs = await p.knowledgeBase.findMany({
     where: { workspaceId, deletedAt: null },
-    select: { id: true, name: true },
+    select: { id: true, name: true, governanceEnabled: true },
     orderBy: { createdAt: "asc" },
   });
   const kbIds = kbs.map((k) => k.id);

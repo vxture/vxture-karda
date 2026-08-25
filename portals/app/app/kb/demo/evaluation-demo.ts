@@ -14,10 +14,13 @@ export const DEMO_EVALUATION: EvaluationData = {
     unverified: 573,
     coveragePct: 82,
     floorPct: 80,
+    // `id: null` throughout - these libraries do not exist, so the rows must
+    // stay un-clickable. A fabricated id would render a link that 404s, which is
+    // worse than a row that plainly does not lead anywhere.
     belowFloor: [
-      { name: "应急预案库", coveragePct: 61, staleCount: 17 },
-      { name: "会议纪要与决议", coveragePct: 58, staleCount: 9 },
-      { name: "客户与项目档案", coveragePct: 71, staleCount: 0 },
+      { id: null, name: "应急预案库", coveragePct: 61, staleCount: 17 },
+      { id: null, name: "会议纪要与决议", coveragePct: 58, staleCount: 9 },
+      { id: null, name: "客户与项目档案", coveragePct: 71, staleCount: 0 },
     ],
     preVerifiedPending: S.preVerified,
   },
