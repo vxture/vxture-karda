@@ -23,6 +23,8 @@ import { isLocale, useLocale } from "./locale";
 import { useMessages } from "../_i18n/useMessages";
 import { shell } from "../_i18n";
 import { ScopePanel } from "./ScopePanel";
+import { ROLE_LABEL_KEY } from "./roles";
+import { sessionRole } from "../_lib/session";
 
 // The unified product header (owner, 2026-08-21). Structure follows the
 // arda-header shell: launcher + brand + menu area (left) / search (center slot,
@@ -43,6 +45,9 @@ import { ScopePanel } from "./ScopePanel";
 // language is the shell-local LocaleProvider (zh-CN default).
 
 const LOCALE_OPTIONS = [
+  // i18n-allow: a language picker names each language in its OWN script -
+  // 简体中文 stays 简体中文 for an English reader, the way Deutsch stays
+  // Deutsch for a Chinese one. Translating it is the bug, not leaving it.
   { locale: "zh-CN" as const, nativeName: "简体中文" },
   { locale: "en-US" as const, nativeName: "English" },
 ];
@@ -97,13 +102,17 @@ export function AppHeader({
 
   const searchGroups = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const pages = NAV_ITEMS.filter((n) => !q || n.label.toLowerCase().includes(q)).map((n) => ({
+    // Matching is done on the RESOLVED label, so search follows the language
+    // the reader is actually looking at - typing "channels" finds 供给通道 in
+    // en-US and typing 通道 finds it in zh-CN, rather than one of the two
+    // always missing.
+    const pages = NAV_ITEMS.map((n) => ({
       key: n.key,
-      label: n.label,
-      description: n.description,
+      label: m[n.labelKey],
+      description: m[n.descKey],
       icon: n.icon,
       onSelect: () => router.push(n.href),
-    }));
+    })).filter((n) => !q || n.label.toLowerCase().includes(q));
     const actions = [
       {
         key: "bench",
@@ -127,7 +136,7 @@ export function AppHeader({
   }, [query, router]);
 
   const displayName = user?.sub ?? m.signedOut;
-  const roleLabel = user?.isWorkspaceOwner ? m.roleOwner : user?.canManage ? m.roleAdmin : m.roleMember;
+  const roleLabel = m[ROLE_LABEL_KEY[sessionRole(user)]];
 
   // Domain navigation lives in the 导航栏 cards, so the 顶栏 keeps only
   // launcher + brand - two navs must not coexist.
@@ -148,8 +157,8 @@ export function AppHeader({
         items={NAV_ITEMS.map((n) => ({
           key: n.key,
           icon: n.icon,
-          label: n.label,
-          description: n.description,
+          label: m[n.labelKey],
+          description: m[n.descKey],
           active: n.key === active,
         }))}
         onSelect={(key) => {
@@ -176,7 +185,7 @@ export function AppHeader({
         </ShellIconButton>
         {pending > 0 && !dockOpen && (
           <span
-            aria-label={`${pending} 项待裁决`}
+            aria-label={m.pendingBadge(pending)}
             className="pointer-events-none absolute -right-0.5 -top-0.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-destructive px-2xs font-mono text-code-sm font-semibold text-white"
           >
             {pending}
@@ -206,7 +215,7 @@ export function AppHeader({
       <ShellUserMenu
           user={{
             displayName,
-            uniqueLine: user?.activeWorkspace ? `工作区 ${user.activeWorkspace.slice(0, 8)}` : undefined,
+            uniqueLine: user?.activeWorkspace ? m.workspaceLabel(user.activeWorkspace.slice(0, 8)) : undefined,
             statusTag: sessionLoaded && user ? { label: m.signedIn, verified: true } : undefined,
           }}
           openLabel={m.account}
@@ -239,7 +248,7 @@ export function AppHeader({
               leadIcon="medal"
               lead="row"
               slots={[
-                { key: "role", icon: "user", label: `角色 · ${roleLabel}`, earned: Boolean(user) },
+                { key: "role", icon: "user", label: m.roleLine(roleLabel), earned: Boolean(user) },
                 { key: "level", icon: "star", label: m.locked },
                 { key: "slot-3", icon: "medal", label: m.locked },
               ]}

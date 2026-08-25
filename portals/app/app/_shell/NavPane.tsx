@@ -4,6 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@vxture/design-system";
 import { NAV_ITEMS, type NavItem } from "./nav";
+import { useMessages } from "../_i18n/useMessages";
+import { useFormat } from "../_i18n/useFormat";
+import { shell as shellMessages } from "../_i18n/messages/shell";
 import type { ShellData } from "../kb/demo/shell-types";
 
 // 导航栏 (nav pane) - the left pane of the shell body: one card per
@@ -95,11 +98,6 @@ const TONE_TEXT: Record<Tone, string> = {
   warning: "text-warning-text",
   danger: "text-destructive-text",
 };
-
-/** Compact thousands: 1204 -> 1,204; 12040 -> 1.2万. */
-function fmt(n: number): string {
-  return n >= 10000 ? `${(n / 10000).toFixed(1)}万` : n.toLocaleString();
-}
 
 /** 环形图 as the frame around a figure: a near-closed arc with a small
  *  opening at the bottom, the number read off the middle. 知识资产 owns no
@@ -256,14 +254,16 @@ function TitleTag({ count, tone, label }: { count: number; tone: "warning" | "da
   );
 }
 
-/** The tag a domain card shows beside its title, if it has one. */
-function titleTag(key: string, shell: ShellData | null) {
+/** The tag a domain card shows beside its title, if it has one. A component
+ *  rather than a plain call so it can read the catalog itself. */
+function DomainTag({ itemKey, shell }: { itemKey: string; shell: ShellData | null }) {
+  const m = useMessages(shellMessages);
   if (!shell) return null;
-  if (key === "overview" && shell.overview.needsAttention > 0) {
-    return <TitleTag count={shell.overview.needsAttention} tone="warning" label="需关注" />;
+  if (itemKey === "overview" && shell.overview.needsAttention > 0) {
+    return <TitleTag count={shell.overview.needsAttention} tone="warning" label={m.needsAttention} />;
   }
-  if (key === "channels" && shell.channels.degraded > 0) {
-    return <TitleTag count={shell.channels.degraded} tone="warning" label="异常通道" />;
+  if (itemKey === "channels" && shell.channels.degraded > 0) {
+    return <TitleTag count={shell.channels.degraded} tone="warning" label={m.degradedChannels} />;
   }
   return null;
 }
@@ -283,9 +283,11 @@ function FootFigures({ items }: { items: { k: string; v: string; tone?: string }
 }
 
 function CardBody({ item, shell }: { item: NavItem; shell: ShellData | null }) {
+  const m = useMessages(shellMessages);
+  const f = useFormat();
   if (!shell) {
     // Same height as a settled body, so the pane does not jump on arrival.
-    return <span className="flex h-[68px] items-center text-body-md text-muted-foreground">读取中…</span>;
+    return <span className="flex h-[68px] items-center text-body-md text-muted-foreground">{m.paneLoading}</span>;
   }
   switch (item.key) {
     case "overview": {
@@ -297,8 +299,8 @@ function CardBody({ item, shell }: { item: NavItem; shell: ShellData | null }) {
       const o = shell.overview;
       return (
         <span className="flex items-start gap-xs">
-          <Ring value={fmt(o.assetCount)} label="资产" />
-          <Ring value={fmt(o.entryCount)} label="知识" note={`+${o.weeklyNew}`} />
+          <Ring value={f.compact(o.assetCount)} label={m.ringAssets} />
+          <Ring value={f.compact(o.entryCount)} label={m.ringEntries} note={`+${f.compact(o.weeklyNew)}`} />
         </span>
       );
     }
@@ -313,8 +315,8 @@ function CardBody({ item, shell }: { item: NavItem; shell: ShellData | null }) {
       return (
         <span className="flex flex-col gap-sm">
           <span className="flex items-baseline gap-xs">
-            <span className="text-title-lg font-mono text-foreground">{fmt(c.todayCalls)}</span>
-            <span className="text-body-md text-muted-foreground">今日调用</span>
+            <span className="text-title-lg font-mono text-foreground">{f.compact(c.todayCalls)}</span>
+            <span className="text-body-md text-muted-foreground">{m.callsToday}</span>
             <span
               className={`ml-auto font-mono text-code-md ${
                 c.deltaPct >= 0 ? "text-success-text" : "text-destructive-text"
@@ -332,8 +334,8 @@ function CardBody({ item, shell }: { item: NavItem; shell: ShellData | null }) {
               ]}
             />
             <span className="flex min-w-0 flex-1 flex-col gap-xs">
-              <LegendRow tone="brand" label="直供通道" value={fmt(c.directCalls)} pct={share(c.directCalls)} />
-              <LegendRow tone="ai" label="能力平台" value={fmt(c.runosCalls)} pct={share(c.runosCalls)} />
+              <LegendRow tone="brand" label={m.channelDirect} value={f.compact(c.directCalls)} pct={share(c.directCalls)} />
+              <LegendRow tone="ai" label={m.channelRunos} value={f.compact(c.runosCalls)} pct={share(c.runosCalls)} />
             </span>
           </span>
         </span>
@@ -345,15 +347,15 @@ function CardBody({ item, shell }: { item: NavItem; shell: ShellData | null }) {
         <span className="flex flex-col gap-md">
           <BarRows
             rows={[
-              { label: "在制", value: p.inflight, tone: "brand" },
-              { label: "待确认", value: p.pending, tone: "warning" },
-              { label: "失败", value: p.failedResident, tone: "danger" },
+              { label: m.pipeInflight, value: p.inflight, tone: "brand" },
+              { label: m.pipePending, value: p.pending, tone: "warning" },
+              { label: m.pipeFailed, value: p.failedResident, tone: "danger" },
             ]}
           />
           <FootFigures
             items={[
-              { k: "今日完成", v: `${p.docsToday} 份`, tone: "text-success-text" },
-              { k: "重建中", v: String(p.rebuilding) },
+              { k: m.doneToday, v: m.docsCount(p.docsToday), tone: "text-success-text" },
+              { k: m.rebuilding, v: String(p.rebuilding) },
             ]}
           />
         </span>
@@ -368,10 +370,10 @@ function CardBody({ item, shell }: { item: NavItem; shell: ShellData | null }) {
         <span className="flex flex-col gap-sm">
           <span className="flex items-baseline gap-xs">
             <span className="text-title-lg font-mono text-foreground">{e.coveragePct}%</span>
-            <span className="text-body-md text-muted-foreground">验证覆盖</span>
+            <span className="text-body-md text-muted-foreground">{m.verifyCoverage}</span>
             <span className="ml-auto text-body-md text-muted-foreground">
-              未验证
-              <span className="ml-2xs font-mono text-code-md text-foreground">{fmt(e.unverified)}</span>
+              {f.verification("unverified").label}
+              <span className="ml-2xs font-mono text-code-md text-foreground">{f.compact(e.unverified)}</span>
             </span>
           </span>
           <SplitBar
@@ -382,9 +384,9 @@ function CardBody({ item, shell }: { item: NavItem; shell: ShellData | null }) {
           />
           <FootFigures
             items={[
-              { k: "已验证", v: fmt(e.verified), tone: "text-success-text" },
-              { k: "待复验", v: String(e.stale), tone: "text-warning-text" },
-              { k: "缺口", v: String(e.gaps), tone: "text-destructive-text" },
+              { k: f.verification("verified").label, v: f.compact(e.verified), tone: "text-success-text" },
+              { k: f.verification("stale").label, v: String(e.stale), tone: "text-warning-text" },
+              { k: m.gaps, v: String(e.gaps), tone: "text-destructive-text" },
             ]}
           />
         </span>
@@ -404,6 +406,8 @@ export function NavPane({
   shell: ShellData | null;
   collapsed: boolean;
 }) {
+  const m = useMessages(shellMessages);
+  const f = useFormat();
   const [closed, setClosed] = useState<Set<string>>(() => new Set());
 
   // Read after mount only: localStorage does not exist during SSR, so the
@@ -478,15 +482,15 @@ export function NavPane({
                 />
                 {/* Light title: it names the card, the chart is the loud part. */}
                 <span className={`min-w-0 truncate ${domainActive ? "text-primary-text" : "text-foreground"}`}>
-                  {item.label}
+                  {m[item.labelKey]}
                 </span>
-                {titleTag(item.key, shell)}
+                <DomainTag itemKey={item.key} shell={shell} />
                 <span className="flex-1" />
               </Link>
               <button
                 onClick={() => toggleCard(item.key)}
                 aria-expanded={open}
-                aria-label={`${open ? "收起" : "展开"}${item.label}`}
+                aria-label={open ? m.collapseItem(m[item.labelKey]) : m.expandItem(m[item.labelKey])}
                 className="flex size-control-md shrink-0 items-center justify-center rounded-md text-muted-foreground/60 transition-colors duration-fast ease-standard hover:text-foreground"
               >
                 <Icon name={open ? "chevron-up" : "chevron-down"} size="xs" />
@@ -514,7 +518,7 @@ export function NavPane({
                               : "text-muted-foreground hover:bg-accent hover:text-foreground"
                           }`}
                         >
-                          {s.label}
+                          {m[s.labelKey]}
                         </Link>
                       );
                     })}

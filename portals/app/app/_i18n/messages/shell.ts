@@ -1,4 +1,4 @@
-import type { Message } from "../catalog";
+import type { Catalog, MessageFn } from "../catalog";
 
 // The product shell: the four nav domains and their sub-views, plus the chrome
 // around them. These render on EVERY page, so they are the first namespace to
@@ -91,4 +91,72 @@ export const shell = {
   roleMember: { "zh-CN": "成员", "en-US": "Member" },
   tier: { "zh-CN": "等级", "en-US": "Tier" },
   locked: { "zh-CN": "未解锁", "en-US": "Locked" },
-} satisfies Record<string, Message>;
+
+  // --- 导航栏 cards ------------------------------------------------------------
+  paneLoading: { "zh-CN": "读取中…", "en-US": "Loading…" },
+  needsAttention: { "zh-CN": "需关注", "en-US": "Needs attention" },
+  degradedChannels: { "zh-CN": "异常通道", "en-US": "Degraded" },
+  ringAssets: { "zh-CN": "资产", "en-US": "Assets" },
+  ringEntries: { "zh-CN": "知识", "en-US": "Entries" },
+  callsToday: { "zh-CN": "今日调用", "en-US": "Calls today" },
+  // Written out rather than abbreviated: 直供 / 能力 on their own do not read
+  // as channel names (owner 2026-08-24).
+  channelDirect: { "zh-CN": "直供通道", "en-US": "Direct channel" },
+  channelRunos: { "zh-CN": "能力平台", "en-US": "Capability platform" },
+  pipeInflight: { "zh-CN": "在制", "en-US": "In flight" },
+  pipePending: { "zh-CN": "待确认", "en-US": "Awaiting review" },
+  pipeFailed: { "zh-CN": "失败", "en-US": "Failed" },
+  doneToday: { "zh-CN": "今日完成", "en-US": "Done today" },
+  docsCount: {
+    "zh-CN": (n: number) => `${n} 份`,
+    "en-US": (n: number) => `${n} doc${n === 1 ? "" : "s"}`,
+  } satisfies MessageFn<[number]>,
+  rebuilding: { "zh-CN": "重建中", "en-US": "Rebuilding" },
+  verifyCoverage: { "zh-CN": "验证覆盖", "en-US": "Verification coverage" },
+  gaps: { "zh-CN": "缺口", "en-US": "Gaps" },
+  collapseItem: {
+    "zh-CN": (label: string) => `收起${label}`,
+    "en-US": (label: string) => `Collapse ${label}`,
+  } satisfies MessageFn<[string]>,
+  expandItem: {
+    "zh-CN": (label: string) => `展开${label}`,
+    "en-US": (label: string) => `Expand ${label}`,
+  } satisfies MessageFn<[string]>,
+
+  // --- 值班台 ------------------------------------------------------------------
+  dockOnDuty: { "zh-CN": "在岗", "en-US": "On duty" },
+  dockConnecting: { "zh-CN": "正在接入…", "en-US": "Connecting…" },
+  dockPending: { "zh-CN": "待你裁决", "en-US": "Awaiting your call" },
+  dockRest: {
+    "zh-CN": (n: number) => `其余 ${n} 项 →`,
+    "en-US": (n: number) => `${n} more →`,
+  } satisfies MessageFn<[number]>,
+  dockAlert: { "zh-CN": "告警", "en-US": "Alert" },
+  dockGoHandle: { "zh-CN": "去处理", "en-US": "Go handle it" },
+  dockActivity: { "zh-CN": "Agent 活动 · 实时", "en-US": "Agent activity · live" },
+  dockDelegate: {
+    "zh-CN": "低风险项全部交给管家处理",
+    "en-US": "Hand every low-risk item to the steward",
+  },
+
+  // --- scope panel / user menu -------------------------------------------------
+  workspaceLabel: {
+    "zh-CN": (id: string) => `工作区 ${id}`,
+    "en-US": (id: string) => `Workspace ${id}`,
+  } satisfies MessageFn<[string]>,
+  orgLabel: {
+    "zh-CN": (id: string) => `组织 ${id}`,
+    "en-US": (id: string) => `Organization ${id}`,
+  } satisfies MessageFn<[string]>,
+  orgUnknown: { "zh-CN": "组织未知", "en-US": "Organization unknown" },
+  yourRole: { "zh-CN": "你的角色", "en-US": "Your role" },
+  accountId: { "zh-CN": "账号", "en-US": "Account id" },
+  roleLine: {
+    "zh-CN": (role: string) => `角色 · ${role}`,
+    "en-US": (role: string) => `Role · ${role}`,
+  } satisfies MessageFn<[string]>,
+  pendingBadge: {
+    "zh-CN": (n: number) => `${n} 项待裁决`,
+    "en-US": (n: number) => `${n} awaiting your call`,
+  } satisfies MessageFn<[number]>,
+} satisfies Catalog;
