@@ -121,10 +121,18 @@ export function formatWhen(iso: string | null | undefined): string {
 export function apiErrorMessage(status: number, code?: string): string {
   if (status === 401) return "登录已过期，请重新登录。";
   if (status === 403) return code === "forbidden" ? "你没有执行该操作的权限。" : "这个操作被拒绝了。";
+  if (code === "illegal_transition") return "当前状态不允许这个操作——撤销是终态，无法恢复。";
+  if (code === "unknown_connector") return "未知的连接器。";
   if (status === 404) return "没找到——它可能属于另一个工作区。";
   if (status === 409) {
     if (code === "duplicate_document") return "这份内容已经在库里了。";
     if (code === "name_taken") return "这个工作区里已经有同名的库了。";
+    // Names BOTH causes, because the second is the surprising one: a revoked
+    // source keeps its row (uidx_binding_kb_connector_source has no state
+    // predicate), so it permanently occupies that identifier for this library.
+    if (code === "binding_exists") {
+      return "这个来源标识已经绑定过本库了——可能仍在用，也可能是撤销后永久占位；撤销不可逆，无法重新绑定。";
+    }
     return "和已存在的内容冲突。";
   }
   if (code === "name_required") return "请填写名称。";

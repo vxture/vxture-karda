@@ -78,3 +78,24 @@ test("toneGlyph is total over the tone union", () => {
     assert.ok(toneGlyph(t).length > 0);
   }
 });
+
+// --- binding errors (batch 12) -----------------------------------------------
+
+test("binding_exists names BOTH causes, because the second one surprises people", () => {
+  // uidx_binding_kb_connector_source has no state predicate, so a REVOKED
+  // binding keeps its row and permanently occupies that identifier for the
+  // library. "和已存在的内容冲突" would leave the owner retrying forever.
+  const msg = apiErrorMessage(409, "binding_exists");
+  assert.match(msg, /撤销/, "must mention that a revoked source keeps the identifier");
+  assert.match(msg, /不可逆|无法重新绑定/);
+  assert.notEqual(msg, apiErrorMessage(409), "it must not fall through to the generic 409 wording");
+});
+
+test("illegal_transition says WHY, not just that it failed", () => {
+  const msg = apiErrorMessage(409, "illegal_transition");
+  assert.match(msg, /终态|无法恢复/);
+});
+
+test("an unrecognised 409 still gets the generic conflict wording", () => {
+  assert.match(apiErrorMessage(409, "something_else"), /冲突/);
+});

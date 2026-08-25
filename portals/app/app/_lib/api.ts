@@ -415,3 +415,91 @@ export interface SweepSummary {
 export async function runGovernanceSweep(): Promise<SweepSummary> {
   return req<SweepSummary>("/api/kb/governance/sweep", { method: "POST" });
 }
+
+// --- connector bindings (batch 12) --------------------------------------------
+
+export type BindingMode = "backfill" | "incremental";
+export type BindingState = "active" | "paused" | "revoked";
+
+export interface Binding {
+  id: string;
+  kbId: string;
+  connectorCode: string;
+  externalSourceId: string;
+  mode: BindingMode;
+  state: BindingState;
+  /** karda-side consumption checkpoint. Null before the first sync. */
+  cursor: string | null;
+  lastSyncedAt: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConnectorInfo {
+  name: string;
+  capabilities: {
+    changeDetection: "source" | "karda";
+    delivery: "poll" | "notify";
+    fetch: "direct" | "ref";
+    reconcile: "list" | "none";
+    deleteSignal: "tombstone" | "absence";
+  };
+  /** Accepted trade-offs of this connector, stated rather than absorbed. */
+  degradations: string[];
+}
+
+export async function listBindings(kbId: string): Promise<Binding[]> {
+  const body = await req<{ bindings: Binding[] }>(`/api/kb/${kbId}/bindings`);
+  return need(body, "bindings", `/api/kb/${kbId}/bindings`);
+}
+
+export async function createBinding(
+  kbId: string,
+  connectorCode: string,
+  externalSourceId: string,
+): Promise<{ binding: Binding; connector?: ConnectorInfo }> {
+  return req<{ binding: Binding; connector?: ConnectorInfo }>(`/api/kb/${kbId}/bindings`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ connector_code: connectorCode, external_source_id: externalSourceId }),
+  });
+}
+
+export interface RevokeImpact {
+  documents: number;
+  /** Verified documents leaving recall - the part that actually hurts. */
+  verified: number;
+  unverified: number;
+  /** Always false: the schema forbids re-binding a revoked source to the same
+   *  library, so revoke is permanent for that pair. */
+  rebindable: false;
+  connectorCode: string;
+  externalSourceId: string;
+}
+
+/** What a revoke would cost, BEFORE doing it. */
+export async function previewRevoke(kbId: string, bindingId: string): Promise<RevokeImpact> {
+  const body = await req<{ impact: RevokeImpact }>(`/api/kb/${kbId}/bindings/${bindingId}/revoke-preview`);
+  return need(body, "impact", `/api/kb/${kbId}/bindings/${bindingId}/revoke-preview`);
+}
+
+export async function bindingAction(
+  kbId: string,
+  bindingId: string,
+  action: "pause" | "resume" | "revoke",
+): Promise<{ binding: Binding; cascade?: { tombstoned: number } }> {
+  return req<{ binding: Binding; cascade?: { tombstoned: number } }>(`/api/kb/${kbId}/bindings/${bindingId}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ action }),
+  });
+}
+
+/** The connector catalogue - what a library can bind to. */
+export async function listConnectors(): Promise<(ConnectorInfo & { code: string; meetsDeleteInvariant: boolean })[]> {
+  const body = await req<{ connectors: (ConnectorInfo & { code: string; meetsDeleteInvariant: boolean })[] }>(
+    "/api/connectors",
+  );
+  return need(body, "connectors", "/api/connectors");
+}
