@@ -11,6 +11,7 @@ import { runPipeline, type EmbeddingClient, type CommitTarget, type RawSource } 
 import { backoffMs } from "./stages";
 import { TaskQueue, type Task } from "./queue";
 import { DEFAULT_CHUNK_PARAMS } from "./chunk";
+import { NULL_TASK_LEDGER, stateForAction, type TaskLedger } from "./task-ledger";
 
 // The document operations the worker needs. A thin slice of ContentService so
 // the worker is testable with a fake, and so it cannot reach beyond what it
@@ -27,6 +28,11 @@ export interface DocumentSink {
 export interface WorkerDeps {
   queue: TaskQueue;
   sink: DocumentSink;
+  /** Records the task's lifecycle for the 加工管道 read model (task-ledger.ts).
+   *  Optional and defaulted to a no-op: the worker's behaviour must be
+   *  identical with and without it, which is what makes "bookkeeping never
+   *  fails a task" testable rather than merely asserted. */
+  ledger?: TaskLedger;
   /** Resolve a document's raw source + config for the run. */
   resolve(task: Task): Promise<{
     source: RawSource;
@@ -50,14 +56,18 @@ export interface TickResult {
  * loop's.
  */
 export async function tick(deps: WorkerDeps): Promise<TickResult> {
+  const ledger = deps.ledger ?? NULL_TASK_LEDGER;
   const now = deps.now();
   const task = deps.queue.claim(now);
   if (!task) return { ran: false };
 
+  await ledger.started(task.docId);
+
   const resolved = await deps.resolve(task);
   if (!resolved) {
     // The document went away (deleted mid-flight): drop the task, do not fail a
-    // document that no longer exists.
+    // document that no longer exists. The ledger row goes with it on the FK
+    // cascade, so nothing is recorded here.
     deps.queue.complete(task);
     return { ran: true, action: "failed", docId: task.docId };
   }
@@ -73,22 +83,29 @@ export async function tick(deps: WorkerDeps): Promise<TickResult> {
 
   if ("done" in result) {
     await deps.sink.markIndexed(task.docId);
+    await ledger.settled({ docId: task.docId, state: "done" });
     deps.queue.complete(task);
     return { ran: true, action: "indexed", docId: task.docId };
   }
 
   // failed - the taxonomy already chose the outcome.
+  const settle = { failureClass: result.class, reason: result.reason, stage: result.stage };
   switch (result.outcome.action) {
     case "retry":
+      // Back to `queued`, not a fourth state: a retry is the same work waiting
+      // again, and `attempt` is what distinguishes it (task-ledger.ts).
+      await ledger.settled({ docId: task.docId, state: stateForAction("retry"), ...settle });
       deps.queue.retry(task, result.outcome.nextGeneration, now + backoffMs(task.attempt));
       return { ran: true, action: "retry", docId: task.docId };
     case "suspend":
       // Parked: the document stays `processing`, the task waits for resume. This
       // is the embed-unavailable path (A1) as much as quota - nothing is lost.
+      await ledger.settled({ docId: task.docId, state: "suspended", ...settle });
       deps.queue.suspend(task);
       return { ran: true, action: "suspend", docId: task.docId };
     case "fail":
       await deps.sink.markFailed(task.docId, `${result.stage}: ${result.reason}`);
+      await ledger.settled({ docId: task.docId, state: "failed", ...settle });
       deps.queue.fail(task);
       return { ran: true, action: "failed", docId: task.docId };
   }

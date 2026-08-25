@@ -50,3 +50,14 @@ comment in `98` so the whitelist still documents the column as writable.
   (`karda_kb.kb_attachment`, definition 4.8). A brand-new table, so its
   `SELECT/INSERT/DELETE` service-role grant travels with the increment (97's
   `ON ALL TABLES` grant predates it). Insert/delete only, no writable columns.
+- `0003_chunk_embedding.sql` - the in-Postgres vector index store
+  (`karda_kb.chunk_embedding`, ADR-002). One row per embedded chunk, written in
+  the same transaction as the chunk-version commit; `model_code` is the KD-107
+  vector-space lock. Brand-new table, so its `SELECT/INSERT/DELETE` grant travels
+  with the increment. No UPDATE - embeddings are rebuilt, never edited.
+  (Was missing from this list; recorded 2026-08-25.)
+- `0004_ops_read_models.sql` - the ops read-model tables (`processing_task`,
+  `processing_task_stage`, `supply_call`, `supply_call_asset`; authority
+  `docs/30-design/240-ops-read-models.md`). Four brand-new tables, so BOTH the
+  service-role grants and the column-lock whitelist travel with the increment.
+  The two ledger tables get `SELECT, INSERT` only - no UPDATE and no DELETE.

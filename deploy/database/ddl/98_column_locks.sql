@@ -106,3 +106,39 @@ GRANT UPDATE (mode, state, cursor, last_synced_at, updated_at)
 -- added by incr/0002, which db-init applies AFTER this file, so its SELECT/INSERT/
 -- DELETE grant travels with that increment (incr/README.md); there is nothing to
 -- REVOKE here because 97's `ON ALL TABLES` grant also predates the table.
+
+-- --- karda_kb ops read models (240-ops-read-models) ---
+-- These four tables are in 00_baseline.sql (fresh DBs get them here) AND in
+-- incr/0004 (live DBs adopt them there). db-init applies baseline -> 97 -> 98 ->
+-- incr/*, so at THIS point they exist on a fresh DB and do NOT exist on a live
+-- one - hence the existence guard. Without it the statements below fail on a
+-- live database; without the statements at all, a FRESH database ends up with
+-- 97's blanket SELECT/INSERT/DELETE and no column lock, i.e. the two ledgers
+-- would be deletable and the two task tables would have no UPDATE grant at all
+-- (their state machine could not advance). Both halves are needed.
+-- incr/0004 repeats them unguarded for the live path; both are idempotent.
+DO $$
+BEGIN
+  IF to_regclass('karda_kb.processing_task') IS NOT NULL THEN
+    -- document_id / kb_id / created_in_product / created_by / queued_at are the
+    -- task's identity and provenance - immutable. `tier` IS writable on purpose:
+    -- a controlled rebuild demotes a task from interactive to bulk so it stops
+    -- crowding the interactive queue (110-processing's queue discipline).
+    REVOKE UPDATE ON karda_kb.processing_task FROM karda_svc;
+    GRANT UPDATE (tier, state, current_stage, failure_class, failure_reason,
+                  attempt, started_at, finished_at, updated_at)
+      ON karda_kb.processing_task TO karda_svc;
+
+    -- Only the closing fields: stage and started_at are history once written.
+    REVOKE UPDATE ON karda_kb.processing_task_stage FROM karda_svc;
+    GRANT UPDATE (outcome, ended_at, note)
+      ON karda_kb.processing_task_stage TO karda_svc;
+
+    -- Append-only ledgers. DELETE is revoked too, because 97 hands out
+    -- SELECT/INSERT/DELETE to every table in the schema and a served call is not
+    -- something that stops having happened. Retention is a policy job, not a
+    -- runtime capability (240 section 6).
+    REVOKE UPDATE, DELETE ON karda_kb.supply_call FROM karda_svc;
+    REVOKE UPDATE, DELETE ON karda_kb.supply_call_asset FROM karda_svc;
+  END IF;
+END $$;

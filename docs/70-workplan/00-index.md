@@ -359,10 +359,10 @@ evaluation run. So the batch splits by what each domain needs:
 | Domain | Needs | Cost |
 |--------|-------|------|
 | 验证治理 (half of 验证评测) | nothing - `document.verification_state` / `entry.verification_state` exist since the baseline DDL | **done 2026-08-25** - `kb/governance/corpus-read.ts`, 8 unit tests; read by BOTH `/api/evaluation` and the 导航栏 card so they cannot disagree |
-| 加工管道 (流水 / 任务与队列) | a task/queue table - the processing runtime runs but leaves no readable record | DDL -> `db-init`, the gated path |
-| 供给通道 | a supply ledger - karda emits `karda.ingest` to the platform but keeps no local record to read back | DDL -> `db-init` |
+| 加工管道 (流水 / 任务与队列) | a task/queue table | **tables landed + WRITES wired 2026-08-25** (`kb/processing/task-ledger.ts`, at enqueue and at every worker outcome). Read models still on the overlay - next |
+| 供给通道 | a supply ledger | **DONE end to end 2026-08-25** - `kb/tools/supply-ledger.ts` writes at the one seam BOTH channels pass through; `kb/tools/supply-read.ts` aggregates; `/api/channels` serves live traffic with `sources: { traffic, registry }` |
 | 质量评测 (other half of 验证评测) | eval-set + eval-run tables, and a runner | DDL + the runner; KD-011 ruled out synthetic QA generation, so sets are authored |
-| 知识资产 ops figures (引用热度 / TOP 消费方) | the same supply ledger as 供给通道 | rides on that one |
+| 知识资产 ops figures (引用热度 / TOP 消费方) | the same supply ledger as 供给通道 | the DATA now exists (`supply_call_asset` is being written); `/api/overview` does not read it yet |
 
 **Provenance contract, set by the first one done.** A page-wide `demoOps` flag
 cannot survive a domain going half-live, so `EvaluationData` now carries
@@ -371,11 +371,15 @@ cannot survive a domain going half-live, so `EvaluationData` now carries
 adopt the same shape when their ledgers land - **do not let a section go live
 under a page-wide flag**, that is how a demo figure gets read as real.
 
-**Sequencing.** 验证治理 first because it cost no DDL. The remaining three all
-need `db-init`, which is the one irreversible-ish step in the chain, so they
-should land as ONE schema increment rather than three - and the schema doc
-(`30-design/2xx` band) must land with it: `lint:data-design` is a hard gate on
-DDL/Prisma lockstep.
+**Sequencing.** 验证治理 first because it cost no DDL. The rest landed as ONE
+schema increment (`incr/0004`, authority `30-design/240-ops-read-models.md`),
+executed against a throwaway Postgres on both the fresh and the live path before
+merging - see 240 section 11.
+
+**Still open in this batch:** the 加工管道 read models (`/api/pipeline`,
+`/api/pipeline/tasks`, `/api/pipeline/rebuild`) and the 知识资产 ops figures.
+Their tables are written now, so these are aggregation-and-wire jobs with no
+further DDL. 质量评测 stays overlay until a runner exists (240 section 8).
 
 ## Decision track (owner)
 

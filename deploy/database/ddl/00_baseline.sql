@@ -505,3 +505,137 @@ CREATE TABLE IF NOT EXISTS karda_kb.kb_attachment (
 );
 CREATE INDEX IF NOT EXISTS idx_kb_attachment_lookup
   ON karda_kb.kb_attachment (workspace_id, user_sub, product_code);
+
+-- ===== karda_kb: ops read models (240-ops-read-models) =====
+-- The fact sources behind the 加工管道 and 供给通道 domains. Until these tables
+-- existed both domains queried NO database at all - every task, every call on
+-- those pages was a demo constant. See 240 section 1.
+-- NOTE (live DB): added by incr/0004, which db-init applies AFTER 97/98, so both
+-- the service-role grants AND the column-lock whitelist travel with that
+-- increment, not with 97/98 (incr/README.md).
+
+-- One processing task = one document going through the five stages
+-- (110-processing 2). Rows are what make the pipeline OBSERVABLE; making it
+-- RESUMABLE across a restart is a further change this table enables but does not
+-- itself perform (240 section 4.1).
+CREATE TABLE IF NOT EXISTS karda_kb.processing_task (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  document_id         UUID NOT NULL,
+  kb_id               UUID NOT NULL,                   -- deliberately denormalised; see 240 4.1
+  tier                VARCHAR(32) NOT NULL DEFAULT 'interactive'
+                        CONSTRAINT chk_processing_task_tier
+                        CHECK (tier IN ('interactive', 'sync', 'bulk')),
+  state               VARCHAR(32) NOT NULL DEFAULT 'queued'
+                        CONSTRAINT chk_processing_task_state
+                        CHECK (state IN ('queued', 'running', 'suspended', 'failed', 'done')),
+  current_stage       VARCHAR(32) NOT NULL DEFAULT 'fetch'
+                        CONSTRAINT chk_processing_task_stage
+                        CHECK (current_stage IN ('fetch', 'parse', 'chunk', 'embed', 'commit')),
+  -- The retry judgment as a COLUMN, not a string to be parsed out of
+  -- failure_reason: quota -> suspend, transient -> back off, permanent -> park.
+  failure_class       VARCHAR(32)
+                        CONSTRAINT chk_processing_task_failure_class
+                        CHECK (failure_class IN ('transient', 'permanent', 'quota')),
+  failure_reason      TEXT,
+  attempt             INTEGER NOT NULL DEFAULT 1,
+  created_in_product  VARCHAR(32),                     -- [ref] row-level provenance (#108)
+  created_by          VARCHAR(128),                    -- [ref] OBO user, when there is one
+  queued_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
+  started_at          TIMESTAMPTZ,
+  finished_at         TIMESTAMPTZ,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT fk_processing_task_document FOREIGN KEY (document_id)
+    REFERENCES karda_kb.document (id) ON DELETE CASCADE,
+  CONSTRAINT fk_processing_task_kb FOREIGN KEY (kb_id)
+    REFERENCES karda_kb.knowledge_base (id) ON DELETE CASCADE
+);
+-- CONCURRENCY, not reporting: without this a duplicate enqueue puts two
+-- pipelines on the same document, and 110-processing's atomic chunk replace
+-- assumes a single writer.
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_processing_task_doc_live
+  ON karda_kb.processing_task (document_id)
+  WHERE state IN ('queued', 'running');
+CREATE INDEX IF NOT EXISTS idx_processing_task_kb_state
+  ON karda_kb.processing_task (kb_id, state);
+CREATE INDEX IF NOT EXISTS idx_processing_task_state_queued
+  ON karda_kb.processing_task (state, queued_at);
+CREATE INDEX IF NOT EXISTS idx_processing_task_kb_finished
+  ON karda_kb.processing_task (kb_id, finished_at);
+
+-- One row per (task, stage). A retry is a NEW task (attempt + 1), never an
+-- overwrite here - overwriting would erase the previous timing, and stage P95 is
+-- exactly the history. duration is NOT stored: it is ended_at - started_at.
+CREATE TABLE IF NOT EXISTS karda_kb.processing_task_stage (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id     UUID NOT NULL,
+  stage       VARCHAR(32) NOT NULL
+                CONSTRAINT chk_processing_task_stage_stage
+                CHECK (stage IN ('fetch', 'parse', 'chunk', 'embed', 'commit')),
+  -- ai_assisted is the steward-extraction flavour (the purple dot): an OUTCOME
+  -- of a stage, not a sixth stage.
+  outcome     VARCHAR(32)
+                CONSTRAINT chk_processing_task_stage_outcome
+                CHECK (outcome IN ('ok', 'failed', 'skipped', 'ai_assisted')),
+  started_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  ended_at    TIMESTAMPTZ,
+  note        TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT fk_processing_task_stage_task FOREIGN KEY (task_id)
+    REFERENCES karda_kb.processing_task (id) ON DELETE CASCADE,
+  CONSTRAINT uidx_processing_task_stage UNIQUE (task_id, stage)
+);
+CREATE INDEX IF NOT EXISTS idx_processing_task_stage_p95
+  ON karda_kb.processing_task_stage (stage, ended_at);
+
+-- The supply ledger: one row per served call, append-only. Deliberately NOT in
+-- local_usage - that schema is the C3 platform-metering contract buffer (factory
+-- baseline, 210 section 1: not touched, not mirrored, not extended). Same shape,
+-- different purpose: this one is ours to slice by consumer / capability / asset,
+-- and the platform does not care about it. See 240 section 2.
+CREATE TABLE IF NOT EXISTS karda_kb.supply_call (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  channel        VARCHAR(32) NOT NULL
+                   CONSTRAINT chk_supply_call_channel
+                   CHECK (channel IN ('direct', 'runos')),
+  capability     VARCHAR(64) NOT NULL,             -- karda.kb-read / karda.kb-write
+  operation      VARCHAR(64) NOT NULL,             -- search / ask / write_document / ...
+  consumer_code  VARCHAR(64),                      -- calling agent; null for a human in Console
+  workspace_id   UUID NOT NULL,                    -- [ref] the served workspace
+  -- The taskId sent on to Atlas (karda#101), so one agent task's karda-side and
+  -- Atlas-side consumption can be added back together. NOT named task_id: that
+  -- name already means processing_task in this schema, and same-name-different-
+  -- meaning is the hardest kind of mistake to find.
+  task_id_ref    VARCHAR(128),
+  outcome        VARCHAR(32) NOT NULL DEFAULT 'ok'
+                   CONSTRAINT chk_supply_call_outcome
+                   CHECK (outcome IN ('ok', 'degraded', 'error')),
+  error_code     VARCHAR(64),
+  latency_ms     INTEGER,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_supply_call_created
+  ON karda_kb.supply_call (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_supply_call_channel_created
+  ON karda_kb.supply_call (channel, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_supply_call_consumer_created
+  ON karda_kb.supply_call (consumer_code, created_at DESC);
+
+-- Per-asset attribution for one call. A search recalls across several libraries,
+-- so a single kb_id on supply_call would either miss rows or credit an arbitrary
+-- one. Counts CITED, not recalled - heat is "was it believed", and counting
+-- recalls would make a library nobody ever trusted look busy. A library with
+-- cited_count = 0 gets NO row.
+CREATE TABLE IF NOT EXISTS karda_kb.supply_call_asset (
+  call_id      UUID NOT NULL,
+  kb_id        UUID NOT NULL,
+  cited_count  INTEGER NOT NULL,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT pk_supply_call_asset PRIMARY KEY (call_id, kb_id),
+  CONSTRAINT fk_supply_call_asset_call FOREIGN KEY (call_id)
+    REFERENCES karda_kb.supply_call (id) ON DELETE CASCADE,
+  CONSTRAINT fk_supply_call_asset_kb FOREIGN KEY (kb_id)
+    REFERENCES karda_kb.knowledge_base (id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_supply_call_asset_kb
+  ON karda_kb.supply_call_asset (kb_id);

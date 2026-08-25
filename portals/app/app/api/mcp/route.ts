@@ -10,7 +10,8 @@ import {
   rpcError,
   rpcResult,
 } from "../../kb/mcp/protocol";
-import { MCP_TOOLS, callMcpTool, isMcpTool } from "../../kb/mcp/tools";
+import { MCP_TOOLS, callMcpTool, channelCaller, isMcpTool } from "../../kb/mcp/tools";
+import { dispatchResultFromMcp, recordSupplyCall } from "../../kb/tools/supply-ledger";
 import { authenticateChannel } from "../../kb/mcp/auth";
 import { buildToolBackends } from "../../kb/tools/backends";
 import { PROTOCOL_VERSION as TOOLSET_VERSION } from "../../kb/tools/catalog";
@@ -85,7 +86,22 @@ export async function POST(req: Request): Promise<Response> {
         params.arguments && typeof params.arguments === "object" && !Array.isArray(params.arguments)
           ? (params.arguments as Record<string, unknown>)
           : {};
+      const startedAt = Date.now();
       const result = await callMcpTool(name, args, buildToolBackends());
+      // The supply ledger, same seam as the direct channel (240 section 4.3).
+      // channelCaller returns null when org_id/workspace_id are missing, which
+      // is exactly the case callMcpTool already refused - no tenant, no row.
+      const caller = channelCaller(args);
+      if (caller) {
+        await recordSupplyCall({
+          channel: "runos",
+          toolName: name,
+          args,
+          caller,
+          result: dispatchResultFromMcp(result),
+          latencyMs: Date.now() - startedAt,
+        });
+      }
       return NextResponse.json(rpcResult(id, result));
     }
 

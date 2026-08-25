@@ -20,6 +20,7 @@ import { PrismaCommitTarget } from "./commit";
 import { taskKey, configFingerprint, tierForTrigger } from "./stages";
 import { processingEmbedder, type EmbedderTaskContext } from "./atlas-embedder";
 import { prismaEnabled, getPrismaClient } from "../../lib/db";
+import { getTaskLedger, type TaskLedger } from "./task-ledger";
 
 // --- sink: content-state transitions ----------------------------------------
 
@@ -71,6 +72,11 @@ export interface EnqueueParams {
   /** a manual re-run after a fix carries a new generation, so it is a NEW task,
    *  not a dedup'd no-op against the old key (stages section 8). */
   retryGeneration?: number;
+  /** Row-level provenance for the ledger, same pair the document carries
+   *  (#108). Optional: a rebuild sweep has no user, and inventing one would be
+   *  worse than recording none. */
+  createdInProduct?: string | null;
+  createdBy?: string | null;
 }
 
 /**
@@ -79,17 +85,34 @@ export interface EnqueueParams {
  * is already queued (dedup by key), so enqueue-on-upload is safe to call
  * unconditionally.
  */
-export function enqueueForDocument(queue: TaskQueue, p: EnqueueParams): boolean {
+export function enqueueForDocument(queue: TaskQueue, p: EnqueueParams, ledger: TaskLedger = getTaskLedger()): boolean {
   const gen = p.retryGeneration ?? 0;
   const key = taskKey(p.docId, p.contentHash ?? "-", configFingerprint(p.config), gen);
-  return queue.enqueue({
+  const tier = tierForTrigger(p.trigger);
+  const accepted = queue.enqueue({
     key,
     docId: p.docId,
     kbId: p.kbId,
     org: p.workspaceId,
-    tier: tierForTrigger(p.trigger),
+    tier,
     attempt: gen,
   });
+  // Only a NEWLY accepted task gets a row: a dedup'd enqueue is the same work,
+  // and writing a second row for it would double every queue-depth figure on the
+  // 加工管道 page. Deliberately not awaited - enqueue is synchronous by contract
+  // (callers rely on the boolean) and the ledger can never fail a task, so the
+  // write is fire-and-forget with its own error swallowing inside.
+  if (accepted) {
+    void ledger.enqueued({
+      docId: p.docId,
+      kbId: p.kbId,
+      tier,
+      attempt: gen,
+      createdInProduct: p.createdInProduct ?? null,
+      createdBy: p.createdBy ?? null,
+    });
+  }
+  return accepted;
 }
 
 // --- resolver ----------------------------------------------------------------
@@ -185,6 +208,7 @@ export function getProcessingRuntime(): WorkerDeps {
     queue: new TaskQueue(),
     sink: new ContentSink(content),
     resolve: makeResolver({ content, objects: getObjectStore() }),
+    ledger: getTaskLedger(),
     now: () => Date.now(),
   };
   return runtime;
