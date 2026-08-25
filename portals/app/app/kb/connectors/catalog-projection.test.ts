@@ -33,7 +33,7 @@ test("the weakest possible connector reports BOTH a compliance gap and its trade
   });
   assert.equal(weakest.meetsDeleteInvariant, false, "I4 is unmet - this is a compliance gap, not a UX one");
   assert.equal(weakest.degradations.length, 3, "poll latency + no reconcile + undetectable deletes");
-  assert.ok(weakest.degradations.some((d) => /CANNOT be detected/.test(d)));
+  assert.ok(weakest.degradations.includes("deletesUndetectable"));
 });
 
 test("a mid-strength connector reports the WEAKER delete wording, not the absolute one", () => {
@@ -47,8 +47,8 @@ test("a mid-strength connector reports the WEAKER delete wording, not the absolu
     deleteSignal: "absence",
   });
   assert.equal(mid.meetsDeleteInvariant, true);
-  assert.ok(mid.degradations.some((d) => /full-list reconcile/.test(d)));
-  assert.ok(!mid.degradations.some((d) => /CANNOT be detected/.test(d)));
+  assert.ok(mid.degradations.includes("deletesByReconcileOnly"));
+  assert.ok(!mid.degradations.includes("deletesUndetectable"));
 });
 
 test("the strongest connector has nothing to warn about", () => {

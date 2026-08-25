@@ -25,9 +25,11 @@ import {
   type SearchResult,
   type AskResult,
 } from "../../_lib/api";
-import { apiErrorMessage } from "../../_lib/format";
+
 import { SignInGate } from "../../_lib/ui";
 import { PageHead } from "../../_shell/PageHead";
+import { useFormat, type Failure } from "../../_i18n/useFormat";
+import { bench } from "../../_i18n/messages/bench";
 
 // 检验台 - where an agent developer answers "will karda give my agent good
 // answers" by asking it, on the same retrieval chain the agent will use.
@@ -58,9 +60,10 @@ const FILTERS = [
 ] as const;
 
 export function BenchClient() {
+  const f = useFormat();
   const [kbs, setKbs] = useState<Kb[] | null>(null);
   const [needsAuth, setNeedsAuth] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Failure | null>(null);
 
   const [mode, setMode] = useState<Mode>("search");
   const [query, setQuery] = useState("");
@@ -78,7 +81,7 @@ export function BenchClient() {
       setKbs(await listKbs());
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) return setNeedsAuth(true);
-      setError(e instanceof ApiError ? apiErrorMessage(e.status, e.code) : "库列表加载失败。");
+      setError({ cause: e, fb: bench.errLoadKbs });
     }
   }, []);
 
@@ -119,7 +122,7 @@ export function BenchClient() {
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) return setNeedsAuth(true);
       if (err instanceof ApiError && err.status === 501) setAskUnavailable(true);
-      else setError(err instanceof ApiError ? apiErrorMessage(err.status, err.code) : "查询失败。");
+      else setError({ cause: err, fb: bench.errQuery });
     } finally {
       setRunning(false);
     }
@@ -143,7 +146,7 @@ export function BenchClient() {
         }
       />
 
-      {error && <Banner tone="danger" title={error} />}
+      {error && <Banner tone="danger" title={f.failure(error) ?? ""} />}
 
       <Card>
         <CardContent className="py-md">

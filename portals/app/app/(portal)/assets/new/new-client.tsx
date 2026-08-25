@@ -2,8 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { listKbs, createKb, loginHref, ApiError, type Kb } from "../../../_lib/api";
-import { sharingMeta, apiErrorMessage } from "../../../_lib/format";
+
 import { styles, Badge, Button, Notice, Empty, SignInGate, T } from "../../../_lib/ui";
+import { useFormat, type Failure } from "../../../_i18n/useFormat";
+
+import { useMessages } from "../../../_i18n/useMessages";
+import { assets } from "../../../_i18n/messages/assets";
 
 // Libraries index: the workspace's libraries with their sharing grade, and a
 // create form. "Grade" is the publish state (private / workspace / organization);
@@ -11,9 +15,11 @@ import { styles, Badge, Button, Notice, Empty, SignInGate, T } from "../../../_l
 // library carries its own sharing - so creating the right library IS the
 // classification step (track 10: upload -> classify into graded libraries).
 export function NewAssetClient() {
+  const f = useFormat();
+  const m = useMessages(assets);
   const [kbs, setKbs] = useState<Kb[] | null>(null);
   const [needsAuth, setNeedsAuth] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Failure | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [creating, setCreating] = useState(false);
@@ -24,7 +30,7 @@ export function NewAssetClient() {
       setKbs(await listKbs());
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) return setNeedsAuth(true);
-      setError(e instanceof ApiError ? apiErrorMessage(e.status, e.code) : "资产列表加载失败。");
+      setError({ cause: e, fb: assets.errLoadList });
     }
   }, []);
 
@@ -45,7 +51,7 @@ export function NewAssetClient() {
       await load();
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) return setNeedsAuth(true);
-      setError(err instanceof ApiError ? apiErrorMessage(err.status, err.code) : "创建失败。");
+      setError({ cause: err, fb: assets.errCreate });
     } finally {
       setCreating(false);
     }
@@ -61,54 +67,54 @@ export function NewAssetClient() {
 
   return (
     <>
-      <h1 style={styles.h1}>知识资产</h1>
+      <h1 style={styles.h1}>{m.indexTitle}</h1>
       <p style={styles.sub}>
-        当前工作区的知识资产。把文档传进某个资产，再决定它共享给谁。{" "}
+        {m.indexLead}{" "}
         <a href="/bench" style={{ color: T.accent }}>
-          检验台
+          {m.indexBenchLink}
         </a>{" "}
-        可跨你能看到的全部资产试问。
+        {m.indexBenchTail}
       </p>
 
-      {error && <Notice tone="bad">{error}</Notice>}
+      {error && <Notice tone="bad">{f.failure(error)}</Notice>}
 
       <section style={styles.card}>
-        <h2 style={styles.h2}>新建资产</h2>
+        <h2 style={styles.h2}>{m.createTitle}</h2>
         <form onSubmit={onCreate}>
           <div style={{ marginBottom: 10 }}>
             <input
               style={styles.input}
-              placeholder="资产名称"
+              placeholder={m.createNameLabel}
               value={name}
               maxLength={255}
               onChange={(e) => setName(e.target.value)}
-              aria-label="资产名称"
+              aria-label={m.createNameLabel}
             />
           </div>
           <div style={{ marginBottom: 12 }}>
             <input
               style={styles.input}
-              placeholder="描述（可选）"
+              placeholder={m.createDescPlaceholder}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              aria-label="资产描述"
+              aria-label={m.createDescLabel}
             />
           </div>
           <Button type="submit" variant="primary" disabled={!name.trim() || creating}>
-            {creating ? "创建中…" : "新建资产"}
+            {creating ? m.createPending : m.createTitle}
           </Button>
-          <span style={{ ...styles.sub, marginLeft: 12 }}>新建的资产默认私有，创建后再决定共享范围。</span>
+          <span style={{ ...styles.sub, marginLeft: 12 }}>{m.createHint}</span>
         </form>
       </section>
 
       <section>
         {kbs === null ? (
-          <Empty>Loading libraries...</Empty>
+          <Empty>{m.indexLoading}</Empty>
         ) : kbs.length === 0 ? (
-          <Empty>还没有资产。用上面的表单建第一个。</Empty>
+          <Empty>{m.indexEmpty}</Empty>
         ) : (
           kbs.map((kb) => {
-            const share = sharingMeta(kb.publishState);
+            const share = f.sharing(kb.publishState);
             return (
               <a key={kb.id} href={`/assets/${kb.id}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <div style={{ ...styles.card, cursor: "pointer" }}>
@@ -118,7 +124,7 @@ export function NewAssetClient() {
                       {kb.description && <div style={{ ...styles.sub, marginTop: 2 }}>{kb.description}</div>}
                     </div>
                     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      {kb.governanceEnabled && <Badge tone="info">已开启治理</Badge>}
+                      {kb.governanceEnabled && <Badge tone="info">{m.governedBadge}</Badge>}
                       <Badge tone={share.tone}>{share.label}</Badge>
                     </div>
                   </div>
@@ -131,7 +137,7 @@ export function NewAssetClient() {
 
       <p style={{ ...styles.sub, marginTop: 8 }}>
         <a href="/status" style={{ color: T.accent }}>
-          集成状态
+          {m.integrationStatus}
         </a>
       </p>
     </>

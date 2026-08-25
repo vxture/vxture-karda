@@ -8,7 +8,7 @@ const at = (iso: string) => new Date(iso);
 test("an unverified item has no clock, so it says nothing", () => {
   // A countdown here would be invented - there is no verification to count from.
   const r = verificationRecord("unverified", null, null, NOW);
-  assert.equal(r.label, null);
+  assert.equal(r.phrase, null);
   assert.equal(r.days, null);
   assert.equal(r.urgency, "none");
 });
@@ -19,7 +19,8 @@ test("a stale item leads with HOW LONG it has been lapsed", () => {
   const r = verificationRecord("stale", at("2026-05-01T12:00:00Z"), at("2026-07-26T12:00:00Z"), NOW);
   assert.equal(r.urgency, "lapsed");
   assert.equal(r.days, -30);
-  assert.match(r.label ?? "", /已过期 30 天/);
+  assert.equal(r.phrase, "lapsedDays");
+  assert.equal(r.days, -30);
 });
 
 test("a stale item with no expiry date still reads as lapsed", () => {
@@ -27,7 +28,7 @@ test("a stale item with no expiry date still reads as lapsed", () => {
   const r = verificationRecord("stale", at("2026-05-01T12:00:00Z"), null, NOW);
   assert.equal(r.urgency, "lapsed");
   assert.equal(r.days, null);
-  assert.equal(r.label, "已过期，待复验");
+  assert.equal(r.phrase, "lapsed");
 });
 
 test("verified with NO interval says so instead of counting down", () => {
@@ -36,20 +37,21 @@ test("verified with NO interval says so instead of counting down", () => {
   const r = verificationRecord("verified", at("2026-01-01T12:00:00Z"), null, NOW);
   assert.equal(r.urgency, "ok");
   assert.equal(r.days, null);
-  assert.match(r.label ?? "", /不设复验间隔/);
+  assert.equal(r.phrase, "noInterval");
 });
 
 test("an approaching expiry is flagged BEFORE it lapses", () => {
   const r = verificationRecord("verified", at("2026-06-01T12:00:00Z"), at("2026-09-01T12:00:00Z"), NOW);
   assert.equal(r.days, 7);
   assert.equal(r.urgency, "soon");
-  assert.equal(r.label, "7 天后到期");
+  assert.equal(r.phrase, "dueDays");
+  assert.equal(r.days, 7);
 });
 
 test("expiring today reads as today, not as 0 天后", () => {
   const r = verificationRecord("verified", at("2026-06-01T12:00:00Z"), at("2026-08-25T20:00:00Z"), NOW);
   assert.equal(r.days, 0);
-  assert.equal(r.label, "今天到期");
+  assert.equal(r.phrase, "dueToday");
 });
 
 test("a comfortable expiry is ok, not soon", () => {
@@ -72,7 +74,7 @@ test("STILL `verified` but past its date: the countdown says lapsed, the state i
   const r = verificationRecord("verified", at("2026-01-01T12:00:00Z"), at("2026-08-01T12:00:00Z"), NOW);
   assert.equal(r.urgency, "lapsed");
   assert.equal(r.days, -24);
-  assert.match(r.label ?? "", /等待续验扫描/);
+  assert.equal(r.phrase, "overdueDays");
 });
 
 test("an expiry an hour ago is 0 days lapsed, not 1", () => {
@@ -80,13 +82,14 @@ test("an expiry an hour ago is 0 days lapsed, not 1", () => {
   // that has not passed. Truncation toward zero is the honest reading.
   const r = verificationRecord("stale", at("2026-01-01T12:00:00Z"), at("2026-08-25T11:00:00Z"), NOW);
   assert.equal(r.days, 0);
-  assert.match(r.label ?? "", /已过期 0 天/);
+  assert.equal(r.phrase, "lapsedDays");
+  assert.equal(r.days, 0, "an hour past expiry is zero whole days, not one");
 });
 
 test("an expiry in eight hours is 今天到期, not a countdown of 0", () => {
   const r = verificationRecord("verified", at("2026-01-01T12:00:00Z"), at("2026-08-25T20:00:00Z"), NOW);
   assert.equal(r.days, 0);
-  assert.equal(r.label, "今天到期");
+  assert.equal(r.phrase, "dueToday");
 });
 
 test("ISO strings and Date objects are accepted alike - the API sends strings", () => {

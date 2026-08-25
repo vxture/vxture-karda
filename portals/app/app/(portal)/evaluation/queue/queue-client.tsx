@@ -22,9 +22,12 @@ import {
   type QueueItem,
   type QueueResult,
 } from "../../../_lib/api";
-import { apiErrorMessage, formatWhen } from "../../../_lib/format";
+
 import { SignInGate } from "../../../_lib/ui";
 import { PageHead } from "../../../_shell/PageHead";
+import { useFormat, type Failure } from "../../../_i18n/useFormat";
+import { evaluation } from "../../../_i18n/messages/evaluation";
+import type { Message } from "../../../_i18n/catalog";
 
 // 待复验队列 - batch 11's spine.
 //
@@ -41,13 +44,14 @@ import { PageHead } from "../../../_shell/PageHead";
 type Filter = "all" | "stale" | "unverified";
 
 export function QueueClient() {
+  const f = useFormat();
   const params = useSearchParams();
   const kbId = params.get("kb") ?? undefined;
 
   const [data, setData] = useState<QueueResult | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [needsAuth, setNeedsAuth] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Failure | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [sweeping, setSweeping] = useState(false);
@@ -60,12 +64,12 @@ export function QueueClient() {
    *  over a queue with no stale items left in it. */
   const [done, setDone] = useState<Map<string, QueueItem["verificationState"]>>(new Map());
 
-  const guard = useCallback((e: unknown, fallback: string) => {
+  const guard = useCallback((e: unknown, fallback: Message) => {
     if (e instanceof ApiError && e.status === 401) {
       setNeedsAuth(true);
       return;
     }
-    setError(e instanceof ApiError ? apiErrorMessage(e.status, e.code) : fallback);
+    setError({ cause: e, fb: fallback });
   }, []);
 
   const load = useCallback(async () => {
@@ -73,7 +77,7 @@ export function QueueClient() {
       setData(await readGovernanceQueue(kbId));
       setDone(new Map());
     } catch (e) {
-      guard(e, "待复验队列加载失败。");
+      guard(e, evaluation.errQueue);
     }
   }, [kbId, guard]);
 
@@ -93,7 +97,7 @@ export function QueueClient() {
       // A refusal here is worth reading rather than swallowing: 403 means this
       // caller is not the library's verifier, and 409 means the library has
       // governance off - two different fixes, neither of them "try again".
-      guard(e, "验证失败。");
+      guard(e, evaluation.errVerify);
     } finally {
       setBusy(null);
     }
@@ -115,7 +119,7 @@ export function QueueClient() {
       );
       await load();
     } catch (e) {
-      guard(e, "续验扫描失败。");
+      guard(e, evaluation.errSweep);
     } finally {
       setSweeping(false);
     }
@@ -165,7 +169,7 @@ export function QueueClient() {
         }
       />
 
-      {error && <Banner tone="danger" title={error} />}
+      {error && <Banner tone="danger" title={f.failure(error) ?? ""} />}
       {notice && <Banner tone="success" title={notice} />}
 
       {data && !data.live && (
@@ -231,6 +235,7 @@ function QueueRow({
   busy: boolean;
   onVerify: (item: QueueItem) => void | Promise<void>;
 }) {
+  const f = useFormat();
   const stale = item.verificationState === "stale";
   return (
     <div className="flex items-center gap-md border-t border-border/60 py-sm first:border-t-0">
@@ -262,14 +267,14 @@ function QueueRow({
               <span>·</span>
               {/* The lapse is the fact that matters: it says how long this has
                   been quietly missing from the default recall tier. */}
-              <span className="text-warning-text">{formatWhen(item.expiresAt)} 到期</span>
+              <span className="text-warning-text">{f.when(item.expiresAt)} 到期</span>
             </>
           )}
           {item.verifiedAt && (
             <>
               <span>·</span>
               <span>
-                上次 {formatWhen(item.verifiedAt)}
+                上次 {f.when(item.verifiedAt)}
                 {item.verifier ? ` · ${item.verifier}` : ""}
               </span>
             </>

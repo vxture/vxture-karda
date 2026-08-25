@@ -6,6 +6,7 @@
 // Every call throws ApiError on a non-2xx so a component can branch on
 // err.status (401 -> prompt sign-in) without threading a result type through the
 // UI. The one place that maps a status to human wording is format.apiErrorMessage.
+import type { DegradationKind } from "../kb/connectors/catalog";
 import type { PublishState } from "./format";
 
 export class ApiError extends Error {
@@ -451,7 +452,7 @@ export interface ConnectorInfo {
     deleteSignal: "tombstone" | "absence";
   };
   /** Accepted trade-offs of this connector, stated rather than absorbed. */
-  degradations: string[];
+  degradations: DegradationKind[];
 }
 
 export async function listBindings(kbId: string): Promise<Binding[]> {

@@ -20,6 +20,7 @@ platform repo's `{kind}_{domain}_{NNN}_{slug}` family is not used here.
 | `220-connector-framework.md` | connector capability registry, binding lifecycle, ingest envelope | in repo |
 | `230-runos-channel.md` | karda as a Runos capability supplier: kb-read/kb-write capabilities, the MCP endpoint, channel rules | v1.0 implemented 2026-08-18; Runos-side registration pending |
 | `240-ops-read-models.md` | ops read-model tables (`processing_task` / `processing_task_stage` / `supply_call` / `supply_call_asset`) - the fact sources behind 加工管道 and 供给通道, which query no database today | Draft v0.1, awaiting review before DDL increment `0004` |
+| `250-i18n-seam.md` | where language lives: the message catalog, the structure/language split, and the seam guard | implemented for the shell header, state vocabulary and the assets domain |
 
 Product-level authority over these is `docs/20-specs/10-product-definition.md`,
 itself under the positioning authority `docs/20-specs/30-agent-knowledge-blueprint.md`

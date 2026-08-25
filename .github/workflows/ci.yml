@@ -106,6 +106,9 @@ jobs:
       - name: Port-consistency guardrail (registry R3, one story per repo)
         run: node scripts/guardrails/check-port-consistency.mjs
 
+      - name: i18n seam guardrail (no product strings outside the catalog)
+        run: node scripts/guardrails/check-i18n-seam.mjs
+
   # -- Quality gate (aggregator; stable required-check name) ------------------
   quality-gate:
     name: quality-gate
