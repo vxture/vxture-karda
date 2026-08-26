@@ -221,11 +221,25 @@ Atlas 在 `#4` / `#39` 上给了**终态答复:Atlas 侧无待办**。授权链�
 同一个界面字段**;而且在界面补上之前,**运维直接调 CRUD API 就能配上**,代价只是
 绕过界面的审计与回显(事后从 `audit.change_records` 反查)。
 
-执行时两个易错点(对端点名):
+执行时三个易错点。前两个对端点过名:
 
 - **`modelId` 是 uuid,不是 `modelCode`**,用 `GET /capability/models` 取;
 - 列表端点**拒绝**未知过滤器而不是忽略(传 `limit` 会收到 `CAPABILITY_UNKNOWN_FILTER`
   并附可接受清单)——在检索上,**被忽略的过滤器比被拒绝的危险**。
+
+第三个是我方 2026-08-27 自查出来的,**它改变了这件事的形状**:
+
+- **`tenantId` 是调用方客户的 org,不是 karda。** 平台数据模型
+  (`data_model_200_schema` §1.3)把 `model_grants.tenant_id` 定为 NOT NULL、真 FK 指向
+  `tenancy.tenants`,而**产品/应用维度是可空的 `application_id`**;§1.3 的「轴语义(关键)」
+  明写授权维持 `tenant(+application)` 轴、**不**改名为 workspace/product。karda 运行时发的
+  也正是 `caller.org`。**所以不存在「karda 的租户 uuid」这个东西**——karda 是 application。
+
+**由此,「一次运维写入」这个说法是错的。** 授权键是 `(tenant × model × taskProfile)`,
+而 tenant 是**每一个用 karda 的客户 org**。四条 profile × 每个客户 org = 首个客户 4 次,
+第二个客户再 4 次。这是**开通流程的一部分,不是一次性配置**,而且在第一个客户之前就该
+和 platform / atlas 线对齐——`application_id` 那根轴存在的意义可能正是为了避免这种 N×4,
+但按当前 schema 它可空、不能单独作键。**登记为待澄清,不自行假设。**
 
 生效判据不需要另做验证:`model_request_rejections_total{code="TASK_PROFILE_NOT_ROUTABLE",
 product="karda"}` 停止增长即是。(这类 404 抛在第一条日志行之前,两张 reqlog 表里都没有。)
