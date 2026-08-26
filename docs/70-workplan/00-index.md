@@ -856,7 +856,7 @@ ship.
 
 | Item | Waiting on | Since | Blocks MVP? |
 |---|---|---|---|
-| **Atlas 授权:`karda.extract` taskProfile** | atlas 线 —— **issue 尚未开**(karda 侧无 atlas 仓访问权);KD-018 定了模型走授权不走配置,karda 侧仅有 `ask` / `embed` / `rerank` 三个 profile。抽取是**批量**任务,成本/延迟画像与交互式 `ask` 不同,共用一个标签会让 Atlas 运维无法给它配更便宜的模型。无授权时 Atlas 返 `404 TASK_PROFILE_NOT_ROUTABLE`——不会静默降级 | 2026-08-26 | 批次 15 的**抽取运行**;抽取缝与存储不阻塞,可先建并测。**应急退路**:复用 `karda.ask` profile,代价是抽取与问答同价 |
+| **Atlas 授权:`karda.extract` taskProfile** | atlas 线 —— **`vxture-atlas#39`**(2026-08-26 已开);KD-018 定了模型走授权不走配置,karda 侧仅有 `ask` / `embed` / `rerank` 三个 profile。抽取是**批量**任务,成本/延迟画像与交互式 `ask` 不同,共用一个标签会让 Atlas 运维无法给它配更便宜的模型。无授权时 Atlas 返 `404 TASK_PROFILE_NOT_ROUTABLE`——不会静默降级 | 2026-08-26 | 批次 15 的**抽取运行**;抽取缝与存储不阻塞,可先建并测。**应急退路**:复用 `karda.ask` profile,代价是抽取与问答同价 |
 | Runos capability registration | runos line - `runos#156`; until then the channel can receive but is never sent to | 2026-08-18 | the Runos channel only; the direct S2S channel is unaffected |
 | Five plan tiers, and therefore all of C2 | **owner ruled 2026-08-25 (KD-207)**; now with the platform line - `vxture/vxture-platform#371` | 2026-08-25 | **yes - the whole commercial surface**, but no longer ours |
 | Arda content channel | arda line - 5 questions | 2026-07-22 | **no** - one connector, not a dependency |
