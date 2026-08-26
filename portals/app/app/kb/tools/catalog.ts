@@ -53,6 +53,20 @@ export const TOOLS: ToolDescriptor[] = [
     authz: { asset_types: ["knowledge_base"] },
   },
   {
+    name: "karda.get_context",
+    summary: "The passage a citation came from, read out of the source document with surrounding context.",
+    mode: "obo_or_service",
+    // Not metered, like get_evidence and for the same reason: this reads around
+    // a citation the caller was already charged for. What keeps that safe is
+    // that the caller chooses the WIDTH of the window and never its position -
+    // the anchor is always the citation. Total unmetered reach is therefore
+    // bounded by the citations it holds, and citations only come from
+    // search/ask, which are metered.
+    metering: { kind: "none" },
+    input: ["citation_id", "radius"],
+    authz: { asset_types: ["knowledge_base"] },
+  },
+  {
     name: "karda.find_entity",
     summary: "What the corpus knows about a thing: the entity, and the assertions naming it with their sources.",
     mode: "obo_or_service",

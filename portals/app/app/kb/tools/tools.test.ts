@@ -12,7 +12,7 @@ import { callerFromClaims, rejectsInternalAuthHeader, type S2sClaims } from "./s
 
 // --- catalog -----------------------------------------------------------------
 
-test("the tool surface is exactly these ten karda.* tools", () => {
+test("the tool surface is exactly these eleven karda.* tools", () => {
   // The descriptor list IS the published contract (/.well-known/vxture-tools),
   // so adding to it has to be a deliberate act rather than a side effect. This
   // test is the thing that makes it one.
@@ -25,12 +25,22 @@ test("the tool surface is exactly these ten karda.* tools", () => {
       "karda.create_kb",
       "karda.detach_kb",
       "karda.find_entity",
+      "karda.get_context",
       "karda.get_evidence",
       "karda.list_kbs",
       "karda.search",
       "karda.write_document",
     ].sort(),
   );
+});
+
+test("get_context is NOT metered - it reads around a citation already paid for", () => {
+  // Safe to leave unmetered only because the caller picks the window's WIDTH and
+  // never its position: the anchor is always the citation. Turn that into a
+  // caller-chosen offset and this becomes an unmetered document-read API.
+  const ctx = TOOLS.find((x) => x.name === "karda.get_context");
+  assert.ok(ctx);
+  assert.equal(ctx.metering.kind, "none");
 });
 
 test("find_entity IS metered, get_evidence is not - the difference is what the call is", () => {

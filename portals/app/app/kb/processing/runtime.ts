@@ -10,6 +10,7 @@
 // only assemble them, so the one impure piece - getProcessingRuntime() building
 // the real Prisma / object-store ports - has nothing to test, and everything
 // below it is covered with fakes.
+import { decodeSourceBytes } from "./ir";
 import { ContentService } from "../lib/content-service";
 import { getContentStore, type DocumentRow } from "../lib/content-store";
 import { getObjectStore, type ObjectStore } from "../storage/objectstore";
@@ -185,7 +186,7 @@ export function rawSourceFor(doc: DocumentRow, objects: ObjectStore): RawSource 
       if (!doc.storageRef) throw new Error(`document ${doc.id} has no stored object`);
       const bytes = await objects.get(doc.storageRef);
       if (!bytes) throw new Error(`stored object ${doc.storageRef} is missing`);
-      return bytes.toString("utf-8");
+      return decodeSourceBytes(bytes);
     },
   };
 }
