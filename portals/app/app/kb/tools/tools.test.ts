@@ -12,7 +12,10 @@ import { callerFromClaims, rejectsInternalAuthHeader, type S2sClaims } from "./s
 
 // --- catalog -----------------------------------------------------------------
 
-test("the v1 tool surface is exactly the seven karda.* tools", () => {
+test("the tool surface is exactly these nine karda.* tools", () => {
+  // The descriptor list IS the published contract (/.well-known/vxture-tools),
+  // so adding to it has to be a deliberate act rather than a side effect. This
+  // test is the thing that makes it one.
   assert.deepEqual(
     TOOLS.map((t) => t.name).sort(),
     [
@@ -21,11 +24,22 @@ test("the v1 tool surface is exactly the seven karda.* tools", () => {
       "karda.create_entry",
       "karda.create_kb",
       "karda.detach_kb",
+      "karda.get_evidence",
       "karda.list_kbs",
       "karda.search",
       "karda.write_document",
     ].sort(),
   );
+});
+
+test("get_evidence is NOT metered - checking an answer must not carry a price", () => {
+  // The follow-up an agent makes to verify an answer it was already charged
+  // for. Billing the check would put a price on verification, which is the one
+  // behaviour a knowledge platform should be making free.
+  const t = TOOLS.find((x) => x.name === "karda.get_evidence");
+  assert.ok(t);
+  assert.equal(t.metering.kind, "none");
+  assert.equal(t.mode, "obo_or_service", "reading provenance is a read, like search");
 });
 
 test("create / attach / write are OBO-only; read tools are obo_or_service", () => {

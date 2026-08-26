@@ -19,6 +19,8 @@ import { getVisibleSetResolver } from "../retrieval/visible-set";
 import { getGenerationClient, askModelSelection } from "../retrieval/generation";
 import { searchTool } from "../retrieval/search-tool";
 import { askTool } from "../retrieval/ask-tool";
+import { readEvidence } from "../assertions/evidence-store";
+import { evidenceNotFound } from "../assertions/evidence-read";
 import { writeDocument } from "./write";
 import { createEntry } from "./entry";
 import { createKb, attachKb, detachKb } from "../attachments/tools";
@@ -64,6 +66,22 @@ export function buildToolBackends(): ToolBackends {
     // pinned ATLAS_ASK_MODEL - askModelSelection emits exactly one.
     ...(generation
       ? {
+          // get_evidence reuses the SAME visible-set rule as retrieval rather
+          // than checking access its own way: a provenance tool that computed
+          // visibility differently from the tool that produced the citation
+          // would eventually disagree with it, and the disagreement would only
+          // ever show up as a leak.
+          getEvidence: async (caller, citationId) => {
+            const ws = caller.workspace;
+            if (!ws) return evidenceNotFound(citationId);
+            const visible = await getVisibleSetResolver(getKbStore()).resolve({
+              org: caller.org,
+              ws,
+              product: caller.callerProduct,
+              user: caller.user,
+            });
+            return readEvidence(citationId, visible.map((v) => v.kbId));
+          },
           ask: (caller, args) =>
             askTool(caller, args, {
               visibleSet: getVisibleSetResolver(getKbStore()),
