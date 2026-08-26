@@ -379,6 +379,12 @@ model Chunk {
   document  Document        @relation(fields: [documentId], references: [id], onDelete: Cascade, map: "fk_chunk_document")
   embedding ChunkEmbedding?
 
+  /// Where this chunk came from in the document's CANONICAL text. The assertion
+  /// layer's spans index into the same space, so `get_evidence` is a range
+  /// intersection rather than a document-level guess. NULL = unknown (written
+  /// before incr/0007), never 0.
+  startOffset Int? @map("start_offset")
+  endOffset   Int? @map("end_offset")
   @@unique([documentId, version, ordinal], map: "uidx_chunk_document_version_ordinal")
   @@index([documentId, version], map: "idx_chunk_active")
   @@map("chunk")

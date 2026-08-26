@@ -46,6 +46,11 @@ export class PrismaCommitTarget implements DocumentCommitTarget {
             ordinal: c.ordinal,
             text: c.text,
             tokenCount: c.tokenCount,
+            // The bridge to the assertion layer: an assertion's span indexes
+            // into the same canonical text, so a citation resolves to the
+            // assertions it actually rests on rather than to its whole document.
+            startOffset: c.sourceRange.start,
+            endOffset: c.sourceRange.end,
             vectorRef: withVectors && c.vector ? `db:${embeddingModel}`.slice(0, 128) : null,
           })),
         });
