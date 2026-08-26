@@ -813,12 +813,31 @@ model behind it has not moved.
 2. 本轮**只做溯源层**,断言不作为检索单元。yucer 的依赖是溯源不是检索;
    而检索是目前唯一跑通且被评测集覆盖的链路。“断言成为检索单元”登记为下一步。
 
-**尚需拍板**:设计稿 §11 五条(断言是否继承文档的 verified、抽取落在管线
-哪一段、confidence 是否入排序、KD-206 是否穿透副本、断言能否跨库)。
-其中第 4 条是登记册里 KD-206 的未答子问题在断言层的同形。
+§11 第 1、3 条已拍板(owner 2026-08-26):断言**可参考、不继承**文档的 verified
+(KD-209,工程后果是**不建 `source_verified` 列**——副本会过期);confidence
+**人确认前参与排序、确认后不参与**(KD-210)。两条都入了 `20-specs/20-decisions.md`。
 
-**实现尚未开始。** 设计稿给出了 schema 草案与 `incr/0006_*` 的位置,
-但 §11 未拍板前不建 DDL——其中第 1、3 条直接决定列形状。
+**尚待拍板(§11 第 2、4、5 条)**:抽取落在管线哪一段、KD-206 是否穿透副本、
+断言能否跨库。其中第 2 条是登记册里 KD-206 的未答子问题在断言层的同形。
+
+### 实现进度
+
+| # | 内容 | 状态 |
+|---|---|---|
+| `#144` | 设计稿 v0.1 | 已合 |
+| `#145` | `incr/0006_*`:assertion / span / evidence / entity / assertion_mention 五表 | 已合 |
+| `#146` | 抽取缝 `prepare()` + 七条准入拒因;并开 `vxture-atlas#39` 申请 `karda.extract` 授权 | 已合 |
+| `#147` | `storeExtraction()` 一次抽取一个事务;裁决落位;失依据扫描 | 已合 |
+| `#148` | 登记 `vxture-atlas#39` | 已合 |
+| `#149` | `incr/0007_*`:chunk 记住 `start_offset` / `end_offset`——引用与断言之间的桥 | 已合 |
+| `#150` | `karda.get_evidence`——断言层第一个对外产出,工具面九件 | 已合 |
+| 本轮 | `karda.find_entity`——工具面十件,第一件读知识图而非检索机制 | 进行中 |
+
+**下一件是 `karda.get_context`**:只依赖 Span 与 chunk 来源区间,两者都已就位,
+不依赖 Atlas。真正被挡住的只有**抽取的模型调用**,等 `vxture-atlas#39`。
+
+每一次 DDL 变更都过真库并跑探针。**每一轮探针都至少抓到一个 type-check、单测、
+build 三关全放过的缺陷**——这不是巧合,是这三关结构上看不见存储层行为。
 
 ### Parallel track, starting now - not batch-ordered
 

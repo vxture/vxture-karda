@@ -27,6 +27,10 @@ export interface ToolBackends {
   // for a citation the caller cannot see. A 403 or 404 there would make the
   // tool an oracle for probing which chunk ids exist in other libraries.
   getEvidence?(caller: CallerContext, citationId: string): Promise<unknown>;
+  // find_entity answers 200 with an empty result for a name nobody can see,
+  // for the same reason get_evidence does: a distinguishable refusal maps the
+  // entity registries of libraries the caller has no access to.
+  findEntity?(caller: CallerContext, name: string): Promise<unknown>;
   // write_document returns a full DispatchResult (it has real 4xx cases:
   // not-found library, duplicate, bad args), so the backend owns the status, not
   // dispatch. Injected by the route (TD-009 track 9a).
@@ -88,6 +92,15 @@ export async function dispatchTool(
       if (!backends.ask) return notImplemented(name);
       const result = await backends.ask(caller, args);
       return { status: 200, body: { result: result as Record<string, unknown> } };
+    }
+    case "karda.find_entity": {
+      if (!backends.findEntity) return notImplemented(name);
+      const entityName = typeof args.name === "string" ? args.name.trim() : "";
+      if (!entityName) {
+        return { status: 400, body: { error: "invalid_argument", detail: "name is required" } };
+      }
+      const result = await backends.findEntity(caller, entityName);
+      return { status: 200, body: { result: result as unknown as Record<string, unknown> } };
     }
     case "karda.get_evidence": {
       if (!backends.getEvidence) return notImplemented(name);
