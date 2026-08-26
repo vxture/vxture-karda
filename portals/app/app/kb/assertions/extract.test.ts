@@ -129,24 +129,33 @@ test("an assertion with no subject makes no claim about sameness", () => {
 
 // --- the read-side invariant ----------------------------------------------------
 
-test("an assertion with no evidence is NOT recallable, whatever its state", () => {
+test("an assertion with no supporting evidence is NOT recallable, whatever its state", () => {
   // Proven necessary by a live probe: deleting a document cascades its spans and
   // evidence but leaves the assertion standing. A foreign key cannot express
   // "lost its LAST edge", so the filter is a read-time definition instead.
-  assert.equal(isRecallable({ contentState: "indexed", evidenceCount: 0 }), false);
-  assert.equal(isRecallable({ contentState: "indexed", evidenceCount: 1 }), true);
+  assert.equal(isRecallable({ contentState: "indexed", supportingEvidenceCount: 0 }), false);
+  assert.equal(isRecallable({ contentState: "indexed", supportingEvidenceCount: 1 }), true);
+});
+
+test("a `contradicts` edge is not grounds - it is the opposite", () => {
+  // The counting bug a second live probe caught: an adjudication loser keeps a
+  // `contradicts` edge naming the winner, and that edge points at an ASSERTION,
+  // so it survives the document deletion that took the loser's real grounds.
+  // Counting all evidence made it look grounded by the very edge that recorded
+  // it losing.
+  assert.equal(isRecallable({ contentState: "indexed", supportingEvidenceCount: 0 }), false);
 });
 
 test("an assertion that lost a conflict is not recallable", () => {
   assert.equal(
-    isRecallable({ contentState: "indexed", evidenceCount: 2, supersededById: "other" }),
+    isRecallable({ contentState: "indexed", supportingEvidenceCount: 2, supersededById: "other" }),
     false,
   );
 });
 
 test("only indexed assertions are recallable", () => {
   for (const s of ["draft", "processing", "failed", "archived", "deleted"]) {
-    assert.equal(isRecallable({ contentState: s, evidenceCount: 3 }), false, s);
+    assert.equal(isRecallable({ contentState: s, supportingEvidenceCount: 3 }), false, s);
   }
 });
 

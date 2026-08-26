@@ -29,10 +29,14 @@ export type EvidenceStance = (typeof EVIDENCE_STANCES)[number];
  */
 export function isRecallable(a: {
   contentState: string;
-  evidenceCount: number;
+  /** Edges with `stance = supports` ONLY. A `contradicts` edge is not grounds -
+   *  it says the assertion is disputed, which is the opposite. Counting all
+   *  evidence made an adjudication LOSER look grounded by the very edge that
+   *  recorded it losing; a live probe caught it surviving a sweep. */
+  supportingEvidenceCount: number;
   supersededById?: string | null;
 }): boolean {
-  if (a.evidenceCount <= 0) return false;
+  if (a.supportingEvidenceCount <= 0) return false;
   if (a.supersededById) return false; // a conflict was adjudicated and this one lost
   return a.contentState === "indexed";
 }
