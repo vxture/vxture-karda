@@ -22,6 +22,8 @@ import { askTool } from "../retrieval/ask-tool";
 import { readEvidence } from "../assertions/evidence-store";
 import { findEntities } from "../assertions/entity-store";
 import { readContext } from "../assertions/context-store";
+import { browseLibrary } from "../assertions/browse-store";
+import { clampPage, emptyPage, type BrowseTarget } from "../assertions/browse-read";
 import { clampRadius, contextNotFound } from "../assertions/context-read";
 import { noEntityMatch } from "../assertions/entity-read";
 import { evidenceNotFound } from "../assertions/evidence-read";
@@ -70,6 +72,23 @@ export function buildToolBackends(): ToolBackends {
     // pinned ATLAS_ASK_MODEL - askModelSelection emits exactly one.
     ...(generation
       ? {
+          browse: async (caller, kbId, target, pageSize, cursor) => {
+            const ws = caller.workspace;
+            if (!ws) return emptyPage(kbId, target as BrowseTarget);
+            const visible = await getVisibleSetResolver(getKbStore()).resolve({
+              org: caller.org,
+              ws,
+              product: caller.callerProduct,
+              user: caller.user,
+            });
+            return browseLibrary(
+              kbId,
+              target as BrowseTarget,
+              visible.map((v) => v.kbId),
+              clampPage(pageSize),
+              cursor,
+            );
+          },
           getContext: async (caller, citationId, radius) => {
             const ws = caller.workspace;
             if (!ws) return contextNotFound(citationId);
