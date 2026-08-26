@@ -800,6 +800,26 @@ find_entity / browse). This is the largest design-implementation gap in the
 register: the positioning was raised to "Agent 共享知识基础设施" (KD-017) and the
 model behind it has not moved.
 
+### 设计已落地 2026-08-26
+
+`docs/30-design/140-assertion-model.md` v0.1 。这条并行线计划与批次 10-13
+同时跑,实际未开始;批次 14 之后补上。
+
+**两个岁口已由 owner 拍板(2026-08-26)**:
+
+1. 断言是**新建对象**与 Document / Entry 并列,不是 Entry 的扩展。
+   理由:Evidence 必须指向**跨度**,而 Entry 没有跨度概念;且抽取物与手写条目
+   在可编辑性、量级、真值归属三点上不同。
+2. 本轮**只做溯源层**,断言不作为检索单元。yucer 的依赖是溯源不是检索;
+   而检索是目前唯一跑通且被评测集覆盖的链路。“断言成为检索单元”登记为下一步。
+
+**尚需拍板**:设计稿 §11 五条(断言是否继承文档的 verified、抽取落在管线
+哪一段、confidence 是否入排序、KD-206 是否穿透副本、断言能否跨库)。
+其中第 4 条是登记册里 KD-206 的未答子问题在断言层的同形。
+
+**实现尚未开始。** 设计稿给出了 schema 草案与 `incr/0006_*` 的位置,
+但 §11 未拍板前不建 DDL——其中第 1、3 条直接决定列形状。
+
 ### Parallel track, starting now - not batch-ordered
 
 Assertion-level provenance has a **downstream line already waiting**: yucer made
