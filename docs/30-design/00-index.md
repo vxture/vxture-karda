@@ -15,6 +15,7 @@ platform repo's `{kind}_{domain}_{NNN}_{slug}` family is not used here.
 | `110-processing.md` | offline processing pipeline: multi-stage parsing, templated chunking, vectorization and atomic commit, incremental update, controlled rebuild, retry | Draft v0.1, 4 open decisions |
 | `120-retrieval-tools.md` | retrieval evaluation chain, cross-namespace union recall, visible-set cache, association manifest, v1 tool surface | Draft v0.1, 5 open decisions |
 | `130-portal-shell.md` | portal shell vocabulary (工作区 / 导航栏 / 内容区 / 值班台), spacing constants, container-query column rule, DS typography baseline | v1.0, matches `portals/app/app/_shell/` |
+| `140-assertion-model.md` | 断言模型 v2:Fact / Claim / Entity / Evidence,断言级溯源,Knowledge API 扩面 | 设计稿 v0.1,待 owner 拍板 §11(批次 15) |
 | `200-arda-channel.md` | Karda x Arda content channel contract (binding, delivery, incremental, tombstone delete, revoke cascade) | Draft v0.1, needs Arda-side alignment |
 | `210-data-model.md` | karda_kb schema refinement (DDL <-> Prisma lockstep) | in repo |
 | `220-connector-framework.md` | connector capability registry, binding lifecycle, ingest envelope | in repo |
