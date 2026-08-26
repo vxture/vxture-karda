@@ -183,3 +183,54 @@ BEGIN
     REVOKE UPDATE ON karda_kb.eval_run_result FROM karda_svc;
   END IF;
 END $$;
+
+-- --- assertion layer (incr/0006) ---------------------------------------------
+--
+-- Guarded on existence: a database that has not yet taken incr/0006 must not
+-- fail this file. The increment carries the same locks unguarded, because the
+-- tables are created in the same transaction there.
+DO $$
+BEGIN
+  IF to_regclass('karda_kb.assertion') IS NOT NULL THEN
+    -- assertion: kb_id is the assertion's home and its authorization anchor -
+    -- repointing one at another library is not an edit, it is a leak (the same
+    -- reasoning that locks eval_set.workspace_id).
+    --
+    -- The extraction record is immutable: `extracted_by`, `extraction_run` and
+    -- `confidence` say what the machine did and how sure it was. Editing them
+    -- afterwards would erase the only basis for judging the extractor.
+    --
+    -- `kind`, `subject`, `statement`, `asserted_by` and the validity window ARE
+    -- writable: a mis-extracted kind or a wrong `asserted_by` is precisely the sort
+    -- of error verification exists to catch, and catching it has to mean fixing it.
+    REVOKE UPDATE ON karda_kb.assertion FROM karda_svc;
+    GRANT UPDATE (kind, subject, statement, asserted_by, as_of, valid_until,
+                  content_state, failure_reason, failed_at,
+                  verification_state, verifier, verified_at, expires_at,
+                  superseded_by, updated_at)
+      ON karda_kb.assertion TO karda_svc;
+
+    -- span: a measurement of one version of one document, written once. UPDATE is
+    -- revoked entirely - a span whose offsets or excerpt could be rewritten cannot
+    -- anchor a citation. A rebuild does not edit spans; it produces new ones at a
+    -- new document_version.
+    REVOKE UPDATE ON karda_kb.span FROM karda_svc;
+
+    -- evidence: an edge, written once. If the stance was wrong the edge was wrong -
+    -- delete it and add the right one (97 grants DELETE). Allowing a flip from
+    -- `supports` to `contradicts` in place would rewrite the history of an
+    -- adjudication that already happened.
+    REVOKE UPDATE ON karda_kb.evidence FROM karda_svc;
+
+    -- entity: kb_id is immutable for the same reason as assertion.kb_id. Name, kind
+    -- and aliases are editable - an entity registry that cannot absorb "it is also
+    -- called X" is not a registry.
+    REVOKE UPDATE ON karda_kb.entity FROM karda_svc;
+    GRANT UPDATE (name, kind, aliases, updated_at)
+      ON karda_kb.entity TO karda_svc;
+
+    -- assertion_mention: the whole row IS the key. Changing any part of it means a
+    -- different mention, so it is delete-and-insert, never update.
+    REVOKE UPDATE ON karda_kb.assertion_mention FROM karda_svc;
+  END IF;
+END $$;
