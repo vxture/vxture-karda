@@ -49,13 +49,14 @@
 | `karda.list_kbs` | OBO/service | 免计量 | 已交付 | 已实现·未激活 | `120` §6 |
 | `karda.get_evidence` | OBO/service | **免计量** | 已交付 | **未实现** | `140` §8 |
 | `karda.find_entity` | OBO/service | per_call | 已交付 | **未实现** | `140` §8.1 |
+| `karda.get_context` | OBO/service | **免计量** | 已交付 | **未实现** | `140` §8.3 |
 | `karda.attach_kb` | **仅 OBO** | 免计量 | 已交付 | 不做 | `120` §6 |
 | `karda.detach_kb` | **仅 OBO** | 免计量 | 已交付 | 不做 | `120` §6 |
 | `karda.create_kb` | **仅 OBO** | 免计量 | 已交付 | 不做 | `120` §6 |
 | `karda.write_document` | 直连**仅 OBO** / Runos 可 service | per_doc | 已交付 | 已实现·未激活 | `230` §2 |
 | `karda.create_entry` | 直连**仅 OBO** / Runos 可 service | per_doc | 已交付 | 已实现·未激活 | `230` §2 |
 
-**这张表暴露的第一件事:断言层的两件工具只在直连通道上。** Runos 面仍是五件
+**这张表暴露的第一件事:断言层的三件工具只在直连通道上。** Runos 面仍是五件
 (`search` / `ask` / `list_kbs` / `write_document` / `create_entry`)。这不是遗漏,
 是**代价不对称**:Runos 在端点注册时 live-pull `tools/list` 并逐项比对,加一件工具
 等于改注册契约(`tools_list_mismatch`),必须与 runos 线协同——不是一次自由的追加。
@@ -157,8 +158,7 @@ karda 不在自己这边选型,也不该出现模型名。
 
 | 接口 | 依赖 | 状态 |
 |---|---|---|
-| `karda.get_context` | Span + chunk 来源区间(`incr/0007`,均已就位) | **未实现——下一件**,不依赖 Atlas |
-| `karda.browse` | 断言 + 实体分页 | 未实现 |
+| `karda.browse` | 断言 + 实体分页 | **未实现——下一件** |
 | `karda.retrieve` | 检索单元化 | 不做(本轮),`140` §10 |
 | 断言抽取管线 | Atlas `karda.extract` | **待对端** `vxture-atlas#39` |
 | Runos 面补齐两件断言工具 | Runos 通道先注册成功 | 待对端 `vxture-runos#156` |

@@ -831,10 +831,11 @@ model behind it has not moved.
 | `#148` | 登记 `vxture-atlas#39` | 已合 |
 | `#149` | `incr/0007_*`:chunk 记住 `start_offset` / `end_offset`——引用与断言之间的桥 | 已合 |
 | `#150` | `karda.get_evidence`——断言层第一个对外产出,工具面九件 | 已合 |
-| 本轮 | `karda.find_entity`——工具面十件,第一件读知识图而非检索机制 | 进行中 |
+| `#152` | `karda.find_entity`——工具面十件,第一件读知识图而非检索机制;并建 `260-external-interfaces` 对外接口登记册 | 已合 |
+| 本轮 | `karda.get_context`——工具面十一件;**并修一个部署级缺陷**:`active_chunk_version` 的列授权只在 `incr/0001` 里,没镜进 `98`,新初始化的环境加工管道无法提交 | 进行中 |
 
-**下一件是 `karda.get_context`**:只依赖 Span 与 chunk 来源区间,两者都已就位,
-不依赖 Atlas。真正被挡住的只有**抽取的模型调用**,等 `vxture-atlas#39`。
+**下一件是 `karda.browse`**。真正被挡住的只有**抽取的模型调用**,等
+`vxture-atlas#39`。
 
 每一次 DDL 变更都过真库并跑探针。**每一轮探针都至少抓到一个 type-check、单测、
 build 三关全放过的缺陷**——这不是巧合,是这三关结构上看不见存储层行为。

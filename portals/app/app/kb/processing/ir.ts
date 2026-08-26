@@ -57,6 +57,19 @@ export function canonicalText(raw: string): string {
   return raw.replace(/\r\n/g, "\n");
 }
 
+/**
+ * Decode stored bytes into the source text.
+ *
+ * One function rather than two `toString("utf-8")` calls because BOTH the
+ * processing path (which measures every offset) and `karda.get_context` (which
+ * reads them back) must produce the identical string. A read side that decoded
+ * differently would return a window shifted by however many characters the two
+ * decodings disagreed on - and it would look like text, so nothing would fail.
+ */
+export function decodeSourceBytes(bytes: Buffer): string {
+  return bytes.toString("utf-8");
+}
+
 export interface DocumentIR {
   /** Parser version - a bump can scope a controlled rebuild (110-processing 4.2). */
   parserVersion: string;

@@ -31,6 +31,7 @@ export interface ToolBackends {
   // for the same reason get_evidence does: a distinguishable refusal maps the
   // entity registries of libraries the caller has no access to.
   findEntity?(caller: CallerContext, name: string): Promise<unknown>;
+  getContext?(caller: CallerContext, citationId: string, radius: unknown): Promise<unknown>;
   // write_document returns a full DispatchResult (it has real 4xx cases:
   // not-found library, duplicate, bad args), so the backend owns the status, not
   // dispatch. Injected by the route (TD-009 track 9a).
@@ -101,6 +102,17 @@ export async function dispatchTool(
       }
       const result = await backends.findEntity(caller, entityName);
       return { status: 200, body: { result: result as unknown as Record<string, unknown> } };
+    }
+    case "karda.get_context": {
+      if (!backends.getContext) return notImplemented(name);
+      const citationId = typeof args.citation_id === "string" ? args.citation_id.trim() : "";
+      if (!citationId) {
+        return { status: 400, body: { error: "invalid_argument", detail: "citation_id is required" } };
+      }
+      // radius is NOT validated here - clampRadius treats anything unreadable as
+      // the default. A malformed width must not cost the caller its citation.
+      const context = await backends.getContext(caller, citationId, args.radius);
+      return { status: 200, body: { result: context as unknown as Record<string, unknown> } };
     }
     case "karda.get_evidence": {
       if (!backends.getEvidence) return notImplemented(name);

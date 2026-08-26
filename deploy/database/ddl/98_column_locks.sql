@@ -62,17 +62,26 @@ REVOKE UPDATE ON karda_kb.document FROM karda_svc;
 GRANT UPDATE (title, folder_id, processing_template_id, storage_ref,
               content_state, failure_reason, failed_at, verification_state,
               verifier, verified_at, expires_at, sensitivity, business_meta,
-              updated_at)
+              active_chunk_version, updated_at)
   ON karda_kb.document TO karda_svc;
 -- storage_ref IS writable: the pipeline fills it once the raw file lands in
 -- karda's object storage, and a controlled rebuild may relocate it. source /
 -- connector_code / source_ref / content_hash stay immutable - they are the
 -- provenance and the dedup key.
--- active_chunk_version is ALSO writable (the atomic swap flips it at commit),
--- but its column is added by incr/0001, which db-init applies AFTER this file.
--- On a live DB the column does not exist yet when 98 runs, so its GRANT cannot
--- live here - it travels with the increment that adds the column. General rule
--- for any writable column added by an increment: see incr/README.md.
+-- active_chunk_version is writable: the atomic swap flips it at commit
+-- (kb/processing/commit.ts), and without this grant NO document ever becomes
+-- retrievable - the swap fails with `permission denied for table document` and
+-- the pipeline can never publish a version.
+--
+-- It used to live only in incr/0001, because when that increment shipped the
+-- column did not exist yet at the moment 98 ran on a live DB. That reasoning
+-- expired the moment the baseline absorbed the increment: db-init runs
+-- baseline -> 97 -> 98, so on a FRESH database the column is there before this
+-- file. Leaving the grant only in the increment meant every newly-initialised
+-- environment - beta, and the first production install - got a pipeline that
+-- could not commit, while every migrated database was fine. Restored 2026-08-26,
+-- found by a get_context probe; incr/0001 keeps its copy for old databases.
+-- General rule for any writable column added by an increment: see incr/README.md.
 
 REVOKE UPDATE ON karda_kb.entry FROM karda_svc;
 GRANT UPDATE (title, folder_id, content_template_id, template_version, fields,
