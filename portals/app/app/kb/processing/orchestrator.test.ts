@@ -67,7 +67,11 @@ test("the stub embedder suspends the task, never fails it", async () => {
   });
   assert.ok("failed" in r && r.failed);
   assert.equal(r.stage, "embed");
-  assert.equal(r.class, "quota");
+  // `unavailable`, not `quota` (incr/0008). Both suspend - the invariant this
+  // test exists for is unchanged - but the embed stage has been parked on the
+  // Atlas A1 GRANT all along, and calling that 「配额」 pointed the operator at
+  // the one thing that was never the problem.
+  assert.equal(r.class, "unavailable");
   assert.deepEqual(r.outcome, { action: "suspend" }, "no embedder -> suspend, not fail");
 });
 
@@ -124,7 +128,7 @@ test("a fetch failure is transient and resumes from fetch", async () => {
   assert.deepEqual(r.outcome, { action: "retry", fromStage: "fetch", nextGeneration: 1 });
 });
 
-test("UnavailableError is quota-classed so it suspends", async () => {
+test("UnavailableError is `unavailable`-classed, and still suspends", async () => {
   const unavailable: EmbeddingClient = {
     async embed() {
       throw new UnavailableError("down");

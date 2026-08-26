@@ -142,6 +142,7 @@ export const pipeline = {
     "en-US": (attempt: number) => `Waiting to retry · attempt ${attempt}`,
   } satisfies MessageFn<[number]>,
   statusSuspendedQuota: { "zh-CN": "挂起 · 配额", "en-US": "Suspended · quota" },
+  statusSuspendedUnavailable: { "zh-CN": "挂起 · 能力未开通", "en-US": "Suspended · capability not granted" },
   statusSuspendedOther: { "zh-CN": "挂起 · 待恢复", "en-US": "Suspended · awaiting recovery" },
   statusFailed: {
     "zh-CN": (stage: string) => `失败 · ${stage}`,

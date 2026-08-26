@@ -542,6 +542,13 @@ CREATE TABLE IF NOT EXISTS karda_kb.processing_task (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   document_id         UUID NOT NULL,
   kb_id               UUID NOT NULL,                   -- deliberately denormalised; see 240 4.1
+  -- KD-211: extraction is its own pass, not a sixth stage of processing. The two
+  -- have different invalidation keys, and fusing them would let a re-embed
+  -- discard assertions a human already adjudicated. Written at INSERT, never
+  -- updated - a task does not change species, so it carries no UPDATE grant.
+  kind                VARCHAR(32) NOT NULL DEFAULT 'processing'
+                        CONSTRAINT chk_processing_task_kind
+                        CHECK (kind IN ('processing', 'extraction')),
   tier                VARCHAR(32) NOT NULL DEFAULT 'interactive'
                         CONSTRAINT chk_processing_task_tier
                         CHECK (tier IN ('interactive', 'sync', 'bulk')),
@@ -550,12 +557,19 @@ CREATE TABLE IF NOT EXISTS karda_kb.processing_task (
                         CHECK (state IN ('queued', 'running', 'suspended', 'failed', 'done')),
   current_stage       VARCHAR(32) NOT NULL DEFAULT 'fetch'
                         CONSTRAINT chk_processing_task_stage
-                        CHECK (current_stage IN ('fetch', 'parse', 'chunk', 'embed', 'commit')),
+                        -- 'extract' is an extraction task's ONLY stage: the run is
+                        -- all-windows-or-nothing, so there is no resumable midpoint
+                        -- for sub-stages to record. The processing pipeline's five
+                        -- stages are unchanged.
+                        CHECK (current_stage IN ('fetch', 'parse', 'chunk', 'embed', 'commit', 'extract')),
   -- The retry judgment as a COLUMN, not a string to be parsed out of
   -- failure_reason: quota -> suspend, transient -> back off, permanent -> park.
   failure_class       VARCHAR(32)
                         CONSTRAINT chk_processing_task_failure_class
-                        CHECK (failure_class IN ('transient', 'permanent', 'quota')),
+                        -- 'unavailable' and 'quota' both suspend; they differ in what
+                        -- the operator must DO - chase the grant, versus wait. Telling
+                        -- an operator 「配额」 about an ungranted capability is simply false.
+                        CHECK (failure_class IN ('transient', 'permanent', 'quota', 'unavailable')),
   failure_reason      TEXT,
   attempt             INTEGER NOT NULL DEFAULT 1,
   created_in_product  VARCHAR(32),                     -- [ref] row-level provenance (#108)
@@ -573,8 +587,12 @@ CREATE TABLE IF NOT EXISTS karda_kb.processing_task (
 -- CONCURRENCY, not reporting: without this a duplicate enqueue puts two
 -- pipelines on the same document, and 110-processing's atomic chunk replace
 -- assumes a single writer.
+-- Keyed on (document_id, KIND): the rule is per-pipeline. An extraction run
+-- writes assertions and never touches chunks, so it does not contend with
+-- processing; keyed on document_id alone this would have made an extraction task
+-- and a reprocess of the same document mutually exclusive.
 CREATE UNIQUE INDEX IF NOT EXISTS uidx_processing_task_doc_live
-  ON karda_kb.processing_task (document_id)
+  ON karda_kb.processing_task (document_id, kind)
   WHERE state IN ('queued', 'running');
 CREATE INDEX IF NOT EXISTS idx_processing_task_kb_state
   ON karda_kb.processing_task (kb_id, state);
@@ -586,6 +604,9 @@ CREATE INDEX IF NOT EXISTS idx_processing_task_kb_finished
 -- One row per (task, stage). A retry is a NEW task (attempt + 1), never an
 -- overwrite here - overwriting would erase the previous timing, and stage P95 is
 -- exactly the history. duration is NOT stored: it is ended_at - started_at.
+CREATE INDEX IF NOT EXISTS idx_processing_task_kind_document
+  ON karda_kb.processing_task (kind, document_id, state);
+
 CREATE TABLE IF NOT EXISTS karda_kb.processing_task_stage (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   task_id     UUID NOT NULL,

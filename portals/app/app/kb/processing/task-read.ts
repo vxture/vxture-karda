@@ -54,7 +54,7 @@ export interface TaskTally {
   counts: { inflight: number; suspended: number; failed: number };
   throughput: { docsToday: number; p95Seconds: number; docsPerMin: number };
   queueDepth: { interactive: number; sync: number; bulk: number };
-  failures: { transient: number; permanent: number; quota: number };
+  failures: { transient: number; permanent: number; quota: number; unavailable: number };
   stageP95: [number, number, number, number, number];
   tierQueued: Record<QueueTier["key"], number>;
   tasks: PipelineTask[];
@@ -121,7 +121,14 @@ export function statusFor(row: TaskRow): Pick<PipelineTask, "status" | "statusTo
       // Quota/unavailable parks the task; it resumes on its own, so this is not
       // an error state and must not be painted as one.
       return {
-        status: { kind: row.failureClass === "quota" ? "suspendedQuota" : "suspendedOther" },
+        status: {
+          kind:
+            row.failureClass === "quota"
+              ? "suspendedQuota"
+              : row.failureClass === "unavailable"
+                ? "suspendedUnavailable"
+                : "suspendedOther",
+        },
         statusTone: "warning",
       };
     case "failed":
@@ -146,10 +153,10 @@ export function tallyTasks(rows: TaskRow[], now: number): TaskTally {
     if (r.tier === "interactive" || r.tier === "sync" || r.tier === "bulk") tierQueued[r.tier] += 1;
   }
 
-  const failures = { transient: 0, permanent: 0, quota: 0 };
+  const failures = { transient: 0, permanent: 0, quota: 0, unavailable: 0 };
   for (const r of [...failed, ...suspended]) {
-    if (r.failureClass === "transient" || r.failureClass === "permanent" || r.failureClass === "quota") {
-      failures[r.failureClass] += 1;
+    if (r.failureClass && r.failureClass in failures) {
+      failures[r.failureClass as keyof typeof failures] += 1;
     }
   }
 

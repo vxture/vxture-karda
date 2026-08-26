@@ -95,6 +95,7 @@ user × product 的概念,而 Runos 通道整条是 service 模式、无用户�
 | `/api/health` | GET | 编排/探活 | 无(**零依赖**:不碰 DB / Redis / 上游) | 已交付 |
 | `/api/kb/processing/tick` | POST | 调度器 | `x-internal-job-token` | 已交付 |
 | `/api/kb/governance/sweep` | POST | 调度器 | `x-internal-job-token` | 已交付 |
+| `/api/kb/extraction/tick` | POST | 调度器 | `x-internal-job-token` | 已交付——**与加工 tick 分开**(KD-211),抽取是 bulk、无人等待,慢抽取不该拖住上传 |
 | `/api/usage/flush` | POST | 调度器 | `x-internal-job-token` | 已交付 |
 | `/api/kb/admin/seed-presets` | POST | 运维一次性 | `x-internal-job-token` | 已交付(**生产尚未跑过**,TD-006 尾巴) |
 
@@ -160,7 +161,7 @@ karda 不在自己这边选型,也不该出现模型名。
 |---|---|---|
 | `karda.browse` | 断言 + 实体分页 | **未实现——下一件** |
 | `karda.retrieve` | 检索单元化 | 不做(本轮),`140` §10 |
-| 断言抽取的**调度** | §11.1 的落位裁定 | 未实现——客户端与单文档编排已交付,缺的是谁来触发 |
+| 断言抽取的**调度** | —— | **已交付**:`incr/0008` 任务种类 + 抽取 pass + 独立 tick |
 | 断言抽取**实际产出断言** | Atlas `karda.extract` 授权 | **待对端** `vxture-atlas#39`;在那之前每次调用驻留,不写库 |
 | Runos 面补齐两件断言工具 | Runos 通道先注册成功 | 待对端 `vxture-runos#156` |
 
