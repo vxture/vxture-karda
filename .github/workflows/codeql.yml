@@ -8,13 +8,31 @@ name: codeql
 # etc.) in the app's own source. Free for public repos, no GHAS license
 # needed.
 
+# paths-ignore is safe HERE and nowhere else in this repo: `analyze` is NOT one
+# of the five required checks (main-ruleset.json), so a skipped run does not
+# leave a required context unreported and does not block a merge. That matters -
+# putting paths-ignore on ci.yml or secret-scan.yml would block every docs-only
+# PR forever, because a check that never runs never reports.
+#
+# It is also where the money was. Over the last 60 runs codeql accounted for
+# 35 of 68 runner-minutes - more than half - and a large share of that was
+# analysing TypeScript for commits that touched only Markdown. The weekly cron
+# below still sweeps the whole tree, so nothing goes unscanned indefinitely.
 on:
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - 'deploy/database/ddl/**'
   push:
     branches:
       - main
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - 'deploy/database/ddl/**'
   schedule:
     # Weekly sweep catches new CodeQL query-pack findings against unchanged
     # code (the PR/push triggers only cover code that actually changed).

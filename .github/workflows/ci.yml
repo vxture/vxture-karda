@@ -79,6 +79,55 @@ jobs:
           # dependencies the flag is a no-op and this becomes a real scan.
           /tmp/osv-bin/osv-scanner scan -L pnpm-lock.yaml --config .osv-scanner.toml --allow-no-lockfiles
 
+  # -- Did any CODE change? ---------------------------------------------------
+  # The required checks must ALWAYS report - a docs-only PR that never produces
+  # `build` / `test-coverage` is blocked forever, which is why this repo can
+  # never use paths-ignore on ci.yml. So the jobs still run and still report;
+  # what they skip is the expensive middle (install, type-check, build, tests)
+  # when the diff cannot possibly affect them.
+  #
+  # Fails OPEN on purpose: anything unexpected (a shallow clone, a force-push, a
+  # base branch that cannot be resolved) reports `code=true` and runs the full
+  # gate. The failure mode of guessing wrong must be "did unnecessary work", not
+  # "skipped the check that would have caught it".
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.detect.outputs.code }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Detect non-docs changes
+        id: detect
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "push to main - always the full gate"
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          base="origin/${{ github.base_ref }}"
+          if ! files=$(git diff --name-only "$base...HEAD" 2>/dev/null) || [ -z "$files" ]; then
+            echo "cannot resolve the diff - failing open to the full gate"
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "$files"
+          # Anything outside docs/ and *.md counts as code. DDL is deliberately
+          # code here (ci.yml runs the DDL<->Prisma lockstep guardrail), even
+          # though codeql treats it as non-source.
+          if echo "$files" | grep -qvE '^docs/|\.md$'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "docs-only change - build and tests have nothing to verify"
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
   # -- Static checks (feed quality-gate) --------------------------------------
   # Pure-node, zero-dependency checks that run without a pnpm install: the docs
   # numbering hard gate and a whitespace/marker check. quality-gate aggregates
@@ -127,27 +176,41 @@ jobs:
   build:
     name: build
     runs-on: ubuntu-latest
+    needs: [changes]
     timeout-minutes: 15
+    # The job always runs so the required context always reports; every step
+    # below is conditional on there being code to build.
+    env:
+      CODE: ${{ needs.changes.outputs.code }}
     steps:
+      - name: Nothing to build (docs-only change)
+        if: env.CODE != 'true'
+        run: echo "docs-only change - no source to type-check or build"
+
       - name: Checkout
+        if: env.CODE == 'true'
         uses: actions/checkout@v7
 
       - name: Set up Node
+        if: env.CODE == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 24
 
       - name: Enable corepack (pnpm from packageManager)
+        if: env.CODE == 'true'
         run: corepack enable
 
       # pnpm 11 no longer expands ${NODE_AUTH_TOKEN} in the project .npmrc, so
       # the credential goes into ~/.npmrc explicitly before the install.
       - name: Wire GitHub Packages auth
+        if: env.CODE == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
         run: echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> ~/.npmrc
 
       - name: Install (frozen lockfile)
+        if: env.CODE == 'true'
         run: pnpm install --frozen-lockfile
         env:
           # @vxture/shared resolves from GitHub Packages (org secret, visibility
@@ -155,9 +218,11 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
 
       - name: Type-check (shared)
+        if: env.CODE == 'true'
         run: pnpm type-check:all
 
       - name: Build app (Next.js standalone)
+        if: env.CODE == 'true'
         run: pnpm build
         env:
           # Provenance is read at runtime (server env), not baked by `next build`;
@@ -168,27 +233,39 @@ jobs:
   test-coverage:
     name: test-coverage
     runs-on: ubuntu-latest
+    needs: [changes]
     timeout-minutes: 10
+    env:
+      CODE: ${{ needs.changes.outputs.code }}
     steps:
+      - name: Nothing to test (docs-only change)
+        if: env.CODE != 'true'
+        run: echo "docs-only change - no source under test"
+
       - name: Checkout
+        if: env.CODE == 'true'
         uses: actions/checkout@v7
 
       - name: Set up Node
+        if: env.CODE == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 24
 
       - name: Enable corepack (pnpm from packageManager)
+        if: env.CODE == 'true'
         run: corepack enable
 
       # pnpm 11 no longer expands ${NODE_AUTH_TOKEN} in the project .npmrc, so
       # the credential goes into ~/.npmrc explicitly before the install.
       - name: Wire GitHub Packages auth
+        if: env.CODE == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
         run: echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> ~/.npmrc
 
       - name: Install (frozen lockfile)
+        if: env.CODE == 'true'
         run: pnpm install --frozen-lockfile
         env:
           # @vxture/shared resolves from GitHub Packages (org secret, visibility
@@ -196,4 +273,5 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
 
       - name: Run tests
+        if: env.CODE == 'true'
         run: pnpm --filter @karda/app test
