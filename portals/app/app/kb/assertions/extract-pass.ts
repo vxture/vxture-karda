@@ -18,6 +18,7 @@ import { getObjectStore } from "../storage/objectstore";
 import { getExtractionClient } from "../atlas/extract";
 import type { ExtractionClient } from "../atlas/extract";
 import { runExtraction, type ExtractionRunResult } from "./extract-run";
+import { tenantForWorkspace } from "../processing/atlas-embedder";
 
 /** Documents per sweep. A bounded pass, re-invoked on a schedule - the same
  *  discipline the processing tick uses, and for the same reason: scheduling is
@@ -175,13 +176,31 @@ export async function runExtractionPass(
     let outcome: PassOutcome;
     try {
       const bytes = doc.storageRef ? await objects.get(doc.storageRef) : null;
+      // tenant != workspace. Atlas keys model authorization by PLATFORM TENANT
+      // (`model_grants.tenant_id`, a real FK to `tenancy.tenants`), and the
+      // mapping from our workspace to that tenant lives in the provisioning
+      // contract table - `tenantForWorkspace` is the one place that reads it,
+      // and the embed path has always gone through it. Sending the workspace id
+      // in the tenant field type-checks, both are uuids, and it would have
+      // resolved against the wrong tenant the moment the karda.extract grant
+      // landed - which is exactly when nobody would be looking for it.
+      const tenantId = await tenantForWorkspace(doc.knowledgeBase.workspaceId);
+      if (!tenantId) {
+        // Not provisioned on the platform yet: there is no tenant to bill or
+        // authorize against, so this is not extractable rather than a failure.
+        outcome = { documentId: doc.id, status: "not_extractable", reason: "no_platform_tenant", assertions: 0 };
+        await settle(p, task.id, { status: "not_extractable", reason: "no_platform_tenant", windows: 0, raw: 0, batch: null, stored: null });
+        result.skipped += 1;
+        result.outcomes.push(outcome);
+        continue;
+      }
       const run = await runExtraction(client, {
         documentId: doc.id,
         documentVersion: doc.activeChunkVersion!,
         kbId: doc.kbId,
         mime: doc.mime,
         bytes,
-        tenantId: doc.knowledgeBase.workspaceId,
+        tenantId,
         workspaceId: doc.knowledgeBase.workspaceId,
         taskId: task.id,
         extractedBy,
