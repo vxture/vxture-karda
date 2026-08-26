@@ -10,7 +10,7 @@ import {
 } from "./extract";
 import { AtlasApiError } from "./client";
 import { QuotaError, UnavailableError } from "../processing/orchestrator";
-import { KARDA_TASK_PROFILES, extractSelection } from "./selection";
+import { KARDA_ENDPOINTS, extractSelection } from "./selection";
 import type { ChatRequest, ChatResponse, GenerationClient } from "../retrieval/ask";
 
 const err = (code: string, status: number, retryable: boolean) => new AtlasApiError(code, status, retryable, code);
@@ -29,11 +29,13 @@ const body = (assertions: unknown[]) => JSON.stringify({ assertions });
 
 // --- the ungranted case: the whole reason this ships before the grant --------------
 
-test("an ungranted karda.extract PARKS rather than fails", () => {
-  // This is exactly what Atlas answers today (vxture-atlas#39 is open). It must
+test("an ungranted extract ENDPOINT parks rather than fails", () => {
+  // What Atlas answers until the product holds the endpoint grant. It must
   // suspend: parked, resumable, never `failed` - so the day the grant lands the
-  // work resumes with no karda change and no human un-failing anything.
-  const mapped = mapExtractError(err("TASK_PROFILE_NOT_ROUTABLE", 404, false));
+  // work resumes with no karda change and no human un-failing anything. The
+  // retired TASK_PROFILE_NOT_ROUTABLE carried identical semantics, which is why
+  // the switch to the product axis needed no change here.
+  const mapped = mapExtractError(err("ENDPOINT_NOT_ROUTABLE", 404, false));
   assert.ok(mapped instanceof UnavailableError);
 });
 
@@ -123,8 +125,8 @@ test("the call carries the karda.extract profile, temperature 0, and the tenant 
     taskId: "t-1",
   });
   const seen = gen.seen!;
-  assert.equal(seen.taskProfile, KARDA_TASK_PROFILES.extract);
-  assert.equal(seen.modelCode, undefined); // model choice is Atlas's, per KD-018
+  assert.equal(seen.endpointCode, KARDA_ENDPOINTS.extract);
+  assert.equal(seen.modelCode, undefined); // model choice is the operator's, per KD-018
   assert.equal(seen.temperature, 0);
   assert.equal(seen.tenantId, "org-1");
   assert.equal(seen.taskId, "t-1");
@@ -143,17 +145,25 @@ test("the client rebases before returning, so callers never see window coordinat
 });
 
 test("an Atlas failure from the call is mapped, not leaked raw", async () => {
-  const gen = new FakeGeneration(err("TASK_PROFILE_NOT_ROUTABLE", 404, false));
+  const gen = new FakeGeneration(err("ENDPOINT_NOT_ROUTABLE", 404, false));
   await assert.rejects(
     () => new AtlasExtractionClient(gen).extract({ window: { text: "x", baseOffset: 0 }, tenantId: "o", workspaceId: "w", taskId: "t" }),
     UnavailableError,
   );
 });
 
-test("the default selection sends a profile and no model - selection lives in the grant", () => {
+test("the default selection sends an ENDPOINT and no model - selection lives in the grant", () => {
   const sel = extractSelection();
-  assert.equal(sel.taskProfile, "karda.extract");
+  assert.equal(sel.endpointCode, "chat/extract");
   assert.equal(sel.modelCode, undefined);
+  assert.equal((sel as { taskProfile?: string }).taskProfile, undefined, "the legacy tenant axis is not sent");
+});
+
+test("extraction does NOT share the ask endpoint", () => {
+  // Same rule as before the axis change, and it survives the change on purpose:
+  // one endpoint would leave routing, billing and observability unable to tell
+  // batch extraction from interactive answering.
+  assert.notEqual(KARDA_ENDPOINTS.extract, KARDA_ENDPOINTS.ask);
 });
 
 test("the prompt states the two rules that are not stylistic", () => {

@@ -80,21 +80,21 @@ test("a taskProfile is forwarded verbatim in the chat body (auto-adapt)", async 
   assert.doesNotMatch(body, /"modelCode"/, "auto-adapt sends no modelCode");
 });
 
-test("askModelSelection: grant-routed by default (karda.ask); env pins are break-glass (KD-018)", () => {
-  const saved = { tp: process.env.ATLAS_ASK_TASK_PROFILE, mc: process.env.ATLAS_ASK_MODEL };
+test("askModelSelection: grant-routed by default (chat/default); env pins are break-glass (KD-018)", () => {
+  const saved = { ep: process.env.ATLAS_ASK_ENDPOINT, mc: process.env.ATLAS_ASK_MODEL };
   try {
-    process.env.ATLAS_ASK_TASK_PROFILE = "profile-x";
-    assert.deepEqual(askModelSelection(), { taskProfile: "profile-x" });
+    process.env.ATLAS_ASK_ENDPOINT = "chat/incident";
+    assert.deepEqual(askModelSelection(), { endpointCode: "chat/incident" });
 
-    delete process.env.ATLAS_ASK_TASK_PROFILE;
+    delete process.env.ATLAS_ASK_ENDPOINT;
     process.env.ATLAS_ASK_MODEL = "model-y";
     assert.deepEqual(askModelSelection(), { modelCode: "model-y" });
 
     delete process.env.ATLAS_ASK_MODEL;
-    assert.deepEqual(askModelSelection(), { taskProfile: "karda.ask" }, "unconfigured = the fixed profile, never a fake modelCode");
+    assert.deepEqual(askModelSelection(), { endpointCode: "chat/default" }, "unconfigured = the fixed endpoint, never a fake modelCode");
   } finally {
-    if (saved.tp === undefined) delete process.env.ATLAS_ASK_TASK_PROFILE;
-    else process.env.ATLAS_ASK_TASK_PROFILE = saved.tp;
+    if (saved.ep === undefined) delete process.env.ATLAS_ASK_ENDPOINT;
+    else process.env.ATLAS_ASK_ENDPOINT = saved.ep;
     if (saved.mc === undefined) delete process.env.ATLAS_ASK_MODEL;
     else process.env.ATLAS_ASK_MODEL = saved.mc;
   }

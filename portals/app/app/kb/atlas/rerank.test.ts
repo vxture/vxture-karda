@@ -32,19 +32,19 @@ test("extractScores handles results[{index,score}] and bare scores[]", () => {
   assert.equal(extractScores({ scores: [0.1] }, 2), null, "misaligned scores are rejected");
 });
 
-test("rerankSelection: grant-routed by default (karda.rerank); env pins are break-glass (KD-018)", () => {
-  const saved = { tp: process.env.ATLAS_RERANK_TASK_PROFILE, mc: process.env.ATLAS_RERANK_MODEL };
+test("rerankSelection: grant-routed by default (rerank/default); env pins are break-glass (KD-018)", () => {
+  const saved = { ep: process.env.ATLAS_RERANK_ENDPOINT, mc: process.env.ATLAS_RERANK_MODEL };
   try {
-    process.env.ATLAS_RERANK_TASK_PROFILE = "rerank-profile";
-    assert.deepEqual(rerankSelection(), { taskProfile: "rerank-profile" });
-    delete process.env.ATLAS_RERANK_TASK_PROFILE;
+    process.env.ATLAS_RERANK_ENDPOINT = "rerank/incident";
+    assert.deepEqual(rerankSelection(), { endpointCode: "rerank/incident" });
+    delete process.env.ATLAS_RERANK_ENDPOINT;
     process.env.ATLAS_RERANK_MODEL = "rr-1";
     assert.deepEqual(rerankSelection(), { modelCode: "rr-1" });
     delete process.env.ATLAS_RERANK_MODEL;
-    assert.deepEqual(rerankSelection(), { taskProfile: "karda.rerank" }, "unconfigured = the fixed profile, never null");
+    assert.deepEqual(rerankSelection(), { endpointCode: "rerank/default" }, "unconfigured = the fixed endpoint, never null");
   } finally {
-    if (saved.tp === undefined) delete process.env.ATLAS_RERANK_TASK_PROFILE;
-    else process.env.ATLAS_RERANK_TASK_PROFILE = saved.tp;
+    if (saved.ep === undefined) delete process.env.ATLAS_RERANK_ENDPOINT;
+    else process.env.ATLAS_RERANK_ENDPOINT = saved.ep;
     if (saved.mc === undefined) delete process.env.ATLAS_RERANK_MODEL;
     else process.env.ATLAS_RERANK_MODEL = saved.mc;
   }

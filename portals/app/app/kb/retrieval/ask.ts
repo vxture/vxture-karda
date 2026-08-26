@@ -24,10 +24,14 @@ export interface ChatRequest {
    *  across products and models - it is the only key that adds a task's
    *  consumption back together. */
   taskId: string;
-  // At least one of modelCode / taskProfile is required (Atlas #70 §6); they are
-  // alternatives. A taskProfile lets Atlas resolve the concrete model from the
-  // tenant's grant (auto-adapt); a modelCode pins one explicitly.
+  // Exactly one selector: `modelCode` > `endpointCode` > `taskProfile`, narrower
+  // wins (the contract's `TARGET_SELECTOR_REQUIRED` oneOf). karda sends
+  // `endpointCode` - the PRODUCT-axis name, resolved from the product's endpoint
+  // grant. `taskProfile` is the legacy tenant axis and karda no longer sends it;
+  // the field stays declared because Atlas still accepts it and removing it from
+  // the type would misrepresent the wire contract we are coding against.
   modelCode?: string;
+  endpointCode?: string;
   taskProfile?: string;
   messages: ChatMessage[];
   temperature?: number;
@@ -76,6 +80,7 @@ export interface AskInput extends Omit<SearchInput, "params"> {
   workspaceId?: string;
   userId?: string;
   modelCode?: string;
+  endpointCode?: string;
   taskProfile?: string;
   resolver: ChunkResolver;
   generation: GenerationClient;
@@ -149,6 +154,7 @@ export async function runAsk(input: AskInput): Promise<AskResult> {
   const res = await input.generation.chat({
     taskId: input.taskId,
     modelCode: input.modelCode,
+    endpointCode: input.endpointCode,
     taskProfile: input.taskProfile,
     messages: prompt,
     temperature: 0,

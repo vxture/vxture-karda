@@ -1,14 +1,20 @@
-// The Atlas extraction client - karda's side of `vxture-atlas#39`.
+// The Atlas extraction client.
 //
-// Extraction rides the SAME `/v1/chat` data plane as `karda.ask`; #39 asks Atlas
-// for a taskProfile grant, not for a new endpoint. What separates the two calls
-// is the label: `karda.extract` lets Atlas route batch structured extraction to a
-// cheaper model than interactive question answering, which is the entire point of
-// KD-018 putting model choice in authorization rather than in karda's config.
+// Extraction rides the SAME `/v1/chat` data plane as cited answering, under its
+// OWN endpoint code (`chat/extract`, not `chat/default`): that is what lets an
+// operator route batch structured extraction to a cheaper model than interactive
+// answering, which is the entire point of KD-018 putting model choice in
+// authorization rather than in karda's config.
 //
-// THE GRANT DOES NOT EXIST YET (`vxture-atlas#39` is open). This client ships
+// Axis note (`vxture-atlas#47`, ruling 2026-08-26): this used to send a
+// `taskProfile`, which lives on Atlas's LEGACY tenant axis and dragged a tenant
+// uuid along with it. karda is a product, so it holds a PRODUCT-axis endpoint
+// grant instead. Nothing in this file's error handling changed, because
+// `ENDPOINT_NOT_ROUTABLE` carries the identical semantics.
+//
+// THE GRANT DOES NOT EXIST YET (`vxture-platform#55`). This client ships
 // anyway, on owner direction 2026-08-26, because the ungranted case is not a
-// mystery: Atlas answers `404 TASK_PROFILE_NOT_ROUTABLE` and does nothing else -
+// mystery: Atlas answers `404 ENDPOINT_NOT_ROUTABLE` and does nothing else -
 // no model runs, nothing is charged, no state moves. Mapping that to the existing
 // suspend path means extraction is BUILT and PARKED rather than absent, and the
 // day the grant lands the parked work resumes with no karda change. The same
@@ -44,10 +50,10 @@ export interface ExtractionClient {
 /**
  * Map an Atlas failure onto the processing taxonomy.
  *
- * `TASK_PROFILE_NOT_ROUTABLE` is the one that matters today - it is exactly what
- * an ungranted `karda.extract` returns - and it becomes `UnavailableError`, which
+ * `ENDPOINT_NOT_ROUTABLE` is the one that matters today - it is exactly what an
+ * ungranted `chat/extract` returns - and it becomes `UnavailableError`, which
  * the orchestrator suspends: parked, resumable, never `failed`, never needing a
- * human to un-fail it once #39 lands.
+ * human to un-fail it once the endpoint grant lands.
  *
  * A malformed or unparseable model response deliberately does NOT park. It falls
  * through as a plain Error into the bounded transient path, so a karda-side

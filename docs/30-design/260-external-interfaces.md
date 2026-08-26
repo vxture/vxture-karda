@@ -132,10 +132,10 @@ user × product 的概念,而 Runos 通道整条是 service 模式、无用户�
 
 | 对端 | 接口 | 方式 | 状态 |
 |---|---|---|---|
-| Atlas | `POST {ATLAS_BASE_URL}/v1/embed` | bearer `aud=atlas`,taskProfile `karda.embed` | 已实现·未激活(缺 env + grant) |
-| Atlas | `POST /v1/rerank` | taskProfile `karda.rerank` | 已实现·未激活 |
-| Atlas | `POST /v1/chat` | taskProfile `karda.ask` | 已实现·未激活 |
-| Atlas | `POST /v1/chat` | taskProfile `karda.extract`,`temperature: 0` | **已实现·未激活**——授权未到位,Atlas 返 `404 TASK_PROFILE_NOT_ROUTABLE`,我方**驻留可恢复**而非失败(`vxture-atlas#39` OPEN) |
+| Atlas | `POST {ATLAS_BASE_URL}/v1/embed` | bearer `aud=atlas`,endpointCode `embedding/default` | 已实现·未激活(缺 env + 产品轴授权) |
+| Atlas | `POST /v1/rerank` | endpointCode `rerank/default` | 已实现·未激活 |
+| Atlas | `POST /v1/chat` | endpointCode `chat/default` | 已实现·未激活 |
+| Atlas | `POST /v1/chat` | endpointCode `chat/extract`,`temperature: 0` | **已实现·未激活**——产品轴授权未到位,Atlas 返 `404 ENDPOINT_NOT_ROUTABLE`,我方**驻留可恢复**而非失败(`vxture-platform#55`) |
 | Atlas | A2 深解析 | 请求页形态未定 | **未实现**——我方的请求侧问题**在对端仓里没有编号**(§11.1);`#102` 是 atlas 通知我方**响应**形状变了,不是我方的提问。不猜线上形状 |
 | 平台 | `GET {PLATFORM_API_URL}/platform/entitlements?workspace_id=&product=` | `x-vxture-internal-auth` | 已实现·未激活 |
 | 平台 | `POST {PLATFORM_API_URL}/usage/consume` | `x-vxture-internal-auth`,幂等键,配额尽 → 不重试 | 已实现·未激活 |
@@ -168,7 +168,7 @@ karda 不在自己这边选型,也不该出现模型名。
 |---|---|---|
 | `karda.retrieve` | 检索单元化 | 不做(本轮),`140` §10 |
 | 断言抽取的**调度** | —— | **已交付**:`incr/0008` 任务种类 + 抽取 pass + 独立 tick |
-| 断言抽取**实际产出断言** | Atlas `karda.extract` 授权 | **待对端** `vxture-atlas#39`;在那之前每次调用驻留,不写库。**不复用 `karda.ask` 标签**(§11.1.2) |
+| 断言抽取**实际产出断言** | 产品轴端点授权 `chat/extract` | **待对端** `vxture-platform#55`;在那之前每次调用驻留,不写库。**不与 `chat/default` 共用一个端点**(§11.1.2) |
 | Runos 面补齐两件断言工具 | Runos 通道先注册成功 | 待对端 `vxture-runos#156` |
 
 ---
@@ -199,64 +199,69 @@ karda 不在自己这边选型,也不该出现模型名。
 
 规矩沿用 §2:**一条需求没有对端仓的 issue 号,就不算提出来了**,状态退回「未实现」。
 
-### 11.1 Atlas(四条,全部 open)
+### 11.1 Atlas(全部结清 —— 剩下的不在 Atlas 那边)
 
-| # | 我方要什么 | 不给会怎样 | 退路 | 开了多久 |
-|---|---|---|---|---|
-| `vxture-atlas#4` | 三条 taskProfile 授权:`karda.ask` / `karda.embed` / `karda.rerank` | **检索与问答整条链驻留**:embed 进不了向量、rerank 不精排、ask 不生成 | 运维**直接调授权 CRUD API** 配好,不必等界面 | 2026-08-21 |
-| `vxture-atlas#39` | 第四条:`karda.extract` | 抽取每趟驻留,不写库(`#154` / `#156` 已按此建好) | **无。对端明确建议不要走**——见 §11.1.2 | 2026-08-26 |
-| ~~`vxture-atlas#21`~~ | ~~`/v1` 契约以类型包或夹具发布~~ | —— | —— | **已交付**,见 §11.1.3 |
-| **未提出,且提了也没用** | A2 深解析的**请求页**形态 | 深解析仍永久失败 | 不需要——真正的挡板是**采购**,见 §11.1.4 | —— |
+**2026-08-26/27,三条全部有了终态,而且两条是被对端推翻的。**
 
-### 11.1.1 前两条是同一个阻塞点,而且不是工程阻塞(对端终态答复 2026-08-26)
+| # | 我方要什么 | 结局 |
+|---|---|---|
+| `vxture-atlas#4` | 三条 `taskProfile` 授权 | **CLOSED —— 走错了轴**,见 §11.1.1 |
+| `vxture-atlas#39` | 第四条 `karda.extract` | **CLOSED —— 同上** |
+| `vxture-atlas#21` | `/v1` 契约以类型包/夹具发布 | **CLOSED —— 已交付并已消费**,见 §11.1.3 |
+| **`vxture-platform#55`** | **给产品 `karda` 授四个端点** | **待运维**——这是唯一还剩的一条 |
 
-Atlas 在 `#4` / `#39` 上给了**终态答复:Atlas 侧无待办**。授权链他们已在自测栈上
-端到端实测:授权不存在时返 `404 TASK_PROFILE_NOT_ROUTABLE`;
-`POST /capability/tenant-model-grants` 带 `taskProfile` 返 **201** 并原样回显
-`state: active`;同一请求再发就带出解析到的 `modelCode`;阴性对照(另一个不存在的
-画像)仍 404,**没有连带放行**。
+### 11.1.1 前两条被对端推翻:那条轴是 legacy,而且是他们指错的
 
-缺的只是 **opera 授权页没有 `taskProfile` 输入框**——已落
-`vxture-platform/vxture-platform#52`。所以这两条**不该分别去追 Atlas,它们等的是
-同一个界面字段**;而且在界面补上之前,**运维直接调 CRUD API 就能配上**,代价只是
-绕过界面的审计与回显(事后从 `audit.change_records` 反查)。
+`atlas#47` 是**判定,不是征询**。Atlas 有两条授权轴,而 `grant` 这个词同时指着它们:
 
-执行时三个易错点。前两个对端点过名:
+| | 产品轴 `product_endpoint_grants` | 租户轴 `model_grants` |
+|---|---|---|
+| 持有者 | **产品** | 租户 |
+| 授的是 | **端点** `endpoint_code` | 模型 `model_id` |
+| 解析入参 | `resolveEndpoint(code)`——**一个字符串** | `taskProfile` + `tenantId` + 应用作用域 |
+| 状态 | **新轴** | **legacy**,有倒计时指标等着删 |
 
-- **`modelId` 是 uuid,不是 `modelCode`**,用 `GET /capability/models` 取;
-- 列表端点**拒绝**未知过滤器而不是忽略(传 `limit` 会收到 `CAPABILITY_UNKNOWN_FILTER`
-  并附可接受清单)——在检索上,**被忽略的过滤器比被拒绝的危险**。
+**「标签路由」这个能力当初只在租户轴上建过。** 所以我方一要 `taskProfile`,就被迫拖上一个
+租户 uuid ——**不是因为授权需要租户,是因为路由功能只在那条轴上有过实现**。而 karda 是
+**产品**,不是租户。
 
-第三个是我方 2026-08-27 自查出来的,**它改变了这件事的形状**:
+这也就是 owner 2026-08-26 那句质疑的答案:**「为什么需要租户 UUID」——不该需要。**
+我方当时是照对端给的指引写的,而指引本身错了(其 `10-http-surface.md` 把 `taskProfile`
+定性成 *per-tenant preference*,并把三个选择器摆成平等三选一,**没有一处说明第三个挂在
+正在退役的轴上**)。对端已认领并在修(其 PR `#48`,加「轴」一列、标 legacy、写清产品该用
+哪行,并登记 TD-052)。
 
-- **`tenantId` 是调用方客户的 org,不是 karda。** 平台数据模型
-  (`data_model_200_schema` §1.3)把 `model_grants.tenant_id` 定为 NOT NULL、真 FK 指向
-  `tenancy.tenants`,而**产品/应用维度是可空的 `application_id`**;§1.3 的「轴语义(关键)」
-  明写授权维持 `tenant(+application)` 轴、**不**改名为 workspace/product。karda 运行时发的
-  也正是 `caller.org`。**所以不存在「karda 的租户 uuid」这个东西**——karda 是 application。
+**产品轴的重指语义还更强**:改 `chat/default` 指向哪个模型,**所有持有它的产品自动跟随,
+一行授权都不用改**;`taskProfile` 重指要逐租户改授权行。端点还自带 `fallback_model_code`
+故障转移链。
 
-**由此,「一次运维写入」这个说法是错的。** 授权键是 `(tenant × model × taskProfile)`,
-而 tenant 是**每一个用 karda 的客户 org**。四条 profile × 每个客户 org = 首个客户 4 次,
-第二个客户再 4 次。这是**开通流程的一部分,不是一次性配置**,而且在第一个客户之前就该
-和 platform / atlas 线对齐——`application_id` 那根轴存在的意义可能正是为了避免这种 N×4,
-但按当前 schema 它可空、不能单独作键。**登记为待澄清,不自行假设。**
+### 11.1.2 karda 侧的改动:一处,已交付
 
-生效判据不需要另做验证:`model_request_rejections_total{code="TASK_PROFILE_NOT_ROUTABLE",
-product="karda"}` 停止增长即是。(这类 404 抛在第一条日志行之前,两张 reqlog 表里都没有。)
+`taskProfile` → `endpointCode`,四个能力对应四个端点码:
 
-### 11.1.2 退路作废:对端建议宁可继续驻留,也不要复用 `karda.ask`
+| 端点码 | 用途 |
+|---|---|
+| `chat/default` | 问答 |
+| `embedding/default` | 向量化 |
+| `rerank/default` | 精排 |
+| `chat/extract` | **知识抽取,与问答分开** |
 
-我方原先记的代价是「抽取与问答同价」。**对端指出代价不止于价**,并建议不要走:
+选择器优先级不变(`modelCode` > `endpointCode` > `taskProfile`,三选一,更窄的赢);
+`404 ENDPOINT_NOT_ROUTABLE` 与退役的 `TASK_PROFILE_NOT_ROUTABLE` **语义一致**,我方现有的
+驻留映射原样照搬——`ENDPOINT_NOT_ROUTABLE` 本来就在 `SUSPEND_CODES` 里,
+`check-atlas-contract` 证明它是已发布且不可重试的码。
 
-同一个标签意味着**路由、计费、可观测三处都分不开抽取与问答**。抽取是批量、长上下文、
-可容忍慢的;问答是交互式、要低延迟的——绑在一个标签上,Atlas 无法给它们指不同的模型。
-将来想给抽取单独换一个便宜模型,**得改 karda 的代码,回到 KD-018 之前**。而
-`taskProfile` 这根轴存在的全部理由,就是让这件事由授权配置决定而不是由消费方代码决定。
+**抽取仍然不与问答共用一个端点**,理由不变、只是换到了正确的轴上:同一个端点让路由、
+计费、可观测三处都分不开批量抽取与交互问答。**两个端点,一次配置,永久解耦。**
 
-**采纳。** 驻留是可恢复的、不写数据、不计费;标签混用是要还的债,还的时候要动我方代码。
-§8 的退路列已改。
+顺带修正一处我方自己的错:env 兜底原来是 `profile > model`,而契约写的是
+`modelCode > endpointCode > taskProfile`——**旧代码的优先级和契约是反的**,已对齐。
 
-### 11.1.3 `#21` 已交付——剩下的活在我方这边
+**`tenantId` 仍然要发**,不要混淆:`/v1/chat` 的必填项里有 `TENANT_ID_REQUIRED`。变的是
+**授权轴**,不是数据面字段——租户仍是计量与归属的主体。
+
+### 11.1.3 `#21` 已交付并已消费
+
 
 对端答复「已交付,请关闭」,而且**已经在生产上跑了三个版本**:
 
@@ -314,16 +319,29 @@ runner 上而 Atlas 在 tailnet,这个比对**在这里跑不了**,而**一个�
 另外**请求形状其实已经发布了**,就在 `requests["/v1/parse"]` 里——顺着我方这条,对端还
 查出自己一处缺陷(`task` 字段运行时强制却没发布,缺失与填错共用一个码),已修。
 
-### 11.1.5 那么这三条该不该关
+### 11.1.5 关于「该不该关」:我上一版的判断被事实推翻了一半
 
-| # | 该不该关 | 为什么 |
-|---|---|---|
-| `#21` | **该关** | 对端点名要求关闭,制品已在生产跑三个版本。剩余的活在我方,不该挂在对端板上 |
-| `#4` | **不关** | 它跟踪的是**结果**(三条标签实际配上),而结果还没发生。对端自己也写明「保持 open 直到配上」 |
-| `#39` | **不关** | 同上,且我方已在生产上发这个标签、每次收 404,是有时间压力的那一条 |
+上一版这里写着:`#21` 该关,`#4` / `#39` **不关**——理由是「它们跟踪的是**结果**(标签实际
+配上),而结果还没发生」。
 
-**「Atlas 侧无待办」不等于「这件事完了」。** 关掉一条尚未兑现的需求,等于把它从唯一
-还看得见它的地方删掉——这正是 §11 开头那条规矩要防的事。
+**那个理由本身没错,结论错了。** 它们不该开着,不是因为结果达成了,而是因为**它们要的东西
+是错的**——继续开着等于继续追一条走错轴的需求。判断一条需求该不该关,除了「结果有没有
+发生」,还有一问我漏了:**这条需求本身还成立吗。**
+
+结果由 `vxture-platform#55` 接管:同一件事、正确的轴、一次运维写入,而且**这次是真的一次**
+——产品轴按产品授权,不按租户,所以不再是 §11.1.1 旧版里那个「每个客户 org 四次」的
+O(租户) 形状。
+
+### 11.1.6 「按租户区分模型」这个方向,对端明确否掉了
+
+将来若出现「不同客户用不同档次模型」的需求,**正确形态不是给租户授权**,而是产品侧选一个
+**业务模式**(成本优先 / 质量优先 / 效率优先),由运营决定每个模式后面挂什么。
+
+理由值得记下来:按租户绑模型会让**租户本身变成路由维度**,每接一个客户改一次配置,
+O(租户);业务模式是 O(模式),三个就够。更要紧的是——**标签应该说明调用方需要什么,
+而租户身份不携带这个意图**。
+
+**所以 `taskProfile` 不会被扩展**,这个概念会以模式的形式落在产品轴上。
 
 ### 11.2 其他对端
 
