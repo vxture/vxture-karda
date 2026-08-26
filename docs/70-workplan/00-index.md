@@ -832,10 +832,12 @@ model behind it has not moved.
 | `#149` | `incr/0007_*`:chunk 记住 `start_offset` / `end_offset`——引用与断言之间的桥 | 已合 |
 | `#150` | `karda.get_evidence`——断言层第一个对外产出,工具面九件 | 已合 |
 | `#152` | `karda.find_entity`——工具面十件,第一件读知识图而非检索机制;并建 `260-external-interfaces` 对外接口登记册 | 已合 |
-| 本轮 | `karda.get_context`——工具面十一件;**并修一个部署级缺陷**:`active_chunk_version` 的列授权只在 `incr/0001` 里,没镜进 `98`,新初始化的环境加工管道无法提交 | 进行中 |
+| `#153` | `karda.get_context`——工具面十一件;**并修一个部署级缺陷**:`active_chunk_version` 的列授权只在 `incr/0001` 里,没镜进 `98`,新初始化的环境加工管道无法提交 | 已合 |
+| 本轮 | 抽取调用:Atlas 客户端 + 单文档编排。**不等授权**(owner 2026-08-26)——未授权返 `404 TASK_PROFILE_NOT_ROUTABLE`,映射到既有的驻留路径,建好并驻留而不是缺席 | 进行中 |
 
-**下一件是 `karda.browse`**。真正被挡住的只有**抽取的模型调用**,等
-`vxture-atlas#39`。
+**下一步两条并行**:`karda.browse`;以及抽取的**调度落位**——设计稿 §11.1 已改判并
+提请裁定(独立一趟,不做管线第六档)。抽取真正产出断言仍等 `vxture-atlas#39`,
+但在那之前每次调用只是驻留,不写库、不计费。
 
 每一次 DDL 变更都过真库并跑探针。**每一轮探针都至少抓到一个 type-check、单测、
 build 三关全放过的缺陷**——这不是巧合,是这三关结构上看不见存储层行为。
