@@ -57,7 +57,7 @@ test("a KB pin posts modelCode and the pin is the resolved space when the echo i
   assert.deepEqual(body.texts, ["a", "b"]);
   assert.equal(body.workspaceId, "ws1");
   assert.equal(body.modelCode, "embedding-3");
-  assert.equal(body.taskProfile, undefined, "a pin sends no profile");
+  assert.equal(body.endpointCode, undefined, "a pin sends no endpoint");
 });
 
 test("no pin = grant-routed (KD-018): sends the fixed karda.embed profile, records the RESOLVED model", async () => {
@@ -65,7 +65,7 @@ test("no pin = grant-routed (KD-018): sends the fixed karda.embed profile, recor
   const out = await c.embed(["a"], null);
   assert.equal(out.modelCode, "embedding-3", "the response echo is the vector-space identity");
   const body = JSON.parse(captured.body ?? "{}");
-  assert.equal(body.taskProfile, "karda.embed");
+  assert.equal(body.endpointCode, "embedding/default");
   assert.equal(body.modelCode, undefined, "grant routing sends no modelCode");
 });
 

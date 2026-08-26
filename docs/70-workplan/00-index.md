@@ -844,7 +844,7 @@ model behind it has not moved.
 **已消费(2026-08-27)**:契约制品落地为 `kb/atlas/contract.snapshot.json` + `kb/atlas/codes.ts`(词表是对端的、策略是我方的),并加 `check-atlas-contract.mjs` 硬门——**把 `#100` 的原缺陷放回去当场报红**。指纹只作溯源、不钉、不与生产比对(CI 到不了 tailnet,而悄悄跑不了的检查比没有更糟)。
 
 **下一步**:`karda.browse` 已交付,工具面十二件。抽取链路已经端到端可跑,真库实测走完
-「驻留 → 恢复 → 产出 → 幂等」全程;只等 `vxture-atlas#39` 的授权把 stub 换成真模型。抽取真正产出断言仍等 `vxture-atlas#39`,
+「驻留 → 恢复 → 产出 → 幂等」全程;只等 `vxture-platform#55` 的产品轴端点授权把 stub 换成真模型。抽取真正产出断言仍等 `vxture-platform#55`,
 但在那之前每次调用只是驻留,不写库、不计费。
 
 每一次 DDL 变更都过真库并跑探针。**每一轮探针都至少抓到一个 type-check、单测、
@@ -886,7 +886,7 @@ ship.
 
 | Item | Waiting on | Since | Blocks MVP? |
 |---|---|---|---|
-| **Atlas 授权(两条,同一个上游)** | **对端 2026-08-26 终态答复:Atlas 侧无待办**,授权链已在其自测栈端到端实测通过(201 + 回显 + 阴性对照)。**这不是工程阻塞,是一次运维写入**——运维调 `POST /capability/tenant-model-grants` 即可,不必等 opera 界面(`vxture-platform#52`)。`modelId` 是 uuid 不是 modelCode;生效判据是 `model_request_rejections_total{code="TASK_PROFILE_NOT_ROUTABLE"}` 停止增长。**退路作废**:对端建议宁可继续驻留也不要复用 `karda.ask`(路由/计费/可观测三处会分不开,将来换模型要改我方代码)。详见 `260` §11.1。原文:`vxture-atlas#4`(ask/embed/rerank)+ `vxture-atlas#39`(extract)。**两条等的是同一件事**:opera 授权页缺 `taskProfile` 输入框(`vxture-platform#52`)——atlas 侧链路是通的。而且**这不是工程阻塞,是一次运维动作**:直接调授权 CRUD API 就能配上,代价只是绕过界面审计。详见 `260` §11.1。原文:atlas 线 —— **`vxture-atlas#39`**(2026-08-26 已开);KD-018 定了模型走授权不走配置,karda 侧仅有 `ask` / `embed` / `rerank` 三个 profile。抽取是**批量**任务,成本/延迟画像与交互式 `ask` 不同,共用一个标签会让 Atlas 运维无法给它配更便宜的模型。无授权时 Atlas 返 `404 TASK_PROFILE_NOT_ROUTABLE`——不会静默降级 | 2026-08-26 | 批次 15 的**抽取运行**;抽取缝与存储不阻塞,可先建并测。**应急退路**:复用 `karda.ask` profile,代价是抽取与问答同价 |
+| **Atlas 端点授权(一条,产品轴)** | **轴已更正(`vxture-atlas#47` 判定 2026-08-26)**:原先追的两条 `taskProfile` 授权走的是**租户轴 `model_grants`**——Atlas 自己标记为 legacy 且有倒计时指标等着删;karda 是**产品**不是租户,应走**产品轴** `product_endpoint_grants` 的 `endpointCode`。`atlas#4` / `#39` 已 CLOSED,由 **`vxture-platform#55`** 接管:给产品 `karda` 授四个端点(`chat/default` / `embedding/default` / `rerank/default` / `chat/extract`),**不需要租户 uuid**,也不再是「每个客户 org 一遍」。karda 侧改动一处,已交付。详见 `260` §11.1 | 2026-08-26 | embed 未授权则**加工管线提交不了,一份文档都检索不到**;其余同前 |
 | Runos capability registration | runos line - `runos#156`; until then the channel can receive but is never sent to | 2026-08-18 | the Runos channel only; the direct S2S channel is unaffected |
 | Five plan tiers, and therefore all of C2 | **owner ruled 2026-08-25 (KD-207)**; now with the platform line - `vxture/vxture-platform#371` | 2026-08-25 | **yes - the whole commercial surface**, but no longer ours |
 | Arda content channel | arda line - 5 questions | 2026-07-22 | **no** - one connector, not a dependency |

@@ -157,7 +157,7 @@ deliberately not carried over.
   `Reranker` port with the existing degrade contract. Parked documents resume via
   `POST /api/kb/processing/tick {"resume": true}`. Activation is configuration,
   not code: `ATLAS_EMBED_MODEL` (+ per-KB `embedding_model`) and
-  `ATLAS_RERANK_MODEL|TASK_PROFILE` on the host, plus Atlas-side grants for the
+  `ATLAS_RERANK_MODEL|ENDPOINT` on the host, plus Atlas-side grants for the
   chosen models (A1 currently serves Zhipu-family embedding models only). The
   A2 deep-parse path stays permanent-fail-for-now by choice (quality enhancer,
   KD-101), tracked in the workplan rather than here.
