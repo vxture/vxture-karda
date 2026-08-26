@@ -235,6 +235,10 @@ model KnowledgeBase {
   processingTasks    ProcessingTask[]
   supplyCallAssets   SupplyCallAsset[]
 
+  assertions Assertion[]
+
+  entities   Entity[]
+
   @@index([ownerType, ownerSub], map: "idx_kb_owner")
   @@map("knowledge_base")
   @@schema("karda_kb")
@@ -323,6 +327,8 @@ model Document {
   processingTemplate ProcessingTemplate? @relation(fields: [processingTemplateId], references: [id], map: "fk_document_processing_template")
   chunks             Chunk[]
   processingTasks    ProcessingTask[]
+
+  spans Span[]
 
   @@index([kbId, contentState], map: "idx_document_kb_state")
   @@map("document")
@@ -446,6 +452,8 @@ model ProcessingTask {
   // (WHERE state IN ('queued','running')) and Prisma cannot express the
   // predicate. The DDL is the authority; declaring it here without the WHERE
   // would be a different constraint, so it is deliberately absent.
+  assertions Assertion[]
+
   @@index([kbId, state], map: "idx_processing_task_kb_state")
   @@index([state, queuedAt], map: "idx_processing_task_state_queued")
   @@index([kbId, finishedAt], map: "idx_processing_task_kb_finished")
@@ -601,5 +609,154 @@ model EvalRunResult {
   @@id([runId, questionId], map: "pk_eval_run_result")
   @@index([runId], map: "idx_eval_run_result_run")
   @@map("eval_run_result")
+  @@schema("karda_kb")
+}
+
+// --- assertion layer (140-assertion-model, batch 15) -------------------------
+//
+// v1's model is a CARRIER model - where content lives and how it is recalled.
+// These five say what it MEANS. Structure authority is the DDL; this is only a
+// client-generation source and the lockstep guardrail holds them equal.
+
+model Assertion {
+  id      String  @id @default(uuid()) @db.Uuid
+  kbId    String  @map("kb_id") @db.Uuid
+  /// fact | claim | event | procedure | rule. One table, not five: their field
+  /// needs are identical and the difference is semantic.
+  kind    String  @db.VarChar(32)
+  /// What the assertion is ABOUT. Conflict candidates are clustered by this -
+  /// two assertions can only contradict if they concern the same subject.
+  subject String? @db.VarChar(512)
+  statement String
+  /// WHO SAID IT: the authority inside the source. NEVER the uploader, and
+  /// never the extractor - see `extractedBy`.
+  assertedBy String?   @map("asserted_by") @db.VarChar(512)
+  asOf       DateTime? @map("as_of") @db.Timestamptz()
+  /// NULL means the source declared no expiry, not that it never expires.
+  validUntil DateTime? @map("valid_until") @db.Timestamptz()
+  /// WHO PULLED IT OUT: process accountability. Merging this with `assertedBy`
+  /// would make the product tell an agent that karda said it.
+  extractedBy   String? @map("extracted_by") @db.VarChar(128)
+  extractionRun String? @map("extraction_run") @db.Uuid
+  /// Machine confidence at extraction; NULL for an authored assertion. KD-210:
+  /// it ranks the assertion only until a person confirms it, then stops scoring
+  /// - but is never cleared, because it is how the extractor is judged.
+  confidence Decimal? @db.Decimal(4, 3)
+
+  contentState  String    @default("draft") @map("content_state") @db.VarChar(32)
+  failureReason String?   @map("failure_reason")
+  failedAt      DateTime? @map("failed_at") @db.Timestamptz()
+
+  /// KD-209: a source document's verification is a signal that may be
+  /// CONSULTED, never a state that is inherited. There is deliberately no
+  /// `sourceVerified` field - it would be a snapshot that goes stale.
+  verificationState String    @default("unverified") @map("verification_state") @db.VarChar(32)
+  verifier          String?   @db.VarChar(128)
+  verifiedAt        DateTime? @map("verified_at") @db.Timestamptz()
+  expiresAt         DateTime? @map("expires_at") @db.Timestamptz()
+
+  /// Set when a conflict is adjudicated and this assertion lost. The loser is
+  /// kept: "what did we believe, and what did it replace" is the question this
+  /// column exists to answer.
+  supersededById String? @map("superseded_by") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+
+  kb           KnowledgeBase   @relation(fields: [kbId], references: [id], onDelete: Cascade)
+  extraction   ProcessingTask? @relation(fields: [extractionRun], references: [id], onDelete: SetNull)
+  supersededBy Assertion?      @relation("AssertionSupersedes", fields: [supersededById], references: [id], onDelete: SetNull)
+  supersedes   Assertion[]     @relation("AssertionSupersedes")
+
+  evidence   Evidence[]         @relation("EvidenceOfAssertion")
+  supporting Evidence[]         @relation("EvidenceSupports")
+  mentions   AssertionMention[]
+
+  @@index([kbId, contentState], map: "idx_assertion_kb_content")
+  @@index([kbId, verificationState], map: "idx_assertion_kb_verification")
+  @@index([kbId, subject], map: "idx_assertion_kb_subject")
+  @@map("assertion")
+  @@schema("karda_kb")
+}
+
+/// A byte range in ONE VERSION of a document - the third of the three questions
+/// assertion-level provenance has to answer ("which version"). A chunk is reborn
+/// on every rebuild; a span is anchored to the version it was read from.
+model Span {
+  id              String   @id @default(uuid()) @db.Uuid
+  documentId      String   @map("document_id") @db.Uuid
+  documentVersion Int      @map("document_version")
+  startOffset     Int      @map("start_offset")
+  endOffset       Int      @map("end_offset")
+  /// Stored redundantly on purpose: after a rebuild the offsets may not resolve
+  /// against the current text, and a citation that cannot show what it quoted is
+  /// not a citation.
+  excerpt         String
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  document Document   @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  evidence Evidence[]
+
+  @@index([documentId, documentVersion], map: "idx_span_document_version")
+  @@map("span")
+  @@schema("karda_kb")
+}
+
+/// An EDGE, not a column. One assertion can rest on several grounds, one span
+/// can support several assertions, and grounds can themselves be assertions.
+/// `stance = contradicts` is where conflict detection lands.
+model Evidence {
+  id          String   @id @default(uuid()) @db.Uuid
+  assertionId String   @map("assertion_id") @db.Uuid
+  spanId      String?  @map("span_id") @db.Uuid
+  supportsId  String?  @map("supports_id") @db.Uuid
+  stance      String   @default("supports") @db.VarChar(16)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  assertion Assertion  @relation("EvidenceOfAssertion", fields: [assertionId], references: [id], onDelete: Cascade)
+  span      Span?      @relation(fields: [spanId], references: [id], onDelete: Cascade)
+  supports  Assertion? @relation("EvidenceSupports", fields: [supportsId], references: [id], onDelete: Cascade)
+
+  @@index([assertionId], map: "idx_evidence_assertion")
+  @@index([spanId], map: "idx_evidence_span")
+  @@map("evidence")
+  @@schema("karda_kb")
+}
+
+/// The library's registry of business objects. Scoped to ONE library on
+/// purpose: cross-library entity resolution is an ontology problem and belongs
+/// to the Ontos plane, not here.
+model Entity {
+  id        String   @id @default(uuid()) @db.Uuid
+  kbId      String   @map("kb_id") @db.Uuid
+  name      String   @db.VarChar(512)
+  kind      String   @default("thing") @db.VarChar(64)
+  aliases   Json     @default("[]")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+
+  kb       KnowledgeBase      @relation(fields: [kbId], references: [id], onDelete: Cascade)
+  mentions AssertionMention[]
+
+  @@unique([kbId, kind, name], map: "uidx_entity_kb_kind_name")
+  @@map("entity")
+  @@schema("karda_kb")
+}
+
+/// Which entities an assertion names, and in what role. The whole row is the
+/// key: the same assertion naming the same entity in the same role twice is a
+/// duplicate, and the key says so.
+model AssertionMention {
+  assertionId String   @map("assertion_id") @db.Uuid
+  entityId    String   @map("entity_id") @db.Uuid
+  role        String   @default("mentions") @db.VarChar(32)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  assertion Assertion @relation(fields: [assertionId], references: [id], onDelete: Cascade)
+  entity    Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@id([assertionId, entityId, role])
+  @@index([entityId], map: "idx_mention_entity")
+  @@map("assertion_mention")
   @@schema("karda_kb")
 }
