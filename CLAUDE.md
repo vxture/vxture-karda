@@ -131,6 +131,15 @@ lands on main is a new SHA, so it gets its own gate run); it does NOT deploy.
   unexpected runs the full gate. `check-workflows.mjs` now refuses a path filter
   on any workflow carrying a required check; `codeql.yml` may use one because
   `analyze` is not required.
+- `check-atlas-contract.mjs` refuses any branch on an Atlas error code Atlas does
+  not publish, checked against a vendored snapshot of their
+  `/.well-known/vxture-contract` artifact (`kb/atlas/contract.snapshot.json`).
+  This is the fix for `#100`, where karda branched on `QUOTA_EXHAUSTED` - a code
+  that has never existed - and the dead branch type-checked and passed review.
+  The vocabulary is Atlas's and the POLICY (which codes park) is ours; the check
+  guards the seam between them. The snapshot fingerprint is provenance, NOT a
+  pin, and is deliberately not compared against production: CI cannot reach the
+  tailnet, and a check that silently cannot run is worse than none.
 - `quality-gate` aggregates the static checks: `git diff --check`, the docs
   numbering guardrail (`node scripts/guardrails/check-docs-numbering.mjs --strict`),
   and the data-architecture guardrail (DDL <-> Prisma lockstep).
