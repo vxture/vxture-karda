@@ -20,6 +20,7 @@ import type { RawAssertion } from "../assertions/extract";
 import { QuotaError, UnavailableError } from "../processing/orchestrator";
 import { AtlasApiError } from "./client";
 import { extractSelection } from "./selection";
+import { shouldSuspend } from "./codes";
 
 /** A slice of a document's canonical text, and where it starts in that text. */
 export interface TextWindow {
@@ -39,20 +40,6 @@ export interface ExtractionClient {
   extract(req: ExtractionRequest): Promise<RawAssertion[]>;
 }
 
-/**
- * Codes where waiting cannot help but a grant or an operator can. Identical set
- * to the embed client's, and deliberately so: one taxonomy for all Atlas
- * capabilities means a capability gap always parks and never fails, whichever
- * capability it is.
- */
-const SUSPEND_CODES = new Set([
-  "QUOTA_EXCEEDED",
-  "NOT_ENTITLED",
-  "MODEL_NOT_IMPLEMENTED",
-  "MODEL_NOT_ROUTABLE",
-  "ENDPOINT_NOT_ROUTABLE",
-  "TASK_PROFILE_NOT_ROUTABLE",
-]);
 
 /**
  * Map an Atlas failure onto the processing taxonomy.
@@ -70,7 +57,7 @@ const SUSPEND_CODES = new Set([
 export function mapExtractError(e: unknown): unknown {
   if (e instanceof AtlasApiError) {
     if (e.code === "QUOTA_EXCEEDED") return new QuotaError(`atlas extract: ${e.code}`);
-    if (!e.retryable && SUSPEND_CODES.has(e.code)) {
+    if (shouldSuspend(e.code, e.retryable)) {
       return new UnavailableError(`atlas extract: ${e.code}: ${e.message}`);
     }
   }

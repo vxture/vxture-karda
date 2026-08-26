@@ -21,24 +21,17 @@
 import { QuotaError, UnavailableError, type EmbeddingClient, type EmbedResult } from "../processing/orchestrator";
 import { AtlasApiError, atlasPost, type AtlasClientCore, type AtlasContext } from "./client";
 import { embedSelection } from "./selection";
+import { shouldSuspend } from "./codes";
 
 export const DEFAULT_ATLAS_EMBED_PATH = "/v1/embed";
 
 /** Codes where waiting cannot help but an operator/capability change can: park
  *  the work (suspend) rather than burn retries or fail it. */
-const SUSPEND_CODES = new Set([
-  "QUOTA_EXCEEDED",
-  "NOT_ENTITLED",
-  "MODEL_NOT_IMPLEMENTED",
-  "MODEL_NOT_ROUTABLE",
-  "ENDPOINT_NOT_ROUTABLE",
-  "TASK_PROFILE_NOT_ROUTABLE",
-]);
 
 export function mapEmbedError(e: unknown): unknown {
   if (e instanceof AtlasApiError) {
     if (e.code === "QUOTA_EXCEEDED") return new QuotaError(`atlas embed: ${e.code}`);
-    if (!e.retryable && SUSPEND_CODES.has(e.code)) {
+    if (shouldSuspend(e.code, e.retryable)) {
       return new UnavailableError(`atlas embed: ${e.code}: ${e.message}`);
     }
     // retryable (RATE_LIMITED / PROVIDER_UNAVAILABLE / 5xx) and validation 4xx
