@@ -23,6 +23,10 @@ export interface ToolBackends {
   // dispatch stays free of the chain's construction details.
   search?(caller: CallerContext, args: Record<string, unknown>): Promise<unknown>;
   ask?(caller: CallerContext, args: Record<string, unknown>): Promise<unknown>;
+  // get_evidence always answers 200 with a status inside the body - including
+  // for a citation the caller cannot see. A 403 or 404 there would make the
+  // tool an oracle for probing which chunk ids exist in other libraries.
+  getEvidence?(caller: CallerContext, citationId: string): Promise<unknown>;
   // write_document returns a full DispatchResult (it has real 4xx cases:
   // not-found library, duplicate, bad args), so the backend owns the status, not
   // dispatch. Injected by the route (TD-009 track 9a).
@@ -84,6 +88,15 @@ export async function dispatchTool(
       if (!backends.ask) return notImplemented(name);
       const result = await backends.ask(caller, args);
       return { status: 200, body: { result: result as Record<string, unknown> } };
+    }
+    case "karda.get_evidence": {
+      if (!backends.getEvidence) return notImplemented(name);
+      const citationId = typeof args.citation_id === "string" ? args.citation_id.trim() : "";
+      if (!citationId) {
+        return { status: 400, body: { error: "invalid_argument", detail: "citation_id is required" } };
+      }
+      const result = await backends.getEvidence(caller, citationId);
+      return { status: 200, body: { result: result as unknown as Record<string, unknown> } };
     }
     // write_document (9a) and create_entry (9b) are wired: each captures content
     // and owns its status (both have real 4xx cases). write_document enqueues on

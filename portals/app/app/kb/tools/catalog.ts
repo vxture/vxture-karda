@@ -41,6 +41,18 @@ export const TOOLS: ToolDescriptor[] = [
     authz: { asset_types: ["knowledge_base"] },
   },
   {
+    name: "karda.get_evidence",
+    summary: "What a citation rests on: the assertions it covers, who asserted them, when, and from which document version.",
+    mode: "obo_or_service",
+    // NOT metered, and that is a product decision rather than an oversight.
+    // This is the follow-up an agent makes to CHECK an answer it was already
+    // charged for. Billing the check would put a price on verification - the
+    // one behaviour a knowledge platform should be making free.
+    metering: { kind: "none" },
+    input: ["citation_id"],
+    authz: { asset_types: ["knowledge_base"] },
+  },
+  {
     name: "karda.list_kbs",
     summary: "List visible / attached libraries with tier and governance summary.",
     mode: "obo_or_service",
