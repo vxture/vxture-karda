@@ -441,12 +441,32 @@ CREATE TABLE IF NOT EXISTS karda_kb.chunk (
   ordinal      INTEGER NOT NULL,
   text         TEXT NOT NULL,
   token_count  INTEGER,
+  -- Where this chunk came from in the document's CANONICAL text (line endings
+  -- normalised, nothing else - kb/processing/ir.ts). The assertion layer anchors
+  -- its spans to the same offset space, which is what turns "which assertions
+  -- does this citation rest on" into a range intersection instead of a guess.
+  -- NULLABLE: chunks written before incr/0007 have no offsets and cannot get
+  -- them without a reparse. NULL means unknown, never 0.
+  start_offset INTEGER,
+  end_offset   INTEGER,
   vector_ref   VARCHAR(128),
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT fk_chunk_document FOREIGN KEY (document_id)
     REFERENCES karda_kb.document (id) ON DELETE CASCADE,
-  CONSTRAINT uidx_chunk_document_version_ordinal UNIQUE (document_id, version, ordinal)
+  CONSTRAINT uidx_chunk_document_version_ordinal UNIQUE (document_id, version, ordinal),
+  -- Both or neither, and ordered: a half-populated pair is a range that cannot
+  -- be intersected, which is worse than no range at all.
+  -- Three-valued logic, deliberately explicit: with start = 10 and end = NULL
+  -- the naive form evaluates to NULL, and a CHECK constraint PASSES on NULL.
+  -- A live probe caught half a range being accepted by a constraint whose own
+  -- comment said "both or neither".
+  CONSTRAINT chk_chunk_source_range CHECK (
+    (start_offset IS NULL) = (end_offset IS NULL)
+    AND (start_offset IS NULL OR (start_offset >= 0 AND end_offset > start_offset))
+  )
 );
+CREATE INDEX IF NOT EXISTS idx_chunk_source_range
+  ON karda_kb.chunk (document_id, version, start_offset);
 -- idx_chunk_active references `version`. On a fresh DB the column exists (just
 -- created above) so the index is built here, keeping baseline a complete
 -- provision. On a LIVE pre-versioning table the CREATE TABLE above is a no-op

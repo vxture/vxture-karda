@@ -4,7 +4,7 @@
 //
 // Chunking is deterministic and model-free, so it is fully implemented and
 // tested - the Atlas dependency is the NEXT stage (embed), not this one.
-import type { DocumentIR, Element } from "./ir";
+import type { DocumentIR, Element, SourceRange } from "./ir";
 
 export interface ChunkParams {
   targetTokens: number; // KD-007: 512
@@ -16,10 +16,22 @@ export const DEFAULT_CHUNK_PARAMS: ChunkParams = { targetTokens: 512, maxTokens:
 
 export interface Chunk {
   ordinal: number;
-  /** The search text: contextual prefix (section path) + element content. */
+  /** The search text: contextual prefix (section path) + element content. NOT a
+   *  slice of the canonical text - the prefix is synthesised and the element
+   *  content is normalised. `sourceRange` is what points at the document. */
   text: string;
   /** Where this came from - fed into Chunk.locator for citation provenance. */
   locator: { ordinal: number; page?: number };
+  /**
+   * The half-open range of the CANONICAL text this chunk was built from.
+   *
+   * This is the bridge the assertion layer needs: an assertion's span indexes
+   * into the same offset space, so "which assertions does this citation rest
+   * on" becomes a range intersection rather than a guess. Without it the only
+   * honest answer would be document-level - and telling an agent "here are 400
+   * assertions from this 200-page manual" answers nothing it asked.
+   */
+  sourceRange: SourceRange;
   tokenCount: number;
 }
 
@@ -61,6 +73,10 @@ export function chunkGeneral(ir: DocumentIR, params: ChunkParams = DEFAULT_CHUNK
       ordinal: ordinal++,
       text,
       locator: { ordinal: buf[0].locator.ordinal, page: buf[0].locator.page },
+      // First element's start to last element's end. The gap between elements
+      // is included, which is correct: this chunk was built from that stretch
+      // of the document, blank lines and all.
+      sourceRange: { start: buf[0].range.start, end: buf[buf.length - 1].range.end },
       tokenCount: estimateTokens(text),
     });
     buf = [];
@@ -81,6 +97,13 @@ export function chunkGeneral(ir: DocumentIR, params: ChunkParams = DEFAULT_CHUNK
           ordinal: ordinal++,
           text,
           locator: { ordinal: el.locator.ordinal, page: el.locator.page },
+          // Every piece carries the WHOLE element's range, deliberately.
+          // `splitOversized` cuts the element's NORMALISED text, and a
+          // normalised offset cannot be mapped back to the canonical text - a
+          // paragraph's lines were joined with single spaces that the source may
+          // not have had. Claiming a sub-range here would point at the wrong
+          // bytes; claiming the element's range is coarser and true.
+          sourceRange: { start: el.range.start, end: el.range.end },
           tokenCount: estimateTokens(text),
         });
       }

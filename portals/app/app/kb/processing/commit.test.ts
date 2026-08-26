@@ -7,6 +7,7 @@ const chunk = (ordinal: number, text: string): CommittedChunk => ({
   ordinal,
   text,
   locator: { ordinal },
+  sourceRange: { start: ordinal * 100, end: ordinal * 100 + text.length },
   tokenCount: text.split(/\s+/).length,
   vector: null,
 });
