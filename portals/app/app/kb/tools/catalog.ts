@@ -80,6 +80,17 @@ export const TOOLS: ToolDescriptor[] = [
     authz: { asset_types: ["knowledge_base"] },
   },
   {
+    name: "karda.browse",
+    summary: "What a library holds: its assertions or its entities, paged.",
+    mode: "obo_or_service",
+    // Metered per call, like search and find_entity. It reads the corpus and
+    // returns content; that it takes no query does not make it cheaper. If
+    // anything the opposite - browse is the one tool a caller can loop.
+    metering: { kind: "per_call", metric: "karda.browse" },
+    input: ["kb_id", "target", "page_size", "cursor"],
+    authz: { asset_types: ["knowledge_base"] },
+  },
+  {
     name: "karda.list_kbs",
     summary: "List visible / attached libraries with tier and governance summary.",
     mode: "obo_or_service",

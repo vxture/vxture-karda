@@ -841,7 +841,7 @@ model behind it has not moved.
 
 **新的我方待办(对端已交付)**:`vxture-atlas#21` 要的契约制品**已在生产跑了三个版本**——`GET /.well-known/vxture-contract` 带 `errorCodes`(v0.5.0)与 `requests`(v0.6.0),用我方现有 S2S 令牌就能拉。改为消费这份制品,不再人工抄码表(`#100` 那次 `QUOTA_EXHAUSTED` / `QUOTA_EXCEEDED` 就是人工抄的产物)。**先不要钉指纹**:对端有 PR 待合,合后从 `c1-e132a38fae1a` 移到 `c1-d2ecccf5b20d`。
 
-**下一步**:`karda.browse`。抽取链路已经端到端可跑,真库实测走完
+**下一步**:消费 Atlas 契约制品(见上)。`karda.browse` 已交付,工具面十二件。抽取链路已经端到端可跑,真库实测走完
 「驻留 → 恢复 → 产出 → 幂等」全程;只等 `vxture-atlas#39` 的授权把 stub 换成真模型。抽取真正产出断言仍等 `vxture-atlas#39`,
 但在那之前每次调用只是驻留,不写库、不计费。
 

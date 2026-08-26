@@ -12,7 +12,7 @@ import { callerFromClaims, rejectsInternalAuthHeader, type S2sClaims } from "./s
 
 // --- catalog -----------------------------------------------------------------
 
-test("the tool surface is exactly these eleven karda.* tools", () => {
+test("the tool surface is exactly these twelve karda.* tools", () => {
   // The descriptor list IS the published contract (/.well-known/vxture-tools),
   // so adding to it has to be a deliberate act rather than a side effect. This
   // test is the thing that makes it one.
@@ -26,12 +26,22 @@ test("the tool surface is exactly these eleven karda.* tools", () => {
       "karda.detach_kb",
       "karda.find_entity",
       "karda.get_context",
+      "karda.browse",
       "karda.get_evidence",
       "karda.list_kbs",
       "karda.search",
       "karda.write_document",
     ].sort(),
   );
+});
+
+test("browse IS metered - taking no query does not make it cheaper", () => {
+  // It reads the corpus and returns content. If anything it deserves metering
+  // more than the others: it is the one tool a caller can simply loop.
+  const b = TOOLS.find((x) => x.name === "karda.browse");
+  assert.ok(b);
+  assert.equal(b.metering.kind, "per_call");
+  assert.equal(b.mode, "obo_or_service");
 });
 
 test("get_context is NOT metered - it reads around a citation already paid for", () => {

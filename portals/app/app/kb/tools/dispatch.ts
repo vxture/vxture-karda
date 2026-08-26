@@ -32,6 +32,7 @@ export interface ToolBackends {
   // entity registries of libraries the caller has no access to.
   findEntity?(caller: CallerContext, name: string): Promise<unknown>;
   getContext?(caller: CallerContext, citationId: string, radius: unknown): Promise<unknown>;
+  browse?(caller: CallerContext, kbId: string, target: string, pageSize: unknown, cursor: unknown): Promise<unknown>;
   // write_document returns a full DispatchResult (it has real 4xx cases:
   // not-found library, duplicate, bad args), so the backend owns the status, not
   // dispatch. Injected by the route (TD-009 track 9a).
@@ -102,6 +103,22 @@ export async function dispatchTool(
       }
       const result = await backends.findEntity(caller, entityName);
       return { status: 200, body: { result: result as unknown as Record<string, unknown> } };
+    }
+    case "karda.browse": {
+      if (!backends.browse) return notImplemented(name);
+      const kbId = typeof args.kb_id === "string" ? args.kb_id.trim() : "";
+      if (!kbId) {
+        return { status: 400, body: { error: "invalid_argument", detail: "kb_id is required" } };
+      }
+      // An unknown target is a 400 rather than a silent fallback to assertions:
+      // a caller that asked for entities and got assertions would read the
+      // answer as "this library has no entities".
+      const target = typeof args.target === "string" ? args.target.trim() : "assertions";
+      if (target !== "assertions" && target !== "entities") {
+        return { status: 400, body: { error: "invalid_argument", detail: "target must be assertions or entities" } };
+      }
+      const pageResult = await backends.browse(caller, kbId, target, args.page_size, args.cursor);
+      return { status: 200, body: { result: pageResult as unknown as Record<string, unknown> } };
     }
     case "karda.get_context": {
       if (!backends.getContext) return notImplemented(name);
