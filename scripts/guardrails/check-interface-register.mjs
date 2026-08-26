@@ -56,12 +56,42 @@ function registerTools() {
   );
 }
 
+
+/**
+ * Every row marked 待对端 ("waiting on the counterpart") must name an issue.
+ *
+ * The register's own status vocabulary says so, and the rule earns its keep:
+ * organising the upstream asks turned up one that had been "tracked" for over a
+ * week in a workplan table and had NEVER been filed on the other side's repo.
+ * A request nobody can see is not a request - it is a note to ourselves that
+ * reads like one, which is worse than no entry at all, because it makes the
+ * board look complete.
+ *
+ * Without a number, the honest status is 未实现.
+ */
+function pendingWithoutIssue() {
+  const md = readFileSync(REGISTER, "utf8");
+  const problems = [];
+  md.split("\n").forEach((line, i) => {
+    if (!line.startsWith("|") || !line.includes("待对端")) return;
+    // A row that DEFINES the marker (section 2's vocabulary) or REFERS to it
+    // (section 10's linkage registry, where it is quoted with guillemets) is not
+    // a row that CARRIES it. Only a status assignment needs an issue number.
+    if (line.startsWith("| **待对端**")) return;
+    if (line.includes("「待对端」")) return;
+    if (/#\d+/.test(line)) return;
+    problems.push(`${REGISTER}:${i + 1}: a 待对端 row names no issue - file it, or mark it 未实现`);
+  });
+  return problems;
+}
+
 function fail(problems) {
   for (const p of problems) console.error(`[interface-register] ${p}`);
   console.error(
-    "[interface-register] The tool surface and its register disagree. Update " +
-      "docs/30-design/260-external-interfaces.md section 3 - including the per-channel " +
-      "status columns, which are the reason the register exists.",
+    "[interface-register] docs/30-design/260-external-interfaces.md is out of step. " +
+      "For a tool mismatch, update section 3 including the per-channel status columns - " +
+      "they are the reason the register exists. For a 待对端 row, file the issue on the " +
+      "counterpart's repo and cite it, or mark the row 未实现.",
   );
   process.exit(strict ? 1 : 0);
 }
@@ -74,7 +104,8 @@ if (inCatalog.size === 0) fail(["catalog.ts: parsed zero tools - the checker its
 const problems = [
   ...[...inCatalog].filter((t) => !inRegister.has(t)).map((t) => `${t} ships but has no row in the register`),
   ...[...inRegister].filter((t) => !inCatalog.has(t)).map((t) => `${t} is listed in the register but no longer ships`),
+  ...pendingWithoutIssue(),
 ];
 
 if (problems.length > 0) fail(problems);
-console.log(`[interface-register] OK - ${inCatalog.size} karda.* tools, register in step.`);
+console.log(`[interface-register] OK - ${inCatalog.size} karda.* tools, register in step; every 待对端 names an issue.`);

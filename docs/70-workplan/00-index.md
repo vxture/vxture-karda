@@ -839,6 +839,8 @@ model behind it has not moved.
 | `#155` | DS 升 9.0.7 | 已合 |
 | 本轮 | **KD-211 落地**:`incr/0008` 任务种类 + 抽取 pass + 独立 tick;`failure_class` 分出 `unavailable`,驻留不再被谎报成「配额」 | 进行中 |
 
+**新的我方待办(对端已交付)**:`vxture-atlas#21` 要的契约制品**已在生产跑了三个版本**——`GET /.well-known/vxture-contract` 带 `errorCodes`(v0.5.0)与 `requests`(v0.6.0),用我方现有 S2S 令牌就能拉。改为消费这份制品,不再人工抄码表(`#100` 那次 `QUOTA_EXHAUSTED` / `QUOTA_EXCEEDED` 就是人工抄的产物)。**先不要钉指纹**:对端有 PR 待合,合后从 `c1-e132a38fae1a` 移到 `c1-d2ecccf5b20d`。
+
 **下一步**:`karda.browse`。抽取链路已经端到端可跑,真库实测走完
 「驻留 → 恢复 → 产出 → 幂等」全程;只等 `vxture-atlas#39` 的授权把 stub 换成真模型。抽取真正产出断言仍等 `vxture-atlas#39`,
 但在那之前每次调用只是驻留,不写库、不计费。
@@ -882,11 +884,11 @@ ship.
 
 | Item | Waiting on | Since | Blocks MVP? |
 |---|---|---|---|
-| **Atlas 授权:`karda.extract` taskProfile** | atlas 线 —— **`vxture-atlas#39`**(2026-08-26 已开);KD-018 定了模型走授权不走配置,karda 侧仅有 `ask` / `embed` / `rerank` 三个 profile。抽取是**批量**任务,成本/延迟画像与交互式 `ask` 不同,共用一个标签会让 Atlas 运维无法给它配更便宜的模型。无授权时 Atlas 返 `404 TASK_PROFILE_NOT_ROUTABLE`——不会静默降级 | 2026-08-26 | 批次 15 的**抽取运行**;抽取缝与存储不阻塞,可先建并测。**应急退路**:复用 `karda.ask` profile,代价是抽取与问答同价 |
+| **Atlas 授权(两条,同一个上游)** | **对端 2026-08-26 终态答复:Atlas 侧无待办**,授权链已在其自测栈端到端实测通过(201 + 回显 + 阴性对照)。**这不是工程阻塞,是一次运维写入**——运维调 `POST /capability/tenant-model-grants` 即可,不必等 opera 界面(`vxture-platform#52`)。`modelId` 是 uuid 不是 modelCode;生效判据是 `model_request_rejections_total{code="TASK_PROFILE_NOT_ROUTABLE"}` 停止增长。**退路作废**:对端建议宁可继续驻留也不要复用 `karda.ask`(路由/计费/可观测三处会分不开,将来换模型要改我方代码)。详见 `260` §11.1。原文:`vxture-atlas#4`(ask/embed/rerank)+ `vxture-atlas#39`(extract)。**两条等的是同一件事**:opera 授权页缺 `taskProfile` 输入框(`vxture-platform#52`)——atlas 侧链路是通的。而且**这不是工程阻塞,是一次运维动作**:直接调授权 CRUD API 就能配上,代价只是绕过界面审计。详见 `260` §11.1。原文:atlas 线 —— **`vxture-atlas#39`**(2026-08-26 已开);KD-018 定了模型走授权不走配置,karda 侧仅有 `ask` / `embed` / `rerank` 三个 profile。抽取是**批量**任务,成本/延迟画像与交互式 `ask` 不同,共用一个标签会让 Atlas 运维无法给它配更便宜的模型。无授权时 Atlas 返 `404 TASK_PROFILE_NOT_ROUTABLE`——不会静默降级 | 2026-08-26 | 批次 15 的**抽取运行**;抽取缝与存储不阻塞,可先建并测。**应急退路**:复用 `karda.ask` profile,代价是抽取与问答同价 |
 | Runos capability registration | runos line - `runos#156`; until then the channel can receive but is never sent to | 2026-08-18 | the Runos channel only; the direct S2S channel is unaffected |
 | Five plan tiers, and therefore all of C2 | **owner ruled 2026-08-25 (KD-207)**; now with the platform line - `vxture/vxture-platform#371` | 2026-08-25 | **yes - the whole commercial surface**, but no longer ours |
 | Arda content channel | arda line - 5 questions | 2026-07-22 | **no** - one connector, not a dependency |
-| Deep parsing (Atlas A2) | atlas line - 4 request-side questions | 2026-08-18 | **no** - scanned/complex layouts stay permanent-fail for MVP |
+| Deep parsing (Atlas A2) | **nobody - the four request-side questions were never filed on the atlas repo** (found 2026-08-26 while consolidating the asks into `260` §11; `#102` is atlas telling US the RESPONSE shape changed, not our question). Status is 未实现, not 待对端 | 2026-08-18 | **no** - scanned/complex layouts stay permanent-fail for MVP |
 
 Only one of these blocks the product. It **was** ours; as of 2026-08-25 it is
 not: owner ruled KD-207, the matrix landed in `entitlement/capability.ts` with
