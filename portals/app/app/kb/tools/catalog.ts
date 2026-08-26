@@ -53,6 +53,19 @@ export const TOOLS: ToolDescriptor[] = [
     authz: { asset_types: ["knowledge_base"] },
   },
   {
+    name: "karda.find_entity",
+    summary: "What the corpus knows about a thing: the entity, and the assertions naming it with their sources.",
+    mode: "obo_or_service",
+    // Metered per call, unlike get_evidence. The distinction is what the call
+    // IS: get_evidence checks an answer the caller already paid for, and
+    // charging for a check would put a price on verification. This one is a
+    // fresh question against the corpus - the same kind of work search does,
+    // and priced the same way.
+    metering: { kind: "per_call", metric: "karda.find_entity" },
+    input: ["name", "kb_ids"],
+    authz: { asset_types: ["knowledge_base"] },
+  },
+  {
     name: "karda.list_kbs",
     summary: "List visible / attached libraries with tier and governance summary.",
     mode: "obo_or_service",

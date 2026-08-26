@@ -12,7 +12,7 @@ import { callerFromClaims, rejectsInternalAuthHeader, type S2sClaims } from "./s
 
 // --- catalog -----------------------------------------------------------------
 
-test("the tool surface is exactly these nine karda.* tools", () => {
+test("the tool surface is exactly these ten karda.* tools", () => {
   // The descriptor list IS the published contract (/.well-known/vxture-tools),
   // so adding to it has to be a deliberate act rather than a side effect. This
   // test is the thing that makes it one.
@@ -24,12 +24,23 @@ test("the tool surface is exactly these nine karda.* tools", () => {
       "karda.create_entry",
       "karda.create_kb",
       "karda.detach_kb",
+      "karda.find_entity",
       "karda.get_evidence",
       "karda.list_kbs",
       "karda.search",
       "karda.write_document",
     ].sort(),
   );
+});
+
+test("find_entity IS metered, get_evidence is not - the difference is what the call is", () => {
+  // get_evidence checks an answer the caller already paid for; charging for a
+  // check would put a price on verification. find_entity is a fresh question
+  // against the corpus - the same work search does, priced the same way.
+  const find = TOOLS.find((x) => x.name === "karda.find_entity");
+  assert.ok(find);
+  assert.equal(find.metering.kind, "per_call");
+  assert.equal(find.mode, "obo_or_service");
 });
 
 test("get_evidence is NOT metered - checking an answer must not carry a price", () => {
