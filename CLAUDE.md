@@ -123,6 +123,14 @@ context; zero tests passes). Never remove a check from the required set.
 `ci.yml` triggers on PRs to `main` and on `push:main` (the squash commit that
 lands on main is a new SHA, so it gets its own gate run); it does NOT deploy.
 
+- `changes` decides whether the diff contains anything but docs. It exists
+  because this repo can NEVER put `paths-ignore` on `ci.yml`: a required context
+  that never runs never reports, and branch protection then blocks a docs-only
+  PR forever with nothing to click. So the jobs always run (the contexts always
+  report) and only the expensive steps are skipped. It fails OPEN - anything
+  unexpected runs the full gate. `check-workflows.mjs` now refuses a path filter
+  on any workflow carrying a required check; `codeql.yml` may use one because
+  `analyze` is not required.
 - `quality-gate` aggregates the static checks: `git diff --check`, the docs
   numbering guardrail (`node scripts/guardrails/check-docs-numbering.mjs --strict`),
   and the data-architecture guardrail (DDL <-> Prisma lockstep).
@@ -135,7 +143,11 @@ lands on main is a new SHA, so it gets its own gate run); it does NOT deploy.
   package-version in `.osv-scanner.toml` with a reason - never suppressed by
   removing the check.
 - `gitleaks` (separate required check, `.github/workflows/secret-scan.yml`):
-  pinned gitleaks binary, full-history `detect`, rules in `.gitleaks.toml`.
+  pinned gitleaks binary, full-history `detect`, rules in `.gitleaks.toml`. Its
+  `push` trigger is scoped to `main`: a bare `push:` scanned every branch commit
+  AND then scanned the identical SHA again on `pull_request`. Layers 1 and 3 of
+  the secret-hygiene posture (push protection, the local pre-commit hook) cover
+  the branch commits that now have no PR yet.
 
 None of these run on a tag push - cutting a release tag ships whatever is already
 at that commit on `main`, it does not re-verify the gates.

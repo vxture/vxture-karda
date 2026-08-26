@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * check-workflows.mjs - .github/workflows/*.yml must parse, and must keep the
- * triggers they claim.
+ * check-workflows.mjs - .github/workflows/*.yml must parse, must keep the
+ * triggers they claim, and must not path-filter a required check away.
  *
  * Why this exists: on 2026-07-24 an edit to db-init.yml turned a literal "\n"
  * inside a shell `printf` into a real newline, splitting one line into two and
@@ -28,6 +28,38 @@ const STRICT = process.argv.includes("--strict");
 const TRIGGERS = ["push", "pull_request", "workflow_dispatch", "workflow_call", "schedule"];
 
 const problems = [];
+
+// Workflows that produce a REQUIRED status check. A required context that never
+// reports is not "skipped" to branch protection - it is missing, and the PR is
+// blocked forever with nothing to click. See main-ruleset.json for the set.
+const REQUIRED_CHECK_WORKFLOWS = new Set(["ci.yml", "secret-scan.yml"]);
+
+/**
+ * A workflow carrying a required check must not filter by path.
+ *
+ * `paths` / `paths-ignore` decide whether the workflow RUNS AT ALL. On a
+ * workflow whose jobs are required, a filtered-out PR produces no `build`, no
+ * `test-coverage`, no `gitleaks` - and branch protection waits for them
+ * indefinitely. A docs-only PR would be unmergeable, and the error message
+ * ("Expected - Waiting for status to be reported") names nothing that explains
+ * why.
+ *
+ * The saving that motivates path filtering is real and there is a correct way to
+ * take it: let the job RUN (so the context reports) and make the expensive steps
+ * conditional. ci.yml's `changes` job does exactly that. codeql.yml may and does
+ * use paths-ignore, because `analyze` is not a required check.
+ */
+function checkPathFilters(name, text) {
+  if (!REQUIRED_CHECK_WORKFLOWS.has(name)) return;
+  text.split(/\r?\n/).forEach((l, i) => {
+    if (!/^\s+paths(-ignore)?:\s*$/.test(l)) return;
+    problems.push(
+      `${name}:${i + 1} declares a path filter, but this workflow carries a REQUIRED check - ` +
+        `a filtered-out PR never reports it and can never merge. Gate the expensive STEPS ` +
+        `instead (see ci.yml's 'changes' job); paths-ignore is only safe on codeql.yml.`,
+    );
+  });
+}
 
 function scan(name, text) {
   const lines = text.split(/\r?\n/);
@@ -97,7 +129,11 @@ try {
   process.exit(0);
 }
 
-for (const f of files) scan(f, readFileSync(join(DIR, f), "utf8"));
+for (const f of files) {
+  const text = readFileSync(join(DIR, f), "utf8");
+  scan(f, text);
+  checkPathFilters(f, text);
+}
 
 if (problems.length === 0) {
   console.log(`[workflows] OK - ${files.length} workflow files parse and declare triggers.`);
