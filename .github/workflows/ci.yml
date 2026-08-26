@@ -109,6 +109,9 @@ jobs:
       - name: i18n seam guardrail (no product strings outside the catalog)
         run: node scripts/guardrails/check-i18n-seam.mjs
 
+      - name: Interface register guardrail (260 section 3 <-> tool catalog)
+        run: node scripts/guardrails/check-interface-register.mjs --strict
+
   # -- Quality gate (aggregator; stable required-check name) ------------------
   quality-gate:
     name: quality-gate

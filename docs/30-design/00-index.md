@@ -22,6 +22,7 @@ platform repo's `{kind}_{domain}_{NNN}_{slug}` family is not used here.
 | `230-runos-channel.md` | karda as a Runos capability supplier: kb-read/kb-write capabilities, the MCP endpoint, channel rules | v1.0 implemented 2026-08-18; Runos-side registration pending |
 | `240-ops-read-models.md` | ops read-model tables (`processing_task` / `processing_task_stage` / `supply_call` / `supply_call_asset`) - the fact sources behind 加工管道 and 供给通道, which query no database today | Draft v0.1, awaiting review before DDL increment `0004` |
 | `250-i18n-seam.md` | where language lives: the message catalog, the structure/language split, and the seam guard | implemented for the shell header, state vocabulary and the assets domain |
+| `260-external-interfaces.md` | 对外调用面的单一登记册:接口 + 调用方式 + 实现状态。工具面清单从 `120` §6 迁来 - 它在那里漂过两次 | v0.1 2026-08-26 |
 
 Product-level authority over these is `docs/20-specs/10-product-definition.md`,
 itself under the positioning authority `docs/20-specs/30-agent-knowledge-blueprint.md`

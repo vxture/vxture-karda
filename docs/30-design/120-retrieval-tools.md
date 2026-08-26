@@ -83,17 +83,12 @@ scope 语义执行:token 侧 grant scope=retrieve 的库,其内容仅经带 ref 
 
 命名空间 `karda.*`;全部经 `GET /.well-known/vxture-tools` 发布;semver 1.0.0 起步。
 
-| 工具 | 功能 | 模式 | metering | 关键入参 |
-|---|---|---|---|---|
-| `karda.search` | 混合检索(联合召回) | OBO/service | `karda.search` per_call | query, top_k?, kb_ids?, verification_filter?, filters?(白名单字段) |
-| `karda.ask` | 单轮带引用问答 | OBO/service | `karda.ask` per_call(模型 token 归 Atlas) | question, top_k?, kb_ids?, verification_filter? |
-| `karda.list_kbs` | 列出可见/已关联库(含 tier、治理策略摘要) | OBO/service | 免计量 | filter?(attached\|visible) |
-| `karda.attach_kb` / `karda.detach_kb` | 维护当前 user × product 关联清单 | **仅 OBO** | 免计量 | kb_id |
-| `karda.create_kb` | 创建 U 级库(创建现场自动关联,承接 D5) | **仅 OBO** | 免计量(存储另计) | name, processing_template?, home_ws 取 token |
-| `karda.write_document` | 写入文档(知识沉淀路径) | **仅 OBO**(v1) | `karda.ingest` per_doc | kb_id, content/file_ref, template_override? |
-| `karda.create_entry` | 按 ContentTemplate 写入条目 | **仅 OBO**(v1) | `karda.ingest` per_doc | kb_id, template_id, fields |
+**清单已迁至 `260-external-interfaces` §3,本节不再重复。** 原因是它在这里漂过
+两次:`karda.get_evidence`(`#150`)与 `karda.find_entity`(`#152`)上线后,这张表
+还写着七件。一份清单只留一处,并且那一处要连**调用方式与实现状态**一起登记——
+只有形状没有状态,就是又一张会漂的表。
 
-要点:
+本节保留的是**检索侧的判断依据**,那些不属于登记册:
 
 - **仅 OBO 约束**:创建/关联/写入均为用户语义动作,service 模式一律拒绝(`403 access_denied`)——与"service 不可触达 private"同源的硬规则;v1 写入面不开 service(Arda 同步走内部通道非工具面),避免后台任务替用户造资产;
 - 库管理深水区(删库/发布/晋升/移交/治理配置/实例化)**不进工具面**,归 Console 与管理 API——发布与治理是审慎动作,不宜置于 agent 可自动化路径(待拍板 #4 记录);
