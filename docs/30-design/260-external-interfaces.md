@@ -129,7 +129,7 @@ user × product 的概念,而 Runos 通道整条是 service 模式、无用户�
 | Atlas | `POST /v1/rerank` | taskProfile `karda.rerank` | 已实现·未激活 |
 | Atlas | `POST /v1/chat` | taskProfile `karda.ask` | 已实现·未激活 |
 | Atlas | `POST /v1/chat` | taskProfile `karda.extract`,`temperature: 0` | **已实现·未激活**——授权未到位,Atlas 返 `404 TASK_PROFILE_NOT_ROUTABLE`,我方**驻留可恢复**而非失败(`vxture-atlas#39` OPEN) |
-| Atlas | A2 深解析 | 请求页形态未定 | **待对端** `#102`——**不猜线上形状** |
+| Atlas | A2 深解析 | 请求页形态未定 | **未实现**——我方的请求侧问题**在对端仓里没有编号**(§11.1);`#102` 是 atlas 通知我方**响应**形状变了,不是我方的提问。不猜线上形状 |
 | 平台 | `GET {PLATFORM_API_URL}/platform/entitlements?workspace_id=&product=` | `x-vxture-internal-auth` | 已实现·未激活 |
 | 平台 | `POST {PLATFORM_API_URL}/usage/consume` | `x-vxture-internal-auth`,幂等键,配额尽 → 不重试 | 已实现·未激活 |
 | Arda | 按 ref 回拉内容 | notify-then-pull | **未实现**(框架与入站端点已就位,arda 侧 driver 未写) |
@@ -185,6 +185,45 @@ karda 不在自己这边选型,也不该出现模型名。
 
 ---
 
+## 11. 我方向对端提出的需求
+
+§4 / §6 登记的是**接口**,这一节登记的是**要求**——我方在等别人做什么、等多久了、
+不做会怎样、有没有退路。原先它们散在 workplan 的阻塞表一行、两条 issue、和 §6 的
+状态列里,**没有一处能回答「karda 现在总共卡在 Atlas 哪几件事上」**。
+
+规矩沿用 §2:**一条需求没有对端仓的 issue 号,就不算提出来了**,状态退回「未实现」。
+
+### 11.1 Atlas(四条,全部 open)
+
+| # | 我方要什么 | 不给会怎样 | 退路 | 开了多久 |
+|---|---|---|---|---|
+| `vxture-atlas#4` | 三条 taskProfile 授权:`karda.ask` / `karda.embed` / `karda.rerank` | **检索与问答整条链驻留**:embed 进不了向量、rerank 不精排、ask 不生成 | 运维**直接调授权 CRUD API** 配好,不必等界面 | 2026-08-21 |
+| `vxture-atlas#39` | 第四条:`karda.extract` | 抽取每趟驻留,不写库(`#154` / `#156` 已按此建好) | 复用 `karda.ask` 标签,代价是抽取与问答同价 | 2026-08-26 |
+| `vxture-atlas#21` | `/v1` 契约以**类型包或夹具**发布,不靠信件同步码表 | 码表靠人抄,`#100` 已经漏过一次(我方写了 `QUOTA_EXHAUSTED`,真码是 `QUOTA_EXCEEDED`) | 无。只能继续人工核对 | 2026-08-24 |
+| **未提出** | A2 深解析的**请求页**形态 | 深解析仍永久失败(KD-101 已定:质量增强项,非启动门) | 无需退路——不阻塞 MVP | —— |
+
+**整理出来的第一件事:前两条其实是同一个阻塞点。** Atlas 已答复(`#4` 2026-08-26),
+授权链在他们侧是通的,缺的只是 **opera 授权页没有 `taskProfile` 输入框**——已落
+`vxture-platform/vxture-platform#52`。所以四条里有两条不该分别去追 Atlas,
+**它们等的是同一个界面字段**;而且**那两条都不是工程阻塞,是一次运维动作**:
+运维直接调 CRUD API 就能配上,代价只是绕过界面审计与回显。
+
+**第二件事:第四条根本没提出来。** workplan 的阻塞表写着「Deep parsing (Atlas A2)
+—— atlas line, 4 request-side questions」,而 `#102` 是 **atlas 通知我方**响应形状变了,
+不是我方的请求侧提问。**我方的四个问题在对端仓里没有任何编号**——它在我们自己的表里
+「记着」,而没有人在排期。按本节规矩,它的状态是**未实现**,不是「待对端」。
+
+### 11.2 其他对端
+
+| 对端 | 需求 | issue | 不给会怎样 |
+|---|---|---|---|
+| runos | 能力端点注册(`karda.kb-read` / `karda.kb-write`) | `vxture-runos#156` | Runos 通道能收不被发;直连 S2S 不受影响 |
+| platform | 发布五档套餐,C2 才有权益可解析 | `vxture-platform#371`(KD-207 已裁定) | C2 把每个工作区都解析为未订阅——**唯一还挡着产品的那条** |
+| platform | opera 授权页补 `taskProfile` 字段 | `vxture-platform#52` | 上面 Atlas 前两条的共同上游 |
+| arda | 内容通道五个问题 | —— | 一个 connector,不是依赖(KD-104) |
+
+---
+
 ## 10. 联动修订登记
 
 | 何时 | 必须同改 |
@@ -193,4 +232,5 @@ karda 不在自己这边选型,也不该出现模型名。
 | 改 Runos 暴露的 operation 集 | 本册 §3 + `230` §3 + **与 runos 线协同**(注册契约) |
 | 新增内部作业端点 | 本册 §4 |
 | 新增出站对端 | 本册 §6 + egress 守卫白名单 |
-| 任一「待对端」的 issue 关闭 | 本册对应行状态 |
+| 任一「待对端」的 issue 关闭 | 本册对应行状态 + §11 |
+| 向对端提出新需求 | 本册 §11——**先开 issue 再登记**,没有编号就不算提出来了 |
