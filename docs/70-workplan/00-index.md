@@ -835,10 +835,12 @@ model behind it has not moved.
 | `#150` | `karda.get_evidence`——断言层第一个对外产出,工具面九件 | 已合 |
 | `#152` | `karda.find_entity`——工具面十件,第一件读知识图而非检索机制;并建 `260-external-interfaces` 对外接口登记册 | 已合 |
 | `#153` | `karda.get_context`——工具面十一件;**并修一个部署级缺陷**:`active_chunk_version` 的列授权只在 `incr/0001` 里,没镜进 `98`,新初始化的环境加工管道无法提交 | 已合 |
-| 本轮 | 抽取调用:Atlas 客户端 + 单文档编排。**不等授权**(owner 2026-08-26)——未授权返 `404 TASK_PROFILE_NOT_ROUTABLE`,映射到既有的驻留路径,建好并驻留而不是缺席 | 进行中 |
+| `#154` | 抽取调用:Atlas 客户端 + 单文档编排。**不等授权**(owner 2026-08-26)——未授权返 `404 TASK_PROFILE_NOT_ROUTABLE`,映射到既有的驻留路径,建好并驻留而不是缺席 | 已合 |
+| `#155` | DS 升 9.0.7 | 已合 |
+| 本轮 | **KD-211 落地**:`incr/0008` 任务种类 + 抽取 pass + 独立 tick;`failure_class` 分出 `unavailable`,驻留不再被谎报成「配额」 | 进行中 |
 
-**下一步两条并行**:`karda.browse`;以及抽取的**调度落位**——**KD-211 已落槌**
-(独立一趟,不作管线第六档),加工管线五档不变,新增的是任务种类。抽取真正产出断言仍等 `vxture-atlas#39`,
+**下一步**:`karda.browse`。抽取链路已经端到端可跑,真库实测走完
+「驻留 → 恢复 → 产出 → 幂等」全程;只等 `vxture-atlas#39` 的授权把 stub 换成真模型。抽取真正产出断言仍等 `vxture-atlas#39`,
 但在那之前每次调用只是驻留,不写库、不计费。
 
 每一次 DDL 变更都过真库并跑探针。**每一轮探针都至少抓到一个 type-check、单测、

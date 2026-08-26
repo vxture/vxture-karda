@@ -56,6 +56,8 @@ function statusText(m: Resolved<typeof pipelineMessages>, st: PipelineTask["stat
       return m.statusRetrying(st.attempt) + detail;
     case "suspendedQuota":
       return m.statusSuspendedQuota;
+    case "suspendedUnavailable":
+      return m.statusSuspendedUnavailable;
     case "suspendedOther":
       return m.statusSuspendedOther;
     case "failed":

@@ -148,12 +148,17 @@ function classifyFetchError(e: unknown): FailureClass {
 
 /**
  * An embedding failure is transient (Atlas 429/timeout) EXCEPT quota exhaustion
- * and capability-unavailable, which suspend rather than fail - a suspended task
+ * and capability-unavailable, which suspend rather than fail (under DISTINCT
+ * classes - see FailureClass) - a suspended task
  * resumes automatically when quota returns or when A1 ships. This is what lets
  * the whole embed stage be parked-but-not-lost while Atlas builds A1 (TD-004).
  */
 function classifyEmbeddingError(e: unknown): FailureClass {
-  if (e instanceof QuotaError || e instanceof UnavailableError) return "quota";
+  if (e instanceof QuotaError) return "quota";
+  // Split from quota: the embed stage has been parked on the Atlas A1 GRANT this
+  // whole time, and the pipeline page has been calling that 「配额」 - pointing
+  // an operator at the one thing that was never the problem.
+  if (e instanceof UnavailableError) return "unavailable";
   return "transient";
 }
 

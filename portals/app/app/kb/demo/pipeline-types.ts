@@ -69,6 +69,9 @@ export interface PipelineTask {
     | { kind: "queued" }
     | { kind: "retrying"; attempt: number; detail?: string }
     | { kind: "suspendedQuota" }
+    // Distinct from suspendedQuota: an ungranted capability does not come back
+    // by waiting, it comes back when someone chases the grant.
+    | { kind: "suspendedUnavailable" }
     | { kind: "suspendedOther" }
     | { kind: "failed"; stage: ProcessingStage; detail?: string }
     | { kind: "committed"; detail?: string };

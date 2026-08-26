@@ -112,11 +112,29 @@ test("failure classes count parked tasks too - a quota park IS a quota failure",
     [
       task({ state: "failed", failureClass: "permanent" }),
       task({ state: "suspended", failureClass: "quota" }),
+      task({ state: "suspended", failureClass: "unavailable" }),
       task({ state: "queued", failureClass: "transient" }), // waiting to retry
     ],
     NOW,
   );
-  assert.deepEqual(t.failures, { transient: 0, permanent: 1, quota: 1 });
+  assert.deepEqual(t.failures, { transient: 0, permanent: 1, quota: 1, unavailable: 1 });
+});
+
+test("a capability park is counted apart from a quota park", () => {
+  // They tally separately because they need opposite operator actions: chase the
+  // grant, versus wait. A single number would have said "2 quota" and sent
+  // someone to look at a quota that was never the problem.
+  const t = tallyTasks([task({ state: "suspended", failureClass: "unavailable" })], NOW);
+  assert.equal(t.failures.quota, 0);
+  assert.equal(t.failures.unavailable, 1);
+});
+
+test("a capability park reads as its own status, not as suspendedOther", () => {
+  // Before the split it fell through to suspendedOther / 「挂起 · 待恢复」, which
+  // told an operator to wait for something that only a grant will fix.
+  const s = statusFor(task({ state: "suspended", failureClass: "unavailable" }));
+  assert.equal(s.status.kind, "suspendedUnavailable");
+  assert.equal(s.statusTone, "warning", "parked is not an error state");
 });
 
 test("docsToday counts the trailing 24h of finished work", () => {

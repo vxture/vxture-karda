@@ -436,6 +436,10 @@ model ProcessingTask {
   id               String    @id @default(uuid()) @db.Uuid
   documentId       String    @map("document_id") @db.Uuid
   kbId             String    @map("kb_id") @db.Uuid
+  /// KD-211: `processing` | `extraction`. Extraction is its own pass, not a
+  /// sixth stage - the two have different invalidation keys. Set at insert,
+  /// never updated, so it carries no column-level UPDATE grant.
+  kind             String    @default("processing") @db.VarChar(32)
   tier             String    @default("interactive") @db.VarChar(32)
   state            String    @default("queued") @db.VarChar(32)
   currentStage     String    @default("fetch") @map("current_stage") @db.VarChar(32)

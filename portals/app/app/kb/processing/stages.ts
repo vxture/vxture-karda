@@ -62,7 +62,14 @@ function stableStringify(v: unknown): string {
 
 // --- failure taxonomy (section 8) -------------------------------------------
 
-export type FailureClass = "transient" | "permanent" | "quota";
+/**
+ * `quota` and `unavailable` both suspend, and that is deliberate - they differ
+ * in what the OPERATOR must do, not in what the queue does. A quota comes back
+ * on its own; an ungranted capability comes back when someone chases the grant.
+ * Telling an operator 「配额」 about an ungranted `karda.extract` is simply
+ * false, and it would be false on every parked extraction task there is.
+ */
+export type FailureClass = "transient" | "permanent" | "quota" | "unavailable";
 
 /** Where a task lands after a failure of each class. */
 export type FailureOutcome =
@@ -87,6 +94,7 @@ export function classifyOutcome(
 ): FailureOutcome {
   switch (failure) {
     case "quota":
+    case "unavailable":
       return { action: "suspend" };
     case "permanent":
       return { action: "fail" };
