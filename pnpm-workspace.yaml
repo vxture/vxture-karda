@@ -27,5 +27,5 @@ allowBuilds:
   sharp: true
 
 minimumReleaseAgeExclude:
-  - '@vxture/design-system@6.1.0 || 6.5.1 || 8.0.0 || 9.0.0'
-  - '@vxture/design-ui@3.2.1 || 5.0.0 || 6.0.0'
+  - '@vxture/design-system@6.1.0 || 6.5.1 || 8.0.0 || 9.0.0 || 9.0.4'
+  - '@vxture/design-ui@3.2.1 || 5.0.0 || 6.0.0 || 6.0.4'
