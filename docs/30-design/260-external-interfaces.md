@@ -127,7 +127,7 @@ user × product 的概念,而 Runos 通道整条是 service 模式、无用户�
 | Atlas | `POST {ATLAS_BASE_URL}/v1/embed` | bearer `aud=atlas`,taskProfile `karda.embed` | 已实现·未激活(缺 env + grant) |
 | Atlas | `POST /v1/rerank` | taskProfile `karda.rerank` | 已实现·未激活 |
 | Atlas | `POST /v1/chat` | taskProfile `karda.ask` | 已实现·未激活 |
-| Atlas | 抽取调用 | taskProfile `karda.extract` | **待对端** `vxture-atlas#39`(OPEN) |
+| Atlas | `POST /v1/chat` | taskProfile `karda.extract`,`temperature: 0` | **已实现·未激活**——授权未到位,Atlas 返 `404 TASK_PROFILE_NOT_ROUTABLE`,我方**驻留可恢复**而非失败(`vxture-atlas#39` OPEN) |
 | Atlas | A2 深解析 | 请求页形态未定 | **待对端** `#102`——**不猜线上形状** |
 | 平台 | `GET {PLATFORM_API_URL}/platform/entitlements?workspace_id=&product=` | `x-vxture-internal-auth` | 已实现·未激活 |
 | 平台 | `POST {PLATFORM_API_URL}/usage/consume` | `x-vxture-internal-auth`,幂等键,配额尽 → 不重试 | 已实现·未激活 |
@@ -160,7 +160,8 @@ karda 不在自己这边选型,也不该出现模型名。
 |---|---|---|
 | `karda.browse` | 断言 + 实体分页 | **未实现——下一件** |
 | `karda.retrieve` | 检索单元化 | 不做(本轮),`140` §10 |
-| 断言抽取管线 | Atlas `karda.extract` | **待对端** `vxture-atlas#39` |
+| 断言抽取的**调度** | §11.1 的落位裁定 | 未实现——客户端与单文档编排已交付,缺的是谁来触发 |
+| 断言抽取**实际产出断言** | Atlas `karda.extract` 授权 | **待对端** `vxture-atlas#39`;在那之前每次调用驻留,不写库 |
 | Runos 面补齐两件断言工具 | Runos 通道先注册成功 | 待对端 `vxture-runos#156` |
 
 ---

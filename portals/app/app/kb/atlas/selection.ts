@@ -20,6 +20,7 @@ export const KARDA_TASK_PROFILES = {
   ask: "karda.ask",
   embed: "karda.embed",
   rerank: "karda.rerank",
+  extract: "karda.extract",
 } as const;
 
 export interface ModelSelection {
@@ -49,4 +50,21 @@ export function embedSelection(kbPin?: string | null): ModelSelection {
 /** Rerank (A3). */
 export function rerankSelection(): ModelSelection {
   return select(process.env.ATLAS_RERANK_TASK_PROFILE, process.env.ATLAS_RERANK_MODEL, KARDA_TASK_PROFILES.rerank);
+}
+
+/**
+ * Batch knowledge extraction (`vxture-atlas#39`). Rides `/v1/chat` like ask, but
+ * under its own label so Atlas can route it to a cheaper model: the two profiles
+ * differ on every axis that matters - interactive versus batch, one question
+ * versus a thousand statements per document, seconds-matter versus nobody is
+ * waiting. Sharing `karda.ask` would work mechanically and would take away
+ * exactly the choice KD-018 exists to give Atlas.
+ *
+ * Until the grant lands this label resolves to nothing and Atlas answers
+ * `404 TASK_PROFILE_NOT_ROUTABLE` - no model runs and nothing is charged. That
+ * refusal is the design working (atlas#42: never a silent default), and the
+ * extraction client maps it to a parked, resumable state.
+ */
+export function extractSelection(): ModelSelection {
+  return select(process.env.ATLAS_EXTRACT_TASK_PROFILE, process.env.ATLAS_EXTRACT_MODEL, KARDA_TASK_PROFILES.extract);
 }
