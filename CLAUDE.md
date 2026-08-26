@@ -131,8 +131,13 @@ lands on main is a new SHA, so it gets its own gate run); it does NOT deploy.
   unexpected runs the full gate. `check-workflows.mjs` now refuses a path filter
   on any workflow carrying a required check; `codeql.yml` may use one because
   `analyze` is not required.
-- `check-atlas-contract.mjs` refuses any branch on an Atlas error code Atlas does
-  not publish, checked against a vendored snapshot of their
+- `check-atlas-contract.mjs` refuses two things: a branch on an Atlas error code
+  Atlas does not publish, and any use of the LEGACY tenant authorization axis
+  (`taskProfile`) in non-comment source. karda authorizes on the PRODUCT axis -
+  it sends `endpointCode` (`chat/default` / `embedding/default` / `rerank/default`
+  / `chat/extract`), per `vxture-atlas#47`. A `taskProfile` sent beside an
+  `endpointCode` is silently ignored by the selector precedence, so that residue
+  fails quietly and needs a machine check. It also refuses a branch on a code, checked against a vendored snapshot of their
   `/.well-known/vxture-contract` artifact (`kb/atlas/contract.snapshot.json`).
   This is the fix for `#100`, where karda branched on `QUOTA_EXHAUSTED` - a code
   that has never existed - and the dead branch type-checked and passed review.

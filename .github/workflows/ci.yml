@@ -161,7 +161,7 @@ jobs:
       - name: Interface register guardrail (260 section 3 <-> tool catalog)
         run: node scripts/guardrails/check-interface-register.mjs --strict
 
-      - name: Atlas contract guardrail (no branching on a code Atlas does not publish)
+      - name: Atlas contract guardrail (published codes only; product axis only)
         run: node scripts/guardrails/check-atlas-contract.mjs --strict
 
   # -- Quality gate (aggregator; stable required-check name) ------------------

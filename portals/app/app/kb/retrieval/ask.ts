@@ -24,15 +24,13 @@ export interface ChatRequest {
    *  across products and models - it is the only key that adds a task's
    *  consumption back together. */
   taskId: string;
-  // Exactly one selector: `modelCode` > `endpointCode` > `taskProfile`, narrower
-  // wins (the contract's `TARGET_SELECTOR_REQUIRED` oneOf). karda sends
-  // `endpointCode` - the PRODUCT-axis name, resolved from the product's endpoint
-  // grant. `taskProfile` is the legacy tenant axis and karda no longer sends it;
-  // the field stays declared because Atlas still accepts it and removing it from
-  // the type would misrepresent the wire contract we are coding against.
+  // The selector. Atlas's contract accepts one of three
+  // (`modelCode` > `endpointCode` > `taskProfile`, narrower wins), but this type
+  // describes what KARDA SENDS, not everything Atlas tolerates: `taskProfile` is
+  // the legacy tenant axis and is deliberately not declared, so no call site can
+  // reach for it by accident.
   modelCode?: string;
   endpointCode?: string;
-  taskProfile?: string;
   messages: ChatMessage[];
   temperature?: number;
   maxTokens?: number;
@@ -81,7 +79,6 @@ export interface AskInput extends Omit<SearchInput, "params"> {
   userId?: string;
   modelCode?: string;
   endpointCode?: string;
-  taskProfile?: string;
   resolver: ChunkResolver;
   generation: GenerationClient;
   /** How many top results to ground the answer in. */
@@ -155,7 +152,6 @@ export async function runAsk(input: AskInput): Promise<AskResult> {
     taskId: input.taskId,
     modelCode: input.modelCode,
     endpointCode: input.endpointCode,
-    taskProfile: input.taskProfile,
     messages: prompt,
     temperature: 0,
     tenantId: input.tenantId,

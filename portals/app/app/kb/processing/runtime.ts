@@ -131,7 +131,7 @@ export interface ResolverDeps {
 }
 
 /** KB.embedding_model - the optional per-library pin. Null (the default) means
- *  the embed client routes by grant (karda.embed taskProfile) and the RESOLVED
+ *  the embed client routes by grant (embedding/default endpoint) and the RESOLVED
  *  model is recorded at commit; a pinned library never drifts vector space. */
 async function kbEmbeddingModelDefault(kbId: string): Promise<string | null> {
   if (!prismaEnabled()) return null;
@@ -161,7 +161,7 @@ export function makeResolver(deps: ResolverDeps): WorkerDeps["resolve"] {
 
     // The library's optional pin (KD-107). Null = grant-routed (KD-018): the
     // embed client sends karda.embed and the commit records whichever model
-    // the grant resolved. No grant -> TASK_PROFILE_NOT_ROUTABLE -> park.
+    // the grant resolved. No grant -> ENDPOINT_NOT_ROUTABLE -> park.
     const embeddingModel = await kbEmbeddingModel(task.kbId);
 
     return {

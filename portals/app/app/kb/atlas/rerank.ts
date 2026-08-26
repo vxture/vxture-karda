@@ -1,5 +1,5 @@
 // The Atlas A3 rerank client (KD-102; TD-004 closure). POST /v1/rerank with
-// { taskId, query, candidates, workspaceId, modelCode|taskProfile }.
+// { taskId, query, candidates, workspaceId, modelCode|endpointCode }.
 //
 // Two contract facts shape this client (Atlas #89 + the 2026-08-18 interface
 // doc):
@@ -24,9 +24,9 @@ export interface CandidateTextResolver {
   resolve(ids: string[]): Promise<{ id: string; text: string }[]>;
 }
 
-// Model selection is grant-driven (KD-018): the fixed karda.rerank taskProfile
+// Model selection is grant-driven (KD-018): the fixed rerank/default endpoint
 // by default, env pins as break-glass - see kb/atlas/selection.ts. Re-exported
-// here for the wiring; a missing grant surfaces as TASK_PROFILE_NOT_ROUTABLE
+// here for the wiring; a missing grant surfaces as ENDPOINT_NOT_ROUTABLE
 // at call time and the chain degrades to RRF order, which is the honest state.
 export { rerankSelection } from "./selection";
 export type { ModelSelection as RerankSelection } from "./selection";

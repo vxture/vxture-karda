@@ -42,7 +42,7 @@ export interface ConsoleRetrievalDeps {
   /** null when Atlas A4 is unconfigured - ask reports not_configured. */
   generation?: GenerationClient | null;
   modelCode?: string;
-  taskProfile?: string;
+  endpointCode?: string;
 }
 
 export interface ConsoleSearchItem {
@@ -163,7 +163,7 @@ export async function consoleAsk(
     workspaceId: caller.ws,
     userId: caller.user,
     modelCode: deps.modelCode,
-    taskProfile: deps.taskProfile,
+    endpointCode: deps.endpointCode,
     resolver: {
       async resolve(ids: string[]): Promise<ChunkText[]> {
         return (await deps.texts.resolve(ids)).map((t) => ({ id: t.id, kbId: t.kbId, content: t.text }));
