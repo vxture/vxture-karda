@@ -3,7 +3,7 @@
 // WHICH models serve each capability is not configured here at all - selection
 // is grant-driven (KD-018, kb/atlas/selection.ts): karda sends its fixed task
 // profiles and Atlas resolves models from the tenant's grants. A capability
-// with no matching grant fails at call time with TASK_PROFILE_NOT_ROUTABLE,
+// with no matching grant fails at call time with ENDPOINT_NOT_ROUTABLE,
 // which every consumer maps to its designed degrade (embed parks, vector
 // recall self-degrades to [], rerank falls back to RRF order).
 import { getAtlasTokenSource } from "../retrieval/atlas-token";

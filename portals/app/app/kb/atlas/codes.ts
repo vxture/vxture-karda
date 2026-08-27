@@ -64,6 +64,12 @@ export const ATLAS_RETRYABLE: ReadonlySet<string> = new Set(
  * All of them suspend. `QUOTA_EXCEEDED` is separated from the rest at the call
  * site (a quota comes back on its own; an ungranted capability comes back when
  * someone chases the grant) - see FailureClass.
+ *
+ * `TASK_PROFILE_NOT_ROUTABLE` is deliberately ABSENT even though Atlas still
+ * publishes it. It belongs to the legacy tenant axis, and karda sends only
+ * `endpointCode` now - so that code can never come back, and a branch that can
+ * never fire is exactly the shape of the `#100` defect this file exists to
+ * prevent. `check-atlas-contract.mjs` keeps it out.
  */
 export const SUSPEND_CODES: ReadonlySet<string> = new Set([
   "QUOTA_EXCEEDED",
@@ -71,7 +77,6 @@ export const SUSPEND_CODES: ReadonlySet<string> = new Set([
   "MODEL_NOT_IMPLEMENTED",
   "MODEL_NOT_ROUTABLE",
   "ENDPOINT_NOT_ROUTABLE",
-  "TASK_PROFILE_NOT_ROUTABLE",
 ]);
 
 /**

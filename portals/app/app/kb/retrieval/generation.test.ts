@@ -71,12 +71,12 @@ test("chat mints an aud=atlas bearer per (org, ws) and posts it to base+chatPath
   assert.deepEqual(seen, [{ org: "org1", ws: "ws1" }]);
 });
 
-test("a taskProfile is forwarded verbatim in the chat body (auto-adapt)", async () => {
+test("an endpointCode is forwarded verbatim in the chat body (auto-adapt)", async () => {
   const { cfg } = makeCfg();
   const { fetch: f, captured } = fakeFetch(200, { content: "x" });
-  await new AtlasA4Client(cfg, f).chat({ ...req, modelCode: undefined, taskProfile: "karda.ask.default" });
+  await new AtlasA4Client(cfg, f).chat({ ...req, modelCode: undefined, endpointCode: "chat/default" });
   const body = captured.init?.body as string;
-  assert.match(body, /"taskProfile":"karda.ask.default"/);
+  assert.match(body, /"endpointCode":"chat\/default"/);
   assert.doesNotMatch(body, /"modelCode"/, "auto-adapt sends no modelCode");
 });
 

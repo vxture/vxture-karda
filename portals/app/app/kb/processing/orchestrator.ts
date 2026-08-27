@@ -33,7 +33,7 @@ export interface EmbedResult {
 
 export interface EmbeddingClient {
   /** Embed chunk texts. `modelPin` is an optional library-level lock
-   *  (KB.embedding_model); null means route by grant (taskProfile). Throws on
+   *  (KB.embedding_model); null means route by grant (endpointCode). Throws on
    *  unavailability - see classifyEmbeddingError. */
   embed(texts: string[], modelPin: string | null): Promise<EmbedResult>;
 }

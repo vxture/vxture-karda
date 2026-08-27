@@ -1,6 +1,6 @@
 // The Atlas A1 embedding client (KD-107; KD-018). POST /v1/embed with
 // { taskId, texts, workspaceId } plus the selection: a library-level modelCode
-// pin when the KB carries one, otherwise the fixed karda.embed taskProfile -
+// pin when the KB carries one, otherwise the fixed embedding/default endpoint -
 // Atlas resolves the concrete model from the tenant's GRANTS (KD-018:
 // selection lives in authorization, not karda config). The response echoes the
 // RESOLVED modelCode (verified live, atlas#37: "201 with
@@ -14,7 +14,7 @@
 // code decides which:
 //   retryable:true  (RATE_LIMITED, PROVIDER_UNAVAILABLE, ...) -> transient
 //   QUOTA_EXCEEDED                                            -> QuotaError (suspend)
-//   NOT_ENTITLED / MODEL_NOT_* / TASK_PROFILE_NOT_ROUTABLE    -> UnavailableError (suspend)
+//   NOT_ENTITLED / MODEL_NOT_* / ENDPOINT_NOT_ROUTABLE        -> UnavailableError (suspend)
 //   validation 4xx (EMBED_TEXTS_INVALID, ...)                 -> plain Error (transient
 //     -> bounded retries -> failed visibly; a karda-side payload bug must surface,
 //     not park forever)

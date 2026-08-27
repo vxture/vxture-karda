@@ -260,6 +260,27 @@ karda 不在自己这边选型,也不该出现模型名。
 **`tenantId` 仍然要发**,不要混淆:`/v1/chat` 的必填项里有 `TENANT_ID_REQUIRED`。变的是
 **授权轴**,不是数据面字段——租户仍是计量与归属的主体。
 
+### 11.1.2b 全仓清理:租户轴在代码里一处不留(2026-08-27)
+
+改完发请求还不够——**留着的类型、字段和策略码就是那条轴长回来的路**,而且它长回来的时候
+**不会有任何东西失败**:选择器优先级是 `modelCode` > `endpointCode` > `taskProfile`,
+一个和 `endpointCode` 并排发出去的 `taskProfile` 会被**静默忽略**。
+
+删掉的:
+
+| 处 | 原来是什么 | 为什么删 |
+|---|---|---|
+| `SUSPEND_CODES` | `TASK_PROFILE_NOT_ROUTABLE` | karda 不再发 `taskProfile`,**这个码永远不会回来**——一个永不触发的分支正是 `#100` 那个缺陷的形状 |
+| `ChatRequest` / `AskInput` 的 `taskProfile?` | 我方类型里声明着 | **这个类型描述的是我方发什么,不是 Atlas 容忍什么** |
+| `ask-tool.ts` / `console-retrieval.ts` 的 `deps.taskProfile` | 两处仍在往下传 | **删字段才把它们逼出来**——单靠 grep 注释看不出这两处是活的 |
+
+保留的:**注释里可以提它**。解释一条轴为什么退役,正是注释该干的事,比"全词禁用"换来的
+grep 整洁值钱。
+
+`check-atlas-contract.mjs` 加了第三条检查把这件事钉住:非注释源码里出现 `taskProfile` 或
+`TASK_PROFILE_*` 即硬失败,**已双向验红**(注意验的是退出码——管道里 `head` 的返回码会把
+一个报了错却不失败的检查伪装成通过)。
+
 ### 11.1.3 `#21` 已交付并已消费
 
 

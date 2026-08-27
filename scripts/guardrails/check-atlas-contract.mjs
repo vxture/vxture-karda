@@ -60,6 +60,43 @@ function sourceFiles(dir) {
   return out;
 }
 
+/**
+ * karda authorizes on the PRODUCT axis only.
+ *
+ * Atlas has two authorization axes and the word "grant" pointed at both:
+ * `product_endpoint_grants` (holder = the product, grants an endpoint code) and
+ * `model_grants` (holder = a tenant, grants a model, selected by `taskProfile`).
+ * The second is LEGACY - Atlas has a countdown metric waiting to delete it - and
+ * `vxture-atlas#47` ruled karda onto the first, because karda is a product, not
+ * a tenant.
+ *
+ * So `taskProfile` must not appear in karda's own source at all. Not as a field
+ * we send, not as a type we declare, not as a code we branch on: every one of
+ * those is a way for the legacy axis to grow back, and it grows back silently -
+ * a `taskProfile` karda sends alongside an `endpointCode` is simply ignored by
+ * the selector precedence, so nothing fails and nothing is logged.
+ *
+ * Comments may name it - explaining why an axis was retired is exactly what a
+ * comment is for, and that explanation is worth more than the grep tidiness of
+ * banning the word outright.
+ */
+function tenantAxisResidue() {
+  const problems = [];
+  for (const file of sourceFiles(SCAN_ROOT)) {
+    readFileSync(file, "utf8").split(/\r?\n/).forEach((line, i) => {
+      if (/^\s*(\/\/|\*|\/\*)/.test(line)) return; // comments may explain the retirement
+      if (!/\btaskProfile\b|\bTASK_PROFILE_/.test(line)) return;
+      problems.push(
+        `${file}:${i + 1} names the LEGACY tenant axis (taskProfile). karda authorizes on the ` +
+          "product axis - send `endpointCode` (vxture-atlas#47). A taskProfile sent next to an " +
+          "endpointCode is silently ignored by the selector precedence, so this fails quietly.",
+      );
+    });
+  }
+  return problems;
+}
+
+
 const problems = [];
 
 let contract;
@@ -111,6 +148,8 @@ for (const m of block.slice(0, block.indexOf("]);")).matchAll(/"([A-Z0-9_]+)"/g)
   }
 }
 
+problems.push(...tenantAxisResidue());
+
 if (problems.length > 0) {
   for (const p of problems) console.error(`[atlas-contract] ${p}`);
   console.error(
@@ -122,5 +161,6 @@ if (problems.length > 0) {
 
 console.log(
   `[atlas-contract] OK - ${published.size} published codes at ${contract.fingerprint}; ` +
-    `every code karda names exists, and no parked code is one Atlas calls retryable.`,
+    `every code karda names exists, no parked code is one Atlas calls retryable, ` +
+    `and nothing authorizes through the legacy tenant axis.`,
 );
