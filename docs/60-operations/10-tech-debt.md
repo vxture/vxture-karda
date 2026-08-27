@@ -17,7 +17,7 @@ Append-only. Each entry is a known, deliberately-deferred debt with a stable ID
 | `TD-002` | closed 2026-07-24 | db-init applied the wrong DDL and reported success |
 | `TD-003` | closed 2026-07-24 | CI did not notice a workflow it had broken |
 | `TD-004` | **open** | vectorization and rerank parked on Atlas capability |
-| `TD-005` | **open** | ownership transfer has no runtime write path |
+| `TD-005` | closed 2026-08-27 | ownership transfer has no runtime write path |
 | `TD-006` | closed 2026-08-18 | preset seed has no invocation point |
 | `TD-007` | closed 2026-08-27 | processing pipeline runtime not yet built |
 | `TD-008` | closed 2026-08-27 | retrieval recall backends not yet built |
@@ -198,7 +198,7 @@ deliberately not carried over.
 
 ## TD-005 - ownership transfer has no runtime write path
 
-- **Status**: open - `owner_sub` is column-locked, so transfer needs a DDL grant plus a service path
+- **Status**: closed 2026-08-27 - the privileged path exists (`deploy/database/ops/transfer-kb-owner.sql`); the column lock is UNCHANGED
 
 - **What is missing**: `KbService` exposes `canTransfer` (the permission check)
   but no transfer write. `owner_sub` is column-locked (`98_column_locks`), so the
@@ -213,6 +213,27 @@ deliberately not carried over.
   privileged structure/data changes. Small; deferred only because no departure/
   transfer flow is exercised in v1 yet.
 
+- **CLOSED 2026-08-27.** The recovery condition asked for "a db-init-style or
+  admin-scoped operation that runs as the DB owner (not the service role) to set
+  `owner_sub`". That now exists: `deploy/database/ops/transfer-kb-owner.sql`,
+  with the runbook at `docs/60-operations/50-run-transfer-kb-owner.md`.
+  **The column lock was not widened** - which was the whole point of the entry.
+- **Verified on a real database**, all five branches: transfer, a re-run of the
+  same transfer (idempotent, and it does NOT report "transferred" when nothing
+  moved), non-user tier, empty `new_owner`, missing library. The four refusals
+  `RAISE EXCEPTION` inside the transaction, so the row is unchanged after each.
+- **What this closing does NOT claim.** The path is gated by *possession of the
+  owner DSN and the judgement of the person holding it* - not by a workflow with
+  an approver. "Only the home workspace admin may transfer" is stated in
+  `canTransferOwnership` and enforced by **nobody at runtime**, because an
+  operator is not a session. The runbook says so in its own first section rather
+  than leaving it to be discovered. Turning that into a machine gate means
+  wrapping the script in a workflow with an environment reviewer; that is a
+  separate, optional hardening and is deliberately not implied by this closure.
+- **A related fact worth recording rather than fixing**: `canTransfer` on
+  `KbService` still has no caller. It is the app-side half - who may ASK - and
+  there is no departure flow in the product to call it from yet. Built, tested,
+  unwired, on purpose; the same category as `140-assertion-model` section 11.3.
 
 ## TD-006 - preset seed has no invocation point
 
