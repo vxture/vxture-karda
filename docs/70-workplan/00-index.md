@@ -845,7 +845,9 @@ model behind it has not moved.
 | `#162` | 抽取把 workspace id 当 tenant id 发——对类型不可见、对离线运行也不可见 | 已合 |
 | `#163` / `#164` | 改发 `endpointCode` 走产品轴;全仓清掉 legacy 租户轴并加硬门 | 已合 |
 | `#165` | 四个端点授权的操作单,交付运营侧(`vxture-platform#56`) | 已合 |
-| 本轮 | `100-kb-model` §2.1 对象总图收口:三对象入图、Chunk 地位下调(KD-017)| 进行中 |
+| `#166` | `100-kb-model` §2.1 对象总图收口;并修一个回归:「能力未开通」计数从看板上消失 | 已合 |
+| `#167` | 落槌 KD-212(回收穿透副本)、KD-213(断言不跨库),设计稿 §11 五条结清 | 已合 |
+| 本轮 | **接上 §7 的写侧回收**:`sweepUngrounded` 建好测过却**零调用者**,现接入治理扫描端点;作用域「全部」改为必须明写 | 进行中 |
 
 **新的我方待办(对端已交付)**:`vxture-atlas#21` 要的契约制品**已在生产跑了三个版本**——`GET /.well-known/vxture-contract` 带 `errorCodes`(v0.5.0)与 `requests`(v0.6.0),用我方现有 S2S 令牌就能拉。改为消费这份制品,不再人工抄码表(`#100` 那次 `QUOTA_EXHAUSTED` / `QUOTA_EXCEEDED` 就是人工抄的产物)。**先不要钉指纹**:对端有 PR 待合,合后从 `c1-e132a38fae1a` 移到 `c1-d2ecccf5b20d`。
 
