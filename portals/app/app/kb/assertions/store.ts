@@ -166,6 +166,21 @@ export async function recordConflictOutcome(winnerId: string, loserId: string): 
 }
 
 /**
+ * Scope for a sweep. `"all"` is spelled out rather than expressed by leaving an
+ * argument off, because the two mistakes are not symmetric: sweeping nothing
+ * when you meant everything is a no-op you notice, and sweeping EVERYTHING when
+ * you meant one workspace tombstones another tenant's assertions. An empty array
+ * therefore means exactly what it says - nothing - and the dangerous case cannot
+ * happen by forgetting a parameter.
+ */
+export type SweepScope = string[] | "all";
+
+export interface UngroundedSweep {
+  scanned: number;
+  tombstoned: number;
+}
+
+/**
  * Assertions that have lost every piece of evidence, tombstoned.
  *
  * The write-side half of 140-assertion-model §7. KD-206 rules that a deletion
@@ -176,9 +191,11 @@ export async function recordConflictOutcome(winnerId: string, loserId: string): 
  * This is the ASYNCHRONOUS half. The synchronous guarantee is the read-side
  * filter in `kinds.ts`: an assertion with no evidence is never served, whether
  * or not this has run. Relying on this sweep alone would leave ungrounded
- * assertions citable until it next fired.
+ * assertions citable until it next fired - which is why the read filter shipped
+ * first and this one is allowed to run on a schedule.
  */
-export async function sweepUngrounded(kbId: string): Promise<number> {
+export async function sweepUngrounded(scope: SweepScope): Promise<UngroundedSweep> {
+  if (scope !== "all" && scope.length === 0) return { scanned: 0, tombstoned: 0 };
   const p = await getPrismaClient();
   // `none: { stance: "supports" }`, not `none: {}`. An adjudication loser keeps
   // a `contradicts` edge naming the winner, and that edge points at an
@@ -188,17 +205,17 @@ export async function sweepUngrounded(kbId: string): Promise<number> {
   // should not have.
   const orphaned = await p.assertion.findMany({
     where: {
-      kbId,
+      ...(scope === "all" ? {} : { kbId: { in: scope } }),
       contentState: { notIn: ["deleted"] },
       evidence: { none: { stance: "supports" } },
     },
     select: { id: true },
   });
-  if (orphaned.length === 0) return 0;
+  if (orphaned.length === 0) return { scanned: 0, tombstoned: 0 };
 
   const { count } = await p.assertion.updateMany({
     where: { id: { in: orphaned.map((a) => a.id) } },
     data: { contentState: "deleted", updatedAt: new Date() },
   });
-  return count;
+  return { scanned: orphaned.length, tombstoned: count };
 }
