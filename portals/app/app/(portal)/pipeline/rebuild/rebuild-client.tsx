@@ -55,7 +55,16 @@ export function RebuildClient() {
         title={sh.subRebuild}
         description={m.rebuildDesc}
         meta={m.rebuildMeta}
-        actions={<Button>{m.rebuildStart}</Button>}
+        actions={
+          /* 显式禁用,并说明原因。这个按钮此前没有任何 onClick——点了不会发生任何
+             事。**一个点了没反应的按钮比没有按钮更糟**:它承诺了产品做不到的事,而且
+             要等到有人真的需要重建时才会发现。
+             做成真正的流程需要触发接口,以及 150 §4 第②段要的影响预览(会重建哪些库、
+             旧索引保留多久、期间检索用什么)——那是一件功能,见 150 §4.1。 */
+          <Button disabled title={m.rebuildStartUnavailable}>
+            {m.rebuildStart}
+          </Button>
+        }
       />
 
       <div className="flex flex-col gap-lg @min-[52rem]:flex-row">

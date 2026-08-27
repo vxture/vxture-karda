@@ -167,7 +167,10 @@ export function AssetClient() {
         }
         actions={
           <Button variant="outline" asChild>
-            <Link href="/">{m.backToAssets}</Link>
+            {/* `/assets`,不是 `/`。KD-214 之前两者是同一页,迁路由时这一行没跟着改,
+                于是「返回知识资产」会把人送到首页——按 §3.2,返回要回到这个对象
+                **所属的那一层**,而不是任何一个上级。 */}
+            <Link href="/assets">{m.backToAssets}</Link>
           </Button>
         }
       />

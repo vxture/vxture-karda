@@ -241,6 +241,10 @@ export const pipeline = {
     "en-US": "org rebuild concurrency 1/2 · 24h rollback window",
   },
   rebuildStart: { "zh-CN": "发起重建", "en-US": "Start a rebuild" },
+  rebuildStartUnavailable: {
+    "zh-CN": "重建流程尚未建成——按钮先禁用,而不是留着点了没反应",
+    "en-US": "The rebuild flow is not built yet - disabled rather than left doing nothing",
+  },
   stepDeclare: { "zh-CN": "声明变更", "en-US": "Declare the change" },
   stepShadow: { "zh-CN": "影子索引构建", "en-US": "Build the shadow index" },
   stepSwap: { "zh-CN": "原子切换", "en-US": "Atomic swap" },
