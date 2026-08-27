@@ -234,7 +234,10 @@ before adding any document. The short version:
   purpose - see the convention section 7.
 
 ADRs live in `docs/30-design/decisions/` with stable append-only IDs; the
-tech-debt register lives in `docs/60-operations/` (`TD-NNN`); runbooks are
+tech-debt register lives in `docs/60-operations/` (`TD-NNN`, every entry carrying
+one `- **Status**:` line and an index row - `check-tech-debt.mjs` enforces both,
+after an audit found three entries still describing work that had shipped weeks
+earlier); runbooks are
 `NN-run-{slug}.md`.
 
 ## Rigid zone / blank zone

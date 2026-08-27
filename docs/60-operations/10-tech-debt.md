@@ -4,6 +4,32 @@ Append-only. Each entry is a known, deliberately-deferred debt with a stable ID
 (never reused). Path pinned by the org taxonomy section 4
 (`60-operations/10-tech-debt.md`, calibrated 2026-07-22).
 
+## 索引
+
+每条都必须有一行 `- **Status**:`，`check-tech-debt.mjs` 在 `quality-gate` 里硬性把关。
+这张表存在的理由是 2026-08-27 的一次审计：TD-007 / 008 / 009 描述的是「还没建」，
+而三样东西早就建好了——条目一路追加「what is now built」却从没关闭，**于是一个照着
+债务表排下一阶段的人，会把三件已完成的事当成欠账**。清单漂了就等于没有。
+
+| ID | 状态 | 摘要 |
+|---|---|---|
+| `TD-001` | **open** | beta tier not yet wired |
+| `TD-002` | closed 2026-07-24 | db-init applied the wrong DDL and reported success |
+| `TD-003` | closed 2026-07-24 | CI did not notice a workflow it had broken |
+| `TD-004` | **open** | vectorization and rerank parked on Atlas capability |
+| `TD-005` | **open** | ownership transfer has no runtime write path |
+| `TD-006` | closed 2026-08-18 | preset seed has no invocation point |
+| `TD-007` | closed 2026-08-27 | processing pipeline runtime not yet built |
+| `TD-008` | closed 2026-08-27 | retrieval recall backends not yet built |
+| `TD-009` | closed 2026-08-27 | tool surface backends partially wired |
+| `TD-010` | **open** | db-init applies increments after 97/98, so live-added columns break |
+| `TD-011` | closed 2026-07-28 | main ruleset let admins bypass all checks (bypass_actors always) |
+| `TD-013` | OPEN (worked around locally; filed upstream as `vxture-design`#8) | DS DialogTitle ships `leading-none`, so every dialog title is zero-height |
+| `TD-014` | **open** | page titles cannot follow the locale (server metadata, client locale) |
+| `TD-015` | **open** | recall does not reach copies: the lineage column exists and nothing reads it |
+
+---
+
 Per the platform's deviation discipline (`140-repo-governance-standard.md`,
 execution model): a standard clause that cannot yet be met because an upstream
 dependency is not ready must be (1) annotated at the implementation site, (2)
@@ -32,6 +58,8 @@ deliberately not carried over.
 | TD-001 | Beta tier not yet wired: development phase deploys straight to production, so the standard's second tag->env tier is dormant | 2026-07-22 | open - awaiting the beta server |
 
 ## TD-001 - beta tier not yet wired
+
+- **Status**: open - beta tier still unwired; standing org plan, not a deviation to fix here
 
 - **Clause not yet met**: `140-repo-governance-standard.md` section 4 - product
   repos run two tag->env tiers, `beta-*` -> beta and `v*.*.*` -> production.
@@ -66,6 +94,8 @@ deliberately not carried over.
 
 ## TD-002 - db-init applied the wrong DDL and reported success
 
+- **Status**: closed 2026-07-24 - db-init now verifies what it applied
+
 - **Clause defeated**: `140-repo-governance-standard.md` section 6 - `db-init`
   carries `expected_sha` specifically to "stop a floating ref applying stale
   DDL".
@@ -98,6 +128,8 @@ deliberately not carried over.
 
 ## TD-003 - CI did not notice a workflow it had broken
 
+- **Status**: closed 2026-07-24 - `check-workflows.mjs` is in `quality-gate`
+
 - **What happened** (2026-07-24): the TD-002 fix turned a literal `
 ` inside a
   shell `printf` into a real newline, splitting one line of `db-init.yml` in two.
@@ -125,6 +157,8 @@ deliberately not carried over.
 
 
 ## TD-004 - vectorization and rerank parked on Atlas capability
+
+- **Status**: open - the real remaining blocker; waits on the Atlas endpoint grant (`vxture-platform#55`)
 
 - **What is deferred**: batch 5b (embed chunks via Atlas A1) and batch 6b
   (vector recall + unified rerank via A1/A3). Karda hosts no model runtime by
@@ -164,6 +198,8 @@ deliberately not carried over.
 
 ## TD-005 - ownership transfer has no runtime write path
 
+- **Status**: open - `owner_sub` is column-locked, so transfer needs a DDL grant plus a service path
+
 - **What is missing**: `KbService` exposes `canTransfer` (the permission check)
   but no transfer write. `owner_sub` is column-locked (`98_column_locks`), so the
   service role cannot reassign a library's owner.
@@ -179,6 +215,8 @@ deliberately not carried over.
 
 
 ## TD-006 - preset seed has no invocation point
+
+- **Status**: closed 2026-08-18 - `POST /api/kb/admin/seed-presets`; **still never run against production**
 
 - **What exists**: `seedPresets()` (app/kb/lib/seed.ts) idempotently inserts the
   six processing presets and three content presets (FAQ/glossary/SOP, KD-002)
@@ -211,6 +249,14 @@ deliberately not carried over.
 
 
 ## TD-007 - processing pipeline runtime not yet built
+
+- **Status**: closed 2026-08-27 - runtime built (audit at the end of batch 15)
+- **CLOSED 2026-08-27** (register audit at the end of batch 15). The runtime this
+  entry says is "not yet built" has been built for months: `processing/queue.ts`,
+  `worker.ts`, `runtime.ts` and `orchestrator.ts` all exist, `POST /api/kb/processing/tick`
+  drains the queue, and batch 15 added a SECOND pass beside it (`extraction/tick`,
+  KD-211). The entry kept accumulating "what is now built" notes and was never
+  closed - so a reader planning the next phase would have counted it as debt.
 
 - **What exists (5a)**: the pure pipeline - the five-stage model, idempotency
   key, failure taxonomy, queue-tier routing, the fast-path parser to element-tree
@@ -258,6 +304,16 @@ deliberately not carried over.
 
 ## TD-008 - retrieval recall backends not yet built
 
+- **Status**: closed 2026-08-27 - backends built; ACTIVATION still waits on TD-004
+- **CLOSED 2026-08-27** (register audit). The recall backends exist:
+  `retrieval/bm25.ts`, `corpus.ts`, `vector-corpus.ts`, wired into the tool surface
+  through `buildToolBackends()`.
+- **What is NOT closed by this, and is tracked elsewhere**: vector recall produces
+  nothing until chunks have embeddings, and embeddings wait on the Atlas endpoint
+  grant - see TD-004 and `docs/60-operations/40-run-atlas-endpoint-grants.md`.
+  "Backend built" and "backend serving results" are different claims; this entry
+  only ever made the first one.
+
 - **What exists (6a)**: the full evaluation chain as pure logic over injected
   ports - scope resolution with the whitelist floor, the visible-set cache
   (event-invalidation + TTL), RRF fusion, the unified-rerank step with its
@@ -304,6 +360,15 @@ deliberately not carried over.
 
 
 ## TD-009 - tool surface backends partially wired
+
+- **Status**: closed 2026-08-27 - all twelve tools have backends
+- **CLOSED 2026-08-27** (register audit). Every tool has a backend:
+  `buildToolBackends()` supplies all twelve, and `dispatch.ts` has a case for each.
+  The entry still said "the seven descriptors" - the surface has grown to twelve
+  (`get_evidence` / `find_entity` / `get_context` / `browse` landed in batch 15),
+  which is how far the text had drifted from the code.
+- The authoritative list is now `docs/30-design/260-external-interfaces.md` section 3,
+  with `check-interface-register.mjs` failing CI if it disagrees with the catalog.
 
 - **What exists**: the full `karda.*` contract face - the seven descriptors,
   `/.well-known/vxture-tools` (S2S-authenticated, tailnet only), the S2S gateway
@@ -359,6 +424,16 @@ deliberately not carried over.
 
 ## TD-010 - db-init applies increments after 97/98, so live-added columns break
 
+- **Status**: open - increment ordering unchanged, but the failure class is now caught by a guardrail
+- **Still open, and it bit us on 2026-08-26** (`vxture-karda#153`): the
+  `active_chunk_version` UPDATE grant lived only in `incr/0001`, so every MIGRATED
+  database had it and every FRESHLY INITIALISED one did not - the atomic chunk swap
+  failed with `permission denied for table document` and no document could ever
+  become retrievable. That is exactly the failure shape this entry predicts.
+  Mitigated by mirroring the grant into `98_column_locks.sql` AND by extending
+  `check-data-architecture.mjs` to fail when an increment carries a grant that 98
+  does not - so the class is now caught even though the ordering is unchanged.
+
 - **Clause strained**: `140-repo-governance-standard.md` section 6/7 - the DDL
   applier (`deploy/database/apply.sh`, mirrored in `db-init.yml`) is inherited
   from `vxture-template` and applies `00_baseline.sql -> 97_service_role.sql ->
@@ -395,6 +470,13 @@ deliberately not carried over.
 
 
 ## TD-011 - main ruleset let admins bypass all checks (bypass_actors always)
+
+- **Status**: closed 2026-07-28 - `bypass_actors: []`, verified 2026-08-27
+- **CLOSED 2026-08-27** (register audit; the fix itself landed 2026-07-28).
+  `docs/50-deployment/rebuild/main-ruleset.json` carries `bypass_actors: []`,
+  verified while auditing. CLAUDE.md states the rule as standing ("MUST stay empty";
+  break-glass is an editable ruleset, not an invisible per-push exemption), so the
+  guarantee survives this entry closing.
 
 - **Clause strained**: this repo's own working agreement - "Direct `git push
   origin main` is BLOCKED by the ruleset (must go through a PR, and the required
