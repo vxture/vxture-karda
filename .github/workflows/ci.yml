@@ -164,6 +164,9 @@ jobs:
       - name: Atlas contract guardrail (published codes only; product axis only)
         run: node scripts/guardrails/check-atlas-contract.mjs --strict
 
+      - name: Tech-debt register guardrail (every entry states its status)
+        run: node scripts/guardrails/check-tech-debt.mjs --strict
+
   # -- Quality gate (aggregator; stable required-check name) ------------------
   quality-gate:
     name: quality-gate
