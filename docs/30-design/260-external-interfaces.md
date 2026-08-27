@@ -208,7 +208,7 @@ karda 不在自己这边选型,也不该出现模型名。
 | `vxture-atlas#4` | 三条 `taskProfile` 授权 | **CLOSED —— 走错了轴**,见 §11.1.1 |
 | `vxture-atlas#39` | 第四条 `karda.extract` | **CLOSED —— 同上** |
 | `vxture-atlas#21` | `/v1` 契约以类型包/夹具发布 | **CLOSED —— 已交付并已消费**,见 §11.1.3 |
-| **`vxture-platform#55`** | **给产品 `karda` 授四个端点** | **待运维**——唯一还剩的一条。操作单:`docs/60-operations/40-run-atlas-endpoint-grants.md` |
+| **`vxture-platform#55`** | **给产品 `karda` 授四个端点** | **待运维**——唯一还剩的一条。执行以 `#55` 为准;我方在 `vxture-platform#56` 补了「每条不做会怎样」与三个坑,操作单 `docs/60-operations/40-run-atlas-endpoint-grants.md` |
 
 ### 11.1.1 前两条被对端推翻:那条轴是 legacy,而且是他们指错的
 

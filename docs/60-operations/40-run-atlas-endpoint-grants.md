@@ -2,6 +2,7 @@
 
 > **执行方**:运营侧(持 operator token 的人)。**不是** karda 的代码,也不是 Atlas。
 > **追踪**:`vxture-platform/vxture-platform#55`(Atlas 已在该条上更正为产品轴)。
+> 我方在 `vxture-platform#56` 补了执行面(每条不做会怎样、三个坑)——**执行仍以 `#55` 为准,不要两处分开追**。
 > **karda 侧**:已就绪,零改动——代码发的就是下表这四个端点码(`kb/atlas/selection.ts`)。
 
 一次性操作。做完之前 karda 的模型相关能力全部驻留;做完之后**不需要 karda 改任何代码**。
