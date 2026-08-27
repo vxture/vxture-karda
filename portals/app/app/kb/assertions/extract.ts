@@ -178,6 +178,9 @@ export function prepare(raw: RawAssertion[], source: ExtractionSource, text: str
  * This finds candidates only. Whether they actually contradict is the steward's
  * call, and the answer lands as an `evidence` row with `stance = contradicts`.
  */
+// NOT CALLED IN PRODUCTION YET, deliberately: adjudication is a human act and
+// its surface is deferred by 140 section 5. See 140 section 11.3 - built half,
+// with the other half ruled out of this round. Do not delete as dead.
 export function conflictCandidates(prepared: PreparedAssertion[]): [PreparedAssertion, PreparedAssertion][] {
   const bySubject = new Map<string, PreparedAssertion[]>();
   for (const a of prepared) {

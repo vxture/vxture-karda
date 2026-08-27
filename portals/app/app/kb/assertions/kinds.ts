@@ -52,6 +52,9 @@ export function isRecallable(a: {
  * Confidence is never CLEARED, only ignored: it is the record of how the
  * extractor performed, and clearing it removes the only way to judge one.
  */
+// NOT CALLED IN PRODUCTION YET. KD-210 is ruled, but section 5 keeps assertions
+// out of retrieval this round, so no ranking reads this. A ruling and its
+// taking effect are two different things; see 140 section 11.3.
 export function confidenceWeight(a: { verificationState: string; confidence: number | null }): number | null {
   if (a.verificationState === "verified") return null;
   return a.confidence;
