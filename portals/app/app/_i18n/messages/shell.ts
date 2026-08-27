@@ -9,6 +9,8 @@ import type { Catalog, MessageFn } from "../catalog";
 // structure declaration means it stays readable as an IA document.
 export const shell = {
   // --- domains ---------------------------------------------------------------
+  navHome: { "zh-CN": "首页", "en-US": "Home" },
+  navHomeDesc: { "zh-CN": "此刻能不能用、在服务谁、可不可信", "en-US": "Usable now, serving whom, trustworthy" },
   navAssets: { "zh-CN": "知识资产", "en-US": "Knowledge assets" },
   assetDetail: { "zh-CN": "资产详情", "en-US": "Asset detail" },
   navAssetsDesc: { "zh-CN": "知识资产的统计、运营与健康", "en-US": "Asset inventory, operations and health" },

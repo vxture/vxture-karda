@@ -62,7 +62,11 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS = [
-  { key: "overview", href: "/", icon: "squares-four", labelKey: "navAssets", descKey: "navAssetsDesc", sub: [] },
+  // 首页与知识资产分开(KD-214,owner 2026-08-27)。此前 `/` 兼任两者,于是
+  // 「这套基础设施此刻能不能用」没有地方说——语料为零时,资产总览显示的是一批
+  // 「有库、没内容」的库,读起来像没人上传东西。见 150-page-architecture §2。
+  { key: "home", href: "/", icon: "home", labelKey: "navHome", descKey: "navHomeDesc", sub: [] },
+  { key: "overview", href: "/assets", icon: "squares-four", labelKey: "navAssets", descKey: "navAssetsDesc", sub: [] },
   {
     key: "channels",
     href: "/channels",
