@@ -44,6 +44,18 @@ Product code `karda`; names below are the concrete derived values.
       token) are configured once at the org and shared to this repo - not
       duplicated per repo.
 
+## Atlas capability grants (separate product, separate line)
+
+- [ ] Grant product `karda` the four Atlas endpoints - `chat/default`,
+      `embedding/default`, `rerank/default`, `chat/extract`. **Procedure and
+      impact: `docs/60-operations/40-run-atlas-endpoint-grants.md`**; tracked on
+      `vxture-platform#55`.
+
+Listed here only as a pointer. It is NOT a platform-side action in this
+checklist's sense - Atlas is a separate product with its own repo, deployment and
+management plane - but whoever works this checklist is the person who will
+otherwise discover, at first upload, that karda indexes nothing.
+
 ## Sequencing
 
 Karda inherits the platform-integration layer already built, so these rows are
