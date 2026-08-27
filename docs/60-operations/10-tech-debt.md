@@ -476,3 +476,30 @@ deliberately not carried over.
   and about to become five, which is what showed the containment was wrong.
 - **Recovery condition**: a server-readable locale exists and replaces
   `BRAND.defaultLocale` in those five `metadata` blocks. Nothing else moves.
+
+## TD-015 - recall does not reach copies: the lineage column exists and nothing reads it
+
+- **Status**: open. Raised the moment KD-212 was ruled (2026-08-27), not
+  discovered later - which is the only reason it is a debt entry and not an
+  incident.
+- **Symptom**: a customer deletion request recalls the source library and leaves
+  every INSTANCE and archived snapshot of it standing. Nothing reports this;
+  the recall reports success, because from its own point of view it succeeded.
+- **Cause**: `knowledge_base.origin_kb_id` and `origin_snapshot_at` are in the
+  baseline and carry the comment *P-tier instantiation lineage*, so the handle
+  for finding copies has been there all along - but **no application code reads
+  either column**. Recall walks the library it was given and stops.
+- **Why it is a debt and not a bug**: until KD-212 (owner 2026-08-27) it was an
+  open question whether recall SHOULD penetrate copies. The behaviour matched an
+  undecided spec. The ruling is what turned it into missing work.
+- **Fix**: make recall lineage-aware - from the recalled library, follow
+  `origin_kb_id` to every instance and snapshot and bring them into scope. No DDL
+  is needed; the columns are already there and `check-data-architecture` keeps
+  them in lockstep.
+- **What must NOT be done in the meantime**: do not describe recall as
+  penetrating copies. `140-assertion-model` §7.1 states plainly that until this
+  lands, **recall does not reach copies** - the gap between "ruled" and
+  "implemented" is exactly the difference a customer would ask about.
+- **Interaction with KD-204**: none. KD-204 governs TIME (nothing is cleared just
+  because it aged); KD-212 governs REQUESTS. The two only looked like they
+  collided because both said "clear" without naming the trigger.
