@@ -152,6 +152,8 @@ export async function storeExtraction(
  * cited the old value before the adjudication needs to be able to find out what
  * happened to it.
  */
+// NOT CALLED IN PRODUCTION YET - same reason as `conflictCandidates`: the
+// adjudication surface is deferred. See 140 section 11.3.
 export async function recordConflictOutcome(winnerId: string, loserId: string): Promise<void> {
   const p = await getPrismaClient();
   await p.$transaction(async (tx) => {
