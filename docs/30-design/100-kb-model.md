@@ -30,13 +30,35 @@ KnowledgeBase(唯一库类型)
   ├── 配置面(§7):加工模板 / 索引配置 / 检索默认参数 / 治理策略 / 内容模板绑定
   ├── Folder(可选,纯组织,零权限语义,单层)
   └── ┬── Document(文件型内容:上传 / Arda DataSource 同步)
-      │     └── Chunk(分块,派生)── VectorIndex / FulltextIndex / GraphInstance(预留)
+      │     ├── Chunk(检索单元,派生,中间产物)── VectorIndex / FulltextIndex
+      │     └── Span(原文跨度:document + version + 字符区间)
       └── Entry(条目型内容:结构化知识单元,遵循 ContentTemplate)
             └── 索引化:模板字段 → 检索文本 + filterable 元数据(§6.3)
+
+Assertion(断言,一等对象,与 Document / Entry 并列)
+  ├── Evidence(断言 ←→ Span 的边,stance = supports | contradicts)
+  └── AssertionMention ──→ Entity(实体注册表,库级)
 
 ProcessingTemplate(加工模板,库级,平台预置 + org 可调参)
 ContentTemplate(内容模板,条目级,平台预置 + org 自定义)
 ```
+
+**Chunk 的地位下调(KD-017)。** 上图里 Chunk 从「派生」改标为「**检索单元,中间产物**」,
+不是措辞润色:定位升为 Agent 共享知识基础设施之后,**核心模型是断言,不是分块**。Chunk 是
+为了让检索能工作而切出来的东西,换一套分块参数它就整批作废重建;而断言是我方声称**知道**
+的内容,人裁决过之后它带着人的工作成果。两者失效的理由不同,这一点在 KD-211(抽取独立成
+一趟,不作加工管线第六档)上直接产生了工程后果。
+
+**Assertion 与 Document / Entry 并列,不是 Entry 的扩展**(owner 2026-08-26):Evidence 必须
+指向**跨度**,而 Entry 没有跨度概念;且抽取物与手写条目在可编辑性、量级、真值归属三点上
+都不同。详见 `140-assertion-model`。
+
+**Span 是 Chunk 的同级而非下级。** 两者索引进**同一个偏移空间**(文档 canonical 文本),
+所以「这条引用依据哪些断言」是一次区间相交,而不是文档级的猜测——`incr/0007` 给 chunk 补上
+`start_offset` / `end_offset` 正是为了这座桥。
+
+GraphInstance(预留)未在上图重复:它仍是索引侧的预留,与断言层的实体图**不是同一件事**
+——前者是检索结构,后者是知识内容。
 
 ### 2.2 两类内容单元:Document 与 Entry
 
