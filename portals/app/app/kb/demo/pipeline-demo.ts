@@ -89,7 +89,7 @@ export const DEMO_TASKS: TasksData = {
   counts: { inflight: 12, suspended: 4, failed: 6 },
   throughput: { docsToday: 62, p95Seconds: 38, freshnessP95Min: 6.4, docsPerMin: 4.2 },
   queueDepth: { interactive: 3, sync: 21, bulk: 240 },
-  failures: { transient: 4, permanent: 6, quota: 4 },
+  failures: { transient: 4, permanent: 6, quota: 4, unavailable: 3 },
   stageP95: [1.2, 21, 0.8, 9.0, 0.6],
   tiers: [
     { key: "interactive", queued: 3, concurrency: "2 并发", pct: 12 },

@@ -96,7 +96,11 @@ export interface TasksData {
   counts: { inflight: number; suspended: number; failed: number };
   throughput: { docsToday: number; p95Seconds: number; freshnessP95Min: number; docsPerMin: number };
   queueDepth: { interactive: number; sync: number; bulk: number };
-  failures: { transient: number; permanent: number; quota: number };
+  // `unavailable` split from `quota` (incr/0008). The UI reads THIS type, not
+  // the live read model's - they are declared separately, so a field added to
+  // one is invisible on the page until it is added here too. That is exactly
+  // how the capability-parked count vanished from the board for one release.
+  failures: { transient: number; permanent: number; quota: number; unavailable: number };
   /** Per-stage P95 seconds for the mini bars: fetch/parse/chunk/embed/commit. */
   stageP95: [number, number, number, number, number];
   tiers: QueueTier[];

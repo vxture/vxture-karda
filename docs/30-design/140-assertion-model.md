@@ -507,7 +507,9 @@ karda_kb.assertion_mention
 
 ## 12. 联动修订登记
 
-- `100-kb-model.md`:§2.1 对象总图需增列本文三对象,Chunk 地位下调注明 KD-017;
+- ~~`100-kb-model.md`:§2.1 对象总图需增列本文三对象,Chunk 地位下调注明 KD-017~~
+  —— **已落(2026-08-27)**:Assertion / Evidence / Entity 入图并与 Document / Entry 并列,
+  Span 标为 Chunk 的同级(同一偏移空间),Chunk 改标「检索单元,中间产物」;
 - `110-processing`:**KD-211 已定独立一趟**,故其五档阶段清单**不变**;新增的任务种类
   已随 `incr/0008_*` 落地(§11.2);
 - `120-retrieval-tools`:本轮不改;`confidence` 若入排序(§11 #3)则改;

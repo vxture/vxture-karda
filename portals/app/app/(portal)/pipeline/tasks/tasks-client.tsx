@@ -73,6 +73,34 @@ const TIER_KEY = {
   bulk: { name: "tierBulk", scope: "tierBulkScope" },
 } as const;
 
+/**
+ * The failure breakdown, DERIVED FROM THE TYPE rather than hand-written rows.
+ *
+ * `Record<FailureClassKey, ...>` is the point: add a class to `TasksData` and
+ * this stops compiling until it has a label and a tone. The rows used to be
+ * three hardcoded spans, and when `unavailable` was split out of `quota`
+ * (incr/0008) nothing required a fourth - so the count of tasks parked on a
+ * missing capability grant simply VANISHED from the board. That was worse than
+ * the mislabel it replaced: before the split those tasks at least showed up,
+ * wrongly, under 配额; after it they showed up nowhere, and an operator reading
+ * `quota: 0` / `permanent: 0` would conclude nothing was parked at all.
+ */
+type FailureClassKey = keyof TasksData["failures"];
+
+const FAILURE_LABEL: Record<FailureClassKey, "failTransient" | "failPermanent" | "failQuota" | "failUnavailable"> = {
+  transient: "failTransient",
+  permanent: "failPermanent",
+  quota: "failQuota",
+  unavailable: "failUnavailable",
+};
+
+const FAILURE_ROWS: { cls: FailureClassKey; dot: string; tone: string }[] = [
+  { cls: "transient", dot: "bg-muted-foreground", tone: "text-muted-foreground" },
+  { cls: "permanent", dot: "bg-destructive", tone: "text-destructive-text" },
+  { cls: "quota", dot: "bg-warning", tone: "text-warning-text" },
+  { cls: "unavailable", dot: "bg-warning", tone: "text-warning-text" },
+];
+
 export function TasksClient() {
   const m = useMessages(pipelineMessages);
   const sh = useMessages(shell);
@@ -168,6 +196,10 @@ export function TasksClient() {
               </span>
               <span className="text-warning-text">
                 {data.failures.quota} <span className="text-body-sm text-muted-foreground">{m.quotaSuspended}</span>
+              </span>
+              <span className="text-warning-text">
+                {data.failures.unavailable}{" "}
+                <span className="text-body-sm text-muted-foreground">{m.capabilitySuspended}</span>
               </span>
             </span>
           </CardContent>
@@ -303,21 +335,13 @@ export function TasksClient() {
             <CardContent className="flex flex-col gap-sm px-lg">
               <span className="font-mono text-code-sm tracking-widest text-muted-foreground">{m.failureBreakdown}</span>
               <div className="flex flex-col gap-xs text-body-sm">
-                <span className="flex items-center gap-sm">
-                  <span className="size-2xs rounded-full bg-muted-foreground" />
-                  {m.failTransient}
-                  <span className="ml-auto font-mono text-code-sm text-muted-foreground">{data.failures.transient}</span>
-                </span>
-                <span className="flex items-center gap-sm">
-                  <span className="size-2xs rounded-full bg-destructive" />
-                  {m.failPermanent}
-                  <span className="ml-auto font-mono text-code-sm text-destructive-text">{data.failures.permanent}</span>
-                </span>
-                <span className="flex items-center gap-sm">
-                  <span className="size-2xs rounded-full bg-warning" />
-                  {m.failQuota}
-                  <span className="ml-auto font-mono text-code-sm text-warning-text">{data.failures.quota}</span>
-                </span>
+                {FAILURE_ROWS.map(({ cls, dot, tone }) => (
+                  <span key={cls} className="flex items-center gap-sm">
+                    <span className={`size-2xs rounded-full ${dot}`} />
+                    {m[FAILURE_LABEL[cls]]}
+                    <span className={`ml-auto font-mono text-code-sm ${tone}`}>{data.failures[cls]}</span>
+                  </span>
+                ))}
               </div>
               <div className="border-t border-dashed border-primary/10 pt-sm text-body-sm text-muted-foreground dark:border-primary/20">
                 {m.poisonPill}
