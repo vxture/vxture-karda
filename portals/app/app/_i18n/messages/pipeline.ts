@@ -167,6 +167,7 @@ export const pipeline = {
   tileFailures: { "zh-CN": "失败与挂起", "en-US": "FAILED & SUSPENDED" },
   failedResident: { "zh-CN": "失败驻留", "en-US": "failed, resident" },
   quotaSuspended: { "zh-CN": "配额挂起", "en-US": "quota-suspended" },
+  capabilitySuspended: { "zh-CN": "待授权", "en-US": "awaiting-grant" },
   tileStageP95: { "zh-CN": "阶段 P95 · 秒", "en-US": "STAGE P95 · SECONDS" },
   countInflight: {
     "zh-CN": (n: number) => `在制 ${n}`,
@@ -210,6 +211,10 @@ export const pipeline = {
   failTransient: { "zh-CN": "瞬态（退避重试中）", "en-US": "Transient (backing off, retrying)" },
   failPermanent: { "zh-CN": "永久（驻留待修正）", "en-US": "Permanent (resident, awaiting a fix)" },
   failQuota: { "zh-CN": "配额（恢复自动续）", "en-US": "Quota (resumes on its own)" },
+  // Split from failQuota (incr/0008): both park, but they need OPPOSITE
+  // operator actions - a quota comes back by itself, an ungranted capability
+  // comes back when someone chases the grant.
+  failUnavailable: { "zh-CN": "能力未开通（等授权）", "en-US": "Capability not granted (awaiting a grant)" },
   poisonPill: {
     "zh-CN": "毒丸隔离：单文档失败不阻塞同库其他文档。",
     "en-US": "Poison-pill isolation: one document failing never blocks the others in its library.",
