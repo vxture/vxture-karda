@@ -128,7 +128,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
               window ended up drawing four columns into an 840px pane. Pages
               query it with `@min-[Nrem]:`; the arithmetic behind each
               threshold is written out at the asset grid in
-              (portal)/overview-client.tsx. */}
+              (portal)/assets/assets-client.tsx. */}
           <div className="@container flex w-full flex-col gap-md px-md pb-5xl">{children}</div>
         </main>
         {dockOpen && <StewardDock shell={shell} onClose={toggleDock} />}

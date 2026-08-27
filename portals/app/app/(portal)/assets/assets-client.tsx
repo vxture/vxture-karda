@@ -15,14 +15,14 @@ import {
   StatusBadge,
   type IconName,
 } from "@vxture/design-system";
-import { loginHref } from "../_lib/api";
-import { useMessages } from "../_i18n/useMessages";
-import { common } from "../_i18n/messages/common";
-import { useFormat } from "../_i18n/useFormat";
-import { assets } from "../_i18n/messages/assets";
-import { shell } from "../_i18n/messages/shell";
-import { PageHead } from "../_shell/PageHead";
-import type { OverviewAsset, OverviewData } from "../kb/demo/overview-types";
+import { loginHref } from "../../_lib/api";
+import { useMessages } from "../../_i18n/useMessages";
+import { common } from "../../_i18n/messages/common";
+import { useFormat } from "../../_i18n/useFormat";
+import { assets } from "../../_i18n/messages/assets";
+import { shell } from "../../_i18n/messages/shell";
+import { PageHead } from "../../_shell/PageHead";
+import type { OverviewAsset, OverviewData } from "../../kb/demo/overview-types";
 
 // 知识资产 client. Layout follows the approved V2 design translated to the
 // light-first token palette: stats strip -> tag filter bar -> asset cards.
@@ -204,7 +204,7 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
   );
 }
 
-export function OverviewClient() {
+export function AssetsClient() {
   const m = useMessages(assets);
   const sh = useMessages(shell);
   const c = useMessages(common);

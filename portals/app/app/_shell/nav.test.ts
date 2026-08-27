@@ -17,8 +17,16 @@ test("a sub-view under its own prefix still works", () => {
 });
 
 test('"/" matches only exactly - every path would otherwise start with it', () => {
-  assert.equal(activeNavKey("/"), "overview");
-  assert.equal(activeNavKey("/assets/abc"), null, "an asset page has no top-level domain of its own");
+  assert.equal(activeNavKey("/"), "home");
+});
+
+test("an asset page activates 知识资产, not 首页 (KD-214 split them)", () => {
+  // Before the split `/` WAS the asset overview, so `/assets/abc` deliberately
+  // activated nothing - there was no asset domain entry to light up. Now there
+  // is one, and a detail page belongs to it.
+  assert.equal(activeNavKey("/assets"), "overview");
+  assert.equal(activeNavKey("/assets/abc"), "overview");
+  assert.equal(activeNavKey("/assets/new"), "overview");
 });
 
 test("an unknown path activates nothing rather than guessing", () => {
