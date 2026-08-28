@@ -45,3 +45,34 @@
   height: 0;
   display: none;
 }
+
+/* 首页 hero 的入场序列(owner 2026-08-28:标题区按 hero 做,效果要炫一些)。
+ *
+ * 一段**有编排的**入场,不是几处零散的动效:眉标 -> 字标 -> 导语依次升起,总长约
+ * 700ms。散在各处的动画会让页面显得躁,一段短序列只发生一次,读的人只会觉得这一屏
+ * 「立住了」。
+ *
+ * 只在这里定义,不做成工具类:它只有一处用,而一个只有一处用的工具类是把耦合藏进
+ * 类名里。延迟由使用处的内联 `animation-delay` 给——那是三行数字,不值一套类。
+ *
+ * `prefers-reduced-motion` 下直接落位:不是不显示,是不动。 */
+@keyframes vx-hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.vx-hero-rise {
+  animation: vx-hero-rise 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vx-hero-rise {
+    animation: none;
+  }
+}
