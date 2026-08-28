@@ -7,6 +7,8 @@ import { uploadDocument } from "../../../../kb/lib/upload";
 import { getObjectStore } from "../../../../kb/storage/objectstore";
 import { getProcessingRuntime, enqueueForDocument } from "../../../../kb/processing/runtime";
 import { requireAuth } from "../../../../kb/api/http";
+import { readParkedByDocument } from "../../../../kb/processing/task-read";
+import { prismaEnabled } from "../../../../lib/db";
 import type { AuthUser } from "../../../../auth/lib/claims";
 
 // GET  /api/kb/:id/documents   list documents in a library
@@ -32,7 +34,16 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   if (!auth.ok) return auth.response;
   const { id } = await ctx.params;
   if (!(await scopedKb(id, auth.user))) return NextResponse.json({ error: "not_found" }, { status: 404 });
-  return NextResponse.json({ documents: await content().listDocuments(id) });
+  // `parked` 与 `documents` 并列,不合进文档行:文档没有驻留,是它的任务驻留了
+  // (`readParkedByDocument` 的注释写了为什么不去撑宽 `DocumentRow`)。
+  //
+  // 没有数据库时它是空对象而不是缺字段——界面永远拿到一个可索引的东西,不必为
+  // 「离线」再写一条分支。
+  const [documents, parked] = await Promise.all([
+    content().listDocuments(id),
+    prismaEnabled() ? readParkedByDocument(id) : Promise.resolve({}),
+  ]);
+  return NextResponse.json({ documents, parked });
 }
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }): Promise<Response> {

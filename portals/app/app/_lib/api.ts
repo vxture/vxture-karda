@@ -6,6 +6,7 @@
 // Every call throws ApiError on a non-2xx so a component can branch on
 // err.status (401 -> prompt sign-in) without threading a result type through the
 // UI. The one place that maps a status to human wording is format.apiErrorMessage.
+import type { Unavailable } from "../kb/processing/unavailable";
 import type { DegradationKind } from "../kb/connectors/catalog";
 import type { PublishState } from "./format";
 
@@ -165,9 +166,20 @@ export async function setVerifierConfig(
 
 // --- documents ----------------------------------------------------------------
 
-export async function listDocuments(kbId: string): Promise<Doc[]> {
-  const body = await req<{ documents: Doc[] }>(`/api/kb/${kbId}/documents`);
-  return need(body, "documents", `/api/kb/${kbId}/documents`);
+/** 按 `document_id` 索引的驻留原因。空对象 = 没有任何文档卡住。 */
+export type ParkedByDocument = Record<string, Unavailable>;
+
+/**
+ * 文档清单,外加**每份驻留文档卡在什么原因上**。
+ *
+ * `parked` 与 `documents` 并列而不是长在文档行上:文档没有驻留,是它的任务驻留了
+ * (见 `kb/processing/task-read.ts` 的 `readParkedByDocument`)。
+ *
+ * 字段缺失时回落成空对象——旧版本的端点不返回它,而调用方直接索引,不该为此写判空。
+ */
+export async function listDocuments(kbId: string): Promise<{ documents: Doc[]; parked: ParkedByDocument }> {
+  const body = await req<{ documents: Doc[]; parked?: ParkedByDocument }>(`/api/kb/${kbId}/documents`);
+  return { documents: need(body, "documents", `/api/kb/${kbId}/documents`), parked: body.parked ?? {} };
 }
 
 export async function uploadDocument(

@@ -141,7 +141,8 @@ export function EvalSetsClient() {
         // Evidence is PICKED from the documents actually in scope - a typed id
         // with a typo becomes a question that can never be satisfied.
         const scope = set.kbScope.length > 0 ? set.kbScope : kbs.map((k) => k.id);
-        const all = await Promise.all(scope.map((id) => listDocuments(id).catch(() => [])));
+        // 这一处只要文档清单;驻留原因是资产页的事,评测集选证据时用不着。
+        const all = await Promise.all(scope.map((id) => listDocuments(id).then((r) => r.documents).catch(() => [])));
         setDocs(all.flat());
       } catch (e) {
         guard(e, evaluation.errSetDetail);

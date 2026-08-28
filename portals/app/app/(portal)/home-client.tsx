@@ -11,6 +11,7 @@ import { useMessages } from "../_i18n/useMessages";
 import { home as homeMessages } from "../_i18n/messages/home";
 import { shell } from "../_i18n/messages/shell";
 import { common } from "../_i18n/messages/common";
+import { states } from "../_i18n/messages/states";
 import { assets } from "../_i18n/messages/assets";
 import type { Readiness, ReadinessReason, ReadinessState } from "../kb/home/readiness";
 import type { UnavailableCause } from "../kb/processing/unavailable";
@@ -70,7 +71,7 @@ const BLOCKER_KEY = {
   workspace_not_provisioned: "blockerWorkspaceNotProvisioned",
   endpoint_not_granted: "blockerEndpointNotGranted",
   model_not_routable: "blockerModelNotRoutable",
-} as const satisfies Record<UnavailableCause, keyof typeof homeMessages>;
+} as const satisfies Record<UnavailableCause, keyof typeof states>;
 
 /** 四个域,从导航目录里取——首页不另写一份。首页自己那一项要去掉,否则这一页会给出
  *  一张指向自己的卡片,而且 `DomainCardBody` 的 default 分支会把它画成验证评测。 */
@@ -81,6 +82,9 @@ export function HomeClient() {
   const s = useMessages(shell);
   const c = useMessages(common);
   const a = useMessages(assets);
+  // 「卡在哪、去哪补」那组句子在**资产页也要用**,所以放在共享的状态目录里
+  // ——复制一份到 home 目录,两边的说法迟早会漂移。
+  const st = useMessages(states);
 
   const [readiness, setReadiness] = useState<Readiness | null>(null);
   const [domains, setDomains] = useState<ShellData | null>(null);
@@ -170,11 +174,11 @@ export function HomeClient() {
                     <li key={`${b.cause}:${b.arg ?? ""}`} className="text-body-md">
                       {b.arg ? <code className="font-mono text-code-md text-foreground">{b.arg}</code> : null}
                       <span className={b.arg ? "ml-xs text-muted-foreground" : "text-muted-foreground"}>
-                        {m[BLOCKER_KEY[b.cause]]}
+                        {st[BLOCKER_KEY[b.cause]]}
                       </span>
                     </li>
                   ))}
-                  <li className="text-body-sm text-muted-foreground">{m.blockerResumeNote}</li>
+                  <li className="text-body-sm text-muted-foreground">{st.blockerResumeNote}</li>
                 </ul>
               ) : null}
 

@@ -16,12 +16,14 @@ import {
   NativeSelect,
   SegmentedControl,
 } from "@vxture/design-system";
-import { documentBytesHref, type Doc, type Folder, type Kb } from "../../../_lib/api";
+import { documentBytesHref, type Doc, type Folder, type Kb, type ParkedByDocument } from "../../../_lib/api";
 import { formatBytes } from "../../../_lib/format";
 import { useFormat } from "../../../_i18n/useFormat";
 import { useMessages } from "../../../_i18n/useMessages";
 import { common } from "../../../_i18n/messages/common";
 import { assets } from "../../../_i18n/messages/assets";
+import { states } from "../../../_i18n/messages/states";
+import type { Unavailable, UnavailableCause } from "../../../kb/processing/unavailable";
 import { previewKind } from "../../../kb/lib/preview";
 import { verificationRecord } from "../../../kb/governance/record";
 // `Badge` here is the local tone wrapper (_lib/ui), which maps our five-tone
@@ -52,6 +54,7 @@ const UNFILED = "\u0000unfiled";
 export function DocumentPanel({
   kb,
   docs,
+  parked,
   folders,
   busy,
   onUpload,
@@ -61,6 +64,9 @@ export function DocumentPanel({
 }: {
   kb: Kb;
   docs: Doc[] | null;
+  /** 每份**驻留中**文档卡在什么原因上,按 document_id 索引。与文档清单同一趟取回,
+   *  但不长在文档行上——文档没有驻留,是它的任务驻留了。 */
+  parked: ParkedByDocument;
   folders: Folder[];
   busy: boolean;
   onUpload: (file: File, folderId: string | null) => void | Promise<void>;
@@ -180,6 +186,7 @@ export function DocumentPanel({
                     key={doc.id}
                     kb={kb}
                     doc={doc}
+                    parked={parked[doc.id] ?? null}
                     busy={busy}
                     onPreview={setPreview}
                     onVerify={onVerify}
@@ -199,6 +206,7 @@ export function DocumentPanel({
                     key={doc.id}
                     kb={kb}
                     doc={doc}
+                    parked={parked[doc.id] ?? null}
                     busy={busy}
                     onPreview={setPreview}
                     onVerify={onVerify}
@@ -217,9 +225,19 @@ export function DocumentPanel({
   );
 }
 
+/** 与首页同一张表(`home-client.tsx`),句子在共享的状态目录里,只有这份键映射各写
+ *  一次——把它也提到公共模块只是为了省四行,却让两个页面耦合在一个别处的常量上。 */
+const BLOCKER_KEY = {
+  atlas_not_configured: "blockerAtlasNotConfigured",
+  workspace_not_provisioned: "blockerWorkspaceNotProvisioned",
+  endpoint_not_granted: "blockerEndpointNotGranted",
+  model_not_routable: "blockerModelNotRoutable",
+} as const satisfies Record<UnavailableCause, keyof typeof states>;
+
 function DocumentRow({
   kb,
   doc,
+  parked,
   busy,
   onPreview,
   onVerify,
@@ -228,6 +246,7 @@ function DocumentRow({
 }: {
   kb: Kb;
   doc: Doc;
+  parked: Unavailable | null;
   busy: boolean;
   onPreview: (doc: Doc) => void;
   onVerify: (doc: Doc) => void | Promise<void>;
@@ -237,7 +256,8 @@ function DocumentRow({
   const f = useFormat();
   const m = useMessages(assets);
   const c = useMessages(common);
-  const st = f.content(doc.contentState);
+  const st = useMessages(states);
+  const cs = f.content(doc.contentState);
   const vr = f.verification(doc.verificationState);
   const hint = f.processingHint(doc.contentState);
   const gov = kb.governanceEnabled;
@@ -255,7 +275,7 @@ function DocumentRow({
         </div>
         <div className="flex shrink-0 items-center gap-sm">
           {gov && <ToneBadge tone={vr.tone}>{vr.label}</ToneBadge>}
-          <ToneBadge tone={st.tone}>{st.label}</ToneBadge>
+          <ToneBadge tone={cs.tone}>{cs.label}</ToneBadge>
 
           {/* Preview is offered only for what we will actually render. For
               everything else the honest control is a download - a "预览" button
@@ -319,7 +339,22 @@ function DocumentRow({
           )}
         </div>
       )}
-      {hint && <div className="text-body-sm text-muted-foreground">{hint}</div>}
+      {/* 卡住的文档自己说卡在哪、去哪补。
+          没驻留时才回落到那句中性的「已收下并入队」——原先那句写的是「向量服务恢复前
+          索引暂停」,给每一份 processing 文档都挂上一句停摆说明,包括排着队加工得好好
+          的那些,而且把「没授权」说成一次会自己过去的故障。 */}
+      {parked ? (
+        <div className="flex flex-col gap-3xs text-body-sm">
+          <span>
+            <span className="text-warning-text">{st.parkedPrefix}</span>
+            {parked.arg ? <code className="ml-2xs font-mono text-code-sm text-foreground">{parked.arg}</code> : null}
+            <span className="ml-2xs text-muted-foreground">{st[BLOCKER_KEY[parked.cause]]}</span>
+          </span>
+          <span className="text-muted-foreground">{st.blockerResumeNote}</span>
+        </div>
+      ) : (
+        hint && <div className="text-body-sm text-muted-foreground">{hint}</div>
+      )}
     </div>
   );
 }
