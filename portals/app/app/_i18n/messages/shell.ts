@@ -40,8 +40,17 @@ export const shell = {
   // --- chrome ----------------------------------------------------------------
   searchPlaceholder: { "zh-CN": "搜索资产、条目", "en-US": "Search assets and entries" },
   launcherLabel: { "zh-CN": "切换功能域", "en-US": "Switch domain" },
-  dock: { "zh-CN": "管家值班台", "en-US": "Steward desk" },
-  dockCollapse: { "zh-CN": "收起值班台", "en-US": "Collapse steward desk" },
+  // **Karda Super Agent(卡尔达)** —— karda 平台独有的 super agent(owner 2026-08-28)。
+  // 名字是**英文**,两个语言下都一样:它是一个产品名,不是一段可翻译的措辞,翻掉了
+  // 就成了另一个东西。中文「卡尔达」降为它旁边的 tag,只在中文界面出现——
+  // `dockTag` 的 en-US 是空串,渲染处据此不画那个 tag。
+  //
+  // 旧名「管家值班台 / Steward desk」已退役。仓内其余地方仍用 **值班台 / steward dock**
+  // 指这块**外壳区域**(130-portal-shell §1 的词汇表),那是布局用词,与这个 agent
+  // 的名字不是一回事:区域是家具,super agent 是住在里面的那个。
+  dock: { "zh-CN": "Karda Super Agent", "en-US": "Karda Super Agent" },
+  dockTag: { "zh-CN": "卡尔达", "en-US": "" },
+  dockCollapse: { "zh-CN": "收起 Karda Super Agent", "en-US": "Collapse Karda Super Agent" },
   // 导航栏的 landmark 名。菜单化之后这个 pane 才成为一个真正的 <nav>——
   // 之前它是一列卡片,没有 landmark 可言。
   navLandmark: { "zh-CN": "主导航", "en-US": "Main navigation" },
@@ -104,6 +113,12 @@ export const shell = {
   // --- 导航栏 cards ------------------------------------------------------------
   paneLoading: { "zh-CN": "读取中…", "en-US": "Loading…" },
   degradedChannels: { "zh-CN": "异常通道", "en-US": "Degraded" },
+  // 域卡片的徽章标签。只留「需关注」这一个——「缺口」与「健康」我原本也在这里
+  // 各加了一份,`catalog.test.ts` 当场报重复:它们分别已经是 `evaluation.gapsLabel`
+  // 和 `states.healthHealthy`。同一句话存在两份,迟早只改其中一份。
+  tagNeedsAttention: { "zh-CN": "需关注", "en-US": "Needs a look" },
+  /** 环心那行小字:环画的是什么的总量。 */
+  ringTotal: { "zh-CN": "总计", "en-US": "Total" },
   ringAssets: { "zh-CN": "资产", "en-US": "Assets" },
   ringEntries: { "zh-CN": "知识", "en-US": "Entries" },
   // 今日调用 / 直供通道 / 能力平台 are NOT here: they are the 供给通道 domain's
@@ -119,6 +134,11 @@ export const shell = {
     "zh-CN": (n: number) => `${n} 份`,
     "en-US": (n: number) => `${n} doc${n === 1 ? "" : "s"}`,
   } satisfies MessageFn<[number]>,
+  /** 三段分段条的抬头:它们是队列的构成,不是主数的构成。 */
+  queueNow: { "zh-CN": "当前任务", "en-US": "In the queue" },
+  /** 验证评测那条合计的抬头。与 `queueNow` 同一个位置、同一个作用:
+   *  说明下面三段加起来是什么,以及一共多少。 */
+  corpusTotal: { "zh-CN": "语料合计", "en-US": "Corpus total" },
   rebuilding: { "zh-CN": "重建中", "en-US": "Rebuilding" },
   verifyCoverage: { "zh-CN": "验证覆盖", "en-US": "Verification coverage" },
   collapseItem: {

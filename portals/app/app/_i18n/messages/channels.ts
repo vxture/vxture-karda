@@ -34,6 +34,7 @@ export const channels = {
 
   // --- channel health --------------------------------------------------------
   sectionHealth: { "zh-CN": "通道健康", "en-US": "Channel health" },
+  callsTotal: { "zh-CN": "累计调用", "en-US": "Calls to date" },
   callsToday: { "zh-CN": "今日调用", "en-US": "Calls today" },
   errorRate: { "zh-CN": "错误率", "en-US": "Error rate" },
 

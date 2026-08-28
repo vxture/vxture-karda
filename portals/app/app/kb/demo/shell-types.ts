@@ -27,6 +27,20 @@ export interface ShellData {
     weeklyNew: number;
     /** Problem: assets whose health is not clean (需关注 / 有缺口). */
     needsAttention: number;
+    /**
+     * 知识**落在哪些资产上** —— 按条目数降序的前几个,外加一条把长尾并起来的
+     * 「其余」。
+     *
+     * 加这一份是因为这张卡有**两个维度**(知识、资产),而只给两个总数等于只画了
+     * 一个:12 和 3,852 摆在一起,看不出这 3,852 是均匀铺在 12 个库里,还是有一个
+     * 库装了九成。一根条 = 一个资产(资产维度),条长 = 它装着多少知识(知识维度),
+     * 两维用同一张图说完。
+     *
+     * `rest` 是长尾的合并项,`restCount` 是它合并了几个;没有长尾时 `restCount` 为 0。
+     */
+    topAssets: { name: string; entries: number }[];
+    rest: number;
+    restCount: number;
   };
   channels: {
     /** Chart: the supply split - direct S2S vs the Runos capability plane. */
@@ -35,8 +49,22 @@ export interface ShellData {
     /** Core + growth: today's calls and the day-over-day move. */
     todayCalls: number;
     deltaPct: number;
+    /** 累计调用,以及它的通道拆分。与今日并列的第二个宏观数——今日说「现在忙不忙」,
+     *  累计说「被用了多久、多深」。
+     *
+     *  **拆分不是可选的**:这个域的全部意义就是「分给哪条通道」,只给总数等于把这件事
+     *  盖住。两个饼并排还多说了一件事——累计与今日的构成差异就是趋势本身。 */
+    totalCalls: number;
+    directTotal: number;
+    runosTotal: number;
     /** Problem: channels serving degraded (or not serving at all). */
     degraded: number;
+    // 这里曾经有过一份 `topConsumers`(在服务谁)。撤掉了(owner 2026-08-29):它是我
+    // 为了填卡片下半截的空白加的,而**为了填空加的东西,填完就该被质疑**——消费方榜
+    // 在供给通道域页面上有完整的一份,卡片复述一遍只会把卡撑高。
+    //
+    // 首页三问的第二问「在服务谁」由此仍未在卡上作答;真要答,该答的形式是「谁」而不是
+    // 「几个谁」,那需要的位置比一张卡的页脚大。留在这里作为记录,不是遗漏。
   };
   pipeline: {
     /** Chart + core: the work mix, three columns. */

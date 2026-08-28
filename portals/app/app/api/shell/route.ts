@@ -17,6 +17,9 @@ export const dynamic = "force-dynamic";
 
 const S = DEMO_TOTALS_OPS.steward;
 
+/** 知识资产卡上单列几个资产。再多条就细到读不出长短了。 */
+const TOP_ASSETS = 4;
+
 export async function GET(): Promise<Response> {
   const auth = await requireAuth();
   if (!auth.ok) return auth.response;
@@ -28,6 +31,12 @@ export async function GET(): Promise<Response> {
   let assetCount = DEMO_ASSETS.length;
   let entryCount = demoGoverned;
   let weeklyNew = 137;
+  // 知识落在哪些资产上。离线态从 DEMO_ASSETS 归并,与上面两个总数同一个来源——
+  // 卡片上的条加起来必须等于它自己报的总数,否则同一张卡自相矛盾。
+  let ranked: { name: string; entries: number }[] = DEMO_ASSETS.map((a) => ({
+    name: a.name,
+    entries: a.entryCount + a.docCount,
+  })).sort((x, y) => y.entries - x.entries);
   if (prismaEnabled()) {
     const p = await getPrismaClient();
     const workspaceId = auth.user.activeWorkspace;
@@ -41,7 +50,33 @@ export async function GET(): Promise<Response> {
     assetCount = kbCount;
     entryCount = entryTotal;
     weeklyNew = entryFresh;
+
+    // 每个库装了多少条目。`groupBy` 一次拿计数,再取名字——两趟,但第二趟只查
+    // 前几个库的名字,不是全表。
+    const grouped = await p.entry.groupBy({
+      by: ["kbId"],
+      where: scope,
+      _count: { _all: true },
+      orderBy: { _count: { kbId: "desc" } },
+      take: TOP_ASSETS + 1,
+    });
+    const names = new Map(
+      (
+        await p.knowledgeBase.findMany({
+          where: { id: { in: grouped.map((g) => g.kbId) } },
+          select: { id: true, name: true },
+        })
+      ).map((k) => [k.id, k.name]),
+    );
+    ranked = grouped.map((g) => ({ name: names.get(g.kbId) ?? g.kbId.slice(0, 8), entries: g._count._all }));
   }
+
+  // 前 N 个单列,其余并成一条。并起来而不是截断:截断会让条加起来对不上总数,
+  // 而一张自己对不上自己的图比没有图更糟。
+  const topAssets = ranked.slice(0, TOP_ASSETS);
+  const listed = topAssets.reduce((n, a) => n + a.entries, 0);
+  const rest = Math.max(0, entryCount - listed);
+  const restCount = Math.max(0, assetCount - topAssets.length);
   // Problem figure for the asset domain: assets the overview page paints as
   // 需关注 / 有缺口 (health is the demo ops overlay, so this one stays there
   // even when the counts above go live).
@@ -58,11 +93,14 @@ export async function GET(): Promise<Response> {
     : DEMO_EVALUATION.verification;
 
   const data: ShellData = {
-    overview: { assetCount, entryCount, weeklyNew, needsAttention },
+    overview: { assetCount, entryCount, weeklyNew, needsAttention, topAssets, rest, restCount },
     channels: {
       directCalls: DEMO_TOTALS_OPS.directCalls,
       runosCalls: DEMO_TOTALS_OPS.runosCalls,
       todayCalls: DEMO_TOTALS_OPS.todayCalls,
+      totalCalls: DEMO_TOTALS_OPS.totalCalls,
+      directTotal: DEMO_TOTALS_OPS.directTotal,
+      runosTotal: DEMO_TOTALS_OPS.runosTotal,
       deltaPct: DEMO_TOTALS_OPS.deltaPct,
       degraded: 1,
     },

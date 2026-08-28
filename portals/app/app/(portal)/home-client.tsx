@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button, EmptyState, Icon, type IconName } from "@vxture/design-system";
 import { loginHref } from "../_lib/api";
 import { HomeHero } from "./home-hero";
-import { DomainCardBody, DomainTag } from "../_shell/DomainCard";
+import { DomainCard } from "../_shell/DomainCard";
 import { NAV_ITEMS } from "../_shell/nav";
 import { useMessages } from "../_i18n/useMessages";
 import { home as homeMessages } from "../_i18n/messages/home";
@@ -130,14 +130,62 @@ export function HomeClient() {
 
   return (
     <div className="flex flex-col gap-lg">
-      {/* Hero:画布在下,字在上。画布 absolute 且 pointer-events-none —— 它是地,
-          不是可交互的东西。比上一版矮一档:第一屏要留给卡片。 */}
-      <section className="relative overflow-hidden rounded-xl border border-border bg-surface">
-        <HomeHero className="pointer-events-none absolute inset-0 size-full" />
-        <div className="relative flex flex-col gap-2xs px-lg py-2xl">
-          <span className="font-mono text-code-sm tracking-widest text-muted-foreground">{m.tagline}</span>
-          <h1 className="text-title-xl">{m.title}</h1>
-          <p className="max-w-[42rem] text-body-md text-muted-foreground">{m.lede}</p>
+      {/* Hero。首页的第一块,按 hero 做而不是按页头做(owner 2026-08-28)。
+          分四层,自下而上:
+
+            1. 画布      漂移的点连成图 —— 这一层就是主题本身,不是装饰
+            2. 光晕      左上一团品牌色径向光。**它解决的是一个真问题**:字压在图线上
+                         读不清,给字一块「地」比把图调淡好,后者会让主题消失
+            3. 渐隐边    四周向内收的暗角,让图**淡出**而不是被边框切断
+            4. 字        眉标 / 字标 / 导语,依次升起
+
+          字标用 `em` 相对角色放大,不写死 px:DS 最大的角色是 `title-xl`,而 hero 要更大
+          ——写死会把用户的字号偏好冻在那个数上(04-tokens-contract),`em` 仍然跟着角色走。 */}
+      <section className="relative isolate overflow-hidden rounded-xl border border-border bg-surface">
+        <HomeHero className="pointer-events-none absolute inset-0 -z-10 size-full" />
+
+        {/* 光晕。`-z-10` 之上、字之下;`mix-blend` 不用——暗色主题下会把光晕吃掉。 */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -left-[10%] -top-[40%] -z-10 size-[46rem] rounded-full opacity-70"
+          style={{
+            background:
+              "radial-gradient(closest-side, color-mix(in oklab, var(--color-primary) 16%, transparent), transparent)",
+          }}
+        />
+        {/* 渐隐边:让画布在四周淡出,而不是被 `overflow-hidden` 齐刷刷切掉。 */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -z-10"
+          style={{
+            background:
+              "radial-gradient(120% 90% at 30% 40%, transparent 40%, color-mix(in oklab, var(--color-surface) 85%, transparent) 100%)",
+          }}
+        />
+
+        <div className="relative flex flex-col gap-sm px-2xl py-4xl">
+          {/* 眉标带一道短的品牌色引线:那一道不是装饰,它把眉标钉成「定位语」这一类,
+              而不是又一行说明文字。 */}
+          <span className="vx-hero-rise flex items-center gap-sm" style={{ animationDelay: "40ms" }}>
+            <span className="h-[2px] w-lg shrink-0 rounded-full bg-primary/60" />
+            <span className="font-mono text-code-sm tracking-[0.3em] text-muted-foreground">{m.tagline}</span>
+          </span>
+
+          {/* 字标。`leading-[1.05]` 而不是 `leading-none` —— 后者在 DS 下等于
+              line-height:0(spacing 命名空间回落),整块会渲染成空白。 */}
+          <h1
+            className="vx-hero-rise text-title-xl leading-[1.05] tracking-tight"
+            style={{ animationDelay: "140ms" }}
+          >
+            <span className="text-[2.6em] font-semibold text-foreground">{m.title}</span>
+          </h1>
+
+          <p
+            className="vx-hero-rise max-w-[44rem] text-body-lg text-muted-foreground"
+            style={{ animationDelay: "260ms" }}
+          >
+            {m.lede}
+          </p>
         </div>
       </section>
 
@@ -227,56 +275,18 @@ export function HomeClient() {
         </section>
       ) : null}
 
-      {/* 四个域。卡片的图形词汇来自被退掉的导航卡(`_shell/DomainCard.tsx`),这里给
-          它们**当初在 280px 宽里给不起的东西**:一行说明、成对的呼吸空间、以及把二级
-          视图直接摆出来——首页的职责就是把人送进去,不该让人先进一层再找。 */}
-      {/* 断点走**容器**,不走视口(先例见 `assets/assets-client.tsx`):内容区被
+      {/* 四个域。**整张卡由 `DomainCard` 渲染**——三个区(标题 / 统计 / 操作)一次给全,
+          首页这里不再逐块拼。改版前是在这里拼的,于是四张卡的标题字号、留白、数字摆法
+          各漂各的,统计区尤其不像话(owner 2026-08-28)。一个形状四份数据,想让它们分家
+          得先改那一份渲染。
+
+          断点走**容器**,不走视口(先例见 `assets/assets-client.tsx`):内容区被
           `PortalShell` 标成 `@container`,而视口断点看不见 导航栏 / 值班台 开着没有
           ——`lg:` 会在 1440 两栏全开(内容区只有 38.5rem)时照样画两列,把每张卡压到
-          图表读不出来的宽度。
-          闸门定在 38rem:两列各约 292px,正是这套图形当初在 280px 导航栏里画的宽度
-          ——已经证明能读。再窄就单列,不是把图压瘦。 */}
+          图表读不出来的宽度。闸门 38rem:两列各约 292px,再窄就单列,不是把图压瘦。 */}
       <div className="grid grid-cols-1 gap-lg @min-[38rem]:grid-cols-2">
         {DOMAINS.map((item) => (
-          <section
-            key={item.key}
-            // 卡由渐变承载,不由描边承载(owner 2026-08-24):面从上到下淡下去,靠光
-            // 与地分开,发丝线收到一声耳语。
-            className="flex flex-col overflow-hidden rounded-xl border border-primary/[0.06] bg-gradient-to-b from-card/80 to-card/30 transition-colors duration-fast ease-standard hover:border-primary/25 dark:border-primary/10"
-          >
-            <div className="flex flex-col gap-2xs px-lg pt-lg">
-              <span className="flex items-center gap-xs">
-                <Icon name={item.icon} size="sm" className="text-primary" />
-                <Link href={item.href} className="text-title-sm hover:text-primary-text">
-                  {s[item.labelKey]}
-                </Link>
-                <DomainTag itemKey={item.key} shell={domains} />
-              </span>
-              <p className="text-body-sm text-muted-foreground">{s[item.descKey]}</p>
-            </div>
-
-            {/* 图占这张卡的主体。`justify-center`:网格让同一行的卡等高,而四个域的图
-                高度并不相等——不居中的话,矮的那一张会把所有余量堆在底部,看起来像
-                内容没加载完。 */}
-            <div className="flex flex-1 flex-col justify-center px-lg py-lg">
-              <DomainCardBody item={item} shell={domains} />
-            </div>
-
-            {/* 二级视图作页脚:一条虚线之下的一排去处。 */}
-            {item.sub.length > 0 ? (
-              <div className="flex flex-wrap gap-md border-t border-dashed border-primary/[0.08] px-lg py-sm dark:border-primary/15">
-                {item.sub.map((sv) => (
-                  <Link
-                    key={sv.key}
-                    href={sv.href}
-                    className="text-body-sm text-muted-foreground transition-colors duration-fast ease-standard hover:text-primary-text"
-                  >
-                    {s[sv.labelKey]}
-                  </Link>
-                ))}
-              </div>
-            ) : null}
-          </section>
+          <DomainCard key={item.key} item={item} shell={domains} />
         ))}
       </div>
 

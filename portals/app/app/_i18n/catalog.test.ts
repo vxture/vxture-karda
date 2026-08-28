@@ -22,6 +22,7 @@ const PROBES: Record<string, unknown[]> = {
   "shell.docsCount": [7],
   "assets.coverageAria": [82],
   "assets.openAsset": ["Bid library"],
+  "assets.restAssets": [8],
   "assets.cardEntries": [247],
   "assets.cardDocs": [12],
   "assets.parkedCount": [3],
@@ -159,6 +160,20 @@ test("every message carries EVERY supported locale", () => {
   assert.ok(n > 0, "the registry resolved to no messages at all");
 });
 
+/**
+ * 两个语言下**故意相同**的条目,以及为什么。
+ *
+ * 与 `SAME_ON_PURPOSE` 不是一回事:那个管的是「两个键说同一句话」,这个管的是
+ * 「一个键的两半一样」。都要写理由——没有理由的豁免就是把规则改松。
+ *
+ * 唯一合法的理由是**专名**:产品名、品牌名。翻译一个产品名会得到另一个产品。
+ * 措辞、标签、说明一律不进这里。
+ */
+const UNTRANSLATED_ON_PURPOSE: Record<string, string> = {
+  "shell.dock":
+    "Karda Super Agent —— karda 平台独有 super agent 的产品名(owner 2026-08-28 定名)。中文「卡尔达」是它旁边的 tag(`shell.dockTag`),不是它的译名",
+};
+
 test("no message is left as an untranslated copy of the other language", () => {
   // A pair whose two halves are identical is almost always a placeholder
   // someone pasted and meant to come back to. Punctuation-only and
@@ -166,6 +181,7 @@ test("no message is left as an untranslated copy of the other language", () => {
   const exempt = /^[\s\d\p{P}]*$/u;
   for (const { path, zh, en } of entries()) {
     if (exempt.test(zh)) continue;
+    if (UNTRANSLATED_ON_PURPOSE[path]) continue;
     assert.notEqual(zh, en, `${path} has the same text in both languages`);
   }
 });
@@ -188,6 +204,7 @@ test("the Chinese half of a product string is not left in English", () => {
   for (const { path, zh, en } of entries()) {
     if (!/[a-zA-Z]/.test(zh)) continue;
     if (/[\u4e00-\u9fff]/.test(zh)) continue;
+    if (UNTRANSLATED_ON_PURPOSE[path]) continue;
     assert.ok(
       !(zh === en && en.trim().split(/\s+/).length > 1),
       `${path} zh-CN looks unwritten: ${zh}`,
@@ -243,6 +260,17 @@ test("no two catalog entries say the same thing without saying why", () => {
     [],
     "collapse the duplicate onto one entry, or add it to SAME_ON_PURPOSE with the reason",
   );
+});
+
+test("UNTRANSLATED_ON_PURPOSE has no stale entries", () => {
+  // 一条豁免如果对应的键已经不再两半相同(或者压根不存在了),它就该被删掉——
+  // 留着的豁免会在下一次有人把那个键改成真需要翻译时,悄悄替他挡掉报警。
+  const byPath = new Map([...entries()].map((e) => [e.path, e]));
+  const stale = Object.keys(UNTRANSLATED_ON_PURPOSE).filter((p) => {
+    const e = byPath.get(p);
+    return !e || e.zh !== e.en;
+  });
+  assert.deepEqual(stale, [], "these exemptions no longer describe anything - delete them");
 });
 
 test("SAME_ON_PURPOSE has no stale entries", () => {

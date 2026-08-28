@@ -122,7 +122,16 @@ export function StewardDock({ shell, onClose }: { shell: ShellData | null; onClo
     <aside className="flex w-[25rem] shrink-0 flex-col overflow-hidden rounded-lg border border-primary/[0.06] bg-gradient-to-b from-card/80 to-card/35 dark:border-primary/10">
       <div className="flex shrink-0 items-center gap-sm border-b border-primary/[0.08] px-md py-sm dark:border-primary/10">
         <Icon name="sparkles" size="sm" className="text-ai-text" />
-        <span className="flex-1 text-title-sm">{m.dock}</span>
+        <span className="flex min-w-0 flex-1 items-baseline gap-xs">
+          <span className="truncate text-title-sm">{m.dock}</span>
+          {/* 中文 tag 只在中文界面出现:英文目录里 `dockTag` 是空串,这里据此不画。
+              名字本身不翻——它是产品名。 */}
+          {m.dockTag ? (
+            <span className="shrink-0 rounded-sm bg-primary/[0.1] px-2xs py-[1px] text-body-sm text-primary-text">
+              {m.dockTag}
+            </span>
+          ) : null}
+        </span>
         <span className="size-2xs rounded-full bg-success" aria-label={m.dockOnDuty} />
         {/* Ghost icon button, the DS shell idiom - no boxed background. */}
         <ShellIconButton icon="chevron-right" label={m.dockCollapse} onClick={onClose} />

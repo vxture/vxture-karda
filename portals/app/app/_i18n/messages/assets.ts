@@ -54,6 +54,11 @@ export const assets = {
     "zh-CN": "文件入库即排队加工;卡住时会在该文档下说明原因。",
     "en-US": "A file is queued for processing the moment it lands; if anything blocks it, the reason is stated under that document.",
   },
+  /** 分布图里把长尾并起来的那一条。带数量,因为「其余」不说几个等于没说。 */
+  restAssets: {
+    "zh-CN": (n: number) => `其余 ${n} 个资产`,
+    "en-US": (n: number) => `${n} more assets`,
+  },
   docLoading: { "zh-CN": "正在加载文档…", "en-US": "Loading documents…" },
   docEmpty: { "zh-CN": "还没有文档", "en-US": "No documents yet" },
   docEmptyFolder: { "zh-CN": "该目录下没有文档", "en-US": "No documents in this folder" },

@@ -6,6 +6,8 @@ import type { Message, MessageFn } from "../catalog";
 export const common = {
   // --- verbs -----------------------------------------------------------------
   save: { "zh-CN": "保存", "en-US": "Save" },
+  /** 卡片操作区右侧那个去处。动作名而不是「更多」——它去的是一个确定的页面。 */
+  enter: { "zh-CN": "进入", "en-US": "Open" },
   cancel: { "zh-CN": "取消", "en-US": "Cancel" },
   confirm: { "zh-CN": "确认", "en-US": "Confirm" },
   delete: { "zh-CN": "删除", "en-US": "Delete" },
