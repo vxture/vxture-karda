@@ -40,6 +40,9 @@ import { useMessages } from "../_i18n/useMessages";
 import { shell as shellMessages } from "../_i18n/messages/shell";
 import { channels as channelMessages } from "../_i18n/messages/channels";
 import { evaluation as evalMessages } from "../_i18n/messages/evaluation";
+// 单位「份」用加工管道自己的目录里那一个,不在 shell 里另加一份——
+// 我加过,`catalog.test.ts` 当场报重复。同一句话存在两份,迟早只改其中一份。
+import { pipeline as pipelineMessages } from "../_i18n/messages/pipeline";
 import { assets as assetMessages } from "../_i18n/messages/assets";
 import { common as commonMessages } from "../_i18n/messages/common";
 import { useFormat } from "../_i18n/useFormat";
@@ -120,6 +123,7 @@ type Msgs = ReturnType<typeof useMessages<typeof shellMessages>>;
 type ChMsgs = ReturnType<typeof useMessages<typeof channelMessages>>;
 type EvMsgs = ReturnType<typeof useMessages<typeof evalMessages>>;
 type AsMsgs = ReturnType<typeof useMessages<typeof assetMessages>>;
+type PiMsgs = ReturnType<typeof useMessages<typeof pipelineMessages>>;
 type Fmt = ReturnType<typeof useFormat>;
 
 // --- 图形词汇 -----------------------------------------------------------------
@@ -379,11 +383,24 @@ function Chips({ slices }: { slices: Slice[] }) {
 }
 
 /** 主数:大号等宽 + 名字。四张卡的主数都用它,所以它们在同一条竖线上起笔。 */
-function Headline({ value, label, aside }: { value: string; label: string; aside?: React.ReactNode }) {
+function Headline({
+  value,
+  unit,
+  label,
+  aside,
+}: {
+  value: string;
+  /** 主数的单位。**有单位就必须写出来**——同一张卡上两组数如果单位不同,不写就会被
+   *  当成同一种东西去加、去对,而它们加不起来。 */
+  unit?: string;
+  label: string;
+  aside?: React.ReactNode;
+}) {
   return (
-    <span className="flex items-baseline gap-sm">
+    <span className="flex items-baseline gap-2xs">
       <span className="font-mono text-title-xl leading-[1.1] tabular-nums text-foreground">{value}</span>
-      <span className="text-body-md text-muted-foreground">{label}</span>
+      {unit ? <span className="text-body-md text-muted-foreground">{unit}</span> : null}
+      <span className="ml-2xs text-body-md text-muted-foreground">{label}</span>
       {aside ? <span className="ml-auto">{aside}</span> : null}
     </span>
   );
@@ -582,7 +599,7 @@ function ChannelsBody({ c, ch, f }: { c: ShellData["channels"]; ch: ChMsgs; f: F
   );
 }
 
-function PipelineBody({ p, m, f }: { p: ShellData["pipeline"]; m: Msgs; f: Fmt }) {
+function PipelineBody({ p, m, pi, f }: { p: ShellData["pipeline"]; m: Msgs; pi: PiMsgs; f: Fmt }) {
   // 构成:手上还剩多少,分成三种状态。分段条比饼好读——三段的长短可以直接比,
   // 而三块扇形要绕着圈比。主数给今日完成(产出),队列的构成在条上。
   const slices: Slice[] = [
@@ -590,14 +607,24 @@ function PipelineBody({ p, m, f }: { p: ShellData["pipeline"]; m: Msgs; f: Fmt }
     { label: m.pipePending, value: p.pending, tone: "warning" },
     { label: m.pipeFailed, value: p.failedResident, tone: "danger" },
   ];
+  const queued = slices.reduce((n, s) => n + Math.max(0, s.value), 0);
   return (
     <>
       <Headline
-        value={f.compact(p.docsToday)}
+        value={f.number(p.docsToday)}
+        unit={pi.unitDocs}
         label={m.doneToday}
         aside={p.rebuilding > 0 ? <Pill text={`${m.rebuilding} ${p.rebuilding}`} tone="warning" /> : undefined}
       />
+      {/* 这三段是**队列的构成**,不是主数的构成——主数是今日完成的文档份数(吞吐),
+          这里是此刻在队列里的任务数(存量),两者单位不同、加不起来。所以给它们自己的
+          抬头和自己的合计:不写的话,读的人会去加 12+5+6 然后发现对不上 62
+          (owner 2026-08-29 就是这么发现的)。 */}
       <span className="flex flex-col gap-2xs">
+        <span className="flex items-baseline gap-2xs">
+          <span className="text-body-sm text-muted-foreground">{m.queueNow}</span>
+          <span className="font-mono text-code-md tabular-nums text-foreground">{f.number(queued)}</span>
+        </span>
         <SegBar slices={slices} />
         <Chips slices={slices} />
       </span>
@@ -641,6 +668,7 @@ export function DomainCard({ item, shell }: { item: DomainNavItem; shell: ShellD
   const ch = useMessages(channelMessages);
   const ev = useMessages(evalMessages);
   const a = useMessages(assetMessages);
+  const pi = useMessages(pipelineMessages);
   const c = useMessages(commonMessages);
   const f = useFormat();
 
@@ -680,7 +708,7 @@ export function DomainCard({ item, shell }: { item: DomainNavItem; shell: ShellD
         ) : item.key === "channels" ? (
           <ChannelsBody c={shell.channels} ch={ch} f={f} />
         ) : item.key === "pipeline" ? (
-          <PipelineBody p={shell.pipeline} m={m} f={f} />
+          <PipelineBody p={shell.pipeline} m={m} pi={pi} f={f} />
         ) : (
           <EvaluationBody e={shell.evaluation} m={m} ev={ev} f={f} />
         )}

@@ -85,6 +85,8 @@ const CJK = /[\u3000-\u303f\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff01-\uff60]
  *  own name, a proper noun); anything else belongs in the catalog. */
 const ALLOW = /^\s*\/\/\s*i18n-allow:\s*(\S.*)$/;
 const COMMENT_LINE = /^\s*\/\//;
+/** 块注释的行:`/*`、`/**` 的开头,以及以 `*` 起头的续行。 */
+const BLOCK_COMMENT_LINE = /^\s*(\/\*|\*)/;
 
 /** Walk up the contiguous `//` block above line `i` looking for the pragma. */
 function allowedAbove(raw, i) {
@@ -148,7 +150,11 @@ export function scanCatalog(src) {
   for (let i = 0; i < lines.length; i += 1) {
     const raw = lines[i];
     // 注释里写 markdown 是给读代码的人看的,不会被渲染,随意。
-    if (COMMENT_LINE.test(raw)) continue;
+    //
+    // `//` 之外还要认**块注释**:`/** ... */` 的续行以 `*` 开头,既不是 `//` 也不是
+    // 字符串。第一版漏了这一种,于是给一个目录键写 JSDoc 说明时当场误报——一个会对
+    // 正确写法报错的护栏,人的第一反应是绕开它,而不是修它。
+    if (COMMENT_LINE.test(raw) || BLOCK_COMMENT_LINE.test(raw)) continue;
     if (MARKDOWN.test(raw)) out.push({ line: i + 1, text: raw.trim() });
   }
   return out;

@@ -134,6 +134,8 @@ export const shell = {
     "zh-CN": (n: number) => `${n} 份`,
     "en-US": (n: number) => `${n} doc${n === 1 ? "" : "s"}`,
   } satisfies MessageFn<[number]>,
+  /** 三段分段条的抬头:它们是队列的构成,不是主数的构成。 */
+  queueNow: { "zh-CN": "当前任务", "en-US": "In the queue" },
   rebuilding: { "zh-CN": "重建中", "en-US": "Rebuilding" },
   verifyCoverage: { "zh-CN": "验证覆盖", "en-US": "Verification coverage" },
   collapseItem: {
