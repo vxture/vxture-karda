@@ -8,7 +8,7 @@ import { readCorpus } from "../../kb/governance/corpus-read";
 import type { ShellData } from "../../kb/demo/shell-types";
 
 // GET /api/shell - everything the portal chrome needs in one round trip: the
-// 导航栏 card summaries, the header badge count, the 值班台 payload.
+// 导航栏 card summaries, the header badge count, the 智枢 payload.
 // Asset/entry counts and the 7-day intake are live when a DB is attached; ops
 // figures stay the demo overlay (demoOps: true) until the supply ledger and
 // pipeline land - derived from the same demo constants as /api/overview and

@@ -45,15 +45,19 @@ export const shell = {
   // 就成了另一个东西。中文「卡尔达」降为它旁边的 tag,只在中文界面出现——
   // `dockTag` 的 en-US 是空串,渲染处据此不画那个 tag。
   //
-  // 旧名「管家值班台 / Steward desk」与散落各处的「知识管家」都已退役(2026-08-29 全仓清扫)。
+  // 旧名「管家智枢 / Steward desk」与散落各处的「知识管家」都已退役(2026-08-29 全仓清扫)。
   // 用名规则:**身份出场用全名**(这一条、`pipeline.stewardPresent`),**行内指代用短名**
   // (中文「卡尔达」/ 英文 "Karda")——全名塞进句子会把句子撑散,短名能当主语。
-  // 仓内其余地方仍用 **值班台 / steward dock**
+  //
+  // 右侧那块 pane 叫 **智枢 / agent hub**(2026-08-29 改名,旧名「值班台」太传统,
+  // 描述的是「有人在岗值守」,而那里其实是卡尔达在把事情推给你)。它与顶栏/导航栏/
+  // 内容区一样是**区域词汇**,不出现在界面上;面板标题显示的是**住在里面的那个**。
   // 指这块**外壳区域**(130-portal-shell §1 的词汇表),那是布局用词,与这个 agent
   // 的名字不是一回事:区域是家具,super agent 是住在里面的那个。
   dock: { "zh-CN": "Karda Super Agent", "en-US": "Karda Super Agent" },
   dockTag: { "zh-CN": "卡尔达", "en-US": "" },
-  dockCollapse: { "zh-CN": "收起 Karda Super Agent", "en-US": "Collapse Karda Super Agent" },
+  // 收起的是那块 pane,不是那个 agent —— 与 `navCollapse`(收起导航)同一个句式。
+  dockCollapse: { "zh-CN": "收起智枢", "en-US": "Collapse the agent hub" },
   // 导航栏的 landmark 名。菜单化之后这个 pane 才成为一个真正的 <nav>——
   // 之前它是一列卡片,没有 landmark 可言。
   navLandmark: { "zh-CN": "主导航", "en-US": "Main navigation" },
@@ -153,7 +157,7 @@ export const shell = {
     "en-US": (label: string) => `Expand ${label}`,
   } satisfies MessageFn<[string]>,
 
-  // --- 值班台 ------------------------------------------------------------------
+  // --- 智枢 ------------------------------------------------------------------
   dockOnDuty: { "zh-CN": "在岗", "en-US": "On duty" },
   dockConnecting: { "zh-CN": "正在接入…", "en-US": "Connecting…" },
   dockPending: { "zh-CN": "待你裁决", "en-US": "Awaiting your call" },

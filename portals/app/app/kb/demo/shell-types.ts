@@ -1,5 +1,5 @@
 // Shared response types for GET /api/shell - the ONE fetch the portal chrome
-// (导航栏 cards, header badge, 值班台) makes. Dependency-free, same
+// (导航栏 cards, header badge, 智枢) makes. Dependency-free, same
 // contract style as overview-types/pipeline-types.
 import type { StewardProposal } from "./pipeline-types";
 
@@ -85,7 +85,7 @@ export interface ShellData {
     gaps: number;
   };
   /**
-   * **Karda Super Agent(卡尔达)的那一份 payload** —— 值班台里显示的东西。
+   * **Karda Super Agent(卡尔达)的那一份 payload** —— 智枢里显示的东西。
    *
    * 字段名保留 `steward`,这是刻意的(2026-08-29 全仓清扫时的决定):
    *

@@ -392,15 +392,15 @@ export function AssetsClient() {
         // Elastic asset grid, driven by the 内容区's OWN width, not the
         // viewport (owner 2026-08-25). PortalShell marks the 内容区 as an
         // @container; a viewport breakpoint cannot see whether 导航栏 and
-        // 值班台 are open, which is how a 1600px window used to draw four
+        // 智枢 are open, which is how a 1600px window used to draw four
         // columns into an 840px pane.
         //
         // The 内容区 measures (viewport - 48 window margin - 280 导航栏 -
-        // 400 值班台 - 64 pane spacers - 32 content inset):
+        // 400 智枢 - 64 pane spacers - 32 content inset):
         //   both panes open   1440 -> 38.5rem   1600 -> 48.5rem   1920 -> 68.5rem
         //   both collapsed    1440 -> 85rem     1600 -> 95rem
         //
-        // The frame changed on 2026-08-25 (值班台 320 -> 400, spacer 24 -> 32,
+        // The frame changed on 2026-08-25 (智枢 320 -> 400, spacer 24 -> 32,
         // inset 32 -> 16) and cost the open state a flat 4rem at every
         // viewport. The GATES BELOW DID NOT MOVE, deliberately: a gate encodes
         // how much room this content needs, and the frame getting wider does

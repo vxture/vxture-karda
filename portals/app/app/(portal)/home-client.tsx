@@ -281,7 +281,7 @@ export function HomeClient() {
           得先改那一份渲染。
 
           断点走**容器**,不走视口(先例见 `assets/assets-client.tsx`):内容区被
-          `PortalShell` 标成 `@container`,而视口断点看不见 导航栏 / 值班台 开着没有
+          `PortalShell` 标成 `@container`,而视口断点看不见 导航栏 / 智枢 开着没有
           ——`lg:` 会在 1440 两栏全开(内容区只有 38.5rem)时照样画两列,把每张卡压到
           图表读不出来的宽度。闸门 38rem:两列各约 292px,再窄就单列,不是把图压瘦。 */}
       <div className="grid grid-cols-1 gap-lg @min-[38rem]:grid-cols-2">
