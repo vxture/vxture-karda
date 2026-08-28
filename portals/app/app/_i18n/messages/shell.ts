@@ -136,6 +136,9 @@ export const shell = {
   } satisfies MessageFn<[number]>,
   /** 三段分段条的抬头:它们是队列的构成,不是主数的构成。 */
   queueNow: { "zh-CN": "当前任务", "en-US": "In the queue" },
+  /** 验证评测那条合计的抬头。与 `queueNow` 同一个位置、同一个作用:
+   *  说明下面三段加起来是什么,以及一共多少。 */
+  corpusTotal: { "zh-CN": "语料合计", "en-US": "Corpus total" },
   rebuilding: { "zh-CN": "重建中", "en-US": "Rebuilding" },
   verifyCoverage: { "zh-CN": "验证覆盖", "en-US": "Verification coverage" },
   collapseItem: {

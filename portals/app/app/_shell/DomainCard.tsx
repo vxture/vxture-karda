@@ -599,55 +599,54 @@ function ChannelsBody({ c, ch, f }: { c: ShellData["channels"]; ch: ChMsgs; f: F
   );
 }
 
-function PipelineBody({ p, m, pi, f }: { p: ShellData["pipeline"]; m: Msgs; pi: PiMsgs; f: Fmt }) {
-  // 构成:手上还剩多少,分成三种状态。分段条比饼好读——三段的长短可以直接比,
-  // 而三块扇形要绕着圈比。主数给今日完成(产出),队列的构成在条上。
-  const slices: Slice[] = [
-    { label: m.pipeInflight, value: p.inflight, tone: "brand" },
-    { label: m.pipePending, value: p.pending, tone: "warning" },
-    { label: m.pipeFailed, value: p.failedResident, tone: "danger" },
-  ];
-  const queued = slices.reduce((n, s) => n + Math.max(0, s.value), 0);
+/**
+ * 汇总体:主数 + 例外 + 一条合计 + 分段条 + 明细。
+ *
+ * **加工管道与验证评测共用这一个**(owner 2026-08-29:两张卡的结构要完全一致,细到
+ * 每一个板块、字段、数字——它们本来就是同一种逻辑汇总)。
+ *
+ * 写成一个函数而不是两个长得像的函数,是这条要求唯一可靠的实现方式:两个函数总会漂,
+ * 而这个域一共就四张卡,前两张已经各自因为「各写各的」漂过一轮。想让其中一张多一块、
+ * 少一行,得先改这里——那时会看见另一张也跟着变,而那正是该被看见的。
+ *
+ * 五个位置,两张卡一一对应:
+ *
+ *              加工管道              验证评测
+ *   主数       62 份 今日完成         82 % 验证覆盖
+ *   例外       重建中 1              缺口 10
+ *   合计       当前任务 23           语料合计 5,316
+ *   分段条     在制/待确认/失败       已验证/待复验/未验证
+ *   明细       同上三个数            同上三个数
+ */
+function SummaryBody({
+  value,
+  unit,
+  label,
+  aside,
+  totalLabel,
+  slices,
+  f,
+}: {
+  value: string;
+  unit: string;
+  label: string;
+  aside?: React.ReactNode;
+  totalLabel: string;
+  slices: Slice[];
+  f: Fmt;
+}) {
+  const total = sum(slices);
   return (
     <>
-      <Headline
-        value={f.number(p.docsToday)}
-        unit={pi.unitDocs}
-        label={m.doneToday}
-        aside={p.rebuilding > 0 ? <Pill text={`${m.rebuilding} ${p.rebuilding}`} tone="warning" /> : undefined}
-      />
-      {/* 这三段是**队列的构成**,不是主数的构成——主数是今日完成的文档份数(吞吐),
-          这里是此刻在队列里的任务数(存量),两者单位不同、加不起来。所以给它们自己的
-          抬头和自己的合计:不写的话,读的人会去加 12+5+6 然后发现对不上 62
-          (owner 2026-08-29 就是这么发现的)。 */}
+      <Headline value={value} unit={unit} label={label} aside={aside} />
+      {/* 合计这一行不是装饰:它说明**下面三段加起来是什么**。加工管道那张此前没有它,
+          于是「62」和「12/5/6」被当成同一件事去加,发现对不上(owner 2026-08-29)。
+          两张卡都给,两张卡都不会再有那个歧义。 */}
       <span className="flex flex-col gap-2xs">
         <span className="flex items-baseline gap-2xs">
-          <span className="text-body-sm text-muted-foreground">{m.queueNow}</span>
-          <span className="font-mono text-code-md tabular-nums text-foreground">{f.number(queued)}</span>
+          <span className="text-body-sm text-muted-foreground">{totalLabel}</span>
+          <span className="font-mono text-code-md tabular-nums text-foreground">{f.number(total)}</span>
         </span>
-        <SegBar slices={slices} />
-        <Chips slices={slices} />
-      </span>
-    </>
-  );
-}
-
-function EvaluationBody({ e, m, ev, f }: { e: ShellData["evaluation"]; m: Msgs; ev: EvMsgs; f: Fmt }) {
-  // 比率:这个域存在就是为了把它推向 100%。所以画进度条,**空轨就是还没做的部分**
-  // ——那段空白本身是信息,饼图里它只是第三块颜色,读不出「还差这么多」。
-  const slices: Slice[] = [
-    { label: f.verification("verified").label, value: e.verified, tone: "success" },
-    { label: f.verification("stale").label, value: e.stale, tone: "warning" },
-    { label: f.verification("unverified").label, value: e.unverified, tone: "muted" },
-  ];
-  return (
-    <>
-      <Headline
-        value={`${e.coveragePct}%`}
-        label={m.verifyCoverage}
-        aside={e.gaps > 0 ? <Pill text={`${ev.gapsLabel} ${e.gaps}`} tone="danger" /> : undefined}
-      />
-      <span className="flex flex-col gap-2xs">
         <SegBar slices={slices} />
         <Chips slices={slices} />
       </span>
@@ -708,9 +707,43 @@ export function DomainCard({ item, shell }: { item: DomainNavItem; shell: ShellD
         ) : item.key === "channels" ? (
           <ChannelsBody c={shell.channels} ch={ch} f={f} />
         ) : item.key === "pipeline" ? (
-          <PipelineBody p={shell.pipeline} m={m} pi={pi} f={f} />
+          // 加工管道与验证评测**共用同一个汇总体**,只是喂进去的字段不同。
+          // 它们是同一种逻辑汇总,结构上就不该有分家的余地。
+          <SummaryBody
+            value={f.number(shell.pipeline.docsToday)}
+            unit={pi.unitDocs}
+            label={m.doneToday}
+            aside={
+              shell.pipeline.rebuilding > 0 ? (
+                <Pill text={`${m.rebuilding} ${shell.pipeline.rebuilding}`} tone="warning" />
+              ) : undefined
+            }
+            totalLabel={m.queueNow}
+            slices={[
+              { label: m.pipeInflight, value: shell.pipeline.inflight, tone: "brand" },
+              { label: m.pipePending, value: shell.pipeline.pending, tone: "warning" },
+              { label: m.pipeFailed, value: shell.pipeline.failedResident, tone: "danger" },
+            ]}
+            f={f}
+          />
         ) : (
-          <EvaluationBody e={shell.evaluation} m={m} ev={ev} f={f} />
+          <SummaryBody
+            value={String(shell.evaluation.coveragePct)}
+            unit="%"
+            label={m.verifyCoverage}
+            aside={
+              shell.evaluation.gaps > 0 ? (
+                <Pill text={`${ev.gapsLabel} ${shell.evaluation.gaps}`} tone="danger" />
+              ) : undefined
+            }
+            totalLabel={m.corpusTotal}
+            slices={[
+              { label: f.verification("verified").label, value: shell.evaluation.verified, tone: "success" },
+              { label: f.verification("stale").label, value: shell.evaluation.stale, tone: "warning" },
+              { label: f.verification("unverified").label, value: shell.evaluation.unverified, tone: "muted" },
+            ]}
+            f={f}
+          />
         )}
       </div>
 
