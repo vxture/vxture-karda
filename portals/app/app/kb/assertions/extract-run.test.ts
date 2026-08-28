@@ -77,10 +77,13 @@ test("an empty document produces no windows and therefore no Atlas call", () => 
 // --- the ungranted path: what this whole PR is about ------------------------------
 
 test("a parked capability writes NOTHING and reports why", async () => {
-  const client = new FakeClient(() => new UnavailableError("no karda.extract grant"));
+  const client = new FakeClient(() => new UnavailableError("no karda.extract grant", { cause: "endpoint_not_granted", arg: "chat/extract" }));
   const r = await runExtraction(client, input("第一段。\n\n第二段。"), noStore);
   assert.equal(r.status, "parked");
-  assert.equal(r.reason, "capability_unavailable");
+  // 原来钉的是 `capability_unavailable` —— 「用不了」的同义反复,不带「哪一种、
+  // 去哪修」。现在报的是错误自己携带的原因码,界面据此说清是哪个端点没授给产品
+  // karda(owner 2026-08-28)。
+  assert.equal(r.reason, "endpoint_not_granted:chat/extract");
   assert.equal(r.stored, null);
 });
 
@@ -98,7 +101,7 @@ test("ALL WINDOWS OR NOTHING - a park in a later window discards the earlier ans
   // Big enough to actually cross WINDOW_BUDGET - runExtraction uses the default.
   const doc = [para(1, WINDOW_BUDGET), para(2, WINDOW_BUDGET)].join("\n\n");
   const client = new FakeClient((_req, i) =>
-    i === 0 ? [{ kind: "fact", statement: "早", startOffset: 0, endOffset: 3 }] : new UnavailableError("gone"),
+    i === 0 ? [{ kind: "fact", statement: "早", startOffset: 0, endOffset: 3 }] : new UnavailableError("gone", { cause: "endpoint_not_granted", arg: "chat/extract" }),
   );
   const r = await runExtraction(client, input(doc, { bytes: Buffer.from(doc, "utf-8") }), noStore);
   assert.equal(r.status, "parked");

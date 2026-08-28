@@ -25,8 +25,8 @@ import { getGenerationClient } from "../retrieval/generation";
 import type { RawAssertion } from "../assertions/extract";
 import { QuotaError, UnavailableError } from "../processing/orchestrator";
 import { AtlasApiError } from "./client";
-import { extractSelection } from "./selection";
-import { shouldSuspend } from "./codes";
+import { extractSelection, type ModelSelection } from "./selection";
+import { shouldSuspend, causeForAtlasCode } from "./codes";
 
 /** A slice of a document's canonical text, and where it starts in that text. */
 export interface TextWindow {
@@ -60,11 +60,11 @@ export interface ExtractionClient {
  * prompt or schema bug surfaces as a visible failure instead of quietly parking
  * every document forever.
  */
-export function mapExtractError(e: unknown): unknown {
+export function mapExtractError(e: unknown, selection: ModelSelection): unknown {
   if (e instanceof AtlasApiError) {
     if (e.code === "QUOTA_EXCEEDED") return new QuotaError(`atlas extract: ${e.code}`);
     if (shouldSuspend(e.code, e.retryable)) {
-      return new UnavailableError(`atlas extract: ${e.code}: ${e.message}`);
+      return new UnavailableError(`atlas extract: ${e.code}: ${e.message}`, causeForAtlasCode(e.code, selection));
     }
   }
   return e;
@@ -187,7 +187,7 @@ export class AtlasExtractionClient implements ExtractionClient {
     try {
       content = (await this.generation.chat(chat)).content;
     } catch (e) {
-      throw mapExtractError(e);
+      throw mapExtractError(e, extractSelection());
     }
     return rebase(parseExtractionResponse(content), req.window.baseOffset);
   }
@@ -202,7 +202,17 @@ export class AtlasExtractionClient implements ExtractionClient {
  */
 export class UnavailableExtractionClient implements ExtractionClient {
   async extract(): Promise<RawAssertion[]> {
-    throw new UnavailableError("extraction capability (Atlas karda.extract grant) is not yet available");
+    // 原文写的是「Atlas karda.extract grant」——`karda.extract` 是**租户轴的旧
+    // taskProfile 名**,清租户轴时漏掉的一处。产品轴下根本没有这个授权,照着它去
+    // 平台上找会一无所获;要授的是端点 `chat/extract`。
+    //
+    // 这个 stand-in 只在 `getAtlasCore()` 为空时出现,那是本地没配 Atlas,不是
+    // 上游没授权——所以原因是 `atlas_not_configured`,不是 `endpoint_not_granted`。
+    // 真的没授权时走的是 `mapExtractError`,它会带上真正的端点码。
+    throw new UnavailableError("atlas is not configured for this deployment", {
+      cause: "atlas_not_configured",
+      arg: null,
+    });
   }
 }
 

@@ -52,6 +52,8 @@ export interface ReadinessAction {
   runbook?: string;
 }
 
+import type { Unavailable } from "../processing/unavailable";
+
 export interface ReadinessInput {
   /** 可检索文档数:`content_state = indexed` 且有 active 版本。 */
   retrievable: number;
@@ -65,12 +67,30 @@ export interface ReadinessInput {
   failedResident: number;
   /** 正在加工中的任务数。 */
   inflight: number;
+  /**
+   * 驻留在「用不了」上的任务**各自是为什么**,去重后的清单。
+   *
+   * 有了计数还要有这个,是因为 owner 2026-08-28 指出的那件事:四种「用不了」的
+   * **修复人不同**(运维改配置 / 平台开通工作区 / 平台管理面授端点 / 改库的模型锁),
+   * 只报一个数等于告诉人「有事」却不说是什么事、该找谁。
+   *
+   * 可以为空:老记录里存的是改判之前的英文散文,解不出来就不进这个清单(见
+   * `decodeUnavailable` 为什么不猜)。**空清单不等于没有驻留**——计数仍在。
+   */
+  parkedCauses?: readonly Unavailable[];
 }
 
 export interface Readiness {
   state: ReadinessState;
   reason: ReadinessReason | null;
   action: ReadinessAction | null;
+  /**
+   * 具体卡在哪几件事上。只有 `reason` 是 `capability_not_granted` 时才可能非空
+   * ——其余原因(配额、失败、在加工、没内容)没有「哪一种、去哪修」可说。
+   *
+   * 界面按它逐条渲染「缺什么 + 去哪补」;为空时回落到那句笼统的原因文案。
+   */
+  blockers: readonly Unavailable[];
   /** 支撑这个判断的数,给页面显示,也给读的人自己复核。 */
   facts: ReadinessInput;
 }
@@ -87,37 +107,50 @@ const OPS_GRANTS = "docs/60-operations/40-run-atlas-endpoint-grants.md";
  *
  * 反过来做会得到那个最贵的错误:把「驻留在未授权上」显示成「还没有内容」。
  */
+/** 去重后的原因清单;没有就是空数组,不是 undefined——界面不该为此写一次判空。 */
+function causes(input: ReadinessInput): readonly Unavailable[] {
+  const seen = new Set<string>();
+  const out: Unavailable[] = [];
+  for (const c of input.parkedCauses ?? []) {
+    const key = `${c.cause}:${c.arg ?? ""}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(c);
+  }
+  return out;
+}
+
 export function assessReadiness(input: ReadinessInput): Readiness {
   const { retrievable, parkedUnavailable, parkedQuota, failedResident, inflight, documents } = input;
 
   if (retrievable > 0) {
     // 有内容,但仍要看有没有一部分卡着。能用不等于全都好。
     if (parkedUnavailable > 0) {
-      return { state: "degraded", reason: "capability_not_granted", action: { kind: "ops", runbook: OPS_GRANTS }, facts: input };
+      return { state: "degraded", reason: "capability_not_granted", action: { kind: "ops", runbook: OPS_GRANTS }, facts: input, blockers: causes(input) };
     }
     if (parkedQuota > 0) {
-      return { state: "degraded", reason: "quota_exhausted", action: null, facts: input };
+      return { state: "degraded", reason: "quota_exhausted", action: null, facts: input, blockers: [] };
     }
     if (failedResident > 0) {
-      return { state: "degraded", reason: "failures_resident", action: { kind: "page", href: "/pipeline/tasks" }, facts: input };
+      return { state: "degraded", reason: "failures_resident", action: { kind: "page", href: "/pipeline/tasks" }, facts: input, blockers: [] };
     }
-    return { state: "ready", reason: null, action: null, facts: input };
+    return { state: "ready", reason: null, action: null, facts: input, blockers: [] };
   }
 
   // 一份可检索内容都没有。是「用不了」还是「还没开始」?
   if (parkedUnavailable > 0) {
-    return { state: "unavailable", reason: "capability_not_granted", action: { kind: "ops", runbook: OPS_GRANTS }, facts: input };
+    return { state: "unavailable", reason: "capability_not_granted", action: { kind: "ops", runbook: OPS_GRANTS }, facts: input, blockers: causes(input) };
   }
   if (parkedQuota > 0) {
-    return { state: "unavailable", reason: "quota_exhausted", action: null, facts: input };
+    return { state: "unavailable", reason: "quota_exhausted", action: null, facts: input, blockers: [] };
   }
   if (failedResident > 0) {
-    return { state: "unavailable", reason: "failures_resident", action: { kind: "page", href: "/pipeline/tasks" }, facts: input };
+    return { state: "unavailable", reason: "failures_resident", action: { kind: "page", href: "/pipeline/tasks" }, facts: input, blockers: [] };
   }
   if (inflight > 0 || documents > 0) {
     // 文档在,只是还没走完。这是「等一会」,不是「坏了」,也不是「还没开始」。
-    return { state: "unavailable", reason: "processing", action: { kind: "page", href: "/pipeline/tasks" }, facts: input };
+    return { state: "unavailable", reason: "processing", action: { kind: "page", href: "/pipeline/tasks" }, facts: input, blockers: [] };
   }
 
-  return { state: "empty", reason: "nothing_ingested", action: { kind: "page", href: "/assets/new" }, facts: input };
+  return { state: "empty", reason: "nothing_ingested", action: { kind: "page", href: "/assets/new" }, facts: input, blockers: [] };
 }
