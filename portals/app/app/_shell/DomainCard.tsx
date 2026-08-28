@@ -64,6 +64,24 @@ const TONE = {
   muted: "color-mix(in oklab, var(--color-muted-foreground) 28%, transparent)",
 } as const;
 
+/**
+ * 环用的实色,比 `TONE` **饱和**。
+ *
+ * 我先试过给弧挂渐变(本色 -> 亮一档),结果把弧洗白了,比原来更糟——`TONE` 本身就是
+ * 混了透明的色,再往亮里渐变等于二次稀释。环是这张卡上最大的一块颜色,它需要的是
+ * **确信的色**,不是层次:一条 11px 宽的弧上,明暗过渡看不出来,只看得出变淡。
+ *
+ * 条和块继续用 `TONE`——它们面积小、并排多,浅一点才不吵。
+ */
+const TONE_RING: Record<keyof typeof TONE, string> = {
+  brand: "color-mix(in oklab, var(--color-primary) 88%, transparent)",
+  ai: "color-mix(in oklab, var(--color-ai) 80%, transparent)",
+  success: "color-mix(in oklab, var(--color-success) 88%, transparent)",
+  warning: "color-mix(in oklab, var(--color-warning) 88%, transparent)",
+  danger: "color-mix(in oklab, var(--color-destructive) 80%, transparent)",
+  muted: "color-mix(in oklab, var(--color-muted-foreground) 40%, transparent)",
+};
+
 type Tone = keyof typeof TONE;
 
 /** Type colour that pairs with a TONE fill. Neutral for brand and ai: a count
@@ -134,56 +152,112 @@ function SegBar({ slices, className = "" }: { slices: Slice[]; className?: strin
 /**
  * 环形:一个总量分成两三份,中心是总数本身。
  *
- * 用环不用实心饼:中心那块空地是免费的,拿来放总数比在旁边再摆一行数字省一次视线
- * 移动。描边式画法(`stroke-dasharray`)而不是扇形路径——同一个半径上排布,段与段
- * 之间天然留缝。
+ * 第一版被 owner 判为「太 low」,三处具体的毛病:
+ *
+ *   1. **底轨太重** —— 与弧同宽的实心灰圈,视重和数据弧一样,读起来像三段数据;
+ *      现在底轨细一半、只用一道极淡的描边,它是刻度不是内容;
+ *   2. **色不够确信** —— 弧用的是和条块同一档的浅色,在这么大一块面积上显得虚。
+ *      现在环有自己一档更饱和的色(`TONE_RING`)。中间试过挂渐变,把弧洗白了,更糟:
+ *      `TONE` 本身已经混了透明,再往亮里渐变是二次稀释,而 11px 宽的弧上看不出明暗
+ *      过渡,只看得出变淡;
+ *   3. **中心太挤** —— 数字和说明字号相近,像两行文字而不是「一个数 + 它的名字」。
+ *      现在数字放大、说明降为小字,层级立起来。
+ *
+ * 依然用描边式画法(`stroke-dasharray`)而不是扇形路径:同一半径上排布,段与段之间
+ * 天然留缝,而扇形要自己算两条边的夹角。
  */
 function Ring({
   slices,
   center,
   caption,
-  size = 92,
+  size = 104,
 }: {
   slices: Slice[];
   center: string;
   caption: string;
   size?: number;
 }) {
-  const stroke = 10;
+  const stroke = 11;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const total = sum(slices);
-  const gap = 3; // 段间缝,单位是弧长
+  const gap = 4;
   let offset = 0;
   return (
     <span className="relative flex shrink-0 items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true" className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-muted)" strokeWidth={stroke} />
+        {/* 底轨:细一半,极淡。它是刻度,不该和数据弧一样重。 */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="var(--color-border)"
+          strokeWidth={stroke / 2}
+          opacity={0.5}
+        />
         {total > 0 &&
-          slices.map((s) => {
-            const len = Math.max(0, (Math.max(0, s.value) / total) * c - gap);
+          slices.map((sl) => {
+            const len = Math.max(0, (Math.max(0, sl.value) / total) * c - gap);
             const el = (
               <circle
-                key={s.label}
+                key={sl.label}
                 cx={size / 2}
                 cy={size / 2}
                 r={r}
                 fill="none"
-                stroke={TONE[s.tone]}
+                stroke={TONE_RING[sl.tone]}
                 strokeWidth={stroke}
                 strokeLinecap="round"
                 strokeDasharray={`${Math.max(0, len)} ${c}`}
                 strokeDashoffset={-offset}
               />
             );
-            offset += (Math.max(0, s.value) / total) * c;
+            offset += (Math.max(0, sl.value) / total) * c;
             return len > 0 ? el : null;
           })}
       </svg>
-      <span className="absolute flex flex-col items-center">
-        <span className="font-mono text-title-sm tabular-nums text-foreground">{center}</span>
-        <span className="text-body-sm text-muted-foreground">{caption}</span>
+      <span className="absolute flex flex-col items-center gap-3xs">
+        <span className="font-mono text-title-md leading-[1.1] tabular-nums text-foreground">{center}</span>
+        <span className="text-body-sm leading-[1.1] text-muted-foreground">{caption}</span>
       </span>
+    </span>
+  );
+}
+
+/**
+ * 按长度铺开的一条带:**每一格的宽度就是它的份额**,名字和数字写在自己那格里。
+ *
+ * 与 `Chips` 的区别是「有没有量」:一排 chip 只是四个并列的标签,谁多谁少要靠读数字;
+ * 这条带把份额画进**布局本身**——forge 那格比 raven 宽,不用比对数字就看得出来。
+ *
+ * 窄格会放不下名字,所以名字 `truncate`,而数字始终保留(数字是这一格存在的理由)。
+ * 五个左右是上限:再多每格就窄到只剩省略号(owner 2026-08-29)。
+ */
+function ShareBand({ items }: { items: { code: string; calls: number; text: string }[] }) {
+  const total = Math.max(1, items.reduce((n, i) => n + Math.max(0, i.calls), 0));
+  return (
+    <span className="flex w-full gap-2xs">
+      {items.map((i, idx) => (
+        <span
+          key={i.code}
+          className="flex min-w-0 flex-col gap-3xs"
+          style={{ flexGrow: Math.max(1, i.calls), flexBasis: 0 }}
+        >
+          <span
+            className="h-2xs w-full rounded-full"
+            style={{
+              // 同一族的品牌色,靠**明度**区分先后而不是换色相:换色相会让人以为
+              // 这几格是不同种类的东西,而它们是同一种东西的排名。
+              background: `color-mix(in oklab, var(--color-primary) ${Math.max(28, 82 - idx * 13)}%, transparent)`,
+            }}
+          />
+          <span className="flex min-w-0 items-baseline gap-2xs">
+            <span className="min-w-0 truncate text-body-sm text-foreground">{i.code}</span>
+            <span className="shrink-0 font-mono text-code-sm tabular-nums text-muted-foreground">{i.text}</span>
+          </span>
+        </span>
+      ))}
     </span>
   );
 }
@@ -237,7 +311,11 @@ function Legend({ slices }: { slices: Slice[] }) {
     <span className="flex min-w-0 flex-1 flex-col gap-sm">
       {slices.map((s) => (
         <span key={s.label} className="flex items-baseline gap-xs">
-          <span className="size-2xs shrink-0 translate-y-[-0.1em] rounded-full" style={{ background: TONE[s.tone] }} />
+          <span
+            className="size-2xs shrink-0 translate-y-[-0.1em] rounded-full"
+            // 图例色块取**环**那一档,不取 TONE:色块是给弧做索引的,两者不同色就索引不上。
+            style={{ background: TONE_RING[s.tone] }}
+          />
           <span className="min-w-0 flex-1 truncate text-body-sm text-muted-foreground">{s.label}</span>
           <span className={`font-mono text-code-md tabular-nums ${TONE_TEXT[s.tone]}`}>{s.value}</span>
           <span className="w-[2.75rem] text-right font-mono text-code-sm tabular-nums text-muted-foreground/70">
@@ -442,42 +520,51 @@ function OverviewBody({ o, m, f, a }: { o: ShellData["overview"]; m: Msgs; f: Fm
 }
 
 function ChannelsBody({ c, m, ch, f }: { c: ShellData["channels"]; m: Msgs; ch: ChMsgs; f: Fmt }) {
-  // 份额:一个总量分给两条通道,这正是环形擅长的唯一一件事。总数放进环心,
-  // 省掉一次视线移动;两条通道的份额值得读出来,所以配完整图例而不是紧凑片。
+  // 两个宏观数并列,与知识资产那张同一个句式:**今日在前,累计在后**。两个数回答的是
+  // 两个问题——今日说「现在忙不忙」,累计说「这套东西被用了多久、多深」;只给今日,
+  // 一个刚上线的系统和一个跑了半年的在卡片上长得一模一样(owner 2026-08-29)。
+  //
+  // 环与数**左右布局**:环画的是今日这一笔怎么分给两条通道,和左边的数是同一件事的
+  // 两种说法,并排放才读得出它们相关;上下叠会读成两段。
   const slices: Slice[] = [
     { label: ch.viaDirect, value: c.directCalls, tone: "brand" },
     { label: ch.viaRunos, value: c.runosCalls, tone: "ai" },
   ];
   return (
     <>
-      <Headline
-        value={f.compact(c.todayCalls)}
-        label={ch.callsToday}
-        aside={
+      <span className="flex items-stretch gap-lg">
+        <span className="flex flex-col gap-3xs">
+          <span className="font-mono text-title-xl leading-[1.1] tabular-nums text-foreground">
+            {f.compact(c.todayCalls)}
+          </span>
+          <span className="text-body-sm text-muted-foreground">{ch.callsToday}</span>
+        </span>
+        <span className="w-px shrink-0 bg-border" />
+        <span className="flex flex-col gap-3xs">
+          <span className="font-mono text-title-xl leading-[1.1] tabular-nums text-foreground">
+            {f.number(c.totalCalls)}
+          </span>
+          <span className="text-body-sm text-muted-foreground">{ch.callsTotal}</span>
+        </span>
+        <span className="ml-auto self-start">
           <Pill
             text={`${c.deltaPct >= 0 ? "▲" : "▼"}${Math.abs(c.deltaPct)}%`}
             tone={c.deltaPct >= 0 ? "success" : "danger"}
           />
-        }
-      />
+        </span>
+      </span>
+
       <span className="flex items-center gap-lg">
-        <Ring slices={slices} center={f.compact(c.directCalls + c.runosCalls)} caption={m.ringTotal} />
+        <Ring slices={slices} center={f.compact(c.todayCalls)} caption={ch.callsToday} />
         <Legend slices={slices} />
       </span>
-      {/* 在服务谁 —— 首页三问的第二问。这张卡此前只回答了「有多少调用、走哪条通道」,
-          而量和通道都不是「谁」。**一行,不换行**:卡片高度以知识资产那张为上限
-          (owner 2026-08-29),排不下就少列一个,不是把卡撑高。 */}
+
+      {/* 在服务谁 —— 首页三问的第二问。按**长度**铺开而不是排成一行标签:宽度就是
+          份额,谁多谁少不用比对数字。高度以知识资产那张为上限,所以只有一带,不换行。 */}
       {c.topConsumers.length > 0 && (
-        <span className="flex items-baseline gap-sm border-t border-dashed border-primary/[0.08] pt-sm dark:border-primary/15">
-          <span className="shrink-0 text-body-sm text-muted-foreground">{ch.servingNow}</span>
-          <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-md overflow-hidden">
-            {c.topConsumers.map((p) => (
-              <span key={p.code} className="flex items-baseline gap-2xs">
-                <span className="text-body-sm text-ai-text">{p.code}</span>
-                <span className="font-mono text-code-sm tabular-nums text-muted-foreground">{f.compact(p.calls)}</span>
-              </span>
-            ))}
-          </span>
+        <span className="flex flex-col gap-2xs border-t border-dashed border-primary/[0.08] pt-sm dark:border-primary/15">
+          <span className="text-body-sm text-muted-foreground">{ch.servingNow}</span>
+          <ShareBand items={c.topConsumers.map((p) => ({ ...p, text: f.compact(p.calls) }))} />
         </span>
       )}
     </>

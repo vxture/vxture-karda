@@ -21,8 +21,9 @@ const S = DEMO_TOTALS_OPS.steward;
 /** 知识资产卡上单列几个资产。再多条就细到读不出长短了。 */
 const TOP_ASSETS = 4;
 
-/** 供给通道卡上列几个消费方。一行放得下的量,再多就要换行、把卡撑高。 */
-const TOP_CONSUMERS = 4;
+/** 供给通道卡上列几个消费方。按长度铺开之后五个还排得下(owner 2026-08-29);
+ *  再多每一格就窄到放不下名字。 */
+const TOP_CONSUMERS = 5;
 
 export async function GET(): Promise<Response> {
   const auth = await requireAuth();
@@ -102,6 +103,7 @@ export async function GET(): Promise<Response> {
       directCalls: DEMO_TOTALS_OPS.directCalls,
       runosCalls: DEMO_TOTALS_OPS.runosCalls,
       todayCalls: DEMO_TOTALS_OPS.todayCalls,
+      totalCalls: DEMO_TOTALS_OPS.totalCalls,
       // 供给侧整体仍是演示口径(`demoOps`),消费方名单跟着同一个来源走。
       topConsumers: DEMO_CHANNELS.consumers
         .slice(0, TOP_CONSUMERS)

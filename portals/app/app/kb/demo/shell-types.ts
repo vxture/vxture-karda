@@ -49,6 +49,9 @@ export interface ShellData {
     /** Core + growth: today's calls and the day-over-day move. */
     todayCalls: number;
     deltaPct: number;
+    /** 累计调用。与今日并列的第二个宏观数——今日说「现在忙不忙」,累计说「被用了
+     *  多久、多深」。只给今日的话,刚上线的系统和跑了半年的在卡片上长得一样。 */
+    totalCalls: number;
     /** Problem: channels serving degraded (or not serving at all). */
     degraded: number;
     /**

@@ -590,6 +590,10 @@ export const DEMO_ASSETS: DemoAssetSpec[] = [
 // long-tail); reflux drafts match the steward feed.
 export const DEMO_TOTALS_OPS = {
   todayCalls: 1204,
+  // 累计调用。今日之外还需要一个累计,是因为**两个数回答的是两个问题**:今日说
+  // 「现在忙不忙」,累计说「这套东西被用了多久、多深」——只给今日,一个刚上线的
+  // 系统和一个跑了半年的系统在卡片上长得一模一样。
+  totalCalls: 48392,
   directCalls: 812,
   runosCalls: 392,
   deltaPct: 22,

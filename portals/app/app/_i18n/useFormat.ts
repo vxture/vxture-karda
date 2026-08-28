@@ -91,6 +91,9 @@ export interface FormatHelpers {
    */
   relative(iso: string | null | undefined): string | null;
   compact(n: number): string;
+  /** 完整千分位。`compact` 会在一万以上缩成「4.8万 / 48K」,而并排的两个数
+   *  必须是同一套写法——「1,204」旁边写「4.8万」是两套。 */
+  number(n: number): string;
   /** The verification clock as a sentence. null when there is nothing to say. */
   record(rec: VerificationRecord): string | null;
   /** Render a held failure. Pass-through null so call sites stay one line. */
@@ -163,6 +166,11 @@ export function useFormat(): FormatHelpers {
         const hours = Math.round(mins / 60);
         if (Math.abs(hours) < 24) return rtf.format(hours, "hour");
         return rtf.format(Math.round(hours / 24), "day");
+      },
+      number(n) {
+        // 走应用的 locale,不是 `n.toLocaleString()`——后者跟浏览器语言走,而语言在
+        // 这个产品里是用户偏好,两者可以不一致。
+        return new Intl.NumberFormat(locale as Locale).format(n);
       },
       compact(n) {
         // Below the threshold the exact number is more useful than an
