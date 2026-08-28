@@ -10,7 +10,7 @@
 //
 // 现在是第三版:**一致的是框架和原语,不是图形**。
 //
-//   份额(两条通道)      -> 环形,中心放总数
+//   份额(两条通道)      -> 一对环形,今日与累计各一个,中心放数
 //   构成(队列的三种状态)-> 分段条,段上不标百分比(条已经画了)
 //   比率(验证覆盖)      -> 进度条,空轨就是还没做的部分
 //   计数(资产与知识)    -> 两个大数,外加一张分布图把两维联系起来(`DistBars`)
@@ -226,43 +226,6 @@ function Ring({
 }
 
 /**
- * 按长度铺开的一条带:**每一格的宽度就是它的份额**,名字和数字写在自己那格里。
- *
- * 与 `Chips` 的区别是「有没有量」:一排 chip 只是四个并列的标签,谁多谁少要靠读数字;
- * 这条带把份额画进**布局本身**——forge 那格比 raven 宽,不用比对数字就看得出来。
- *
- * 窄格会放不下名字,所以名字 `truncate`,而数字始终保留(数字是这一格存在的理由)。
- * 五个左右是上限:再多每格就窄到只剩省略号(owner 2026-08-29)。
- */
-function ShareBand({ items }: { items: { code: string; calls: number; text: string }[] }) {
-  const total = Math.max(1, items.reduce((n, i) => n + Math.max(0, i.calls), 0));
-  return (
-    <span className="flex w-full gap-2xs">
-      {items.map((i, idx) => (
-        <span
-          key={i.code}
-          className="flex min-w-0 flex-col gap-3xs"
-          style={{ flexGrow: Math.max(1, i.calls), flexBasis: 0 }}
-        >
-          <span
-            className="h-2xs w-full rounded-full"
-            style={{
-              // 同一族的品牌色,靠**明度**区分先后而不是换色相:换色相会让人以为
-              // 这几格是不同种类的东西,而它们是同一种东西的排名。
-              background: `color-mix(in oklab, var(--color-primary) ${Math.max(28, 82 - idx * 13)}%, transparent)`,
-            }}
-          />
-          <span className="flex min-w-0 items-baseline gap-2xs">
-            <span className="min-w-0 truncate text-body-sm text-foreground">{i.code}</span>
-            <span className="shrink-0 font-mono text-code-sm tabular-nums text-muted-foreground">{i.text}</span>
-          </span>
-        </span>
-      ))}
-    </span>
-  );
-}
-
-/**
  * 分布条列:**一根条一个资产,条长是它装着多少知识**。
  *
  * 这一张图同时说两个维度(owner 2026-08-28):条的**根数**是资产维度,条的**长度**
@@ -300,6 +263,59 @@ function DistBars({ rows }: { rows: { name: string; value: number; text: string;
           </span>
         </span>
       ))}
+    </span>
+  );
+}
+
+/**
+ * 一个数 + 它的构成:环在上,数在环心,图例在下。
+ *
+ * 成对使用(今日 / 累计)。**一个数没有类别就等于没说完**——这个域的全部意义就是
+ * 「分给哪条通道」,只给两个总数把那件事盖住了(owner 2026-08-29)。两个环并排还
+ * 多说了一件事:累计与今日的构成差异本身就是趋势。
+ *
+ * 图例放环下面而不是环右边:两个这样的块要并排,右侧留给另一个块,不留给自己的图例。
+ */
+function RingStat({
+  slices,
+  value,
+  caption,
+  aside,
+  f,
+}: {
+  slices: Slice[];
+  value: string;
+  caption: string;
+  aside?: React.ReactNode;
+  f: Fmt;
+}) {
+  const total = sum(slices);
+  return (
+    <span className="flex min-w-0 flex-1 flex-col items-center gap-sm">
+      {/* `inline-flex` 而不是裸 `relative`:内联元素的盒子对绝对定位子元素不成形,
+          药丸会掉到环下面去(实测)。 */}
+      <span className="relative inline-flex">
+        <Ring slices={slices} center={value} caption={caption} size={92} />
+        {/* 挪到环的**框外**:压在弧上时药丸的字和弧叠在一起,两样都读不清。
+            环列本身是 `flex-1` 居中的,左右都有余量,右上角放得下。 */}
+        {aside ? <span className="absolute -right-lg -top-2xs">{aside}</span> : null}
+      </span>
+      <span className="flex w-full min-w-0 flex-col gap-2xs">
+        {slices.map((sl) => (
+          <span key={sl.label} className="flex items-baseline gap-2xs">
+            <span
+              className="size-2xs shrink-0 translate-y-[-0.1em] rounded-full"
+              style={{ background: TONE_RING[sl.tone] }}
+            />
+            <span className="min-w-0 flex-1 truncate text-body-sm text-muted-foreground">{sl.label}</span>
+            {/* 完整千分位,不缩写:同一张卡上「1,204」旁边写「3.2万」是两套写法。 */}
+            <span className="font-mono text-code-md tabular-nums text-foreground">{f.number(sl.value)}</span>
+            <span className="w-[2.5rem] shrink-0 text-right font-mono text-code-sm tabular-nums text-muted-foreground/70">
+              {total > 0 ? Math.round((Math.max(0, sl.value) / total) * 100) : 0}%
+            </span>
+          </span>
+        ))}
+      </span>
     </span>
   );
 }
@@ -519,55 +535,40 @@ function OverviewBody({ o, m, f, a }: { o: ShellData["overview"]; m: Msgs; f: Fm
   );
 }
 
-function ChannelsBody({ c, m, ch, f }: { c: ShellData["channels"]; m: Msgs; ch: ChMsgs; f: Fmt }) {
-  // 两个宏观数并列,与知识资产那张同一个句式:**今日在前,累计在后**。两个数回答的是
-  // 两个问题——今日说「现在忙不忙」,累计说「这套东西被用了多久、多深」;只给今日,
-  // 一个刚上线的系统和一个跑了半年的在卡片上长得一模一样(owner 2026-08-29)。
+function ChannelsBody({ c, ch, f }: { c: ShellData["channels"]; ch: ChMsgs; f: Fmt }) {
+  // 两个数,各带各的构成:今日一个环,累计一个环。
   //
-  // 环与数**左右布局**:环画的是今日这一笔怎么分给两条通道,和左边的数是同一件事的
-  // 两种说法,并排放才读得出它们相关;上下叠会读成两段。
-  const slices: Slice[] = [
+  // 上一版是「两个大数一行 + 一个今日的环 + 一条在服务谁的带」,被 owner 退回两条:
+  // 卡太高,而且**两个宏观数只有总数没有类别**——这个域的全部意义就是分给哪条通道,
+  // 总数把那件事盖住了。「在服务谁」那条是我为填空加的,一并撤掉:域页面上有完整的
+  // 消费方榜,卡片复述一遍只会把卡撑高。
+  //
+  // 两个环并排还多说了一件事:累计里直供占比比今日高,那个差就是趋势本身。
+  const today: Slice[] = [
     { label: ch.viaDirect, value: c.directCalls, tone: "brand" },
     { label: ch.viaRunos, value: c.runosCalls, tone: "ai" },
   ];
+  const total: Slice[] = [
+    { label: ch.viaDirect, value: c.directTotal, tone: "brand" },
+    { label: ch.viaRunos, value: c.runosTotal, tone: "ai" },
+  ];
   return (
-    <>
-      <span className="flex items-stretch gap-lg">
-        <span className="flex flex-col gap-3xs">
-          <span className="font-mono text-title-xl leading-[1.1] tabular-nums text-foreground">
-            {f.compact(c.todayCalls)}
-          </span>
-          <span className="text-body-sm text-muted-foreground">{ch.callsToday}</span>
-        </span>
-        <span className="w-px shrink-0 bg-border" />
-        <span className="flex flex-col gap-3xs">
-          <span className="font-mono text-title-xl leading-[1.1] tabular-nums text-foreground">
-            {f.number(c.totalCalls)}
-          </span>
-          <span className="text-body-sm text-muted-foreground">{ch.callsTotal}</span>
-        </span>
-        <span className="ml-auto self-start">
+    <span className="flex items-start gap-xl">
+      <RingStat
+        slices={today}
+        value={f.number(c.todayCalls)}
+        caption={ch.callsToday}
+        f={f}
+        aside={
           <Pill
             text={`${c.deltaPct >= 0 ? "▲" : "▼"}${Math.abs(c.deltaPct)}%`}
             tone={c.deltaPct >= 0 ? "success" : "danger"}
           />
-        </span>
-      </span>
-
-      <span className="flex items-center gap-lg">
-        <Ring slices={slices} center={f.compact(c.todayCalls)} caption={ch.callsToday} />
-        <Legend slices={slices} />
-      </span>
-
-      {/* 在服务谁 —— 首页三问的第二问。按**长度**铺开而不是排成一行标签:宽度就是
-          份额,谁多谁少不用比对数字。高度以知识资产那张为上限,所以只有一带,不换行。 */}
-      {c.topConsumers.length > 0 && (
-        <span className="flex flex-col gap-2xs border-t border-dashed border-primary/[0.08] pt-sm dark:border-primary/15">
-          <span className="text-body-sm text-muted-foreground">{ch.servingNow}</span>
-          <ShareBand items={c.topConsumers.map((p) => ({ ...p, text: f.compact(p.calls) }))} />
-        </span>
-      )}
-    </>
+        }
+      />
+      <span className="w-px shrink-0 self-stretch bg-border" />
+      <RingStat slices={total} value={f.number(c.totalCalls)} caption={ch.callsTotal} f={f} />
+    </span>
   );
 }
 
@@ -664,7 +665,7 @@ export function DomainCard({ item, shell }: { item: DomainNavItem; shell: ShellD
         ) : item.key === "overview" ? (
           <OverviewBody o={shell.overview} m={m} f={f} a={a} />
         ) : item.key === "channels" ? (
-          <ChannelsBody c={shell.channels} m={m} ch={ch} f={f} />
+          <ChannelsBody c={shell.channels} ch={ch} f={f} />
         ) : item.key === "pipeline" ? (
           <PipelineBody p={shell.pipeline} m={m} f={f} />
         ) : (

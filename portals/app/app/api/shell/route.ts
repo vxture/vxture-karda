@@ -4,7 +4,6 @@ import { prismaEnabled, getPrismaClient } from "../../lib/db";
 import { DEMO_ASSETS, DEMO_TOTALS_OPS } from "../../kb/demo/seed-data";
 import { DEMO_PIPELINE, DEMO_TASKS } from "../../kb/demo/pipeline-demo";
 import { DEMO_EVALUATION } from "../../kb/demo/evaluation-demo";
-import { DEMO_CHANNELS } from "../../kb/demo/channels-demo";
 import { readCorpus } from "../../kb/governance/corpus-read";
 import type { ShellData } from "../../kb/demo/shell-types";
 
@@ -20,10 +19,6 @@ const S = DEMO_TOTALS_OPS.steward;
 
 /** 知识资产卡上单列几个资产。再多条就细到读不出长短了。 */
 const TOP_ASSETS = 4;
-
-/** 供给通道卡上列几个消费方。按长度铺开之后五个还排得下(owner 2026-08-29);
- *  再多每一格就窄到放不下名字。 */
-const TOP_CONSUMERS = 5;
 
 export async function GET(): Promise<Response> {
   const auth = await requireAuth();
@@ -104,10 +99,8 @@ export async function GET(): Promise<Response> {
       runosCalls: DEMO_TOTALS_OPS.runosCalls,
       todayCalls: DEMO_TOTALS_OPS.todayCalls,
       totalCalls: DEMO_TOTALS_OPS.totalCalls,
-      // 供给侧整体仍是演示口径(`demoOps`),消费方名单跟着同一个来源走。
-      topConsumers: DEMO_CHANNELS.consumers
-        .slice(0, TOP_CONSUMERS)
-        .map((c) => ({ code: c.code, calls: c.calls })),
+      directTotal: DEMO_TOTALS_OPS.directTotal,
+      runosTotal: DEMO_TOTALS_OPS.runosTotal,
       deltaPct: DEMO_TOTALS_OPS.deltaPct,
       degraded: 1,
     },

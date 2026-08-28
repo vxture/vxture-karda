@@ -49,20 +49,22 @@ export interface ShellData {
     /** Core + growth: today's calls and the day-over-day move. */
     todayCalls: number;
     deltaPct: number;
-    /** 累计调用。与今日并列的第二个宏观数——今日说「现在忙不忙」,累计说「被用了
-     *  多久、多深」。只给今日的话,刚上线的系统和跑了半年的在卡片上长得一样。 */
+    /** 累计调用,以及它的通道拆分。与今日并列的第二个宏观数——今日说「现在忙不忙」,
+     *  累计说「被用了多久、多深」。
+     *
+     *  **拆分不是可选的**:这个域的全部意义就是「分给哪条通道」,只给总数等于把这件事
+     *  盖住。两个饼并排还多说了一件事——累计与今日的构成差异就是趋势本身。 */
     totalCalls: number;
+    directTotal: number;
+    runosTotal: number;
     /** Problem: channels serving degraded (or not serving at all). */
     degraded: number;
-    /**
-     * **在服务谁** —— 按调用量排的前几个消费方。
-     *
-     * 这正是首页三问里的第二问(150 §2.4),而这张卡此前只回答了「有多少调用、走哪条
-     * 通道」——量和通道都不是「谁」。加这一份之后,这个域的卡片才真的答完它那一问。
-     *
-     * 只给 code 和 calls:更细的(走哪条通道、常读哪个库)在域页面上,卡片不复述。
-     */
-    topConsumers: { code: string; calls: number }[];
+    // 这里曾经有过一份 `topConsumers`(在服务谁)。撤掉了(owner 2026-08-29):它是我
+    // 为了填卡片下半截的空白加的,而**为了填空加的东西,填完就该被质疑**——消费方榜
+    // 在供给通道域页面上有完整的一份,卡片复述一遍只会把卡撑高。
+    //
+    // 首页三问的第二问「在服务谁」由此仍未在卡上作答;真要答,该答的形式是「谁」而不是
+    // 「几个谁」,那需要的位置比一张卡的页脚大。留在这里作为记录,不是遗漏。
   };
   pipeline: {
     /** Chart + core: the work mix, three columns. */
