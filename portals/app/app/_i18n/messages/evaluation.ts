@@ -42,7 +42,7 @@ export const evaluation = {
   } satisfies MessageFn<[string]>,
   metricStale: { "zh-CN": "待复验", "en-US": "To re-verify" },
   metricStaleTag: { "zh-CN": "过期需重新确认", "en-US": "expired, needs confirming again" },
-  metricPreVerified: { "zh-CN": "管家预验待确认", "en-US": "Steward pre-verified, awaiting you" },
+  metricPreVerified: { "zh-CN": "卡尔达预验待确认", "en-US": "Karda pre-verified, awaiting you" },
   metricPreVerifiedTag: { "zh-CN": "低风险 · 可批量", "en-US": "low risk · confirmable in bulk" },
   metricGaps: { "zh-CN": "覆盖缺口", "en-US": "Coverage gaps" },
   metricGapsTag: { "zh-CN": "评测中查不到的问题", "en-US": "questions evaluation cannot answer" },
@@ -75,7 +75,7 @@ export const evaluation = {
   } satisfies MessageFn<[number]>,
   provCorpusLive: { "zh-CN": "验证治理为实时数据", "en-US": "Verification governance is live data" },
   provCorpusDemo: { "zh-CN": "验证治理为演示数据", "en-US": "Verification governance is demo data" },
-  provStewardDemo: { "zh-CN": " · 管家预验为演示数据 · ", "en-US": " · steward pre-verification is demo data · " },
+  provStewardDemo: { "zh-CN": " · 卡尔达预验为演示数据 · ", "en-US": " · Karda pre-verification is demo data · " },
   provEvalLive: { "zh-CN": "评测为实时数据", "en-US": "Evaluation is live data" },
   provEvalDemo: {
     "zh-CN": "评测口径为演示数据，评测运行器建设中",

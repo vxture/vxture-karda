@@ -312,7 +312,7 @@ export function TasksClient() {
                   {m.alertBody(data.alert.kbName, data.alert.body)}
                   {/* The judgment renders ONLY when the steward actually formed
                       one. A derived alert carries the rate but no opinion, and
-                      an empty "管家判断:" label implying one exists would be the
+                      an empty "卡尔达判断:" label implying one exists would be the
                       most misleading thing on this page. */}
                   {data.alert.judgment ? (
                     <>

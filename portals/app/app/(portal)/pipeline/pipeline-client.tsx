@@ -149,7 +149,9 @@ export function PipelineClient() {
             </span>
             <span className="flex min-w-0 flex-col gap-2xs">
               <span className="flex items-baseline gap-sm">
-                <span className="text-label-lg">{m.stewardName}</span>
+                {/* 名字取自 `shell.dock` —— 它只该有一份。原来 pipeline 目录里另有一条
+                    `stewardName`,两处说同一件事,迟早只改其中一份。 */}
+                <span className="text-label-lg">{sh.dock}</span>
                 <span className="font-mono text-code-sm tracking-widest text-ai-text">{m.stewardOnDuty}</span>
               </span>
               <span className="text-body-sm text-muted-foreground">

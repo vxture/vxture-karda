@@ -13,7 +13,7 @@ import type { EvaluationData } from "../../kb/demo/evaluation-types";
 //
 //   验证治理 (corpus)     LIVE off document/entry verification_state - see
 //                        kb/governance/corpus-read.ts. Needed no new table.
-//   管家预验 (steward)    demo. No steward ledger yet.
+//   卡尔达预验 (steward)    demo. No steward ledger yet.
 //   质量评测 (evaluation) LIVE off eval_run once a set has been RUN; demo until
 //                        then. Batch 14 built the runner and its four tables, so
 //                        this half stopped being a constant - but a workspace

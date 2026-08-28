@@ -62,15 +62,14 @@ export const pipeline = {
   },
   loading: { "zh-CN": "正在加载加工管道…", "en-US": "Loading the processing pipeline…" },
   needSignInDesc: {
-    "zh-CN": "登录后查看知识管家的加工流水与待确认事项。",
-    "en-US": "Sign in to see the steward's processing flow and what is awaiting your call.",
+    "zh-CN": "登录后查看卡尔达的加工流水与待确认事项。",
+    "en-US": "Sign in to see Karda's processing flow and what is awaiting your call.",
   },
   boardMeta: {
     "zh-CN": (docs: number, p95: number, auto: number) => `今日 ${docs} docs · P95 ${p95}s/doc · 自动处理 ${auto}%`,
     "en-US": (docs: number, p95: number, auto: number) => `${docs} docs today · P95 ${p95}s/doc · ${auto}% automatic`,
   } satisfies MessageFn<[number, number, number]>,
   batchConfirm: { "zh-CN": "批量确认预验", "en-US": "Confirm pre-verified in bulk" },
-  stewardName: { "zh-CN": "知识管家", "en-US": "Knowledge steward" },
   stewardOnDuty: { "zh-CN": "AI AGENT · 在岗", "en-US": "AI AGENT · ON DUTY" },
   stewardBlurb: {
     "zh-CN": "负责理解、萃取、编织、验证与纠错的全程加工；需要裁决的事项才会来找你。",
@@ -87,8 +86,8 @@ export const pipeline = {
     "en-US": (n: number) => `Awaiting your call · ${n}`,
   } satisfies MessageFn<[number]>,
   pendingHint: {
-    "zh-CN": "管家已给出建议与依据，采纳即生效",
-    "en-US": "The steward has proposed an action and its grounds; accepting applies it",
+    "zh-CN": "卡尔达已给出建议与依据，采纳即生效",
+    "en-US": "Karda has proposed an action and its grounds; accepting applies it",
   },
   restLink: {
     "zh-CN": (n: number) => `查看其余 ${n} 项 →`,
@@ -199,7 +198,7 @@ export const pipeline = {
       "bulk never starves interactive; once sync depth passes its threshold the Arda channel back-pressures naturally (notify-then-pull slows down).",
   },
   failureAlertTitle: { "zh-CN": "库级失败率告警", "en-US": "Library failure-rate alert" },
-  stewardVerdict: { "zh-CN": "管家判断：", "en-US": "Steward's read: " },
+  stewardVerdict: { "zh-CN": "卡尔达判断：", "en-US": "Karda's read: " },
   viewFailures: { "zh-CN": "查看失败件", "en-US": "See the failures" },
   adjustTemplate: { "zh-CN": "调整模板", "en-US": "Adjust the template" },
   alertBody: {
@@ -222,8 +221,8 @@ export const pipeline = {
   provTasksLive: { "zh-CN": "任务与队列为实时数据", "en-US": "Tasks and queues are live data" },
   provTasksDemo: { "zh-CN": "任务与队列为演示口径", "en-US": "Tasks and queues are illustrative" },
   provTasksRegistry: {
-    "zh-CN": " · 新鲜度、并发上限与管家判断为登记/演示口径",
-    "en-US": " · freshness, concurrency caps and the steward's read are registry or illustrative figures",
+    "zh-CN": " · 新鲜度、并发上限与卡尔达判断为登记/演示口径",
+    "en-US": " · freshness, concurrency caps and Karda's read are registry or illustrative figures",
   },
 
   // --- controlled rebuild ------------------------------------------------------
@@ -262,7 +261,7 @@ export const pipeline = {
   queueDetail: { "zh-CN": "排队详情", "en-US": "Queue detail" },
   whatTriggers: { "zh-CN": "什么会触发重建", "en-US": "What triggers a rebuild" },
   safetyLimits: { "zh-CN": "安全约束", "en-US": "Safety limits" },
-  stewardSuggestion: { "zh-CN": "管家建议", "en-US": "Steward's suggestion" },
+  stewardSuggestion: { "zh-CN": "卡尔达建议", "en-US": "Karda's suggestion" },
 
   // --- one task ----------------------------------------------------------------
   errLoadTask: {
@@ -272,7 +271,7 @@ export const pipeline = {
   loadingTask: { "zh-CN": "正在加载任务详情…", "en-US": "Loading the task…" },
   cancelTask: { "zh-CN": "取消任务", "en-US": "Cancel the task" },
   rerunFromChunk: { "zh-CN": "从分块重跑", "en-US": "Re-run from chunking" },
-  stewardPresent: { "zh-CN": "知识管家 · 全程在场", "en-US": "Knowledge steward · present throughout" },
+  stewardPresent: { "zh-CN": "Karda Super Agent · 全程在场", "en-US": "Karda Super Agent · present throughout" },
   taskStewardLead: {
     "zh-CN": "解析中已做语义修复 2 处；入藏后自动萃取知识单元、关联既有条目并交叉预验——低置信内容标注待人工，",
     "en-US":

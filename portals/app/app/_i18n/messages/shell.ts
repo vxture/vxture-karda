@@ -17,7 +17,7 @@ export const shell = {
   navChannels: { "zh-CN": "供给通道", "en-US": "Supply channels" },
   navChannelsDesc: { "zh-CN": "直供与 Runos 两条供给通道", "en-US": "The direct and Runos supply channels" },
   navPipeline: { "zh-CN": "加工管道", "en-US": "Processing pipeline" },
-  navPipelineDesc: { "zh-CN": "知识管家驱动的智能加工", "en-US": "Steward-driven content processing" },
+  navPipelineDesc: { "zh-CN": "卡尔达驱动的智能加工", "en-US": "Karda-driven content processing" },
   navEvaluation: { "zh-CN": "验证评测", "en-US": "Verification & evaluation" },
   navEvaluationDesc: { "zh-CN": "验证、评测与质量基线", "en-US": "Verification, evaluation and quality baselines" },
 
@@ -45,7 +45,10 @@ export const shell = {
   // 就成了另一个东西。中文「卡尔达」降为它旁边的 tag,只在中文界面出现——
   // `dockTag` 的 en-US 是空串,渲染处据此不画那个 tag。
   //
-  // 旧名「管家值班台 / Steward desk」已退役。仓内其余地方仍用 **值班台 / steward dock**
+  // 旧名「管家值班台 / Steward desk」与散落各处的「知识管家」都已退役(2026-08-29 全仓清扫)。
+  // 用名规则:**身份出场用全名**(这一条、`pipeline.stewardPresent`),**行内指代用短名**
+  // (中文「卡尔达」/ 英文 "Karda")——全名塞进句子会把句子撑散,短名能当主语。
+  // 仓内其余地方仍用 **值班台 / steward dock**
   // 指这块**外壳区域**(130-portal-shell §1 的词汇表),那是布局用词,与这个 agent
   // 的名字不是一回事:区域是家具,super agent 是住在里面的那个。
   dock: { "zh-CN": "Karda Super Agent", "en-US": "Karda Super Agent" },
@@ -162,8 +165,8 @@ export const shell = {
   dockGoHandle: { "zh-CN": "去处理", "en-US": "Go handle it" },
   dockActivity: { "zh-CN": "Agent 活动 · 实时", "en-US": "Agent activity · live" },
   dockDelegate: {
-    "zh-CN": "低风险项全部交给管家处理",
-    "en-US": "Hand every low-risk item to the steward",
+    "zh-CN": "低风险项全部交给卡尔达",
+    "en-US": "Hand every low-risk item to Karda",
   },
 
   // --- scope panel / user menu -------------------------------------------------

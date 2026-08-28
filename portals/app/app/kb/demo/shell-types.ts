@@ -84,7 +84,19 @@ export interface ShellData {
     /** Problem: coverage gaps the evaluation sets surfaced. */
     gaps: number;
   };
-  /** Steward dock payload. */
+  /**
+   * **Karda Super Agent(卡尔达)的那一份 payload** —— 值班台里显示的东西。
+   *
+   * 字段名保留 `steward`,这是刻意的(2026-08-29 全仓清扫时的决定):
+   *
+   *   · 用户可见的文案全部改成了 Karda Super Agent / 卡尔达 / Karda —— 那是**客户读的**;
+   *   · 而 `steward` 作为标识符描述的是它扮演的**角色**(照管这批知识的那个),
+   *     不是它的名字。角色词没有错,改它要动一条跨文件的数据契约,零用户收益。
+   *
+   * 留这段注释,是因为「代码说 steward、界面说卡尔达」如果没有一处说明,下一个人会
+   * 以为是漏改的。**它不是漏改,是分层。** 真要统一,那是一次单独的机械改名,不该
+   * 混在改界面的批次里。
+   */
   steward: {
     pending: number;
     proposals: StewardProposal[];
