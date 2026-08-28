@@ -15,8 +15,8 @@
 //   比率(验证覆盖)      -> 进度条,空轨就是还没做的部分
 //   计数(资产与知识)    -> 两个大数,外加一张分布图把两维联系起来(`DistBars`)
 //
-// 四个 body 各选各的形式,但都从同一组原语(`SegBar` / `Ring` / `Legend` / `Chips` /
-// `Headline` / `Pill`)里取,并被同一个三区框架包着。想让某张卡自成一派,得先加一个
+// 四个 body 各选各的形式,但都从同一组原语(`SegBar` / `Ring` / `RingStat` / `Chips` /
+// `DistBars` / `Headline` / `Pill`)里取,并被同一个三区框架包着。想让某张卡自成一派,得先加一个
 // 新原语——那是一次要过脑子的改动,而不是随手多写十行 JSX。
 //
 // 三个区,自上而下:
@@ -170,11 +170,14 @@ function Ring({
   slices,
   center,
   caption,
+  captionClass = "text-muted-foreground",
   size = 104,
 }: {
   slices: Slice[];
   center: string;
   caption: string;
+  /** 环心第二行的语气色。增量放在这里,涨跌要看得出来。 */
+  captionClass?: string;
   size?: number;
 }) {
   const stroke = 11;
@@ -219,7 +222,7 @@ function Ring({
       </svg>
       <span className="absolute flex flex-col items-center gap-3xs">
         <span className="font-mono text-title-md leading-[1.1] tabular-nums text-foreground">{center}</span>
-        <span className="text-body-sm leading-[1.1] text-muted-foreground">{caption}</span>
+        {caption ? <span className={`text-body-sm leading-[1.1] ${captionClass}`}>{caption}</span> : null}
       </span>
     </span>
   );
@@ -268,77 +271,59 @@ function DistBars({ rows }: { rows: { name: string; value: number; text: string;
 }
 
 /**
- * 一个数 + 它的构成:环在上,数在环心,图例在下。
+ * 一个数 + 它的构成。三处按 owner 2026-08-29 的第三轮重排:
  *
- * 成对使用(今日 / 累计)。**一个数没有类别就等于没说完**——这个域的全部意义就是
- * 「分给哪条通道」,只给两个总数把那件事盖住了(owner 2026-08-29)。两个环并排还
- * 多说了一件事:累计与今日的构成差异本身就是趋势。
- *
- * 图例放环下面而不是环右边:两个这样的块要并排,右侧留给另一个块,不留给自己的图例。
+ *   1. **名字提到标题位**。「今日调用 / 累计调用」是这一块叫什么,它该在最上面,
+ *      而不是缩在环心里当小字——环心是给数用的,不是给标签用的。
+ *   2. **环心腾出来放增量**。原来那个药丸压在弧上,字和弧叠着两样都读不清;而增量
+ *      本来就属于中心那个数(它是那个数的变化),放进去比挂在外面对。
+ *      药丸底色也去掉了:环心已经是一块干净的地,再加个底反而脏。
+ *   3. **左饼右数**。右侧每条通道是「数字大在上、名称小在下」,与知识资产那张的
+ *      `3,852 / 知识` 同一个句式——同一个产品里,一个数和它的名字只该有一种摆法。
  */
 function RingStat({
   slices,
+  title,
   value,
-  caption,
-  aside,
+  delta,
   f,
 }: {
   slices: Slice[];
+  title: string;
   value: string;
-  caption: string;
-  aside?: React.ReactNode;
+  delta?: { text: string; up: boolean };
   f: Fmt;
 }) {
-  const total = sum(slices);
-  return (
-    <span className="flex min-w-0 flex-1 flex-col items-center gap-sm">
-      {/* `inline-flex` 而不是裸 `relative`:内联元素的盒子对绝对定位子元素不成形,
-          药丸会掉到环下面去(实测)。 */}
-      <span className="relative inline-flex">
-        <Ring slices={slices} center={value} caption={caption} size={92} />
-        {/* 挪到环的**框外**:压在弧上时药丸的字和弧叠在一起,两样都读不清。
-            环列本身是 `flex-1` 居中的,左右都有余量,右上角放得下。 */}
-        {aside ? <span className="absolute -right-lg -top-2xs">{aside}</span> : null}
-      </span>
-      <span className="flex w-full min-w-0 flex-col gap-2xs">
-        {slices.map((sl) => (
-          <span key={sl.label} className="flex items-baseline gap-2xs">
-            <span
-              className="size-2xs shrink-0 translate-y-[-0.1em] rounded-full"
-              style={{ background: TONE_RING[sl.tone] }}
-            />
-            <span className="min-w-0 flex-1 truncate text-body-sm text-muted-foreground">{sl.label}</span>
-            {/* 完整千分位,不缩写:同一张卡上「1,204」旁边写「3.2万」是两套写法。 */}
-            <span className="font-mono text-code-md tabular-nums text-foreground">{f.number(sl.value)}</span>
-            <span className="w-[2.5rem] shrink-0 text-right font-mono text-code-sm tabular-nums text-muted-foreground/70">
-              {total > 0 ? Math.round((Math.max(0, sl.value) / total) * 100) : 0}%
-            </span>
-          </span>
-        ))}
-      </span>
-    </span>
-  );
-}
-
-/** 图例:一行一份,名称在左、数字与份额在右。给环形用——它的份额值得读出来。 */
-function Legend({ slices }: { slices: Slice[] }) {
-  const total = sum(slices);
   return (
     <span className="flex min-w-0 flex-1 flex-col gap-sm">
-      {slices.map((s) => (
-        <span key={s.label} className="flex items-baseline gap-xs">
-          <span
-            className="size-2xs shrink-0 translate-y-[-0.1em] rounded-full"
-            // 图例色块取**环**那一档,不取 TONE:色块是给弧做索引的,两者不同色就索引不上。
-            style={{ background: TONE_RING[s.tone] }}
-          />
-          <span className="min-w-0 flex-1 truncate text-body-sm text-muted-foreground">{s.label}</span>
-          <span className={`font-mono text-code-md tabular-nums ${TONE_TEXT[s.tone]}`}>{s.value}</span>
-          <span className="w-[2.75rem] text-right font-mono text-code-sm tabular-nums text-muted-foreground/70">
-            {total > 0 ? Math.round((Math.max(0, s.value) / total) * 100) : 0}%
-          </span>
+      <span className="text-body-md text-muted-foreground">{title}</span>
+      <span className="flex items-center gap-md">
+        <Ring
+          slices={slices}
+          center={value}
+          caption={delta ? delta.text : ""}
+          captionClass={delta ? (delta.up ? "text-success-text" : "text-destructive-text") : ""}
+          size={92}
+        />
+        <span className="flex min-w-0 flex-1 flex-col gap-sm">
+          {slices.map((sl) => (
+            <span key={sl.label} className="flex min-w-0 flex-col gap-3xs">
+              <span className="flex items-baseline gap-2xs">
+                <span
+                  className="size-2xs shrink-0 translate-y-[-0.15em] rounded-full"
+                  style={{ background: TONE_RING[sl.tone] }}
+                />
+                <span className="font-mono text-title-sm leading-[1.1] tabular-nums text-foreground">
+                  {f.number(sl.value)}
+                </span>
+              </span>
+              <span className="min-w-0 truncate pl-md text-body-sm leading-[1.1] text-muted-foreground">
+                {sl.label}
+              </span>
+            </span>
+          ))}
         </span>
-      ))}
+      </span>
     </span>
   );
 }
@@ -536,14 +521,10 @@ function OverviewBody({ o, m, f, a }: { o: ShellData["overview"]; m: Msgs; f: Fm
 }
 
 function ChannelsBody({ c, ch, f }: { c: ShellData["channels"]; ch: ChMsgs; f: Fmt }) {
-  // 两个数,各带各的构成:今日一个环,累计一个环。
+  // 两个数,各带各的构成:今日一个环,累计一个环。这个域的全部意义就是「分给哪条
+  // 通道」,只给两个总数会把那件事盖住(owner 2026-08-29)。
   //
-  // 上一版是「两个大数一行 + 一个今日的环 + 一条在服务谁的带」,被 owner 退回两条:
-  // 卡太高,而且**两个宏观数只有总数没有类别**——这个域的全部意义就是分给哪条通道,
-  // 总数把那件事盖住了。「在服务谁」那条是我为填空加的,一并撤掉:域页面上有完整的
-  // 消费方榜,卡片复述一遍只会把卡撑高。
-  //
-  // 两个环并排还多说了一件事:累计里直供占比比今日高,那个差就是趋势本身。
+  // 两个环并排还多说了一件事:累计里直供占比与今日的差,就是趋势本身。
   const today: Slice[] = [
     { label: ch.viaDirect, value: c.directCalls, tone: "brand" },
     { label: ch.viaRunos, value: c.runosCalls, tone: "ai" },
@@ -553,21 +534,16 @@ function ChannelsBody({ c, ch, f }: { c: ShellData["channels"]; ch: ChMsgs; f: F
     { label: ch.viaRunos, value: c.runosTotal, tone: "ai" },
   ];
   return (
-    <span className="flex items-start gap-xl">
+    <span className="flex items-start gap-lg">
       <RingStat
         slices={today}
+        title={ch.callsToday}
         value={f.number(c.todayCalls)}
-        caption={ch.callsToday}
+        delta={{ text: `${c.deltaPct >= 0 ? "▲" : "▼"}${Math.abs(c.deltaPct)}%`, up: c.deltaPct >= 0 }}
         f={f}
-        aside={
-          <Pill
-            text={`${c.deltaPct >= 0 ? "▲" : "▼"}${Math.abs(c.deltaPct)}%`}
-            tone={c.deltaPct >= 0 ? "success" : "danger"}
-          />
-        }
       />
       <span className="w-px shrink-0 self-stretch bg-border" />
-      <RingStat slices={total} value={f.number(c.totalCalls)} caption={ch.callsTotal} f={f} />
+      <RingStat slices={total} title={ch.callsTotal} value={f.number(c.totalCalls)} f={f} />
     </span>
   );
 }
