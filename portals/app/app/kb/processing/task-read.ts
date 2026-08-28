@@ -1,6 +1,7 @@
 import { getPrismaClient } from "../../lib/db";
 import type { ProcessingStage, StageDot, QueueTier, PipelineTask } from "../demo/pipeline-types";
 import type { Stage } from "./stages";
+import { decodeUnavailable, type Unavailable } from "./unavailable";
 
 // The 加工管道 read model (240-ops-read-models section 4.1/4.2), reading the rows
 // task-ledger.ts writes. Until that ledger existed this page had no data source
@@ -20,6 +21,9 @@ import type { Stage } from "./stages";
 const WINDOW_HOURS = 48;
 const ROW_CAP = 20_000;
 const TASK_LIST_LIMIT = 12;
+/** 一个库里驻留任务的读取上限。原因至多四档,但**任务**可以很多,而且
+ *  这一份是按文档索引的,所以上限跟着文档量走,不跟着原因种类走。 */
+const PARKED_CAP = 2_000;
 
 /** The five pipeline stages in order - the dot row's spine. */
 export const STAGES: Stage[] = ["fetch", "parse", "chunk", "embed", "commit"];
@@ -277,4 +281,42 @@ export async function readTasks(workspaceId: string, now: number = Date.now()): 
     })),
     now,
   );
+}
+
+// --- 每份文档卡在哪一件事上 --------------------------------------------------
+
+/**
+ * 一个库里,每份**驻留中的**文档各自卡在什么原因上。
+ *
+ * 为什么读在这里而不是把字段加进 `DocumentRow`(owner 2026-08-28 的容错要求落到
+ * 文档这一层时的设计选择):**文档没有驻留,是它的任务驻留了**。驻留时
+ * `content_state` 仍是 `processing`,原因写在 `processing_task.failure_reason` 上
+ * ——把它塞进文档行,等于让 `ContentStore` 这个端口(以及它的内存实现)去承载任务表
+ * 的事实,而内存实现里根本没有任务,那个字段只能永远是 null。
+ *
+ * 所以它是一份**旁挂的读**:文档清单照旧,这份按 `document_id` 索引,界面自己对上。
+ *
+ * 只回答 `suspended` + `unavailable` 这一种。`quota` 不在内:它会自己好、不需要任何人
+ * 动手,给每份文档挂一句「配额用尽」只是把焦虑摊开(与首页同一条口径)。
+ */
+export async function readParkedByDocument(kbId: string): Promise<Record<string, Unavailable>> {
+  const p = await getPrismaClient();
+  const rows = await p.processingTask.findMany({
+    where: { kbId, state: "suspended", failureClass: "unavailable" },
+    select: { documentId: true, failureReason: true, queuedAt: true },
+    orderBy: { queuedAt: "desc" },
+    take: PARKED_CAP,
+  });
+
+  const out: Record<string, Unavailable> = {};
+  for (const r of rows) {
+    // 一份文档可能有不止一条驻留任务(加工一条、抽取一条)。**取最新的那条**——
+    // `orderBy desc` 加这个「先到先占」,合起来就是这个意思。两条同时存在时哪一条
+    // 更值得说是个判断,而最新的那条至少是确定的;胡乱取一条会让同一份文档在两次
+    // 刷新之间说法不同。
+    if (out[r.documentId]) continue;
+    const u = decodeUnavailable(r.failureReason);
+    if (u) out[r.documentId] = u;
+  }
+  return out;
 }

@@ -7,6 +7,7 @@ import { Banner, Button, EmptyState, Tabs, TabsContent, TabsList, TabsTrigger } 
 import {
   getKb,
   listDocuments,
+  type ParkedByDocument,
   listFolders,
   listMetadataFields,
   listProcessingTemplates,
@@ -71,6 +72,8 @@ export function AssetClient() {
 
   const [kb, setKb] = useState<Kb | null>(null);
   const [docs, setDocs] = useState<Doc[] | null>(null);
+  /** 每份驻留文档卡在什么原因上,按 document_id 索引。与 `docs` 同一趟取回。 */
+  const [parked, setParked] = useState<ParkedByDocument>({});
   const [folders, setFolders] = useState<Folder[]>([]);
   const [templates, setTemplates] = useState<ProcessingTemplateOption[]>([]);
   const [fields, setFields] = useState<MetadataField[]>([]);
@@ -92,7 +95,9 @@ export function AssetClient() {
 
   const loadDocs = useCallback(async () => {
     try {
-      setDocs(await listDocuments(kbId));
+      const r = await listDocuments(kbId);
+      setDocs(r.documents);
+      setParked(r.parked);
     } catch (e) {
       guard(e, assets.errLoadDocs);
     }
@@ -194,6 +199,7 @@ export function AssetClient() {
             <DocumentPanel
               kb={kb}
               docs={docs}
+              parked={parked}
               folders={folders}
               busy={busy}
               onUpload={(file, folderId) =>

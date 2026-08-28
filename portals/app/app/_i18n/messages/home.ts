@@ -50,37 +50,6 @@ export const home = {
     "en-US": "This workspace has no documents yet",
   },
 
-  // --- 卡在哪一件事上,以及去哪修 -------------------------------------------
-  //
-  // owner 2026-08-28:「如果那一条授权没有,你需要反馈错误信息,如『xxxx 授权失败,
-  // 请在 xxxx 完成授权』。」此前四种「用不了」共用一句「模型能力尚未授权」,而它们
-  // 的**修复人和修复地点各不相同**——只说「未授权」等于谁都不知道该动手。
-  //
-  // 每一档都写成两截:**缺什么** + **谁在哪补**。第二截不能是仓库里的文件路径
-  // ——对着已部署产品的人打不开它。操作单仍然给,但它是给在仓里干活的人的补充,
-  // 不是「去哪修」的答案。
-  blockerAtlasNotConfigured: {
-    "zh-CN": "本部署尚未接入 Atlas(缺服务地址或凭据)。请运维在本产品的环境配置中补齐,与平台授权无关",
-    "en-US": "This deployment is not connected to Atlas (missing base URL or credentials). Operations must complete it in this product's environment config - unrelated to any platform grant",
-  },
-  blockerWorkspaceNotProvisioned: {
-    "zh-CN": "本工作区尚未在平台完成 karda 开通,换不到调用令牌。请在平台为该工作区开通本产品",
-    "en-US": "This workspace has no karda instance provisioned on the platform, so no call token can be issued. Provision this product for the workspace on the platform",
-  },
-  blockerEndpointNotGranted: {
-    "zh-CN": "端点未授权给产品 karda。请在平台管理面为产品 karda 授予该端点",
-    "en-US": "This endpoint is not granted to product karda. Grant it to product karda in the platform console",
-  },
-  blockerModelNotRoutable: {
-    "zh-CN": "点名的模型路由不到。**这不是授权问题**——端点可能已授权,是这个库锁定的模型 Atlas 上没有。请改库的模型锁,或请 Atlas 上线该模型",
-    "en-US": "The pinned model cannot be routed. **This is not a grant problem** - the endpoint may well be granted; this library pins a model Atlas does not serve. Change the library's model lock, or ask Atlas to serve it",
-  },
-  /** 授权补上之后会发生什么。不写这一句,人会以为还要手动重跑一遍。 */
-  blockerResumeNote: {
-    "zh-CN": "补上之后驻留的任务会自动继续,已加工的部分不重做",
-    "en-US": "Once it lands, parked work resumes on its own - nothing already processed is redone",
-  },
-
   // --- 下一步 -------------------------------------------------------------
   /** 有具体清单时的指针。不认领执行方——清单里每一条已经点名了自己的修复人。 */
   actionRunbook: { "zh-CN": "操作单:", "en-US": "Runbook:" },

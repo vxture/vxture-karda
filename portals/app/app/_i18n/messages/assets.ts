@@ -48,8 +48,11 @@ export const assets = {
   uploadPickAria: { "zh-CN": "选择要上传的文档", "en-US": "Choose a document to upload" },
   uploadButton: { "zh-CN": "上传文档", "en-US": "Upload document" },
   uploadHint: {
-    "zh-CN": "文件入库即排队加工；索引在嵌入服务可用前保持暂停。",
-    "en-US": "A file is queued for processing the moment it lands; indexing stays paused until the embedding service is available.",
+    // 原文是「索引在嵌入服务可用前保持暂停」——一句**常驻的**停摆说明,挂在上传框
+    // 旁边,不论此刻加工是不是真的卡住。真卡住时说什么,由每一份文档自己那行
+    // 「加工暂停:…」负责(`states.blocker*`),那一行知道是哪一档、去哪补。
+    "zh-CN": "文件入库即排队加工;卡住时会在该文档下说明原因。",
+    "en-US": "A file is queued for processing the moment it lands; if anything blocks it, the reason is stated under that document.",
   },
   docLoading: { "zh-CN": "正在加载文档…", "en-US": "Loading documents…" },
   docEmpty: { "zh-CN": "还没有文档", "en-US": "No documents yet" },

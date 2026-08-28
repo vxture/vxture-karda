@@ -4,6 +4,7 @@ import {
   scanSource,
   countAllowed,
   stripComments,
+  scanCatalog,
 } from "../../../scripts/guardrails/check-i18n-seam.mjs";
 
 // The guard's own rules, tested without a filesystem. Both bugs pinned below
@@ -90,4 +91,47 @@ test("the pragma does not leak past a blank line", () => {
   const found = scanSource(src);
   assert.equal(found.length, 1);
   assert.equal(found[0].line, 4);
+});
+
+// --- 目录里不许写 markdown ----------------------------------------------------
+//
+// 界面把目录里的句子当纯文本渲染,所以强调标记会原样出现在屏幕上。这一条
+// 穿过 type-check、单测和 build——2026-08-28 是靠真库截图抓到的,而截图不是
+// 每次都有人看。
+
+test("目录里的强调标记会被抓出来,带真实行号", () => {
+  const src = [
+    "export const states = {",
+    '  ok: { \"zh-CN\": \"不是授权问题——端点可能已授权\" },',
+    '  bad: { \"zh-CN\": \"**不是授权问题**——端点可能已授权\" },',
+    "};",
+  ].join("\n");
+  const found = scanCatalog(src);
+  assert.equal(found.length, 1);
+  assert.equal(found[0].line, 3);
+});
+
+test("下划线式强调也算", () => {
+  const src = '  k: { \"en-US\": \"__not a grant problem__ - the endpoint may be granted\" },';
+  assert.equal(scanCatalog(src).length, 1);
+});
+
+test("注释里写 markdown 不算 —— 那是给读代码的人看的,不会被渲染", () => {
+  const src = [
+    "  // 这里**必须**留着,测试钉着它",
+    '  k: { \"zh-CN\": \"已收下并入队\" },',
+  ].join("\n");
+  assert.deepEqual(scanCatalog(src), []);
+});
+
+test("孤立的星号不算 —— 乘号、脚注符、通配符都是正常内容", () => {
+  // 只有成对且中间有内容的才是强调。把单个星号也报出来,护栏会变成噪音,
+  // 而人对噪音的处理办法是关掉它。
+  assert.deepEqual(scanCatalog('  k: { \"en-US\": \"5 * 3 = 15\" },'), []);
+  assert.deepEqual(scanCatalog('  k: { \"en-US\": \"see note *\" },'), []);
+});
+
+test("跨行的两个星号不算一对 —— 否则整份目录会被连成一片", () => {
+  const src = ['  a: \"5 * 3\",', '  b: \"7 * 2\",'].join("\n");
+  assert.deepEqual(scanCatalog(src), []);
 });

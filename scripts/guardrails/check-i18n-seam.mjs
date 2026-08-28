@@ -129,6 +129,31 @@ export function scanSource(src) {
   return out;
 }
 
+// --- 目录里不许写 markdown ----------------------------------------------------
+//
+// 目录里的句子被当作纯文本渲染,没有任何一处把它交给 markdown。所以一句
+// 「(星号)(星号)这不是授权问题(星号)(星号)」会把两对星号原样送到屏幕上。
+//
+// 这一条值得上机器检查,是因为它穿过每一道关:type-check 过、单测过、build 过
+// ——句子只是个字符串,谁都不会觉得它有问题。它是靠真库截图抓到的(2026-08-28,
+// `states.blockerModelNotRoutable`),而截图不是每次都有人看。
+//
+// 只查强调标记。目录里出现链接语法之类是另一回事,真需要时再单独立规矩。
+const MARKDOWN = /(\*\*[^*\n]+\*\*|__[^_\n]+__)/;
+
+/** 目录文件里带 markdown 强调的行。返回 [{line, text}]。 */
+export function scanCatalog(src) {
+  const out = [];
+  const lines = src.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i += 1) {
+    const raw = lines[i];
+    // 注释里写 markdown 是给读代码的人看的,不会被渲染,随意。
+    if (COMMENT_LINE.test(raw)) continue;
+    if (MARKDOWN.test(raw)) out.push({ line: i + 1, text: raw.trim() });
+  }
+  return out;
+}
+
 /** How many lines the pragma let through - reported so an escape hatch that is
  *  quietly filling up is visible in the guard's own output. */
 export function countAllowed(src) {
@@ -141,7 +166,7 @@ export function countAllowed(src) {
   return n;
 }
 
-export { CJK, stripComments, allowedAbove };
+export { CJK, stripComments, allowedAbove, MARKDOWN };
 
 /** A SCOPE entry is a directory to walk, or a single file to scan. */
 function filesIn(entry) {
@@ -180,6 +205,16 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   let scanned = 0;
   let allowed = 0;
 
+  // 目录本身单独扫一遍:上面那轮 `continue` 掉了目录,因为它查的是「产品串跑到了
+  // 目录外面」;这一轮查的是相反方向的问题——串在目录里,但写法渲染不出来。
+  const markdown = [];
+  for (const abs of filesIn(CATALOG)) {
+    const rel = relative(root, abs).replace(/\\/g, "/");
+    for (const hit of scanCatalog(readFileSync(abs, "utf8"))) {
+      markdown.push(`${rel}:${hit.line}  ${hit.text.slice(0, 90)}`);
+    }
+  }
+
   for (const scope of SCOPE) {
     for (const abs of filesIn(scope)) {
       const rel = relative(root, abs).replace(/\\/g, "/");
@@ -203,7 +238,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     }
   });
 
-  if (failures.length || stale.length) {
+  if (failures.length || stale.length || markdown.length) {
     if (failures.length) {
       console.error(`i18n seam: ${failures.length} product string(s) outside the catalog\n`);
       for (const f of failures) console.error("  " + f);
@@ -215,6 +250,13 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
           "in EXEMPT, and are a last resort.",
       );
     }
+    if (markdown.length) {
+      console.error(
+        `\ni18n catalog: ${markdown.length} line(s) carry markdown emphasis - it renders as literal asterisks:`,
+      );
+      for (const f of markdown) console.error("  " + f);
+      console.error("\nStrong wording, not markup: catalog strings are rendered as PLAIN TEXT.");
+    }
     if (stale.length) {
       console.error(`\nStale EXEMPT entr${stale.length === 1 ? "y" : "ies"} - the file is clean now, drop the entry:`);
       for (const e of stale) console.error("  " + e.file);
@@ -224,6 +266,6 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
 
   console.log(
     `i18n seam OK - ${scanned} file(s) across ${SCOPE.length} swept scope(s), ` +
-      `${allowed} allowed line(s), ${EXEMPT.length} exempt file(s)`,
+      `${allowed} allowed line(s), ${EXEMPT.length} exempt file(s); catalog free of markdown`,
   );
 }

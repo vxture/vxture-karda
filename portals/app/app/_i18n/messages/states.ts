@@ -26,9 +26,54 @@ export const states = {
   contentArchived: { "zh-CN": "已归档", "en-US": "Archived" },
   contentDeleted: { "zh-CN": "已删除", "en-US": "Deleted" },
   processingHint: {
-    "zh-CN": "已收下并入队。向量服务恢复前索引暂停——内容不会丢。",
-    "en-US": "Received and queued. Indexing is paused until the embedding service returns - nothing is lost.",
+    // 原文写的是「向量服务恢复前索引暂停」——它给**每一份** processing 文档都挂上
+    // 一句停摆说明,包括那些排着队、加工得好好的。而且「恢复前」把「没授权」说成了
+    // 一次会自己过去的故障。真正卡住时说什么,由下面那组按档的句子负责。
+    //
+    // **「内容不会丢」这半句必须留着**,`states.test.ts` 有一条断言钉着它,而那条
+    // 断言是对的:停在 `processing` 的文档和被丢掉的文档在界面上长得一模一样,这句
+    // 话是唯一说明它没被丢的东西。我第一版把故障叙事和这个承诺一起删了,测试当场报红。
+    "zh-CN": "已收下并入队,正在加工——内容不会丢。",
+    "en-US": "Received and queued; processing - nothing is lost.",
   },
+
+  /** 文档行上的前缀。「暂停」而不是「失败」:任务还在,补上之后自己继续。 */
+  parkedPrefix: { "zh-CN": "加工暂停:", "en-US": "Processing paused:" },
+
+  // --- 卡在哪一件事上,以及去哪修 -------------------------------------------
+  //
+  // owner 2026-08-28:「如果那一条授权没有,你需要反馈错误信息,如『xxxx 授权失败,
+  // 请在 xxxx 完成授权』。」此前四种「用不了」共用一句「模型能力尚未授权」,而它们
+  // 的**修复人和修复地点各不相同**——只说「未授权」等于谁都不知道该动手。
+  //
+  // 每一档都写成两截:**缺什么** + **谁在哪补**。第二截不能是仓库里的文件路径
+  // ——对着已部署产品的人打不开它。操作单仍然给,但它是给在仓里干活的人的补充,
+  // 不是「去哪修」的答案。
+  blockerAtlasNotConfigured: {
+    "zh-CN": "本部署尚未接入 Atlas(缺服务地址或凭据)。请运维在本产品的环境配置中补齐,与平台授权无关",
+    "en-US": "This deployment is not connected to Atlas (missing base URL or credentials). Operations must complete it in this product's environment config - unrelated to any platform grant",
+  },
+  blockerWorkspaceNotProvisioned: {
+    "zh-CN": "本工作区尚未在平台完成 karda 开通,换不到调用令牌。请在平台为该工作区开通本产品",
+    "en-US": "This workspace has no karda instance provisioned on the platform, so no call token can be issued. Provision this product for the workspace on the platform",
+  },
+  blockerEndpointNotGranted: {
+    "zh-CN": "端点未授权给产品 karda。请在平台管理面为产品 karda 授予该端点",
+    "en-US": "This endpoint is not granted to product karda. Grant it to product karda in the platform console",
+  },
+  blockerModelNotRoutable: {
+    // 目录里**不能写 markdown**:界面按纯文本渲染,`**`
+    // 会原样出现在屏幕上——这一条是真库截图抓到的,type-check 和测试都看不见它。
+    // 强调靠措辞,不靠标记:把「不是授权问题」放在句首就够了。
+    "zh-CN": "不是授权问题——端点可能已授权,是这个库锁定的模型 Atlas 上没有。请改库的模型锁,或请 Atlas 上线该模型",
+    "en-US": "Not a grant problem - the endpoint may well be granted; this library pins a model Atlas does not serve. Change the library's model lock, or ask Atlas to serve it",
+  },
+  /** 授权补上之后会发生什么。不写这一句,人会以为还要手动重跑一遍。 */
+  blockerResumeNote: {
+    "zh-CN": "补上之后驻留的任务会自动继续,已加工的部分不重做",
+    "en-US": "Once it lands, parked work resumes on its own - nothing already processed is redone",
+  },
+
 
   // --- verification state ----------------------------------------------------
   verifUnverified: { "zh-CN": "未验证", "en-US": "Unverified" },
