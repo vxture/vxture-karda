@@ -465,8 +465,21 @@ CREATE TABLE IF NOT EXISTS karda_kb.chunk (
     AND (start_offset IS NULL OR (start_offset >= 0 AND end_offset > start_offset))
   )
 );
-CREATE INDEX IF NOT EXISTS idx_chunk_source_range
-  ON karda_kb.chunk (document_id, version, start_offset);
+-- idx_chunk_source_range 引用 start_offset(incr/0007 才补的列)。守卫的理由与下面
+-- idx_chunk_active 完全相同,而这一条当初漏了守卫:2026-08-28 的生产 db-init 就
+-- 死在这里 —— chunk 表早已存在,CREATE TABLE IF NOT EXISTS 整张跳过,于是这条
+-- 独立语句在一个没有 start_offset 的表上执行,ERROR 让 baseline 在 incr/0007
+-- (它会补列并建同一个索引)跑到之前就中断了。
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'karda_kb' AND table_name = 'chunk' AND column_name = 'start_offset'
+  ) THEN
+      CREATE INDEX IF NOT EXISTS idx_chunk_source_range
+      ON karda_kb.chunk (document_id, version, start_offset);
+  END IF;
+END $$;
 -- idx_chunk_active references `version`. On a fresh DB the column exists (just
 -- created above) so the index is built here, keeping baseline a complete
 -- provision. On a LIVE pre-versioning table the CREATE TABLE above is a no-op
@@ -591,9 +604,20 @@ CREATE TABLE IF NOT EXISTS karda_kb.processing_task (
 -- writes assertions and never touches chunks, so it does not contend with
 -- processing; keyed on document_id alone this would have made an extraction task
 -- and a reprocess of the same document mutually exclusive.
-CREATE UNIQUE INDEX IF NOT EXISTS uidx_processing_task_doc_live
-  ON karda_kb.processing_task (document_id, kind)
-  WHERE state IN ('queued', 'running');
+-- 这两条引用 processing_task.kind(incr/0008 才补的列)。processing_task 本身由
+-- incr/0004 建,所以存在一个真实的中间态:库停在 0004..0007 之间时表在、列不在
+-- ——本机 dev 库此刻正是这个状态。守卫让 baseline 在那种库上安静跳过,由 0008 补。
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'karda_kb' AND table_name = 'processing_task' AND column_name = 'kind'
+  ) THEN
+      CREATE UNIQUE INDEX IF NOT EXISTS uidx_processing_task_doc_live
+      ON karda_kb.processing_task (document_id, kind)
+      WHERE state IN ('queued', 'running');
+  END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS idx_processing_task_kb_state
   ON karda_kb.processing_task (kb_id, state);
 CREATE INDEX IF NOT EXISTS idx_processing_task_state_queued
@@ -604,8 +628,17 @@ CREATE INDEX IF NOT EXISTS idx_processing_task_kb_finished
 -- One row per (task, stage). A retry is a NEW task (attempt + 1), never an
 -- overwrite here - overwriting would erase the previous timing, and stage P95 is
 -- exactly the history. duration is NOT stored: it is ended_at - started_at.
-CREATE INDEX IF NOT EXISTS idx_processing_task_kind_document
-  ON karda_kb.processing_task (kind, document_id, state);
+-- 同上 —— 另一条依赖 kind 的独立索引。
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'karda_kb' AND table_name = 'processing_task' AND column_name = 'kind'
+  ) THEN
+      CREATE INDEX IF NOT EXISTS idx_processing_task_kind_document
+      ON karda_kb.processing_task (kind, document_id, state);
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS karda_kb.processing_task_stage (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -866,8 +899,19 @@ CREATE TABLE IF NOT EXISTS karda_kb.entity (
 );
 -- One entity per (library, kind, name). Two things that share a name but not a
 -- kind are two things.
-CREATE UNIQUE INDEX IF NOT EXISTS uidx_entity_kb_kind_name
-  ON karda_kb.entity (kb_id, kind, name);
+-- entity 由 incr/0006 建,新库上这条守卫恒真;它存在是为了统一形状 —— 一条
+-- 「baseline 里的独立索引一律带列守卫」的规则不需要每次判断表是老是新,
+-- 而需要判断的规则迟早会判错一次。check-data-architecture 机器执行这条。
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'karda_kb' AND table_name = 'entity' AND column_name = 'kind'
+  ) THEN
+      CREATE UNIQUE INDEX IF NOT EXISTS uidx_entity_kb_kind_name
+      ON karda_kb.entity (kb_id, kind, name);
+  END IF;
+END $$;
 
 -- --- assertion_mention --------------------------------------------------------
 --

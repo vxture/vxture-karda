@@ -43,6 +43,55 @@ export function prismaTables(text) {
 }
 
 
+// --- baseline 里的独立索引必须带列守卫 ----------------------------------------
+//
+// `db-init` 的顺序是 baseline -> incr/*。在一个**已经存在**的库上,baseline 的
+// `CREATE TABLE IF NOT EXISTS` 会把整张表跳过——包括后来由某个增量补上的列。而写在
+// 表体之外的独立 `CREATE INDEX` **照跑不误**,于是它在一张没有那个列的表上执行,
+// 直接 ERROR,让 baseline 在那个增量(它本会补列)跑到之前就中断。
+//
+// 这个坑咬过两次:
+//   · 第一次是 `version`(incr/0001)。有人手工把 `idx_chunk_active` 包进列存在性
+//     守卫,并写了一整段注释解释为什么——但**没有任何东西拦住下一条**;
+//   · 第二次是 `start_offset`(incr/0007)。2026-08-28 的生产 db-init 死在这里,
+//     卡住了一次发布。同样的解法就在那条语句下面六行,只是没人再想起来。
+//
+// 所以规则改成机器执行,而且是**无条件的**:baseline 里任何引用了「某个增量补过的
+// 列」的独立索引,都必须包在 `DO $$ ... IF EXISTS(information_schema.columns) ... $$`
+// 里。不去判断「这张表是老表还是增量新建的表」——需要判断的规则迟早会判错一次,而
+// 守卫在新库上恒真,不花任何代价。
+function unguardedIndexes() {
+  const base = readFileSync(DDL, "utf8");
+
+  // 增量给活库补过的列。
+  const cols = new Set();
+  for (const f of readdirSync(INCR_DIR).filter((n) => n.endsWith(".sql"))) {
+    const sql = readFileSync(join(INCR_DIR, f), "utf8");
+    for (const m of sql.matchAll(/ADD COLUMN IF NOT EXISTS[ \t]+([a-z_]+)/gi)) cols.add(m[1].toLowerCase());
+  }
+  if (cols.size === 0) return [];
+
+  const lines = base.split("\n");
+  const out = [];
+  let inTable = false;
+  let inDo = false;
+  for (let i = 0; i < lines.length; i += 1) {
+    const l = lines[i];
+    if (/^\s*CREATE TABLE/i.test(l)) inTable = true;
+    if (inTable && /^\)/.test(l)) { inTable = false; continue; }
+    if (/^DO \$\$/.test(l)) inDo = true;
+    if (inDo && /^END \$\$;/.test(l)) { inDo = false; continue; }
+    if (inTable || inDo) continue;
+
+    const m = /^\s*CREATE (?:UNIQUE )?INDEX IF NOT EXISTS\s+(\w+)/i.exec(l);
+    if (!m) continue;
+    const stmt = lines.slice(i, i + 4).join("\n");
+    const hit = [...cols].filter((c) => new RegExp("\\b" + c + "\\b").test(stmt)).sort();
+    if (hit.length) out.push(`${DDL}:${i + 1}  ${m[1]} -> ${hit.join(", ")}`);
+  }
+  return out;
+}
+
 // --- grant lockstep ---------------------------------------------------------
 //
 // Every column-level UPDATE grant an increment carries must ALSO appear in
@@ -113,8 +162,20 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     }
   }
 
+  const unguarded = unguardedIndexes();
+  if (unguarded.length > 0) {
+    console.log("[data-architecture] baseline 里无列守卫的独立索引(活库上会让 db-init 中断):");
+    for (const u of unguarded) console.log(`  ${u}`);
+    console.error(
+      "[data-architecture] 把它包进 `DO $$ BEGIN IF EXISTS (SELECT 1 FROM information_schema.columns " +
+        "WHERE table_schema='karda_kb' AND table_name='<t>' AND column_name='<c>') THEN ... END IF; END $$;` " +
+        "—— 与 idx_chunk_active 同一个形状。",
+    );
+    process.exit(1);
+  }
+
   if (onlyDdl.length === 0 && onlyPrisma.length === 0) {
-    console.log(`[data-architecture] OK - ${ddl.size} tables in lockstep (DDL == prisma), ${grants.length === 0 ? "grants mirrored" : "GRANTS DRIFTED"}.`);
+    console.log(`[data-architecture] OK - ${ddl.size} tables in lockstep (DDL == prisma), ${grants.length === 0 ? "grants mirrored" : "GRANTS DRIFTED"}, baseline 独立索引全部带列守卫.`);
     process.exit(0);
   }
 
