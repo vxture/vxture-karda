@@ -1,34 +1,49 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Card, CardContent, EmptyState, Icon, type IconName } from "@vxture/design-system";
+import Link from "next/link";
+import { Button, EmptyState, Icon, type IconName } from "@vxture/design-system";
 import { loginHref } from "../_lib/api";
 import { HomeHero } from "./home-hero";
+import { DomainCardBody, DomainTag } from "../_shell/DomainCard";
+import { NAV_ITEMS } from "../_shell/nav";
 import { useMessages } from "../_i18n/useMessages";
 import { home as homeMessages } from "../_i18n/messages/home";
 import { shell } from "../_i18n/messages/shell";
 import { common } from "../_i18n/messages/common";
 import { assets } from "../_i18n/messages/assets";
-import { channels } from "../_i18n/messages/channels";
 import type { Readiness, ReadinessReason, ReadinessState } from "../kb/home/readiness";
 import type { ShellData } from "../kb/demo/shell-types";
 
-// 首页(150-page-architecture §2,KD-214)。
+// 首页(150-page-architecture §2,KD-214;形态 KD-215,owner 2026-08-28)。
 //
-// 三问,按 §2.4 定的顺序:能不能用 → 在服务谁 → 可不可信。第一问占最大的面,而且是
-// 唯一会说「不好」的一块——**它是这一页存在的理由**:在此之前,产品的「整体不可用」
-// 状态没有任何页面会说,语料为零时资产总览显示的是一批「有库、没内容」的库,读起来
-// 像没人上传东西。
+// 这一页现在是**四张域卡片**,加上一条只在不正常时出现的可用性条。两条 owner 裁定
+// 把它改成这样:
 //
-// §2.4 的另外两条约束也照办:
-//   · **不是各域数字的拼盘** —— 每个域只取一个能推动动作的数,其余留在它自己的域总览;
-//   · **每一块要么正常、要么给去处** —— 说了问题却不说去哪,只是把焦虑前移。
+//  1. 「还不如把原来的四个导航 card 精细优化作为首页」。上一版把三问各摆一块、再在
+//     下面铺四个入口卡,于是同一批数在一屏里出现两次(通道调用量既在「在服务谁」那
+//     块、又在通道入口卡里),读起来密密麻麻。**卡片本身就同时回答了「怎么样」和
+//     「去哪里」**——它有图、有数、有名字,不需要再在它上面另摆一份摘要。
+//  2. 「可用性只在不正常时才出现」。一条常驻的绿条不携带信息:它每天都在,读的人会
+//     学会跳过它,于是它变红的那一天也会被跳过。**只在 state ≠ ready 时出现的条,
+//     出现本身就是信号。**
+//
+// 判断仍然由 `kb/home/readiness.ts` 做,这里只负责显示——「不可用」和「还没开始」必须
+// 分开这件事写在那个文件里,不在这一页。
 
-const STATE_TONE: Record<ReadinessState, { tone: "success" | "warning" | "danger" | "neutral"; icon: IconName }> = {
-  ready: { tone: "success", icon: "check" },
-  degraded: { tone: "warning", icon: "warning" },
-  unavailable: { tone: "danger", icon: "warning" },
-  empty: { tone: "neutral", icon: "info" },
+/** 每一档的图标与配色。**类名整条写死,不拼**:Tailwind 在构建期扫源码,
+ *  `text-${tone}-text` 这种拼出来的类名扫不到,那个颜色会在生产构建里静默消失
+ *  ——上一版的图标就是这么写的。拼接还会拼出根本不存在的令牌:`danger` 不是 DS 的
+ *  色名,`destructive` 才是,所以那一档从来就没有过颜色。 */
+const STATE_TONE: Record<ReadinessState, { box: string; icon: IconName; iconClass: string }> = {
+  ready: { box: "border-success-border/50 bg-success-muted/40", icon: "check", iconClass: "text-success-text" },
+  degraded: { box: "border-warning-border/50 bg-warning-muted/40", icon: "warning", iconClass: "text-warning-text" },
+  unavailable: {
+    box: "border-destructive-border/50 bg-destructive-muted/50",
+    icon: "warning",
+    iconClass: "text-destructive-text",
+  },
+  empty: { box: "border-border bg-card/60", icon: "info", iconClass: "text-muted-foreground" },
 };
 
 const STATE_KEY = {
@@ -46,21 +61,15 @@ const REASON_KEY = {
   nothing_ingested: "reasonNothing",
 } as const satisfies Record<ReadinessReason, keyof typeof homeMessages>;
 
-/** 四个板块入口。名字与职责**复用导航的**,首页不另写一份——目录测试抓到过一次
- *  重复,而重复意味着改了导航之后首页还挂着旧名。 */
-const ENTRIES = [
-  { href: "/assets", icon: "squares-four", labelKey: "navAssets", descKey: "navAssetsDesc" },
-  { href: "/channels", icon: "plugs-connected", labelKey: "navChannels", descKey: "navChannelsDesc" },
-  { href: "/pipeline", icon: "workflow", labelKey: "navPipeline", descKey: "navPipelineDesc" },
-  { href: "/evaluation", icon: "list-checks", labelKey: "navEvaluation", descKey: "navEvaluationDesc" },
-] as const satisfies readonly { href: string; icon: IconName; labelKey: keyof typeof shell; descKey: keyof typeof shell }[];
+/** 四个域,从导航目录里取——首页不另写一份。首页自己那一项要去掉,否则这一页会给出
+ *  一张指向自己的卡片,而且 `DomainCardBody` 的 default 分支会把它画成验证评测。 */
+const DOMAINS = NAV_ITEMS.filter((i) => i.key !== "home");
 
 export function HomeClient() {
   const m = useMessages(homeMessages);
   const s = useMessages(shell);
   const c = useMessages(common);
   const a = useMessages(assets);
-  const ch = useMessages(channels);
 
   const [readiness, setReadiness] = useState<Readiness | null>(null);
   const [domains, setDomains] = useState<ShellData | null>(null);
@@ -100,54 +109,57 @@ export function HomeClient() {
 
   const state = readiness?.state ?? null;
   const tone = state ? STATE_TONE[state] : null;
+  // 加载中什么都不出。先出一条再收掉会闪一下,而闪一下的告警比不出更糟:它训练人
+  // 忽略这个位置。
+  const showReadiness = failed || (state !== null && state !== "ready");
 
   return (
     <div className="flex flex-col gap-lg">
       {/* Hero:画布在下,字在上。画布 absolute 且 pointer-events-none —— 它是地,
-          不是可交互的东西。 */}
+          不是可交互的东西。比上一版矮一档:第一屏要留给卡片。 */}
       <section className="relative overflow-hidden rounded-xl border border-border bg-surface">
         <HomeHero className="pointer-events-none absolute inset-0 size-full" />
-        <div className="relative flex flex-col gap-2xs px-lg py-3xl">
+        <div className="relative flex flex-col gap-2xs px-lg py-2xl">
           <span className="font-mono text-code-sm tracking-widest text-muted-foreground">{m.tagline}</span>
           <h1 className="text-title-xl">{m.title}</h1>
           <p className="max-w-[42rem] text-body-md text-muted-foreground">{m.lede}</p>
         </div>
       </section>
 
-      {/* 第一问:能不能用。唯一会说「不好」的一块,所以它单独占一行。 */}
-      <Card className="py-md">
-        <CardContent className="flex flex-col gap-sm px-lg">
-          <span className="font-mono text-code-sm tracking-widest text-muted-foreground">{m.q1}</span>
-
+      {/* 可用性:只在不正常时出现。出现 = 有事。 */}
+      {showReadiness ? (
+        <section
+          role="status"
+          className={`flex flex-col gap-2xs rounded-lg border px-lg py-md ${
+            tone ? tone.box : "border-warning-border/50 bg-warning-muted/40"
+          }`}
+        >
           {failed ? (
-            <p className="text-body-md text-warning-text">{m.unreachable}</p>
-          ) : !readiness || !state || !tone ? (
-            <p className="text-body-md text-muted-foreground">{m.loading}</p>
-          ) : (
+            <span className="text-body-md text-warning-text">{m.unreachable}</span>
+          ) : !readiness || !state || !tone ? null : (
             <>
-              {/* 状态只说一次。原先图标旁的标题和徽章写的是同一句话——同一句话
-                  说两遍不会更醒目,只会让人以为它们是两个不同的东西。 */}
-              <span className="flex items-center gap-sm">
-                <Icon name={tone.icon} className={`text-${tone.tone}-text`} />
+              <span className="flex flex-wrap items-center gap-sm">
+                <Icon name={tone.icon} className={tone.iconClass} />
                 <span className="text-title-sm">{m[STATE_KEY[state]]}</span>
+                {readiness.reason ? (
+                  <span className="text-body-md text-muted-foreground">{m[REASON_KEY[readiness.reason]]}</span>
+                ) : null}
               </span>
-
-              {readiness.reason ? (
-                <p className="max-w-[46rem] text-body-md text-muted-foreground">{m[REASON_KEY[readiness.reason]]}</p>
-              ) : null}
 
               {/* 下一步。ops 的那一种**不做成链接**:它不在这个应用里,做成链接
                   点了会发现没有那一页。 */}
               {readiness.action?.kind === "ops" ? (
-                <p className="text-body-sm text-muted-foreground">
+                <span className="text-body-sm text-muted-foreground">
                   {m.actionOps} <span className="font-mono">{readiness.action.runbook}</span>
-                </p>
-              ) : readiness.action?.kind === "page" ? (
-                <span>
+                </span>
+              ) : /* `href` 是可选字段,这里必须一起判 —— `kind: "page"` 但没有 href 的
+                     动作是无处可去的按钮,而无处可去的按钮比没有按钮更糟。 */
+              readiness.action?.kind === "page" && readiness.action.href ? (
+                <span className="pt-2xs">
                   <Button asChild variant="outline" size="sm">
-                    <a href={readiness.action.href}>
+                    <Link href={readiness.action.href}>
                       {readiness.action.href === "/assets/new" ? m.actionGoNew : m.actionGoTasks}
-                    </a>
+                    </Link>
                   </Button>
                 </span>
               ) : null}
@@ -162,7 +174,9 @@ export function HomeClient() {
                 </span>
                 <span>
                   {m.factParked}{" "}
-                  <span className="text-foreground">{readiness.facts.parkedUnavailable + readiness.facts.parkedQuota}</span>
+                  <span className="text-foreground">
+                    {readiness.facts.parkedUnavailable + readiness.facts.parkedQuota}
+                  </span>
                 </span>
                 <span>
                   {m.factFailed} <span className="text-foreground">{readiness.facts.failedResident}</span>
@@ -170,45 +184,65 @@ export function HomeClient() {
               </span>
             </>
           )}
-        </CardContent>
-      </Card>
+        </section>
+      ) : null}
 
-      {/* 第二、三问并排:各取一个能推动动作的数,不铺开。 */}
-      <div className="grid gap-lg md:grid-cols-2">
-        <Card className="py-md">
-          <CardContent className="flex flex-col gap-2xs px-lg">
-            <span className="font-mono text-code-sm tracking-widest text-muted-foreground">{m.q2}</span>
-            <span className="font-mono text-title-lg">{domains ? domains.channels.todayCalls : "—"}</span>
-            <span className="text-body-sm text-muted-foreground">{ch.callsToday}</span>
-            {/* 演示口径必须标出来,而且**尤其在这一页**:第一块刚说完「当前不可用」,
-                紧接着一个未标注的「今日调用 1204」会把整屏的可信度一起带走——读的人
-                无法判断哪个数是真的。供给账本落地后这一行自动消失(`demoOps` 转 false)。*/}
-            {domains?.demoOps ? <span className="text-body-sm text-warning-text">{a.demoNote}</span> : null}
-          </CardContent>
-        </Card>
-        <Card className="py-md">
-          <CardContent className="flex flex-col gap-2xs px-lg">
-            <span className="font-mono text-code-sm tracking-widest text-muted-foreground">{m.q3}</span>
-            <span className="font-mono text-title-lg">{domains ? `${domains.evaluation.coveragePct}%` : "—"}</span>
-            <span className="text-body-sm text-muted-foreground">{m.q3Metric}</span>
-          </CardContent>
-        </Card>
-      </div>
+      {/* 四个域。卡片的图形词汇来自被退掉的导航卡(`_shell/DomainCard.tsx`),这里给
+          它们**当初在 280px 宽里给不起的东西**:一行说明、成对的呼吸空间、以及把二级
+          视图直接摆出来——首页的职责就是把人送进去,不该让人先进一层再找。 */}
+      {/* 断点走**容器**,不走视口(先例见 `assets/assets-client.tsx`):内容区被
+          `PortalShell` 标成 `@container`,而视口断点看不见 导航栏 / 值班台 开着没有
+          ——`lg:` 会在 1440 两栏全开(内容区只有 38.5rem)时照样画两列,把每张卡压到
+          图表读不出来的宽度。
+          闸门定在 38rem:两列各约 292px,正是这套图形当初在 280px 导航栏里画的宽度
+          ——已经证明能读。再窄就单列,不是把图压瘦。 */}
+      <div className="grid grid-cols-1 gap-lg @min-[38rem]:grid-cols-2">
+        {DOMAINS.map((item) => (
+          <section
+            key={item.key}
+            // 卡由渐变承载,不由描边承载(owner 2026-08-24):面从上到下淡下去,靠光
+            // 与地分开,发丝线收到一声耳语。
+            className="flex flex-col overflow-hidden rounded-xl border border-primary/[0.06] bg-gradient-to-b from-card/80 to-card/30 transition-colors duration-fast ease-standard hover:border-primary/25 dark:border-primary/10"
+          >
+            <div className="flex flex-col gap-2xs px-lg pt-lg">
+              <span className="flex items-center gap-xs">
+                <Icon name={item.icon} size="sm" className="text-primary" />
+                <Link href={item.href} className="text-title-sm hover:text-primary-text">
+                  {s[item.labelKey]}
+                </Link>
+                <DomainTag itemKey={item.key} shell={domains} />
+              </span>
+              <p className="text-body-sm text-muted-foreground">{s[item.descKey]}</p>
+            </div>
 
-      {/* 板块入口。首页的职责到此为止:说清状态,然后把人送进去。 */}
-      <div className="grid gap-lg md:grid-cols-2 xl:grid-cols-4">
-        {ENTRIES.map((e) => (
-          <Card key={e.href} className="py-md transition-colors hover:border-primary/40">
-            <CardContent className="flex h-full flex-col gap-2xs px-lg">
-              <Icon name={e.icon} className="text-primary" />
-              <a href={e.href} className="text-title-sm after:absolute after:inset-0">
-                {s[e.labelKey]}
-              </a>
-              <span className="text-body-sm text-muted-foreground">{s[e.descKey]}</span>
-            </CardContent>
-          </Card>
+            {/* 图占这张卡的主体。`justify-center`:网格让同一行的卡等高,而四个域的图
+                高度并不相等——不居中的话,矮的那一张会把所有余量堆在底部,看起来像
+                内容没加载完。 */}
+            <div className="flex flex-1 flex-col justify-center px-lg py-lg">
+              <DomainCardBody item={item} shell={domains} />
+            </div>
+
+            {/* 二级视图作页脚:一条虚线之下的一排去处。 */}
+            {item.sub.length > 0 ? (
+              <div className="flex flex-wrap gap-md border-t border-dashed border-primary/[0.08] px-lg py-sm dark:border-primary/15">
+                {item.sub.map((sv) => (
+                  <Link
+                    key={sv.key}
+                    href={sv.href}
+                    className="text-body-sm text-muted-foreground transition-colors duration-fast ease-standard hover:text-primary-text"
+                  >
+                    {s[sv.labelKey]}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+          </section>
         ))}
       </div>
+
+      {/* 演示口径只标一次,标在所有卡片之下——四张卡的数**都**来自同一个演示读模型,
+          每张各标一遍是把同一句话说四遍。供给账本落地后自动消失(`demoOps` 转 false)。 */}
+      {domains?.demoOps ? <p className="text-body-sm text-warning-text">{a.demoNote}</p> : null}
     </div>
   );
 }

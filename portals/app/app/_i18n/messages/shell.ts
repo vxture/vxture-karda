@@ -42,6 +42,9 @@ export const shell = {
   launcherLabel: { "zh-CN": "切换功能域", "en-US": "Switch domain" },
   dock: { "zh-CN": "管家值班台", "en-US": "Steward desk" },
   dockCollapse: { "zh-CN": "收起值班台", "en-US": "Collapse steward desk" },
+  // 导航栏的 landmark 名。菜单化之后这个 pane 才成为一个真正的 <nav>——
+  // 之前它是一列卡片,没有 landmark 可言。
+  navLandmark: { "zh-CN": "主导航", "en-US": "Main navigation" },
   navCollapse: { "zh-CN": "收起导航", "en-US": "Collapse navigation" },
   fullscreen: { "zh-CN": "全屏", "en-US": "Fullscreen" },
   help: { "zh-CN": "帮助", "en-US": "Help" },
