@@ -34,9 +34,23 @@ updates:
       # bump it deliberately, not via an automated PR.
       - dependency-name: '@vxture/*'
 
-  # Keep pinned Action versions (docker/build-push-action@v6, actions/checkout@v4,
-  # etc.) current - these live outside npm and would otherwise drift silently.
+  # Keep pinned Action versions current - these live outside npm and would
+  # otherwise drift silently.
+  #
+  # GROUPED into ONE pull request, deliberately (2026-08-28). Ungrouped, four
+  # bumps arrived as four PRs on 2026-08-12 and all four sat for over two weeks:
+  # each was green, each went BEHIND as main moved on, and none was individually
+  # worth a round trip. **A queue of stale-but-green PRs is worse than none** -
+  # it teaches the reader that a green check does not mean ready to merge.
+  #
+  # One PR per week is a review unit somebody will actually pick up, and the
+  # four bumps genuinely belong together: they are all "keep the CI toolchain
+  # current", with no independent decision in any of them.
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      github-actions:
+        patterns:
+          - '*'
