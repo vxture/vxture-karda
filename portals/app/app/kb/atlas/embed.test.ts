@@ -25,6 +25,10 @@ function client(status: number, body: unknown) {
   };
 }
 
+// 这些映射现在还要回答「缺的是哪个端点/模型」,所以要一份 selection。
+// 端点码是真的那个,不是占位串——写错了下面断言的 arg 就对不上。
+const SEL = { endpointCode: "embedding/default", modelCode: "m-1" };
+
 test("extractVectors handles the common embed response shapes", () => {
   assert.deepEqual(extractVectors({ vectors: [[1, 2]] }), [[1, 2]]);
   assert.deepEqual(extractVectors({ embeddings: [[3]] }), [[3]]);
@@ -34,16 +38,16 @@ test("extractVectors handles the common embed response shapes", () => {
 });
 
 test("mapEmbedError: QUOTA_EXCEEDED suspends as quota (the real code, not QUOTA_EXHAUSTED - karda#100)", () => {
-  const mapped = mapEmbedError(new AtlasApiError("QUOTA_EXCEEDED", 403, false, "q"));
+  const mapped = mapEmbedError(new AtlasApiError("QUOTA_EXCEEDED", 403, false, "q"), SEL);
   assert.ok(mapped instanceof QuotaError);
 });
 
 test("mapEmbedError: capability/authz gaps suspend; retryable + validation stay transient", () => {
-  assert.ok(mapEmbedError(new AtlasApiError("NOT_ENTITLED", 403, false, "n")) instanceof UnavailableError);
-  assert.ok(mapEmbedError(new AtlasApiError("MODEL_NOT_IMPLEMENTED", 501, false, "n")) instanceof UnavailableError);
-  const rate = mapEmbedError(new AtlasApiError("RATE_LIMITED", 429, true, "r"));
+  assert.ok(mapEmbedError(new AtlasApiError("NOT_ENTITLED", 403, false, "n"), SEL) instanceof UnavailableError);
+  assert.ok(mapEmbedError(new AtlasApiError("MODEL_NOT_IMPLEMENTED", 501, false, "n"), SEL) instanceof UnavailableError);
+  const rate = mapEmbedError(new AtlasApiError("RATE_LIMITED", 429, true, "r"), SEL);
   assert.ok(rate instanceof Error && !(rate instanceof UnavailableError) && !(rate instanceof QuotaError));
-  const invalid = mapEmbedError(new AtlasApiError("EMBED_TEXTS_INVALID", 400, false, "v"));
+  const invalid = mapEmbedError(new AtlasApiError("EMBED_TEXTS_INVALID", 400, false, "v"), SEL);
   assert.ok(invalid instanceof Error && !(invalid instanceof UnavailableError) && !(invalid instanceof QuotaError));
 });
 

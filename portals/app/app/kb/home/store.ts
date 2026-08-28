@@ -5,6 +5,7 @@
 
 import { getPrismaClient, prismaEnabled } from "../../lib/db";
 import { assessReadiness, type Readiness, type ReadinessInput } from "./readiness";
+import { decodeUnavailable, type Unavailable } from "../processing/unavailable";
 
 const EMPTY: ReadinessInput = {
   retrievable: 0,
@@ -46,7 +47,7 @@ export async function readReadiness(workspaceId: string): Promise<Readiness> {
   const docWhere = { kbId: { in: kbIds }, contentState: { not: "deleted" } };
   const taskWhere = { kbId: { in: kbIds } };
 
-  const [retrievable, documents, parkedUnavailable, parkedQuota, failedResident, inflight] = await Promise.all([
+  const [retrievable, documents, parkedUnavailable, parkedQuota, failedResident, inflight, reasonRows] = await Promise.all([
     // 「可检索」的定义与检索侧一致:内容状态 indexed,且有一个 active 的分块版本。
     // 少了后一条会把「提交失败但状态没回滚」的文档算进来,那正是这一屏要暴露的东西。
     p.document.count({ where: { ...docWhere, contentState: "indexed", activeChunkVersion: { not: null } } }),
@@ -55,7 +56,23 @@ export async function readReadiness(workspaceId: string): Promise<Readiness> {
     p.processingTask.count({ where: { ...taskWhere, state: "suspended", failureClass: "quota" } }),
     p.processingTask.count({ where: { ...taskWhere, state: "failed" } }),
     p.processingTask.count({ where: { ...taskWhere, state: { in: ["queued", "running"] } } }),
+    // 驻留任务**各自为什么**驻留,而不只是有几个。`distinct` 让这一查回来的行数
+    // 等于原因种类数(至多四种),不随任务量涨。
+    //
+    // `take` 是给老数据兜底的:改判之前 `failure_reason` 里存的是英文散文,每条都
+    // 不一样,于是 distinct 起不到收敛作用。解不出来的会被 `decodeUnavailable`
+    // 丢掉,但那是解码之后的事——上限要在查询里就设好。
+    p.processingTask.findMany({
+      where: { ...taskWhere, state: "suspended", failureClass: "unavailable" },
+      select: { failureReason: true },
+      distinct: ["failureReason"],
+      take: 32,
+    }),
   ]);
 
-  return assessReadiness({ retrievable, documents, parkedUnavailable, parkedQuota, failedResident, inflight });
+  const parkedCauses = reasonRows
+    .map((r): Unavailable | null => decodeUnavailable(r.failureReason))
+    .filter((c): c is Unavailable => c !== null);
+
+  return assessReadiness({ retrievable, documents, parkedUnavailable, parkedQuota, failedResident, inflight, parkedCauses });
 }

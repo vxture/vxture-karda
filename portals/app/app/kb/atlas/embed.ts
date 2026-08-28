@@ -20,19 +20,19 @@
 //     not park forever)
 import { QuotaError, UnavailableError, type EmbeddingClient, type EmbedResult } from "../processing/orchestrator";
 import { AtlasApiError, atlasPost, type AtlasClientCore, type AtlasContext } from "./client";
-import { embedSelection } from "./selection";
-import { shouldSuspend } from "./codes";
+import { embedSelection, type ModelSelection } from "./selection";
+import { shouldSuspend, causeForAtlasCode } from "./codes";
 
 export const DEFAULT_ATLAS_EMBED_PATH = "/v1/embed";
 
 /** Codes where waiting cannot help but an operator/capability change can: park
  *  the work (suspend) rather than burn retries or fail it. */
 
-export function mapEmbedError(e: unknown): unknown {
+export function mapEmbedError(e: unknown, selection: ModelSelection): unknown {
   if (e instanceof AtlasApiError) {
     if (e.code === "QUOTA_EXCEEDED") return new QuotaError(`atlas embed: ${e.code}`);
     if (shouldSuspend(e.code, e.retryable)) {
-      return new UnavailableError(`atlas embed: ${e.code}: ${e.message}`);
+      return new UnavailableError(`atlas embed: ${e.code}: ${e.message}`, causeForAtlasCode(e.code, selection));
     }
     // retryable (RATE_LIMITED / PROVIDER_UNAVAILABLE / 5xx) and validation 4xx
     // both fall through as plain errors -> the taxonomy's bounded transient path.
@@ -101,7 +101,13 @@ export class AtlasEmbedClient implements EmbeddingClient {
     try {
       ctx = await this.call.context();
     } catch (e) {
-      throw new UnavailableError(`embed context unresolvable: ${e instanceof Error ? e.message : String(e)}`);
+      // 换不到 aud=atlas 的令牌,几乎总是因为这个工作区还没在平台开通 karda
+      // (`vx_provision.app_instance` 里查不到)。说成「模型能力未授权」会把人
+      // 引去平台管理面反复看一个还不存在的产品实例。
+      throw new UnavailableError(`embed context unresolvable: ${e instanceof Error ? e.message : String(e)}`, {
+        cause: "workspace_not_provisioned",
+        arg: null,
+      });
     }
     let body: unknown;
     try {
@@ -112,7 +118,7 @@ export class AtlasEmbedClient implements EmbeddingClient {
         ...selection,
       });
     } catch (e) {
-      throw mapEmbedError(e);
+      throw mapEmbedError(e, selection);
     }
     const vectors = extractVectors(body);
     if (!vectors || vectors.length !== texts.length) {

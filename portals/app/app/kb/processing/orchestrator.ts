@@ -113,7 +113,10 @@ export async function runPipeline(input: RunInput): Promise<StageResult> {
       input.embeddingModel,
     );
   } catch (e) {
-    return failure("embed", classifyEmbeddingError(e), errMessage(e), attempt);
+    // 驻留的那一档写**码**,不写 message:界面要说清是哪一种「用不了」、去哪修,
+    // 而 `e.message` 是给日志看的诊断串。其余档次仍写 message——它们没有「去哪修」
+    // 可说,一句人类可读的原因就是最有用的东西。
+    return failure("embed", classifyEmbeddingError(e), unavailableReason(e) ?? errMessage(e), attempt);
   }
 
   // commit - atomic replace, recording the RESOLVED vector space next to the
@@ -138,7 +141,13 @@ function errMessage(e: unknown): string {
 // --- error classification ---------------------------------------------------
 
 export class QuotaError extends Error {}
-export class UnavailableError extends Error {} // treated as quota-style: suspend, resume later
+
+// `UnavailableError` 搬去了 `./unavailable`,连同它现在携带的**原因**
+// (owner 2026-08-28:四种「用不了」的修复人不同,压成一句等于谁都不知道该动手)。
+// 这里再导出,是为了让既有的 `from "../processing/orchestrator"` 一处都不用改
+// ——搬家不该顺手制造一次无关的改动面。
+export { UnavailableError } from "./unavailable";
+import { UnavailableError, unavailableReason } from "./unavailable";
 
 /** fetch/commit errors are transient by default (network, transient DB). */
 function classifyFetchError(e: unknown): FailureClass {
@@ -172,6 +181,12 @@ function classifyEmbeddingError(e: unknown): FailureClass {
  */
 export class UnavailableEmbeddingClient implements EmbeddingClient {
   async embed(): Promise<EmbedResult> {
-    throw new UnavailableError("embedding capability (Atlas A1) is not yet available");
+    // 原来这里写的是「Atlas A1 尚未提供」——`A1` 是早就废掉的内部代号,而且它把
+    // 「karda 这个部署没配 Atlas」说成了「上游还没建好」。这个 stub 只在
+    // `getAtlasCore()` 为空时出现,那是**本地配置**的事,与平台和 Atlas 都无关。
+    throw new UnavailableError("atlas is not configured for this deployment", {
+      cause: "atlas_not_configured",
+      arg: null,
+    });
   }
 }

@@ -131,7 +131,7 @@ test("a fetch failure is transient and resumes from fetch", async () => {
 test("UnavailableError is `unavailable`-classed, and still suspends", async () => {
   const unavailable: EmbeddingClient = {
     async embed() {
-      throw new UnavailableError("down");
+      throw new UnavailableError("down", { cause: "endpoint_not_granted", arg: "chat/extract" });
     },
   };
   const r = await runPipeline({

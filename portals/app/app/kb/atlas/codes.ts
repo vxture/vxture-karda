@@ -18,6 +18,8 @@
 // machine-readable table precisely so that could not happen again; this file is
 // karda's side of that, and `check-atlas-contract.mjs` is what makes it bite.
 
+import type { Unavailable } from "../processing/unavailable";
+import type { ModelSelection } from "./selection";
 import snapshot from "./contract.snapshot.json";
 
 export interface ContractCode {
@@ -89,6 +91,30 @@ export const SUSPEND_CODES: ReadonlySet<string> = new Set([
 export function shouldSuspend(code: string, retryable: boolean): boolean {
   if (retryable) return false;
   return SUSPEND_CODES.has(code);
+}
+
+/**
+ * 驻留码 -> **为什么用不了**,以及那一档要带的参数。
+ *
+ * `shouldSuspend` 回答「要不要驻留」,这个函数回答「驻留之后告诉谁去修什么」——
+ * 两件事分开,因为前者是我方策略、后者是给人看的因果。owner 2026-08-28:四种
+ * 「用不了」的修复人不同,压成一句「模型能力尚未授权」等于谁都不知道该动手。
+ *
+ * 两组的分界不是错误来源,是**谁去修**:
+ *   NOT_ENTITLED / ENDPOINT_NOT_ROUTABLE  端点没授给产品 karda   -> 平台管理面
+ *   MODEL_NOT_* 　　　　　　　　　　　　   点名的模型路由不到      -> 库的模型锁 / Atlas
+ *
+ * 后一组**不是授权问题**:端点可能授得好好的,是这个库锁了一个 Atlas 上没有的模型。
+ * 把它显示成「未授权」会让人跑去平台反复确认一个已经授过的端点。
+ *
+ * `QUOTA_EXCEEDED` 不走这里——它在调用点就分流成 `QuotaError` 了(会自己好,不需要
+ * 任何人去修,所以它压根不该有「去哪修」)。
+ */
+export function causeForAtlasCode(code: string, selection: ModelSelection): Unavailable {
+  if (code === "MODEL_NOT_IMPLEMENTED" || code === "MODEL_NOT_ROUTABLE") {
+    return { cause: "model_not_routable", arg: selection.modelCode ?? null };
+  }
+  return { cause: "endpoint_not_granted", arg: selection.endpointCode ?? null };
 }
 
 /** Is this a code Atlas actually publishes? Used by the guardrail, and worth

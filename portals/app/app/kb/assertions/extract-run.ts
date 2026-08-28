@@ -9,6 +9,7 @@
 
 import { canonicalText, decodeSourceBytes, parseFastPath, parsePathFor } from "../processing/ir";
 import { UnavailableError, QuotaError } from "../processing/orchestrator";
+import { encodeUnavailable } from "../processing/unavailable";
 import type { ExtractionClient, TextWindow } from "../atlas/extract";
 import { prepare, type PreparedBatch } from "./extract";
 import { storeExtraction, type ExtractionContext, type StoredExtraction } from "./store";
@@ -142,7 +143,9 @@ export async function runExtraction(
     } catch (e) {
       // A capability gap parks the whole run. Everything already extracted is
       // discarded on purpose - see the all-or-nothing rule above.
-      if (e instanceof UnavailableError) return empty("parked", "capability_unavailable", windows.length);
+      // 原来一律写 `capability_unavailable` —— 那是「用不了」的同义反复,不带任何
+      // 「哪一种、去哪修」。改写错误自己带的原因码(owner 2026-08-28)。
+      if (e instanceof UnavailableError) return empty("parked", encodeUnavailable(e.unavailable), windows.length);
       if (e instanceof QuotaError) return empty("parked", "quota_exhausted", windows.length);
       throw e; // transient / karda-side bug: the taxonomy's bounded retry path
     }

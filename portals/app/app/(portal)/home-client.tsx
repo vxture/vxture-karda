@@ -13,6 +13,7 @@ import { shell } from "../_i18n/messages/shell";
 import { common } from "../_i18n/messages/common";
 import { assets } from "../_i18n/messages/assets";
 import type { Readiness, ReadinessReason, ReadinessState } from "../kb/home/readiness";
+import type { UnavailableCause } from "../kb/processing/unavailable";
 import type { ShellData } from "../kb/demo/shell-types";
 
 // 首页(150-page-architecture §2,KD-214;形态 KD-215,owner 2026-08-28)。
@@ -60,6 +61,16 @@ const REASON_KEY = {
   processing: "reasonProcessing",
   nothing_ingested: "reasonNothing",
 } as const satisfies Record<ReadinessReason, keyof typeof homeMessages>;
+
+/** 每一档「用不了」对应的说明。四档分开,因为**修复人不同**——这是 owner 2026-08-28
+ *  纠正的那件事:压成一句「模型能力尚未授权」,运维、平台、库属主三方谁都不知道
+ *  该动手。 */
+const BLOCKER_KEY = {
+  atlas_not_configured: "blockerAtlasNotConfigured",
+  workspace_not_provisioned: "blockerWorkspaceNotProvisioned",
+  endpoint_not_granted: "blockerEndpointNotGranted",
+  model_not_routable: "blockerModelNotRoutable",
+} as const satisfies Record<UnavailableCause, keyof typeof homeMessages>;
 
 /** 四个域,从导航目录里取——首页不另写一份。首页自己那一项要去掉,否则这一页会给出
  *  一张指向自己的卡片,而且 `DomainCardBody` 的 default 分支会把它画成验证评测。 */
@@ -141,16 +152,41 @@ export function HomeClient() {
               <span className="flex flex-wrap items-center gap-sm">
                 <Icon name={tone.icon} className={tone.iconClass} />
                 <span className="text-title-sm">{m[STATE_KEY[state]]}</span>
-                {readiness.reason ? (
+                {/* 有具体清单时**不再重复那句笼统话**——「模型能力尚未授权」后面紧跟
+                    两条「某端点未授权给产品 karda」,是同一句说两遍,而更精确的那一份
+                    已经在下面。清单为空(库里是改判之前的旧记录)时它才是唯一的说法。 */}
+                {readiness.reason && readiness.blockers.length === 0 ? (
                   <span className="text-body-md text-muted-foreground">{m[REASON_KEY[readiness.reason]]}</span>
                 ) : null}
               </span>
+
+              {/* 具体卡在哪几件事上。**这一段才是能让人动手的部分**:上面那句只说了
+                  「用不了」,这里说是哪一种、缺的是哪个端点/模型、谁在哪补。
+                  空的时候什么都不出——库里可能还有改判之前写下的旧记录,解不出来
+                  就退回上面那句笼统的话,含糊好过指错方向。 */}
+              {readiness.blockers.length > 0 ? (
+                <ul className="flex flex-col gap-2xs pt-2xs">
+                  {readiness.blockers.map((b) => (
+                    <li key={`${b.cause}:${b.arg ?? ""}`} className="text-body-md">
+                      {b.arg ? <code className="font-mono text-code-md text-foreground">{b.arg}</code> : null}
+                      <span className={b.arg ? "ml-xs text-muted-foreground" : "text-muted-foreground"}>
+                        {m[BLOCKER_KEY[b.cause]]}
+                      </span>
+                    </li>
+                  ))}
+                  <li className="text-body-sm text-muted-foreground">{m.blockerResumeNote}</li>
+                </ul>
+              ) : null}
 
               {/* 下一步。ops 的那一种**不做成链接**:它不在这个应用里,做成链接
                   点了会发现没有那一页。 */}
               {readiness.action?.kind === "ops" ? (
                 <span className="text-body-sm text-muted-foreground">
-                  {m.actionOps} <span className="font-mono">{readiness.action.runbook}</span>
+                  {/* 「这件事要运维做」在有清单时是**错的**:上面每一条已经点名了自己的
+                      修复人(平台管理面 / 平台 / 运维 / 库属主),而这四个并不都是运维。
+                      有清单时只留「操作单」这个指针,不再替它们认领执行方。 */}
+                  {readiness.blockers.length === 0 ? m.actionOps : m.actionRunbook}{" "}
+                  <span className="font-mono">{readiness.action.runbook}</span>
                 </span>
               ) : /* `href` 是可选字段,这里必须一起判 —— `kind: "page"` 但没有 href 的
                      动作是无处可去的按钮,而无处可去的按钮比没有按钮更糟。 */

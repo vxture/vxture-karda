@@ -90,3 +90,62 @@ test("facts 原样带回,判断可以被读的人自己复核", () => {
   const input = at({ retrievable: 7, documents: 9, failedResident: 2 });
   assert.deepEqual(assessReadiness(input).facts, input);
 });
+
+// --- 卡在哪一件事上,不只是「有事」 -------------------------------------------
+//
+// owner 2026-08-28:「如果那一条授权没有,你需要反馈错误信息,如『xxxx 授权失败,
+// 请在 xxxx 完成授权』。」计数说明「有事」,原因清单才说明「什么事、谁去修」。
+
+test("驻留原因原样带出,并且去重 —— 十二个任务卡在同一件事上是一条,不是十二条", () => {
+  const r = assessReadiness(
+    at({
+      documents: 12,
+      parkedUnavailable: 12,
+      parkedCauses: [
+        { cause: "endpoint_not_granted", arg: "embedding/default" },
+        { cause: "endpoint_not_granted", arg: "embedding/default" },
+        { cause: "workspace_not_provisioned", arg: null },
+      ],
+    }),
+  );
+  assert.equal(r.reason, "capability_not_granted");
+  assert.deepEqual(r.blockers, [
+    { cause: "endpoint_not_granted", arg: "embedding/default" },
+    { cause: "workspace_not_provisioned", arg: null },
+  ]);
+});
+
+test("同一档不同参数是两条 —— 缺两个端点就要说两个", () => {
+  // 去重键必须含参数。只按 cause 去重会让「embedding 和 chat/extract 都没授」
+  // 显示成一条,于是补了一个之后人以为补完了。
+  const r = assessReadiness(
+    at({
+      parkedUnavailable: 2,
+      parkedCauses: [
+        { cause: "endpoint_not_granted", arg: "embedding/default" },
+        { cause: "endpoint_not_granted", arg: "chat/extract" },
+      ],
+    }),
+  );
+  assert.equal(r.blockers.length, 2);
+});
+
+test("没有原因时 blockers 是空数组,不是 undefined", () => {
+  // 界面直接 `.length` 和 `.map`,不该为此各写一次判空。
+  assert.deepEqual(assessReadiness(at({ parkedUnavailable: 3 })).blockers, []);
+  assert.deepEqual(assessReadiness(at({ retrievable: 9, documents: 9 })).blockers, []);
+});
+
+test("解不出的旧记录不会变成一条 blocker —— 那是 store 侧丢掉的,这里只确认空清单仍报驻留", () => {
+  // 库里存着改判之前的英文散文时,store 解码后给的是空清单。可用性判断**不能**
+  // 因此说「一切正常」:计数还在,状态仍是不可用。
+  const r = assessReadiness(at({ documents: 5, parkedUnavailable: 5, parkedCauses: [] }));
+  assert.equal(r.state, "unavailable");
+  assert.equal(r.reason, "capability_not_granted");
+  assert.deepEqual(r.blockers, []);
+});
+
+test("配额驻留不带 blockers —— 它会自己好,没有「去哪修」可说", () => {
+  const r = assessReadiness(at({ parkedQuota: 4 }));
+  assert.deepEqual([r.reason, r.blockers], ["quota_exhausted", []]);
+});

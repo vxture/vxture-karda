@@ -29,29 +29,33 @@ const body = (assertions: unknown[]) => JSON.stringify({ assertions });
 
 // --- the ungranted case: the whole reason this ships before the grant --------------
 
+// 这些映射现在还要回答「缺的是哪个端点/模型」,所以要一份 selection。
+// 端点码是真的那个,不是占位串——写错了下面断言的 arg 就对不上。
+const SEL = { endpointCode: "chat/extract", modelCode: "m-1" };
+
 test("an ungranted extract ENDPOINT parks rather than fails", () => {
   // What Atlas answers until the product holds the endpoint grant. It must
   // suspend: parked, resumable, never `failed` - so the day the grant lands the
   // work resumes with no karda change and no human un-failing anything. The
   // retired TASK_PROFILE_NOT_ROUTABLE carried identical semantics, which is why
   // the switch to the product axis needed no change here.
-  const mapped = mapExtractError(err("ENDPOINT_NOT_ROUTABLE", 404, false));
+  const mapped = mapExtractError(err("ENDPOINT_NOT_ROUTABLE", 404, false), SEL);
   assert.ok(mapped instanceof UnavailableError);
 });
 
 test("quota parks too, under its own error class", () => {
-  assert.ok(mapExtractError(err("QUOTA_EXCEEDED", 429, false)) instanceof QuotaError);
+  assert.ok(mapExtractError(err("QUOTA_EXCEEDED", 429, false), SEL) instanceof QuotaError);
 });
 
 test("a retryable Atlas failure does NOT park - it takes the bounded transient path", () => {
   const e = err("RATE_LIMITED", 429, true);
-  assert.equal(mapExtractError(e), e);
+  assert.equal(mapExtractError(e, SEL), e);
 });
 
 test("a karda-side payload bug does not park either", () => {
   // Parking a prompt/schema bug would hide it forever behind "waiting on Atlas".
   const e = err("CHAT_MESSAGES_INVALID", 400, false);
-  assert.equal(mapExtractError(e), e);
+  assert.equal(mapExtractError(e, SEL), e);
 });
 
 test("the offline stand-in suspends, like the embedding one did through the A1 wait", async () => {

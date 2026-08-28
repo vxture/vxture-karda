@@ -82,7 +82,7 @@ test("a suspended run records settled:suspended, and the document is NOT failed"
         // which the taxonomy parks rather than fails (stages.ts). A bare Error
         // would be `transient` and retry - a different branch entirely, and the
         // distinction is the whole reason A1 being unbuilt loses nothing.
-        embedder: { async embed(): Promise<never> { throw new UnavailableError("A1 unavailable"); } },
+        embedder: { async embed(): Promise<never> { throw new UnavailableError("A1 unavailable", { cause: "endpoint_not_granted", arg: "chat/extract" }); } },
         target: { async commit() {} },
         embeddingModel: null,
       }),
