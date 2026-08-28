@@ -13,7 +13,7 @@
 //   份额(两条通道)      -> 环形,中心放总数
 //   构成(队列的三种状态)-> 分段条,段上不标百分比(条已经画了)
 //   比率(验证覆盖)      -> 进度条,空轨就是还没做的部分
-//   计数(资产与知识)    -> 两个大数,配一条细的健康条
+//   计数(资产与知识)    -> 两个大数,外加一张分布图把两维联系起来(`DistBars`)
 //
 // 四个 body 各选各的形式,但都从同一组原语(`SegBar` / `Ring` / `Legend` / `Chips` /
 // `Headline` / `Pill`)里取,并被同一个三区框架包着。想让某张卡自成一派,得先加一个
@@ -40,7 +40,7 @@ import { useMessages } from "../_i18n/useMessages";
 import { shell as shellMessages } from "../_i18n/messages/shell";
 import { channels as channelMessages } from "../_i18n/messages/channels";
 import { evaluation as evalMessages } from "../_i18n/messages/evaluation";
-import { states as stateMessages } from "../_i18n/messages/states";
+import { assets as assetMessages } from "../_i18n/messages/assets";
 import { common as commonMessages } from "../_i18n/messages/common";
 import { useFormat } from "../_i18n/useFormat";
 
@@ -81,7 +81,7 @@ const TONE_TEXT: Record<Tone, string> = {
 type Msgs = ReturnType<typeof useMessages<typeof shellMessages>>;
 type ChMsgs = ReturnType<typeof useMessages<typeof channelMessages>>;
 type EvMsgs = ReturnType<typeof useMessages<typeof evalMessages>>;
-type StMsgs = ReturnType<typeof useMessages<typeof stateMessages>>;
+type AsMsgs = ReturnType<typeof useMessages<typeof assetMessages>>;
 type Fmt = ReturnType<typeof useFormat>;
 
 // --- 图形词汇 -----------------------------------------------------------------
@@ -184,6 +184,48 @@ function Ring({
         <span className="font-mono text-title-sm tabular-nums text-foreground">{center}</span>
         <span className="text-body-sm text-muted-foreground">{caption}</span>
       </span>
+    </span>
+  );
+}
+
+/**
+ * 分布条列:**一根条一个资产,条长是它装着多少知识**。
+ *
+ * 这一张图同时说两个维度(owner 2026-08-28):条的**根数**是资产维度,条的**长度**
+ * 是知识维度。只给「12 个资产 / 3,852 条知识」两个总数,看不出这 3,852 是均匀铺在
+ * 12 个库里,还是有一个库装了九成——而那两种情况该做的事完全不同。
+ *
+ * 长尾**并成一条**而不是截断:截断会让条加起来对不上卡片自己报的总数,一张自己对
+ * 不上自己的图比没有图更糟。
+ *
+ * 长度按最大值归一,不按总数:按总数的话,十几个库时每根条都短得看不出差别,而这
+ * 张图要回答的正是「谁比谁多」。
+ */
+function DistBars({ rows }: { rows: { name: string; value: number; text: string; muted?: boolean }[] }) {
+  const max = Math.max(1, ...rows.map((r) => Math.max(0, r.value)));
+  return (
+    <span className="flex flex-col gap-2xs">
+      {rows.map((r) => (
+        <span key={r.name} className="flex items-center gap-sm">
+          <span className="w-[7.5rem] shrink-0 truncate text-body-sm text-muted-foreground">{r.name}</span>
+          <span className="flex h-2xs min-w-0 flex-1 items-center overflow-hidden rounded-full bg-muted">
+            <span
+              className="h-full rounded-full"
+              style={{
+                width: `${Math.max(2, (Math.max(0, r.value) / max) * 100)}%`,
+                background: r.muted ? TONE.muted : TONE.brand,
+              }}
+            />
+          </span>
+          <span
+            className={`w-[3.5rem] shrink-0 text-right font-mono text-code-md tabular-nums ${
+              r.muted ? "text-muted-foreground" : "text-foreground"
+            }`}
+          >
+            {r.text}
+          </span>
+        </span>
+      ))}
     </span>
   );
 }
@@ -357,14 +399,20 @@ export function DomainTag({
 // 每个域一个函数,**各选各的形式**;共用的是上面那几个原语和外面那个框架。
 // 每个函数开头一句话说明「为什么是这个形式」——那是这里唯一的判断,排版不是。
 
-function OverviewBody({ o, m, st, f }: { o: ShellData["overview"]; m: Msgs; st: StMsgs; f: Fmt }) {
-  // 计数,不是份额:资产与知识是这个域装着的两样东西,谁也不是谁的一部分,画成饼
-  // 会凭空造出一个不存在的「总量」。所以就是两个大数,中间一道竖线分开。
-  // 健康构成放在下面一条细条上——它是这个域唯一真正的比例。
-  const healthy = Math.max(0, o.assetCount - o.needsAttention);
-  const slices: Slice[] = [
-    { label: st.healthHealthy, value: healthy, tone: "brand" },
-    { label: m.tagNeedsAttention, value: o.needsAttention, tone: "warning" },
+function OverviewBody({ o, m, f, a }: { o: ShellData["overview"]; m: Msgs; f: Fmt; a: AsMsgs }) {
+  // 两个维度,一张图。
+  //
+  // 计数而不是份额:资产与知识谁也不是谁的一部分,画饼会凭空造出一个不存在的「总量」。
+  // 所以两个数各自当大数摆出来,下面那张分布图把它们**联系起来**——一根条一个资产
+  // (资产维度),条长是它装着多少知识(知识维度)。
+  //
+  // 健康构成不在这里再画一遍:标题旁边那个徽章已经说了「需关注 4」,而同一件事画两次
+  // 会让人以为是两件事。
+  const rows = [
+    ...o.topAssets.map((t) => ({ name: t.name, value: t.entries, text: f.compact(t.entries) })),
+    ...(o.restCount > 0
+      ? [{ name: a.restAssets(o.restCount), value: o.rest, text: f.compact(o.rest), muted: true }]
+      : []),
   ];
   return (
     <>
@@ -388,10 +436,7 @@ function OverviewBody({ o, m, st, f }: { o: ShellData["overview"]; m: Msgs; st: 
           </span>
         )}
       </span>
-      <span className="flex flex-col gap-2xs">
-        <SegBar slices={slices} />
-        <Chips slices={slices} />
-      </span>
+      {rows.length > 0 ? <DistBars rows={rows} /> : null}
     </>
   );
 }
@@ -481,7 +526,7 @@ export function DomainCard({ item, shell }: { item: DomainNavItem; shell: ShellD
   const m = useMessages(shellMessages);
   const ch = useMessages(channelMessages);
   const ev = useMessages(evalMessages);
-  const st = useMessages(stateMessages);
+  const a = useMessages(assetMessages);
   const c = useMessages(commonMessages);
   const f = useFormat();
 
@@ -514,7 +559,7 @@ export function DomainCard({ item, shell }: { item: DomainNavItem; shell: ShellD
           // 与落定后等高,避免数据到达时整页跳一下。
           <span className="flex h-[7.5rem] items-center text-body-md text-muted-foreground">{m.paneLoading}</span>
         ) : item.key === "overview" ? (
-          <OverviewBody o={shell.overview} m={m} st={st} f={f} />
+          <OverviewBody o={shell.overview} m={m} f={f} a={a} />
         ) : item.key === "channels" ? (
           <ChannelsBody c={shell.channels} m={m} ch={ch} f={f} />
         ) : item.key === "pipeline" ? (

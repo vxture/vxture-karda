@@ -27,6 +27,20 @@ export interface ShellData {
     weeklyNew: number;
     /** Problem: assets whose health is not clean (需关注 / 有缺口). */
     needsAttention: number;
+    /**
+     * 知识**落在哪些资产上** —— 按条目数降序的前几个,外加一条把长尾并起来的
+     * 「其余」。
+     *
+     * 加这一份是因为这张卡有**两个维度**(知识、资产),而只给两个总数等于只画了
+     * 一个:12 和 3,852 摆在一起,看不出这 3,852 是均匀铺在 12 个库里,还是有一个
+     * 库装了九成。一根条 = 一个资产(资产维度),条长 = 它装着多少知识(知识维度),
+     * 两维用同一张图说完。
+     *
+     * `rest` 是长尾的合并项,`restCount` 是它合并了几个;没有长尾时 `restCount` 为 0。
+     */
+    topAssets: { name: string; entries: number }[];
+    rest: number;
+    restCount: number;
   };
   channels: {
     /** Chart: the supply split - direct S2S vs the Runos capability plane. */

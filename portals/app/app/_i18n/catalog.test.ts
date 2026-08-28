@@ -22,6 +22,7 @@ const PROBES: Record<string, unknown[]> = {
   "shell.docsCount": [7],
   "assets.coverageAria": [82],
   "assets.openAsset": ["Bid library"],
+  "assets.restAssets": [8],
   "assets.cardEntries": [247],
   "assets.cardDocs": [12],
   "assets.parkedCount": [3],
