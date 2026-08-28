@@ -247,7 +247,7 @@ export function AssetsClient() {
           description={m.needSignInDesc}
           action={
             <Button asChild>
-              <a href={loginHref("/")}>{c.signIn}</a>
+              <a href={loginHref("/assets")}>{c.signIn}</a>
             </Button>
           }
         />

@@ -19,7 +19,7 @@
 |---|---|---|---|
 | 顶栏 | header | 48px 顶部栏 | Material top app bar |
 | **工作区** | **shell body** | 顶栏以下的**整块**,含三个 pane | Material 3 body region;VS Code workbench |
-| 导航栏 | nav pane | 左侧域卡片列,280px | 见 §1.1 |
+| 导航栏 | nav pane | 左侧标准菜单,280px | 见 §1.1 |
 | 内容区 | main pane | 中间可滚动列 | ARIA `<main>` |
 | 值班台 | steward dock | 右侧管家值班台,400px | ARIA `<aside>`;Xcode inspector |
 | 栏间距 | pane spacer | pane 之间的间距 | Material 3 pane spacer |
@@ -38,7 +38,31 @@ Material 的 navigation rail 特指 80dp 的窄图标条;本产品左侧是 280p
 
 `<main>` **只指内容区**,不含两侧 pane。任何把整个工作区标成 `main` 的写法都是错的。
 
+导航栏是 `<nav aria-label>`。这在它还是卡片列时无从谈起——一列图表卡不是导航 landmark;
+菜单化(§1.3)之后它才真的是一个,所以那条 landmark 是和菜单一起加上的。
+
 ---
+
+### 1.3 导航栏是菜单,不是仪表盘(KD-215,owner 2026-08-28)
+
+导航栏曾经是四张带图表的域卡片(环形图、饼图、横向柱状图、分段条),2026-08-24/25
+由 owner 逐版调过。2026-08-28 改判为**标准菜单**:一行一个域,当前域的二级视图缩进在
+它下面,除计数徽章外没有任何图形。
+
+理由不是「卡片不好看」——它很好看,而且那些调校一点没浪费:**整套卡片搬去了首页**
+(`_shell/DomainCard.tsx`,首页摆的就是它)。理由是**位置错了**:
+
+- **卡片是落地面的形态,不是常驻侧栏的形态。** 首页只有一屏、职责就是「宏观 + 引导」,
+  卡片同时给出「怎么样」和「去哪里」,正合适;而导航栏**跟着每一页走**,在
+  `/pipeline/tasks/[id]` 这样的详情页上,左边一套仪表盘是在跟你刚打开的那一页抢注意力。
+- **同一批卡片不能出现两次。** 卡片搬到首页之后,如果导航栏还是卡片,打开首页会在
+  一屏里看到同一批卡片两遍。
+- 菜单该做的事只有两件:**我在哪、我还能去哪**。徽章上的计数是菜单的标准词汇(未读数),
+  与被退掉的图表不是一回事。
+
+顺带删掉的:每张卡的折叠开关与它的 `localStorage`。它存在的理由是卡片体可能高得碍事;
+三行菜单不会碍事,而一个只用来藏三条链接的控件,比那三条链接更占注意力。**二级视图跟着
+当前域展开**——这条规则不需要记忆,冷启动和第二个标签页里也总是和你所在的页一致。
 
 ## 2. 空间常量
 
@@ -136,7 +160,7 @@ grid-cols-1  @min-[26rem]:grid-cols-2  @min-[40rem]:grid-cols-3  @min-[76rem]:gr
 ## 5. 面与色
 
 - 卡面由**上下渐变**承载(`bg-gradient-to-b from-card/80 to-card/30`),边框压到 `border-primary/[0.06]` 一道发丝;选中态把同一条渐变加深成品牌色,是唯一允许边框看得见的地方。
-- 导航栏图表只用一张色表(`TONE`,声明在 `NavPane.tsx`),扇形/色块/柱条/数字全部从同一条目取色——`color-mix(oklab)` 混出的颜色与 `bg-primary/60` 这类工具类**不是同一个值**,分开写必然对不上。
+- 域卡片的图表只用一张色表(`TONE`,声明在 `_shell/DomainCard.tsx`),扇形/色块/柱条/数字全部从同一条目取色——`color-mix(oklab)` 混出的颜色与 `bg-primary/60` 这类工具类**不是同一个值**,分开写必然对不上。这张色表 2026-08-28 前声明在 `NavPane.tsx`,随卡片一起搬走(§1.2)。
 - 色义:brand = 量/在制/资产;ai = 能力平台(Runos);success = 已验证/增长;warning = 待办/需关注/异常;danger = 失败/缺口。
 
 ---
@@ -182,7 +206,8 @@ pane 都被盖掉、只留阅读栏。
 |---|---|
 | `_shell/PortalShell.tsx` | 工作区骨架、三个空间常量、`@container` 声明、pane 展开状态(localStorage) |
 | `_shell/AppHeader.tsx` | 顶栏 |
-| `_shell/NavPane.tsx` | 导航栏;词汇表与色表的声明处 |
+| `_shell/NavPane.tsx` | 导航栏;词汇表的声明处。**是一份标准菜单**,不画图表(§1.3) |
+| `_shell/DomainCard.tsx` | 域卡片的图形词汇(环/饼/柱/分段条)与四个域的卡片体,以及色表 `TONE`。**首页**摆整张卡;导航栏只借走计数徽章 `DomainTag` |
 | `_shell/StewardDock.tsx` | 值班台 |
 | `_shell/PageHead.tsx` | 内容区统一页头 |
 | `_shell/nav.ts` | 功能域清单(顶栏 launcher 与导航栏共用的唯一来源)、全屏目标 id。**只有结构,没有文案**——每条声明自己的目录键(`labelKey`/`descKey`),文案在 `_i18n/messages/shell.ts`,见 `250-i18n-seam.md` |
