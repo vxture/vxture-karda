@@ -464,6 +464,22 @@ function ChannelsBody({ c, m, ch, f }: { c: ShellData["channels"]; m: Msgs; ch: 
         <Ring slices={slices} center={f.compact(c.directCalls + c.runosCalls)} caption={m.ringTotal} />
         <Legend slices={slices} />
       </span>
+      {/* 在服务谁 —— 首页三问的第二问。这张卡此前只回答了「有多少调用、走哪条通道」,
+          而量和通道都不是「谁」。**一行,不换行**:卡片高度以知识资产那张为上限
+          (owner 2026-08-29),排不下就少列一个,不是把卡撑高。 */}
+      {c.topConsumers.length > 0 && (
+        <span className="flex items-baseline gap-sm border-t border-dashed border-primary/[0.08] pt-sm dark:border-primary/15">
+          <span className="shrink-0 text-body-sm text-muted-foreground">{ch.servingNow}</span>
+          <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-md overflow-hidden">
+            {c.topConsumers.map((p) => (
+              <span key={p.code} className="flex items-baseline gap-2xs">
+                <span className="text-body-sm text-ai-text">{p.code}</span>
+                <span className="font-mono text-code-sm tabular-nums text-muted-foreground">{f.compact(p.calls)}</span>
+              </span>
+            ))}
+          </span>
+        </span>
+      )}
     </>
   );
 }

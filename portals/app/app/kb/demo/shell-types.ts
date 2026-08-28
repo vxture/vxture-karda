@@ -51,6 +51,15 @@ export interface ShellData {
     deltaPct: number;
     /** Problem: channels serving degraded (or not serving at all). */
     degraded: number;
+    /**
+     * **在服务谁** —— 按调用量排的前几个消费方。
+     *
+     * 这正是首页三问里的第二问(150 §2.4),而这张卡此前只回答了「有多少调用、走哪条
+     * 通道」——量和通道都不是「谁」。加这一份之后,这个域的卡片才真的答完它那一问。
+     *
+     * 只给 code 和 calls:更细的(走哪条通道、常读哪个库)在域页面上,卡片不复述。
+     */
+    topConsumers: { code: string; calls: number }[];
   };
   pipeline: {
     /** Chart + core: the work mix, three columns. */
