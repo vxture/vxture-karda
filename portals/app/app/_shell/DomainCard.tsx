@@ -82,6 +82,26 @@ const TONE_RING: Record<keyof typeof TONE, string> = {
   muted: "color-mix(in oklab, var(--color-muted-foreground) 40%, transparent)",
 };
 
+/**
+ * 环的第二档:比 `TONE_RING` 淡。
+ *
+ * 两个环并排时必须分得开(owner 2026-08-29),但分开的**依据不能是色相**——同一条
+ * 通道在两个环里换了颜色,图例上那个点就索引不到弧了。所以:
+ *
+ *   色相 = 哪条通道(直供 / 能力平台),两个环一致;
+ *   浓淡 = 哪个环(今日实、累计淡)。
+ *
+ * 这条区分正好也读得通:今日是当下,累计是过往,过往退后一步是对的。
+ */
+const TONE_RING_SOFT: Record<keyof typeof TONE, string> = {
+  brand: "color-mix(in oklab, var(--color-primary) 42%, transparent)",
+  ai: "color-mix(in oklab, var(--color-ai) 38%, transparent)",
+  success: "color-mix(in oklab, var(--color-success) 42%, transparent)",
+  warning: "color-mix(in oklab, var(--color-warning) 42%, transparent)",
+  danger: "color-mix(in oklab, var(--color-destructive) 38%, transparent)",
+  muted: "color-mix(in oklab, var(--color-muted-foreground) 22%, transparent)",
+};
+
 type Tone = keyof typeof TONE;
 
 /** Type colour that pairs with a TONE fill. Neutral for brand and ai: a count
@@ -171,6 +191,7 @@ function Ring({
   center,
   caption,
   captionClass = "text-muted-foreground",
+  palette = TONE_RING,
   size = 104,
 }: {
   slices: Slice[];
@@ -178,6 +199,8 @@ function Ring({
   caption: string;
   /** 环心第二行的语气色。增量放在这里,涨跌要看得出来。 */
   captionClass?: string;
+  /** 用哪一档色。两个环并排时靠它分开(见 `TONE_RING_SOFT`)。 */
+  palette?: Record<keyof typeof TONE, string>;
   size?: number;
 }) {
   const stroke = 11;
@@ -209,7 +232,7 @@ function Ring({
                 cy={size / 2}
                 r={r}
                 fill="none"
-                stroke={TONE_RING[sl.tone]}
+                stroke={palette[sl.tone]}
                 strokeWidth={stroke}
                 strokeLinecap="round"
                 strokeDasharray={`${Math.max(0, len)} ${c}`}
@@ -271,54 +294,65 @@ function DistBars({ rows }: { rows: { name: string; value: number; text: string;
 }
 
 /**
- * 一个数 + 它的构成。三处按 owner 2026-08-29 的第三轮重排:
+ * 一个数 + 它的构成:小标题在上,下面是环与图例。
  *
- *   1. **名字提到标题位**。「今日调用 / 累计调用」是这一块叫什么,它该在最上面,
- *      而不是缩在环心里当小字——环心是给数用的,不是给标签用的。
- *   2. **环心腾出来放增量**。原来那个药丸压在弧上,字和弧叠着两样都读不清;而增量
- *      本来就属于中心那个数(它是那个数的变化),放进去比挂在外面对。
- *      药丸底色也去掉了:环心已经是一块干净的地,再加个底反而脏。
- *   3. **左饼右数**。右侧每条通道是「数字大在上、名称小在下」,与知识资产那张的
- *      `3,852 / 知识` 同一个句式——同一个产品里,一个数和它的名字只该有一种摆法。
+ * 几轮下来定在这个形状,每一条都是被退回来才对的:
+ *
+ *   · **名字在标题位**,不在环心——它是这一块叫什么,不是一个数的注脚;
+ *   · **增量在环心**,不做成药丸——它属于中心那个数(是那个数的变化),挂在外面会压到
+ *     弧上;涨绿跌红,颜色顶掉了底色的作用;
+ *   · **图例一行一条**:名称、数字、百分比。中间试过「数字大在上、名称小在下」的
+ *     两行式,读起来散——那个句式适合两三个并列的宏观数(知识资产那张),不适合
+ *     一个环的构成明细;百分比也得留着,它是这个域最该被读到的东西;
+ *   · **环与图例整体垂直居中**,并留出富余的内边距。卡片高度由同行那张定,这一块
+ *     不该顶在上边缘、把空白全甩到底部。
  */
 function RingStat({
   slices,
   title,
   value,
   delta,
+  palette = TONE_RING,
   f,
 }: {
   slices: Slice[];
   title: string;
   value: string;
   delta?: { text: string; up: boolean };
+  palette?: Record<keyof typeof TONE, string>;
   f: Fmt;
 }) {
+  const total = sum(slices);
   return (
-    <span className="flex min-w-0 flex-1 flex-col gap-sm">
+    <span className="flex min-w-0 flex-1 flex-col gap-md">
       <span className="text-body-md text-muted-foreground">{title}</span>
-      <span className="flex items-center gap-md">
+      {/* `my-auto` + 外层 `items-stretch`:两列等高,内容各自垂直居中。 */}
+      <span className="my-auto flex items-center gap-lg py-sm">
         <Ring
           slices={slices}
           center={value}
           caption={delta ? delta.text : ""}
           captionClass={delta ? (delta.up ? "text-success-text" : "text-destructive-text") : ""}
+          palette={palette}
           size={92}
         />
-        <span className="flex min-w-0 flex-1 flex-col gap-sm">
+        {/* 图例**聚在右侧**,三者之间贴紧(owner 2026-08-29)。
+            松的是这一组与环、与标题之间的距离,不是「通道名 / 数字 / 百分比」三者
+            互相之间——把名称设成 `flex-1` 会把三者甩到一行的两头,读一条要来回扫。
+            所以名称按自然宽,数字与百分比给固定窄列(对齐用),整组 `ml-auto` 靠右。 */}
+        <span className="ml-auto flex flex-col gap-sm">
           {slices.map((sl) => (
-            <span key={sl.label} className="flex min-w-0 flex-col gap-3xs">
-              <span className="flex items-baseline gap-2xs">
-                <span
-                  className="size-2xs shrink-0 translate-y-[-0.15em] rounded-full"
-                  style={{ background: TONE_RING[sl.tone] }}
-                />
-                <span className="font-mono text-title-sm leading-[1.1] tabular-nums text-foreground">
-                  {f.number(sl.value)}
-                </span>
+            <span key={sl.label} className="flex items-baseline gap-xs">
+              <span
+                className="size-2xs shrink-0 translate-y-[-0.1em] rounded-full"
+                style={{ background: palette[sl.tone] }}
+              />
+              <span className="shrink-0 text-body-sm text-muted-foreground">{sl.label}</span>
+              <span className="w-[3.25rem] shrink-0 text-right font-mono text-code-md tabular-nums text-foreground">
+                {f.number(sl.value)}
               </span>
-              <span className="min-w-0 truncate pl-md text-body-sm leading-[1.1] text-muted-foreground">
-                {sl.label}
+              <span className="w-[2.25rem] shrink-0 text-right font-mono text-code-sm tabular-nums text-muted-foreground/70">
+                {total > 0 ? Math.round((Math.max(0, sl.value) / total) * 100) : 0}%
               </span>
             </span>
           ))}
@@ -534,7 +568,7 @@ function ChannelsBody({ c, ch, f }: { c: ShellData["channels"]; ch: ChMsgs; f: F
     { label: ch.viaRunos, value: c.runosTotal, tone: "ai" },
   ];
   return (
-    <span className="flex items-start gap-lg">
+    <span className="flex flex-1 items-stretch gap-lg">
       <RingStat
         slices={today}
         title={ch.callsToday}
@@ -543,7 +577,7 @@ function ChannelsBody({ c, ch, f }: { c: ShellData["channels"]; ch: ChMsgs; f: F
         f={f}
       />
       <span className="w-px shrink-0 self-stretch bg-border" />
-      <RingStat slices={total} title={ch.callsTotal} value={f.number(c.totalCalls)} f={f} />
+      <RingStat slices={total} title={ch.callsTotal} value={f.number(c.totalCalls)} palette={TONE_RING_SOFT} f={f} />
     </span>
   );
 }
@@ -634,7 +668,10 @@ export function DomainCard({ item, shell }: { item: DomainNavItem; shell: ShellD
       {/* ② 统计区。**形式按域分派**,不是四张卡套同一个图:份额用环、构成用分段条、
           比率用进度条、计数就是计数(owner 2026-08-28 第二轮——上一版全做成饼图是
           矫枉过正)。共用的是上面那几个原语和这个框架。 */}
-      <div className="flex flex-1 flex-col gap-lg px-lg py-lg">
+      {/* `justify-center`:卡片高度由同行那张定,内容不该顶在上边缘、把空白全甩到底部
+          (owner 2026-08-29)。`py-xl` 比其余留白宽一档,让统计区与小标题、与页脚都
+          隔开——松,是这一块要的。 */}
+      <div className="flex flex-1 flex-col justify-center gap-lg px-lg py-xl">
         {!shell ? (
           // 与落定后等高,避免数据到达时整页跳一下。
           <span className="flex h-[7.5rem] items-center text-body-md text-muted-foreground">{m.paneLoading}</span>
