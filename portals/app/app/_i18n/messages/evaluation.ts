@@ -135,6 +135,8 @@ export const evaluation = {
     "zh-CN": "该范围内的内容都已验证，或所在库未开启验证治理。",
     "en-US": "Everything in scope is verified, or its library has governance switched off.",
   },
+  /** 队列表的主列名。「条目」而不是「标题」：列里除了标题还有归属库与种类。 */
+  colItem: { "zh-CN": "条目", "en-US": "Item" },
   untitledEntry: { "zh-CN": "（无标题条目）", "en-US": "(untitled entry)" },
   externalSync: { "zh-CN": "外部同步", "en-US": "external sync" },
   kindDocument: { "zh-CN": "文档", "en-US": "document" },

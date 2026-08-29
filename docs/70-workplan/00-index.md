@@ -858,7 +858,11 @@ model behind it has not moved.
 | `#177` | 四个 Action 版本一次升齐,dependabot 分组 | 已合 |
 | `#178` | baseline 的独立索引一律带列守卫 —— **生产 db-init 死在这里,卡住了 v0.9.0** | 已合 |
 | `v0.9.0` | **批次 10–15 全量上线**(2026-08-28)。db-init 补齐 incr/0004–0008,35/35 表断言通过 | 已发布 |
-| `#179` | 首页:卡片三区与四种形式、hero、Karda Super Agent 定名(KD-216) | 进行中 |
+| `#179` | 首页:卡片三区与四种形式、hero、Karda Super Agent 定名(KD-216) | 已合 |
+| `#184`–`#188` | 库详情页三趟:五线状态条、设置独立成页(KD-217)、来源模式(KD-218)、文档清单 DS 表化(KD-219/220/221) | 已合 |
+| `#189` | **知识确认台(KD-222)——抽取流闭环**。查出流在中途是断的:草稿落库后没有任何生产路径晋升到 `indexed`,agent 三件读工具永远读到空。`/assets/[kbId]/knowledge`:确认收录(= 收录 + 验证一个动作)、剔除、按 subject 跨批次的冲突裁决(`recordConflictOutcome` 就此接线,`140` §11.3 账目更新至 §11.5) | 已合 |
+| `#190` | `/assets/new` 定为纯新建流程(KD-223),建库时声明来源模式 | 已合 |
+| `#191` | 待复验队列 DS 表化;`/pipeline/tasks` 判为看板不收(判据入 150 §3.6) | 进行中 |
 
 **新的我方待办(对端已交付)**:`vxture-atlas#21` 要的契约制品**已在生产跑了三个版本**——`GET /.well-known/vxture-contract` 带 `errorCodes`(v0.5.0)与 `requests`(v0.6.0),用我方现有 S2S 令牌就能拉。改为消费这份制品,不再人工抄码表(`#100` 那次 `QUOTA_EXHAUSTED` / `QUOTA_EXCEEDED` 就是人工抄的产物)。**先不要钉指纹**:对端有 PR 待合,合后从 `c1-e132a38fae1a` 移到 `c1-d2ecccf5b20d`。
 
