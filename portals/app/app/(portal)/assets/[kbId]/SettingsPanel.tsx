@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Button,
+  DestructiveButton,
   Card,
   CardContent,
   CardDescription,
@@ -46,6 +47,8 @@ export function SettingsPanel({
   busy,
   onShare,
   onTemplate,
+  onEmbedding,
+  onRetrieval,
   onGovernance,
   onVerifierConfig,
   onFields,
@@ -61,6 +64,8 @@ export function SettingsPanel({
   busy: boolean;
   onShare: (target: PublishState) => void | Promise<void>;
   onTemplate: (templateId: string | null) => void | Promise<void>;
+  onEmbedding: (model: string | null) => void | Promise<void>;
+  onRetrieval: (patch: { fulltextEnabled?: boolean; graphEnabled?: boolean }) => void | Promise<void>;
   onGovernance: (enabled: boolean) => void | Promise<void>;
   onVerifierConfig: (verifier: string | null, intervalDays: number | null) => void | Promise<void>;
   onFields: (fields: MetadataField[]) => void | Promise<void>;
@@ -68,12 +73,15 @@ export function SettingsPanel({
   onRenameFolder: (id: string, name: string) => void | Promise<void>;
   onDeleteFolder: (folder: Folder) => void | Promise<void>;
 }) {
+  // 顺序**跟着内容的一生走**,与页头那条 `LifecycleStrip` 同一条脊梁
+  // (owner 2026-08-29):入库 -> 加工 -> 检索 -> 治理 -> 共享。
+  //
+  // 原顺序是共享 / 加工 / 字段 / 治理 / 目录——共享排在最前,而它是这五件里唯一
+  // **对外**的一件,读者一进来先看到的是最后才该决定的事。目录排在最后,而它是
+  // 内容进来时就要用的第一件。
   return (
     <div className="flex flex-col gap-md">
-      <SharingCard kb={kb} busy={busy} onShare={onShare} />
-      <ProcessingCard kb={kb} templates={templates} busy={busy} onTemplate={onTemplate} />
-      <FilterFieldsCard fields={fields} budget={budget} busy={busy} onSave={onFields} />
-      <GovernanceCard kb={kb} busy={busy} onGovernance={onGovernance} onVerifierConfig={onVerifierConfig} />
+      {/* ① 入库 */}
       <FoldersCard
         folders={folders}
         busy={busy}
@@ -81,7 +89,122 @@ export function SettingsPanel({
         onRename={onRenameFolder}
         onDelete={onDeleteFolder}
       />
+      {/* ② 加工 */}
+      <ProcessingCard kb={kb} templates={templates} busy={busy} onTemplate={onTemplate} />
+      <VectorSpaceCard kb={kb} busy={busy} onEmbedding={onEmbedding} />
+      {/* ③ 检索 */}
+      <RetrievalCard kb={kb} busy={busy} onRetrieval={onRetrieval} />
+      <FilterFieldsCard fields={fields} budget={budget} busy={busy} onSave={onFields} />
+      {/* ④ 治理 */}
+      <GovernanceCard kb={kb} busy={busy} onGovernance={onGovernance} onVerifierConfig={onVerifierConfig} />
+      {/* ⑤ 共享 —— 唯一对外的一件,放最后 */}
+      <SharingCard kb={kb} busy={busy} onShare={onShare} />
     </div>
+  );
+}
+
+/**
+ * 向量空间锁(KD-107)。
+ *
+ * **补这一段是因为产品在指着一个不存在的控件说话**:`model_not_routable` 那条驻留
+ * 写着「请改库的模型锁」,而在此之前设置里没有模型锁(owner 2026-08-29)。列授权
+ * (`98_column_locks`)一直允许改 `embedding_model`,缺的只是出口。
+ *
+ * 留空 = 不锁,按授权路由(KD-018)。这是默认,也是绝大多数库该有的状态——锁一个
+ * 具体模型是**例外**,所以说明里先讲清代价再讲怎么用。
+ */
+function VectorSpaceCard({
+  kb,
+  busy,
+  onEmbedding,
+}: {
+  kb: Kb;
+  busy: boolean;
+  onEmbedding: (model: string | null) => void | Promise<void>;
+}) {
+  const m = useMessages(assets);
+  const c = useMessages(common);
+  const [draft, setDraft] = useState(kb.embeddingModel ?? "");
+  useEffect(() => setDraft(kb.embeddingModel ?? ""), [kb]);
+  const dirty = (kb.embeddingModel ?? "") !== draft.trim();
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{m.vectorCardTitle}</CardTitle>
+        <CardDescription>{kb.embeddingModel ? m.vectorLocked(kb.embeddingModel) : m.vectorUnlocked}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-sm">
+        <div className="flex flex-wrap items-center gap-sm">
+          <Input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={m.vectorPlaceholder}
+            aria-label={m.vectorAria}
+            className="w-[22rem] max-w-full"
+            disabled={busy}
+          />
+          <Button size="sm" disabled={busy || !dirty} onClick={() => onEmbedding(draft.trim() || null)}>
+            {c.save}
+          </Button>
+        </div>
+        {/* 改锁的代价必须写在按钮旁边,不能只写在文档里:换一个模型 = 换一个向量空间,
+            旧向量与新查询不可比,已入藏的内容要重建才回得来检索。 */}
+        <p className="text-body-sm text-muted-foreground">{m.vectorHint}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * 召回通道:全文与图谱各一个开关。
+ *
+ * 两列一直在库里、也一直在列授权里,同样没有出口。它们决定这个库的召回**除了向量
+ * 还走哪几路**——关掉全文,一个刚上传还没向量化的库就完全召不回来。
+ */
+function RetrievalCard({
+  kb,
+  busy,
+  onRetrieval,
+}: {
+  kb: Kb;
+  busy: boolean;
+  onRetrieval: (patch: { fulltextEnabled?: boolean; graphEnabled?: boolean }) => void | Promise<void>;
+}) {
+  const m = useMessages(assets);
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{m.retrievalCardTitle}</CardTitle>
+        <CardDescription>{m.retrievalCardDesc}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-md">
+        <label className="flex items-center gap-sm">
+          <Switch
+            checked={kb.fulltextEnabled}
+            disabled={busy}
+            aria-label={m.retrievalFulltext}
+            onCheckedChange={(v) => onRetrieval({ fulltextEnabled: v })}
+          />
+          <span className="flex min-w-0 flex-col">
+            <span className="text-body-md">{m.retrievalFulltext}</span>
+            <span className="text-body-sm text-muted-foreground">{m.retrievalFulltextHint}</span>
+          </span>
+        </label>
+        <label className="flex items-center gap-sm">
+          <Switch
+            checked={kb.graphEnabled}
+            disabled={busy}
+            aria-label={m.retrievalGraph}
+            onCheckedChange={(v) => onRetrieval({ graphEnabled: v })}
+          />
+          <span className="flex min-w-0 flex-col">
+            <span className="text-body-md">{m.retrievalGraph}</span>
+            <span className="text-body-sm text-muted-foreground">{m.retrievalGraphHint}</span>
+          </span>
+        </label>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -516,9 +639,21 @@ function FoldersCard({
                 >
                   {c.rename}
                 </Button>
-                <Button size="sm" variant="ghost" disabled={busy} onClick={() => onDelete(f)}>
+                {/* 删目录会把里面**所有**文档变成未归档,而它此前是一个 ghost 按钮、
+                    点一下直接发 DELETE(owner 2026-08-29 指出)。同一页里删**一份**
+                    文档要过二次确认 + 后果说明——保护强度和实际危害正好倒挂。 */}
+                <DestructiveButton
+                  size="sm"
+                  disabled={busy}
+                  confirm={{
+                    verb: c.delete,
+                    target: f.name,
+                    consequence: m.folderDeleteConsequence,
+                    onConfirm: () => Promise.resolve(onDelete(f)),
+                  }}
+                >
                   {c.delete}
-                </Button>
+                </DestructiveButton>
               </>
             )}
           </div>

@@ -174,6 +174,96 @@ export const assets = {
   errFolderCreate: { "zh-CN": "目录创建失败。", "en-US": "Could not create the folder." },
   errFolderRename: { "zh-CN": "目录重命名失败。", "en-US": "Could not rename the folder." },
   errFolderDelete: { "zh-CN": "目录删除失败。", "en-US": "Could not delete the folder." },
+  /** 删目录的后果。说的是**文档不会丢**——这正是人在按下去之前最想知道的那件事;
+   *  只说「不可恢复」会让人以为文档跟着没了。 */
+  folderDeleteConsequence: {
+    "zh-CN": "目录会被删除,其中的文档不会丢——它们变成「未归档」。",
+    "en-US": "The folder goes away. Its documents are not lost - they become unfiled.",
+  },
+  /** tab 计数里已撤销那一截。缀在活跃数之后,因为它们不是同一种东西。 */
+  bindRevokedSuffix: {
+    "zh-CN": (n: number) => ` · 已撤销 ${n}`,
+    "en-US": (n: number) => ` · ${n} revoked`,
+  } satisfies MessageFn<[number]>,
+  /** 加载失败,与「正在加载库…」分开。**同一个空态承担两种含义,会让人一直等。** */
+  kbLoadFailed: { "zh-CN": "这个库没能打开", "en-US": "Could not open this library" },
+  kbLoadFailedHint: {
+    "zh-CN": "上面那条说明了原因。重试一次,或返回知识资产。",
+    "en-US": "The banner above says why. Retry, or go back to the asset list.",
+  },
+  // --- 库的五条业务流(LifecycleStrip) ------------------------------------------
+  // 每一段只说这个库在那条线上的位置,不重做那个域的事。
+  lifeIngest: { "zh-CN": "入库", "en-US": "Ingested" },
+  lifeIngestUploadOnly: { "zh-CN": "上传与 API 写入", "en-US": "Uploads and API writes" },
+  lifeIngestBindings: {
+    "zh-CN": (n: number) => `含 ${n} 个外部来源`,
+    "en-US": (n: number) => `incl. ${n} external source${n === 1 ? "" : "s"}`,
+  } satisfies MessageFn<[number]>,
+  lifeProcess: { "zh-CN": "加工", "en-US": "Processed" },
+  lifeProcessNote: { "zh-CN": "已可检索", "en-US": "retrievable" },
+  lifeParked: {
+    "zh-CN": (n: number) => `驻留 ${n}`,
+    "en-US": (n: number) => `${n} parked`,
+  } satisfies MessageFn<[number]>,
+  lifeVerify: { "zh-CN": "验证", "en-US": "Verified" },
+  lifeVerifyNote: {
+    "zh-CN": (v: number, t: number) => `${v} / ${t} 已验证`,
+    "en-US": (v: number, t: number) => `${v} of ${t} verified`,
+  } satisfies MessageFn<[number, number]>,
+  // 「待复验 N」用既有的 `evaluation.staleCount` —— 我又新加了一份,目录测试当场报重复。
+  lifeServe: { "zh-CN": "供给 · 7 日引用", "en-US": "Served · 7-day citations" },
+  lifeServeTop: {
+    "zh-CN": (who: string) => `常读方 ${who}`,
+    "en-US": (who: string) => `top readers ${who}`,
+  } satisfies MessageFn<[string]>,
+  lifeServeNone: { "zh-CN": "还没有被引用过", "en-US": "Not cited yet" },
+  lifeGoDomain: { "zh-CN": "去这条线所属的域", "en-US": "Open the domain that owns this" },
+
+  // --- 向量空间与召回通道(设置里新补的两段) ------------------------------------
+  // 补它们是因为**产品在指着不存在的控件说话**:`model_not_routable` 那条驻留写着
+  // 「请改库的模型锁」,而设置里此前没有模型锁。
+  vectorCardTitle: { "zh-CN": "向量空间", "en-US": "Vector space" },
+  vectorUnlocked: {
+    "zh-CN": "未锁定——按授权自动路由到当前的嵌入端点。这是推荐状态。",
+    "en-US": "Not locked - routed to whichever embedding endpoint is granted. This is the recommended state.",
+  },
+  vectorLocked: {
+    "zh-CN": (model: string) => `已锁定到 ${model}。这个库的内容只与同一模型的向量可比。`,
+    "en-US": (model: string) => `Locked to ${model}. This library's vectors are only comparable within that model.`,
+  } satisfies MessageFn<[string]>,
+  vectorPlaceholder: { "zh-CN": "模型标识(留空 = 不锁定)", "en-US": "Model code (empty = do not lock)" },
+  vectorAria: { "zh-CN": "嵌入模型锁", "en-US": "Embedding model lock" },
+  vectorHint: {
+    "zh-CN": "换一个模型就是换一个向量空间:旧向量与新查询不可比,已入藏的内容要重新加工才回得到检索里。锁一个具体模型是例外,不是默认。",
+    "en-US": "Changing the model changes the vector space: old vectors cannot be compared with new queries, and committed content must be reprocessed before it is retrievable again. Locking is the exception, not the default.",
+  },
+  errVectorSave: { "zh-CN": "向量空间保存失败。", "en-US": "Could not save the vector space." },
+  okVectorLocked: {
+    "zh-CN": (model: string) => `已锁定到 ${model}。此后加工的内容进入这个向量空间;已入藏的要重新加工才跟上。`,
+    "en-US": (model: string) => `Locked to ${model}. Content processed from now on lands in that space; committed content must be reprocessed to follow.`,
+  } satisfies MessageFn<[string]>,
+  okVectorUnlocked: {
+    "zh-CN": "已解除锁定,恢复按授权自动路由。",
+    "en-US": "Lock removed; routing follows the grant again.",
+  },
+  errRetrievalSave: { "zh-CN": "召回通道保存失败。", "en-US": "Could not save the recall channels." },
+  okRetrievalSave: { "zh-CN": "召回通道已保存。", "en-US": "Recall channels saved." },
+  retrievalCardTitle: { "zh-CN": "召回通道", "en-US": "Recall channels" },
+  retrievalCardDesc: {
+    "zh-CN": "除向量之外,这个库还走哪几路召回。",
+    "en-US": "Which recall paths this library uses besides vectors.",
+  },
+  retrievalFulltext: { "zh-CN": "全文检索", "en-US": "Full-text search" },
+  retrievalFulltextHint: {
+    "zh-CN": "关掉之后,尚未向量化的内容完全召不回来。",
+    "en-US": "With this off, content that is not vectorised yet cannot be recalled at all.",
+  },
+  retrievalGraph: { "zh-CN": "图谱召回", "en-US": "Graph recall" },
+  retrievalGraphHint: {
+    "zh-CN": "按实体与关系扩展召回;这个库没有抽取出实体时开了也不起作用。",
+    "en-US": "Expands recall along entities and relations; a library with no extracted entities gains nothing from it.",
+  },
+
   okFolderDelete: {
     "zh-CN": (name: string) => `目录「${name}」已删除，其中的文档变为未归档。`,
     "en-US": (name: string) => `Folder "${name}" deleted; the documents in it are now unfiled.`,

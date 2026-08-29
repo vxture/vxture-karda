@@ -26,6 +26,9 @@ type PrismaKbRow = {
   exemptSyncedContent: boolean;
   defaultVerifier: string | null;
   defaultVerifyIntervalDays: number | null;
+  embeddingModel: string | null;
+  fulltextEnabled: boolean;
+  graphEnabled: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -43,6 +46,9 @@ function toRow(r: PrismaKbRow): KnowledgeBaseRow {
     governanceEnabled: r.governanceEnabled,
     exemptSyncedContent: r.exemptSyncedContent,
     defaultVerifier: r.defaultVerifier,
+    embeddingModel: r.embeddingModel,
+    fulltextEnabled: r.fulltextEnabled,
+    graphEnabled: r.graphEnabled,
     defaultVerifyIntervalDays: r.defaultVerifyIntervalDays,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,

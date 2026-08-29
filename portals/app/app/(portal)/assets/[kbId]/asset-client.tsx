@@ -13,6 +13,7 @@ import {
   listProcessingTemplates,
   listBindings,
   listConnectors,
+  getAssetSupply,
   createBinding,
   bindingAction,
   uploadDocument,
@@ -21,6 +22,8 @@ import {
   setSharing,
   setGovernance,
   setProcessingTemplate,
+  setEmbeddingModel,
+  setRetrievalChannels,
   setVerifierConfig,
   verifyDocument,
   createFolder,
@@ -42,6 +45,7 @@ import { type PublishState } from "../../../_lib/format";
 import { SignInGate } from "../../../_lib/ui";
 import { PageHead } from "../../../_shell/PageHead";
 import { DocumentPanel } from "./DocumentPanel";
+import { LifecycleStrip } from "./LifecycleStrip";
 import { SettingsPanel } from "./SettingsPanel";
 import { BindingPanel } from "./BindingPanel";
 import { useFormat, type Failure } from "../../../_i18n/useFormat";
@@ -63,6 +67,19 @@ import { assets } from "../../../_i18n/messages/assets";
 // Authorization stays server-side. Controls the caller may not be allowed to use
 // are still shown, because a refusal that states its reason is more useful than
 // a control that silently is not there.
+/**
+ * 「外部来源」tab 的计数。
+ *
+ * 只数活跃的会与面板内容对不上(面板还列着已撤销那一组),两个都数又会让人以为
+ * 有那么多在同步。所以:**活跃数是主,已撤销单独缀一句**——它们是两种东西,
+ * 一个数字表达不了。
+ */
+function bindingCount(bindings: Binding[], m: { bindRevokedSuffix: (n: number) => string }): string {
+  const live = bindings.filter((b) => b.state !== "revoked").length;
+  const revoked = bindings.length - live;
+  return revoked > 0 ? ` (${live}${m.bindRevokedSuffix(revoked)})` : ` (${live})`;
+}
+
 export function AssetClient() {
   const f = useFormat();
   const m = useMessages(assets);
@@ -83,6 +100,8 @@ export function AssetClient() {
   const [needsAuth, setNeedsAuth] = useState(false);
   const [error, setError] = useState<Failure | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** 供给侧(7 日引用、常读方)。`null` = 还没取到或这个库还没有流量——**不是 0**。 */
+  const [supply, setSupply] = useState<{ heat7d: number; topConsumers: string[] } | null>(null);
   const [busy, setBusy] = useState(false);
 
   const guard = useCallback((e: unknown, fallback: Message): void => {
@@ -127,6 +146,9 @@ export function AssetClient() {
       ),
       listBindings(kbId).then(setBindings, (e) => guard(e, assets.errLoadBindings)),
       listConnectors().then(setConnectors, (e) => guard(e, assets.errLoadConnectors)),
+      // 供给侧取不到不报错:这条线只是状态条上的一格,它缺席时那一格显示「—」,
+      // 而为它弹一条红 banner 会让人以为这个库出了问题。
+      getAssetSupply(kbId).then(setSupply, () => setSupply(null)),
     ]);
   }, [kbId, guard, loadDocs]);
 
@@ -183,14 +205,41 @@ export function AssetClient() {
       {error && <Banner tone="danger" title={f.failure(error) ?? ""} />}
       {notice && <Banner tone="success" title={notice} />}
 
+      {/* **加载中与加载失败不是同一件事**(owner 2026-08-29)。`getKb` 失败时 `kb`
+          也保持 null,于是页面同时显示一条红 banner 和「正在加载库…」,而且没有
+          任何重试入口——只能刷新。一个把失败画成「还在转」的空态,会让人一直等。
+          现在按 `error` 分开,并给失败那一支一个重试按钮。 */}
+      {/* 五条业务流在这个库上的交汇。放在 tab **之外**:它是「进来就该看到的」,
+          藏进任何一个 tab 都等于没有。 */}
+      {kb && docs && bindings && (
+        <LifecycleStrip kb={kb} docs={docs} parked={parked} bindings={bindings} supply={supply} />
+      )}
+
       {kb === null ? (
-        <EmptyState title={m.kbLoading} />
+        error ? (
+          <EmptyState
+            icon="warning"
+            title={m.kbLoadFailed}
+            description={m.kbLoadFailedHint}
+            action={
+              <Button variant="outline" onClick={() => void loadAll()}>
+                {c.retry}
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState title={m.kbLoading} />
+        )
       ) : (
         <Tabs defaultValue="documents" className="flex flex-col gap-md">
           <TabsList>
             <TabsTrigger value="documents">{m.tabDocuments}{docs ? ` (${docs.length})` : ""}</TabsTrigger>
             <TabsTrigger value="bindings">
-              {m.tabBindings}{bindings ? ` (${bindings.filter((b) => b.state !== "revoked").length})` : ""}
+              {/* 计数排除已撤销,而面板里仍然列着已撤销那一组——于是标签写着 (0),
+                  下面却有内容(owner 2026-08-29)。改成:有已撤销时把它单独写出来,
+                  而不是让两个数字互相拆台。 */}
+              {m.tabBindings}
+              {bindings ? bindingCount(bindings, m) : ""}
             </TabsTrigger>
             <TabsTrigger value="settings">{m.tabSettings}</TabsTrigger>
           </TabsList>
@@ -284,6 +333,18 @@ export function AssetClient() {
                 run(assets.errTemplate, async () => {
                   setKb(await setProcessingTemplate(kbId, templateId));
                   return m.okTemplate;
+                })
+              }
+              onEmbedding={(model) =>
+                run(assets.errVectorSave, async () => {
+                  setKb(await setEmbeddingModel(kbId, model));
+                  return model ? m.okVectorLocked(model) : m.okVectorUnlocked;
+                })
+              }
+              onRetrieval={(patch) =>
+                run(assets.errRetrievalSave, async () => {
+                  setKb(await setRetrievalChannels(kbId, patch));
+                  return m.okRetrievalSave;
                 })
               }
               onGovernance={(enabled) =>
