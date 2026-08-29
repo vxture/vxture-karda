@@ -113,6 +113,7 @@ export class KbService {
       "processingTemplateId",
       "governanceEnabled",
       "exemptSyncedContent",
+      "sourceMode",
       "defaultVerifier",
       "defaultVerifyIntervalDays",
       "embeddingModel",

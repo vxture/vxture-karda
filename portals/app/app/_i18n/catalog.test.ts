@@ -29,6 +29,10 @@ const PROBES: Record<string, unknown[]> = {
   "assets.vectorLocked": ["bge-m3"],
   "assets.okVectorLocked": ["bge-m3"],
   "assets.bindRevokedSuffix": [2],
+  "assets.settingsTitle": ["Bid library"],
+  "assets.modeSwitchWarn": [2],
+  "assets.okModeSwitch": ["Synced"],
+
   "assets.restAssets": [8],
   "assets.cardEntries": [247],
   "assets.cardDocs": [12],
@@ -229,8 +233,8 @@ test("the Chinese half of a product string is not left in English", () => {
  * that exists to prevent one.
  */
 const SAME_ON_PURPOSE: Record<string, string> = {
-  "shell.settings == assets.tabSettings":
-    "the system settings entry in the 顶栏 vs an asset's own settings tab - different things that share a word",
+  "shell.settings == assets.settingsLabel":
+    "the system settings entry in the 顶栏 vs one library's own settings page - different things that share a word",
   "shell.densityDefault == shell.sizeDefault":
     "two preference axes; a language that distinguishes them would translate them differently",
   "shell.pipeFailed == states.contentFailed":

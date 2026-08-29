@@ -100,6 +100,8 @@ export interface FormatHelpers {
   failure(err: Failure | null): string | null;
   /** null when the state has nothing to add beyond its badge. */
   processingHint(state: string): string | null;
+  /** 「谁把它放进来的」。未知值原样返回,和 `content()` 同一条规矩。 */
+  docSource(source: string): string;
   interval(days: number | null | undefined): string;
   when(iso: string | null | undefined): string;
 }
@@ -116,6 +118,11 @@ export function useFormat(): FormatHelpers {
       failed: m.contentFailed,
       archived: m.contentArchived,
       deleted: m.contentDeleted,
+    };
+    const sourceLabel: Record<string, string> = {
+      upload: m.docSourceUpload,
+      api: m.docSourceApi,
+      connector: m.docSourceConnector,
     };
     const verifLabel: Record<string, string> = {
       unverified: m.verifUnverified,
@@ -146,6 +153,9 @@ export function useFormat(): FormatHelpers {
       },
       verification(state) {
         return { label: verifLabel[state] ?? state, tone: VERIFICATION_TONE[state as VerificationState] ?? "muted" };
+      },
+      docSource(source) {
+        return sourceLabel[source] ?? source;
       },
       sharing(state) {
         const pair = shareLabel[state];

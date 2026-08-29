@@ -221,6 +221,9 @@ model KnowledgeBase {
   defaultVerifier           String?   @map("default_verifier") @db.VarChar(128)
   defaultVerifyIntervalDays Int?      @map("default_verify_interval_days")
   exemptSyncedContent       Boolean   @default(true) @map("exempt_synced_content")
+  /// 这个库的真相住在哪:`owned` 自主掌握 / `synced` 外部采集。
+  /// 是默认不是约束——采集库仍可手工补充,补充的内容照常纳入治理(它的真相在这里)。
+  sourceMode          String    @default("owned") @map("source_mode") @db.VarChar(16)
   deletedAt                 DateTime? @map("deleted_at") @db.Timestamptz()
   createdAt                 DateTime  @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt                 DateTime  @default(now()) @map("updated_at") @db.Timestamptz()

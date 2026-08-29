@@ -20,6 +20,9 @@ export class ApiError extends Error {
   }
 }
 
+/** 与 `kb/lib/store.ts` 的 `SOURCE_MODES` 同一个值域;这里是它的客户端一侧。 */
+export type SourceMode = "owned" | "synced";
+
 export interface Kb {
   id: string;
   workspaceId: string;
@@ -31,6 +34,8 @@ export interface Kb {
   processingTemplateId: string | null;
   governanceEnabled: boolean;
   exemptSyncedContent: boolean;
+  /** 真相住在哪:`owned` 自主掌握 / `synced` 外部采集。默认,不是约束。 */
+  sourceMode: SourceMode;
   defaultVerifier: string | null;
   defaultVerifyIntervalDays: number | null;
   /** 向量空间锁(KD-107)。null = 不锁,按授权路由(KD-018)。 */
@@ -308,6 +313,21 @@ export async function setEmbeddingModel(kbId: string, embeddingModel: string | n
     method: "PATCH",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ embeddingModel }),
+  });
+  return need(body, "knowledgeBase", `/api/kb/${kbId}`);
+}
+
+/**
+ * 改这个库的来源模式。
+ *
+ * 改模式**不搬内容**:采集库转自建之后,已同步进来的文档还在,只是从此没有人再替
+ * 它们更新——所以调用点要把这句话说清楚,而不是让人以为按一下就断了源。
+ */
+export async function setSourceMode(kbId: string, sourceMode: SourceMode): Promise<Kb> {
+  const body = await req<{ knowledgeBase: Kb }>(`/api/kb/${kbId}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ sourceMode }),
   });
   return need(body, "knowledgeBase", `/api/kb/${kbId}`);
 }

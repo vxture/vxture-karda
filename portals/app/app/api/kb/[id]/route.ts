@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { KbService } from "../../../kb/lib/service";
-import { getKbStore } from "../../../kb/lib/store";
+import { getKbStore, isSourceMode } from "../../../kb/lib/store";
 import { requireAuth, errorJson, readJson } from "../../../kb/api/http";
 import type { KnowledgeBaseRow } from "../../../kb/lib/store";
 import type { AuthUser } from "../../../auth/lib/claims";
@@ -54,6 +54,9 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       typeof body.governanceEnabled === "boolean" ? body.governanceEnabled : undefined,
     exemptSyncedContent:
       typeof body.exemptSyncedContent === "boolean" ? body.exemptSyncedContent : undefined,
+    // 值域在**边界上**收口,不靠 DB 的 CHECK 兜底:CHECK 违例会从驱动里冒出来变成
+    // 500,而这是一个客户端送错值的 400 场景 —— 这里直接不认,当没送。
+    sourceMode: isSourceMode(body.sourceMode) ? body.sourceMode : undefined,
     // Verifier assignment (Track 12): a user sub or null to clear; interval in
     // days or null for verify-once. Anything else is left untouched.
     defaultVerifier:

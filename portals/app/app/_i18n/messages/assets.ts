@@ -108,9 +108,64 @@ export const assets = {
     "zh-CN": (n: number) => `${n} 失败`,
     "en-US": (n: number) => `${n} failed`,
   } satisfies MessageFn<[number]>,
+  /** 设置页的返回:回到这个库,不是回到资产列表——返回要回到**上一层**。 */
+  backToLibrary: { "zh-CN": "返回本库", "en-US": "Back to the library" },
+  settingsTitle: {
+    "zh-CN": (name: string) => `${name} · 设置`,
+    "en-US": (name: string) => `${name} - settings`,
+  } satisfies MessageFn<[string]>,
+  settingsDesc: {
+    "zh-CN": "按内容的一生排:入库 → 加工 → 检索 → 治理 → 共享。",
+    "en-US": "Ordered the way content lives: ingest, process, retrieve, govern, share.",
+  },
+
+  // --- 来源模式 ----------------------------------------------------------------
+  //
+  // 一个库的**真相住在哪**。这不是一个开关的名字,是这一页的形状:自建库根本没有
+  // 「外部来源」这一格,采集库则以来源与同步状态为主角。
+  modeCardTitle: { "zh-CN": "来源模式", "en-US": "Source mode" },
+  modeOwned: { "zh-CN": "自建", "en-US": "Self-owned" },
+  modeSynced: { "zh-CN": "采集", "en-US": "Synced" },
+  modeOwnedDesc: {
+    "zh-CN": "内容由你放进来(上传 / API 写入),真相就在这里,全部纳入治理。",
+    "en-US": "You put the content here (upload or API). The truth is here, and all of it is governed.",
+  },
+  modeSyncedDesc: {
+    "zh-CN": "内容从外部来源同步进来,真相在源头,默认豁免本地复验。",
+    "en-US": "Content is synced from an external source. The truth is upstream, so local re-verification is exempt by default.",
+  },
+  /** 「默认不是约束」这一句必须写在选择器旁边,否则采集库里那份手工文件看起来像违规。 */
+  modeHint: {
+    "zh-CN": "这是默认,不是限制:采集库仍可手工补充,补进来的那份照常纳入治理。",
+    "en-US": "A default, not a restriction: you can still add files by hand to a synced library - those are governed normally.",
+  },
+  /** 切模式**不搬内容**。人最怕的是「按一下东西就没了」,先把这句说掉。 */
+  modeSwitchHint: {
+    "zh-CN": "切换模式不会动已有内容,只改变这一页的默认与形状。",
+    "en-US": "Switching does not move any content - it changes this page's defaults and shape.",
+  },
+  /** 采集 -> 自建,而外部来源还连着:这是唯一一个切换会留下矛盾的方向。 */
+  modeSwitchWarn: {
+    "zh-CN": (n: number) => `这个库还有 ${n} 个在用的外部来源。转为自建后它们仍会同步,请先撤销。`,
+    "en-US": (n: number) =>
+      `${n} external source${n === 1 ? " is" : "s are"} still live. They keep syncing after the switch - revoke them first.`,
+  } satisfies MessageFn<[number]>,
+  okModeSwitch: {
+    "zh-CN": (mode: string) => `来源模式已改为「${mode}」。`,
+    "en-US": (mode: string) => `Source mode is now "${mode}".`,
+  } satisfies MessageFn<[string]>,
+  errModeSwitch: { "zh-CN": "来源模式保存失败。", "en-US": "Could not save the source mode." },
+  /** 采集库里的手工文件。它不是错误,但它和周围那些同步来的不是一回事。 */
+  docLocalAdd: { "zh-CN": "本地补充", "en-US": "Added locally" },
+  docLocalAddHint: {
+    "zh-CN": "手工放进这个采集库的内容:源头不会更新它,治理照常适用。",
+    "en-US": "Added by hand to a synced library: upstream will not update it, and governance applies as normal.",
+  },
+
   tabDocuments: { "zh-CN": "文档", "en-US": "Documents" },
   tabBindings: { "zh-CN": "外部来源", "en-US": "External sources" },
-  tabSettings: { "zh-CN": "设置", "en-US": "Settings" },
+  /** 不再是一个 tab 的名字：设置已经是自己的一页（子路由），这个键既做入口按钮也做那一页的名字。 */
+  settingsLabel: { "zh-CN": "设置", "en-US": "Settings" },
 
   // --- asset detail: mutation outcomes ---------------------------------------
   // Quoting is a per-language convention, which is exactly why these are
@@ -195,6 +250,9 @@ export const assets = {
   // 每一段只说这个库在那条线上的位置,不重做那个域的事。
   lifeIngest: { "zh-CN": "入库", "en-US": "Ingested" },
   lifeIngestUploadOnly: { "zh-CN": "上传与 API 写入", "en-US": "Uploads and API writes" },
+  /** 采集库但一个来源都还没接。写「上传与 API 写入」会把一个**声明过真相在源头**
+   *  的库描述成自持库，而它真正缺的是一次绑定。 */
+  lifeIngestSyncedNone: { "zh-CN": "采集库，尚未接入来源", "en-US": "A synced library with no source connected yet" },
   lifeIngestBindings: {
     "zh-CN": (n: number) => `含 ${n} 个外部来源`,
     "en-US": (n: number) => `incl. ${n} external source${n === 1 ? "" : "s"}`,

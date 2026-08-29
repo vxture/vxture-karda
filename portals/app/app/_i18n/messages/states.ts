@@ -18,6 +18,15 @@ export const states = {
   shareOrg: { "zh-CN": "组织", "en-US": "Organization" },
   shareOrgHelp: { "zh-CN": "组织内所有人可读。", "en-US": "Everyone in the organization can read it." },
 
+  // --- 文档来源 ---------------------------------------------------------------
+  //
+  // 文档行上原先直接印着 `doc.source` —— 「upload」「api」「connector」。那是机器值,
+  // 印在人要读的一行里,在中文界面上尤其突兀。三个词各自说的是**谁把它放进来的**,
+  // 而这决定了后面一连串:能不能删、治理管不管、断源之后它还在不在。
+  docSourceUpload: { "zh-CN": "手工上传", "en-US": "Uploaded" },
+  docSourceApi: { "zh-CN": "API 写入", "en-US": "Via API" },
+  docSourceConnector: { "zh-CN": "外部同步", "en-US": "Synced" },
+
   // --- content state ---------------------------------------------------------
   contentDraft: { "zh-CN": "草稿", "en-US": "Draft" },
   contentProcessing: { "zh-CN": "加工中", "en-US": "Processing" },

@@ -244,6 +244,21 @@ CREATE TABLE IF NOT EXISTS karda_kb.knowledge_base (
   default_verifier              VARCHAR(128),
   default_verify_interval_days  INTEGER,
   exempt_synced_content         BOOLEAN NOT NULL DEFAULT true,
+  -- 这个库的**真相住在哪**(owner 2026-08-30):
+  --   owned   自主掌握——上传 / API 写入,真相在这里
+  --   synced  外部采集——真相在源头
+  --
+  -- 治理规则(kb/lib/state.ts)本来就写着「同步内容的真相在源头,本地复验是演戏」,
+  -- 也就是说产品**早就知道**这是两种真相模型;缺的只是一个让**库**说出自己是哪一种
+  -- 的地方。此前答案靠逐条 `document.source` 推断——于是「这个库可不可信」没有一个
+  -- 答案,只有 N 个。治理、删除(I4)、对账三条规则各自独立地记着这条区分,而一条
+  -- 要在三处被记住的规则,迟早在其中一处被忘掉。
+  --
+  -- 它是**默认而不是约束**:采集库仍可手工补充(「规章库 + 几份自己写的解读」是真
+  -- 场景),补充的内容因为 `synced=false` 而照常纳入治理——那是对的,它的真相在这里。
+  source_mode                   VARCHAR(16) NOT NULL DEFAULT 'owned'
+                                  CONSTRAINT chk_kb_source_mode
+                                  CHECK (source_mode IN ('owned', 'synced')),
   deleted_at                    TIMESTAMPTZ,
   created_at                    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at                    TIMESTAMPTZ NOT NULL DEFAULT now(),

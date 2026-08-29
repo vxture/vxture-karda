@@ -7,6 +7,28 @@ import { PrismaKbStore } from "./prisma-store";
 import type { OwnerType, PublishState } from "./ownership";
 import type { MetadataFieldDecl } from "./metadata";
 
+/**
+ * 一个库的**真相住在哪**(owner 2026-08-30)。
+ *
+ *   owned   自主掌握 —— 上传 / API 写入,真相在这里
+ *   synced  外部采集 —— 真相在源头
+ *
+ * 这条区分产品**早就在用**:`governanceApplies` 写着「同步内容的真相在源头,本地
+ * 复验是演戏」;删除的级联只覆盖某个绑定同步进来的内容(I4);对账扫描不能碰手工上
+ * 传的文件。三条规则各自独立地记着同一件事,而库自己没有地方把它说出来 —— 答案只
+ * 能逐条从 `document.source` 推,于是「这个库可不可信」没有一个答案,只有 N 个。
+ *
+ * 它是**默认,不是约束**(owner 选 B):模式决定页面长什么样、默认怎么给,但不禁止
+ * 往采集库里手工补一份。补进来的那份因为 `synced=false` 照常纳入治理 —— 那是对的,
+ * 它的真相确实在这里。
+ */
+export const SOURCE_MODES = ["owned", "synced"] as const;
+export type SourceMode = (typeof SOURCE_MODES)[number];
+
+export function isSourceMode(v: unknown): v is SourceMode {
+  return typeof v === "string" && (SOURCE_MODES as readonly string[]).includes(v);
+}
+
 export interface KnowledgeBaseRow {
   id: string;
   workspaceId: string;
@@ -18,6 +40,8 @@ export interface KnowledgeBaseRow {
   processingTemplateId: string | null;
   governanceEnabled: boolean;
   exemptSyncedContent: boolean;
+  /** 见 `SOURCE_MODES`。默认 `owned`:没有绑定过外部源的库,真相只可能在这里。 */
+  sourceMode: SourceMode;
   /** The default verifier (a user sub) for content in this library (KD-016). */
   defaultVerifier: string | null;
   /** Re-verification interval in days; null = verify once, never expires. */
@@ -46,6 +70,8 @@ export interface CreateKbInput {
   name: string;
   description?: string | null;
   processingTemplateId?: string | null;
+  /** 建库时就要选,因为它决定这个库的页面长什么样。省略 = `owned`。 */
+  sourceMode?: SourceMode;
 }
 
 /** The columns a caller may change. Deliberately a subset - ownership and
@@ -58,6 +84,8 @@ export interface UpdateKbInput {
   processingTemplateId?: string | null;
   governanceEnabled?: boolean;
   exemptSyncedContent?: boolean;
+  /** 可改:一个自建库后来接上了外部源,或者一个采集库断了源之后转为自持。 */
+  sourceMode?: SourceMode;
   defaultVerifier?: string | null;
   defaultVerifyIntervalDays?: number | null;
   /** 见 `KnowledgeBaseRow.embeddingModel`。列授权里本就允许改,缺的只是出口。 */
@@ -114,6 +142,7 @@ export class InMemoryKbStore implements KbStore {
       publishState: "private" as PublishState,
       processingTemplateId: input.processingTemplateId ?? null,
       governanceEnabled: false,
+      sourceMode: input.sourceMode ?? ("owned" as SourceMode),
       // 与 DDL 的列默认一致:不锁模型(按授权路由,KD-018),全文开、图谱关。
       embeddingModel: null as string | null,
       fulltextEnabled: true,

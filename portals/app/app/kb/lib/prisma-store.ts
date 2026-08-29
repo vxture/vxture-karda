@@ -3,6 +3,7 @@ import type {
   CreateKbInput,
   UpdateKbInput,
   KnowledgeBaseRow,
+  SourceMode,
 } from "./store";
 import type { MetadataFieldDecl } from "./metadata";
 import type { OwnerType, PublishState } from "./ownership";
@@ -24,6 +25,7 @@ type PrismaKbRow = {
   processingTemplateId: string | null;
   governanceEnabled: boolean;
   exemptSyncedContent: boolean;
+  sourceMode: string;
   defaultVerifier: string | null;
   defaultVerifyIntervalDays: number | null;
   embeddingModel: string | null;
@@ -45,6 +47,7 @@ function toRow(r: PrismaKbRow): KnowledgeBaseRow {
     processingTemplateId: r.processingTemplateId,
     governanceEnabled: r.governanceEnabled,
     exemptSyncedContent: r.exemptSyncedContent,
+    sourceMode: r.sourceMode as SourceMode,
     defaultVerifier: r.defaultVerifier,
     embeddingModel: r.embeddingModel,
     fulltextEnabled: r.fulltextEnabled,
@@ -66,6 +69,7 @@ export class PrismaKbStore implements KbStore {
         name: input.name,
         description: input.description ?? null,
         processingTemplateId: input.processingTemplateId ?? null,
+        ...(input.sourceMode ? { sourceMode: input.sourceMode } : {}),
       },
     });
     return toRow(r);
