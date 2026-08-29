@@ -101,7 +101,6 @@ export function DocumentPanel({
   /** 已经展开到第几批。任何一次筛选/搜索/排序变化都把它收回第一批——展开是对
    *  **当前这份清单**的操作,换了清单还留着「已展开 200 行」是无意义的继承。 */
   const [page, setPage] = useState(1);
-  const [target, setTarget] = useState<string>("");
   const [preview, setPreview] = useState<Doc | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -140,6 +139,16 @@ export function DocumentPanel({
     return sorted;
   }, [docs, filter, query, sort]);
 
+  // 上传落到**当前筛选的那个目录**,而不是一个独立的「上传至」下拉。
+  //
+  // 那个下拉和目录芯片说的是同一件事——「哪个目录」——于是同一个问题在一行里被问了
+  // 两遍,还能被答成两个不同的答案(筛在「投标 2026」,却传进了「未归档」)。芯片
+  // 已经说明了此刻在看哪个目录,按钮只要说清它会落在哪儿就够了。
+  //
+  // 「全部」和「未归档」都落到未归档:前者不是一个目录,没有「传到全部」这回事。
+  const uploadTarget = filter === "" || filter === UNFILED ? null : filter;
+  const uploadFolderName = folders.find((f) => f.id === uploadTarget)?.name ?? null;
+
   const failed = (shown ?? []).filter((d) => d.contentState === "failed");
   const restAll = (shown ?? []).filter((d) => d.contentState !== "failed");
   // 失败组**不参与分批**:它是这一页上唯一等着人动手的东西,把它折进「显示更多」
@@ -166,57 +175,13 @@ export function DocumentPanel({
       {hasLocalAdditions && (
         <p className="text-body-sm text-muted-foreground">{m.docLocalAddHint}</p>
       )}
-      <Card>
-        <CardContent className="flex flex-wrap items-center gap-md py-md">
-          <label className="flex items-center gap-sm text-body-md">
-            <span className="text-muted-foreground">{m.uploadTo}</span>
-            <NativeSelect
-              value={target}
-              onChange={(e) => setTarget(e.target.value)}
-              aria-label={m.uploadTargetAria}
-              // Width goes on the WRAPPER, not the select: DS anchors the arrow
-              // to the wrapper's right edge, so narrowing only the select
-              // strands the arrow at the far right.
-              wrapperClassName="w-[10rem]"
-              disabled={busy}
-            >
-              <option value="">{m.docUnfiled}</option>
-              {folders.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name}
-                </option>
-              ))}
-            </NativeSelect>
-          </label>
+      {/* **一行,不是两块**(owner 2026-08-30)。
+          此前这里是上下两条:一个带边框、带内衬的上传卡片(里面只有一个下拉、一个
+          按钮,和一句贴在最右边、中间空出七百像素的说明),下面才是目录芯片与搜索。
+          两条全宽的横条加起来一百多像素,把真正的内容——文档清单——推到了折线以下。
 
-          <input
-            ref={fileRef}
-            type="file"
-            className="hidden"
-            aria-label={m.uploadPickAria}
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              // Reset BEFORE awaiting: re-picking the SAME file is the normal
-              // gesture after a failed upload, and an input still holding that
-              // file fires no change event the second time.
-              if (fileRef.current) fileRef.current.value = "";
-              if (file) await onUpload(file, target || null);
-            }}
-          />
-          <Button variant="default" disabled={busy} onClick={() => fileRef.current?.click()}>
-            <Icon name="upload" />
-            {m.uploadButton}
-          </Button>
-
-          <span className="ml-auto text-body-sm text-muted-foreground">
-            {m.uploadHint}
-          </span>
-        </CardContent>
-      </Card>
-
-      {/* 目录芯片、搜索、排序在同一行:它们是同一件事的三个把手——「让这份清单只剩
-          我要看的那些」。分成两行会让人以为搜索是对目录筛选之后的结果再筛一次,而
-          那恰好是真的,但读起来像两套。 */}
+          它们本来就是同一件事的四个把手:**看哪个目录、找哪一份、怎么排、放一份进去**。
+          归成一行之后,上传按钮还顺带说清了它会落在哪个目录。 */}
       <div className="flex flex-wrap items-center gap-sm">
         {filterItems.length > 1 && (
           <SegmentedControl items={filterItems} value={filter} onChange={(v) => { setFilter(v); setPage(1); }} size="sm" ariaLabel={m.docFilterAria} />
@@ -245,6 +210,27 @@ export function DocumentPanel({
             <option value="oldest">{m.docSortOldest}</option>
             <option value="title">{m.docSortTitle}</option>
           </NativeSelect>
+
+          <input
+            ref={fileRef}
+            type="file"
+            className="hidden"
+            aria-label={m.uploadPickAria}
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              // Reset BEFORE awaiting: re-picking the SAME file is the normal
+              // gesture after a failed upload, and an input still holding that
+              // file fires no change event the second time.
+              if (fileRef.current) fileRef.current.value = "";
+              if (file) await onUpload(file, uploadTarget);
+            }}
+          />
+          {/* 按钮自己说它会落在哪儿。在「全部」或「未归档」下它只是「上传文档」——
+              那时没有第二种可能,写出来是废话。 */}
+          <Button variant="default" disabled={busy} onClick={() => fileRef.current?.click()}>
+            <Icon name="upload" />
+            {uploadFolderName ? m.uploadToFolder(uploadFolderName) : m.uploadButton}
+          </Button>
         </div>
       </div>
 
@@ -377,20 +363,35 @@ function DocumentRow({
   const readable = previewKind(doc.mime) !== "none";
   const localAddition = kb.sourceMode === "synced" && doc.source !== "connector";
   const record = verificationRecord(doc.verificationState, doc.verifiedAt, doc.expiresAt, new Date());
+  const meta = `${f.when(doc.createdAt)} · ${formatBytes(doc.sizeBytes)} · ${f.docSource(doc.source)}`;
 
+  // 一行文档,四列:**标题 | 属性 | 状态 | 操作**(owner 2026-08-30)。
+  //
+  // 此前是一个 `justify-between`:左边一坨字,右边一堆按钮,中间七百像素空白。那不是
+  // 留白,是**没想清楚中间该放什么**——而中间本来就有东西可放:时间、大小、来源此前
+  // 挤在标题下面当第二行,把每一行撑成两行高。挪进中间那一列之后,行高减半,空白被
+  // 信息占满,而且因为**每一列都是定宽**,九十行看下来徽章和按钮是对齐的——此前它们
+  // 跟着标题长短左右晃(有「重新加工」的行和没有的行,按钮起点差一截)。
+  //
+  // 窄面板(内容区被侧栏挤窄时)退回两行:属性列让位,回到标题下面那一行。同一段
+  // 文字写两处、各自按容器宽度显隐,是因为 CSS 搬不动 DOM 里的位置。
   return (
     <div className="flex flex-col gap-xs border-t border-border/60 py-sm first:border-t-0">
-      <div className="flex items-center justify-between gap-md">
-        <div className="min-w-0">
+      <div className="flex items-center gap-md">
+        <div className="min-w-0 flex-1">
           <div className="truncate text-body-md font-medium">{doc.title}</div>
-          {/* `doc.source` 原来是**原样印出来的机器值**——「upload」「api」「connector」,
-              印在中文界面上一行人要读的字里。它说的是「谁把它放进来的」,而这决定了
-              断源之后它还在不在、治理管不管它。 */}
-          <div className="text-body-sm text-muted-foreground">
-            {f.when(doc.createdAt)} · {formatBytes(doc.sizeBytes)} · {f.docSource(doc.source)}
-          </div>
+          {/* 窄的时候才出现在这里。 */}
+          <div className="text-body-sm text-muted-foreground @min-[56rem]:hidden">{meta}</div>
         </div>
-        <div className="flex shrink-0 items-center gap-sm">
+
+        {/* `doc.source` 原来是**原样印出来的机器值**——「upload」「api」「connector」,
+            印在中文界面上一行人要读的字里。它说的是「谁把它放进来的」,而这决定了
+            断源之后它还在不在、治理管不管它。 */}
+        <div className="hidden w-[17rem] shrink-0 truncate text-body-sm tabular-nums text-muted-foreground @min-[56rem]:block">
+          {meta}
+        </div>
+
+        <div className="flex w-[13rem] shrink-0 flex-wrap items-center justify-end gap-xs">
           {/* 采集库里手工放进来的那一份。它不是错误,但它和周围那些同步来的不是
               一回事:源头不会更新它,而治理**照常**适用(`governanceApplies` 按
               每份文档的 `synced` 判断)。不标出来,它看起来就只是一份普通文档,
@@ -400,7 +401,9 @@ function DocumentRow({
           )}
           {gov && <ToneBadge tone={vr.tone}>{vr.label}</ToneBadge>}
           <ToneBadge tone={cs.tone}>{cs.label}</ToneBadge>
+        </div>
 
+        <div className="flex shrink-0 items-center gap-xs">
           {/* Preview is offered only for what we will actually render. For
               everything else the honest control is a download - a "预览" button
               that turns into a download is a broken promise, not a fallback. */}
