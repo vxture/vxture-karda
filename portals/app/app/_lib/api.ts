@@ -188,6 +188,30 @@ export async function getAssetSupply(kbId: string): Promise<{ heat7d: number; to
   return hit ? { heat7d: hit.heat7d, topConsumers: hit.topConsumers } : null;
 }
 
+/** 卡尔达在这个库上的产出。字段含义见 `kb/assertions/library-read.ts`。 */
+export interface LibraryKarda {
+  assertions: number;
+  unverified: number;
+  verified: number;
+  stale: number;
+  superseded: number;
+  entities: number;
+  /** null = 这个库还没被抽取过,**不是 0 条**。 */
+  lastExtractedAt: string | null;
+}
+
+/**
+ * 卡尔达在这个库上抽出了什么。
+ *
+ * 这一条**开了自己的库级端点**,与 `getAssetSupply` 蹭 `/api/overview` 的做法相反,
+ * 因为没有一个现成端点在算这几个数:总览那份「卡尔达产出」是演示数据(`kb/demo`),
+ * 拿它填一个真库的详情页,等于把编的数字印在人要据以判断的位置上。
+ */
+export async function getLibraryKarda(kbId: string): Promise<LibraryKarda> {
+  const body = await req<{ karda: LibraryKarda }>(`/api/kb/${kbId}/karda`);
+  return need(body, "karda", `/api/kb/${kbId}/karda`);
+}
+
 // --- documents ----------------------------------------------------------------
 
 /** 按 `document_id` 索引的驻留原因。空对象 = 没有任何文档卡住。 */

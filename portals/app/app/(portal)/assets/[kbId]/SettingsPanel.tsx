@@ -366,6 +366,27 @@ function ProcessingCard({
   );
 }
 
+/** 字段类型的说法。值域在 `kb/lib/metadata.ts`,这里只负责它的语言;认不出来的值
+ *  原样返回——和状态标签同一条规矩,一个客户端没见过的值是部署错位的信号,原样
+ *  印出来才看得见。 */
+function typeLabel(
+  t: MetadataField["valueType"],
+  m: {
+    fieldTypeString: string;
+    fieldTypeNumber: string;
+    fieldTypeDatetime: string;
+    fieldTypeEnum: string;
+  },
+): string {
+  const map: Record<string, string> = {
+    string: m.fieldTypeString,
+    number: m.fieldTypeNumber,
+    datetime: m.fieldTypeDatetime,
+    enum: m.fieldTypeEnum,
+  };
+  return map[t] ?? t;
+}
+
 /** The filterable whitelist. Its whole reason for existing is that a filterable
  *  field is an INDEX someone pays for, so fields are stored by default and
  *  become filterable only when declared - which is why this card leads with the
@@ -444,7 +465,7 @@ function FilterFieldsCard({
             {draft.map((f, i) => (
               <div key={f.fieldName} className="flex items-center gap-md border-t border-border/60 py-sm first:border-t-0">
                 <span className="w-[14rem] truncate font-mono text-code-sm">{f.fieldName}</span>
-                <span className="w-[6rem] text-body-sm text-muted-foreground">{f.valueType}</span>
+                <span className="w-[6rem] text-body-sm text-muted-foreground">{typeLabel(f.valueType, m)}</span>
                 <label className="flex items-center gap-xs text-body-sm">
                   <Checkbox
                     checked={f.filterable}
@@ -492,10 +513,10 @@ function FilterFieldsCard({
             wrapperClassName="w-[8rem]"
             disabled={busy}
           >
-            <option value="string">string</option>
-            <option value="number">number</option>
-            <option value="datetime">datetime</option>
-            <option value="enum">enum</option>
+            <option value="string">{m.fieldTypeString}</option>
+            <option value="number">{m.fieldTypeNumber}</option>
+            <option value="datetime">{m.fieldTypeDatetime}</option>
+            <option value="enum">{m.fieldTypeEnum}</option>
           </NativeSelect>
           <Button disabled={busy || !name || !nameValid || duplicate} onClick={add}>
             <Icon name="plus" />
