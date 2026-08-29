@@ -29,6 +29,18 @@ export const common = {
   expand: { "zh-CN": "展开", "en-US": "Expand" },
   collapse: { "zh-CN": "收起", "en-US": "Collapse" },
 
+  // --- 翻页 ---------------------------------------------------------------
+  //
+  // DS 的 `Pagination` 自带默认文案,但那套默认是**它的语言**不是产品的:真库上
+  // 一看,翻页按钮印着 "Previous page / Next page",夹在一整屏中文里(owner 2026-08-30
+  // 那次改版当场看见)。件留了口子,产品就该把口子填上——双语产品的每一句都得能换。
+  pagerPrev: { "zh-CN": "上一页", "en-US": "Previous" },
+  pagerNext: { "zh-CN": "下一页", "en-US": "Next" },
+  pagerSizeLabel: { "zh-CN": "每页条数", "en-US": "Rows per page" },
+  /** 模板而不是拼串:中文是「每页 25 条」,英文是「25 per page」,语序不同——
+   *  件替调用方拼就等于替它定了语序(DS 自己在 `pageSizeOptionTemplate` 上写了同一条)。 */
+  pagerSizeTemplate: { "zh-CN": "每页 {size} 条", "en-US": "{size} per page" },
+
   // --- states ----------------------------------------------------------------
   loading: { "zh-CN": "载入中…", "en-US": "Loading…" },
   running: { "zh-CN": "执行中…", "en-US": "Running…" },
