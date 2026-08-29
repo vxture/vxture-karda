@@ -6,12 +6,14 @@ import Link from "next/link";
 import {
   Banner,
   Button,
-  Card,
-  CardContent,
+  DataTable,
   EmptyState,
-  Icon,
+  FilterBar,
+  Pagination,
   SegmentedControl,
   StatusBadge,
+  useListPagination,
+  type DataTableColumn,
 } from "@vxture/design-system";
 import {
   readGovernanceQueue,
@@ -30,6 +32,7 @@ import { evaluation } from "../../../_i18n/messages/evaluation";
 import { useMessages } from "../../../_i18n/useMessages";
 import { shell } from "../../../_i18n/messages/shell";
 import { common } from "../../../_i18n/messages/common";
+import { assets } from "../../../_i18n/messages/assets";
 import type { Message } from "../../../_i18n/catalog";
 
 // 待复验队列 - batch 11's spine.
@@ -43,14 +46,23 @@ import type { Message } from "../../../_i18n/catalog";
 // queue immediately rather than re-rendering it with a green badge, because the
 // queue is work remaining - an item that stays visible after being handled makes
 // "am I finished" unanswerable, which is the single thing a queue must answer.
+//
+// 这是一张表,所以它用 DS 的表(KD-221,与文档清单同一次收编):此前是手工 flex 摆的
+// 行——没有表头、没有分页,「确认」按钮的起点跟着标题长短左右晃。**「确认」是一列,
+// 不进 ⋮ 菜单**:它是这一页最高频的动作,rowActions 那个 64px 图标位是给低频动作
+// 组准备的,把主动作藏进菜单等于给每次确认多收一次点击。
 
 type Filter = "all" | "stale" | "unverified";
+
+const PAGE_SIZE = 25;
+const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 
 export function QueueClient() {
   const f = useFormat();
   const m = useMessages(evaluation);
   const sh = useMessages(shell);
   const c = useMessages(common);
+  const a = useMessages(assets);
   const params = useSearchParams();
   const kbId = params.get("kb") ?? undefined;
 
@@ -152,10 +164,99 @@ export function QueueClient() {
     return { stale: Math.max(0, stale), unverified: Math.max(0, unverified) };
   }, [data, done]);
 
+  const rows = visible ?? [];
+  const pager = useListPagination(rows, PAGE_SIZE);
+  const { resetPage } = pager;
+  useEffect(() => {
+    resetPage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- resetPage 每次渲染都是新函数,挂进依赖会每帧重置
+  }, [filter]);
+
   if (needsAuth) return <SignInGate href={loginHref("/evaluation/queue")} />;
 
   const remaining = counts.stale + counts.unverified;
   const scopeName = data?.items[0]?.kbName;
+
+  const columns: DataTableColumn<QueueItem>[] = [
+    {
+      id: "item",
+      header: m.colItem,
+      cell: (item) => (
+        <div className="min-w-0">
+          <div className="truncate text-body-md font-medium">
+            {item.title ?? <span className="text-muted-foreground">{m.untitledEntry}</span>}
+          </div>
+          <div className="flex flex-wrap items-center gap-xs text-body-sm text-muted-foreground">
+            <Link href={`/assets/${item.kbId}`} className="underline-offset-2 hover:underline">
+              {item.kbName}
+            </Link>
+            <span>·</span>
+            <span>{item.kind === "document" ? m.kindDocument : m.kindEntry}</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "state",
+      header: a.docColStatus,
+      align: "center",
+      width: "sm",
+      cell: (item) => {
+        const stale = item.verificationState === "stale";
+        return (
+          <span className="flex flex-wrap items-center justify-center gap-xs">
+            {/* A stale item is a REGRESSION - it was trusted and lapsed - while an
+                unverified one never was. Same queue, different urgency, so they
+                must not read the same. */}
+            <StatusBadge tone={stale ? "warning" : "neutral"} dot={false}>
+              {f.verification(item.verificationState).label}
+            </StatusBadge>
+            {item.source === "connector" && (
+              <StatusBadge tone="info" dot={false}>
+                {m.externalSync}
+              </StatusBadge>
+            )}
+          </span>
+        );
+      },
+    },
+    {
+      id: "clock",
+      header: a.kColValidity,
+      width: "md",
+      cell: (item) => {
+        const stale = item.verificationState === "stale";
+        return (
+          <span className="text-body-sm text-muted-foreground">
+            {stale && item.expiresAt ? (
+              // The lapse is the fact that matters: it says how long this has
+              // been quietly missing from the default recall tier.
+              <span className="text-warning-text">{m.expiresAt(f.when(item.expiresAt))}</span>
+            ) : item.verifiedAt ? (
+              <>
+                {m.lastVerified(f.when(item.verifiedAt))}
+                {item.verifier ? ` · ${a.verifiedBy(item.verifier)}` : ""}
+              </>
+            ) : (
+              "—"
+            )}
+          </span>
+        );
+      },
+    },
+    {
+      // 「确认」是一**列**,不进 rowActions 的 ⋮ 菜单:队列的主动作要一次点击可达。
+      id: "act",
+      header: "",
+      align: "right",
+      width: "xs",
+      cell: (item) => (
+        <Button size="sm" variant="default" disabled={busy !== null} onClick={() => void onVerify(item)}>
+          {busy === item.id ? "…" : c.confirm}
+        </Button>
+      ),
+    },
+  ];
 
   return (
     <>
@@ -178,16 +279,11 @@ export function QueueClient() {
       {error && <Banner tone="danger" title={f.failure(error) ?? ""} />}
       {notice && <Banner tone="success" title={notice} />}
 
-      {data && !data.live && (
-        <Banner
-          tone="info"
-          title={m.noDatabase}
-        />
-      )}
+      {data && !data.live && <Banner tone="info" title={m.noDatabase} />}
 
       {data && (
-        <Card>
-          <CardContent className="flex flex-wrap items-center gap-md py-md">
+        <FilterBar
+          scope={
             <SegmentedControl
               items={[
                 { value: "all", label: c.all, count: counts.stale + counts.unverified },
@@ -199,100 +295,50 @@ export function QueueClient() {
               size="sm"
               ariaLabel={m.filterAria}
             />
-            <span className="ml-auto text-body-sm text-muted-foreground">
+          }
+          count={
+            <span className="text-body-sm text-muted-foreground">
               {done.size > 0 && <span className="mr-md text-success-text">{m.doneThisSession(done.size)}</span>}
-              {m.remainingLead}<span className="font-mono text-foreground">{remaining}</span>{m.remainingTail}
+              {m.remainingLead}
+              <span className="font-mono text-foreground">{remaining}</span>
+              {m.remainingTail}
               {data.truncated && m.truncatedNote}
             </span>
-          </CardContent>
-        </Card>
-      )}
-
-      {visible === null ? (
-        <EmptyState title={m.queueLoading} />
-      ) : visible.length === 0 ? (
-        <EmptyState
-          title={done.size > 0 ? m.pageDone : m.queueEmpty}
-          description={
-            done.size > 0
-              ? m.pageDoneHint
-              : m.queueEmptyHint
           }
         />
-      ) : (
-        <Card>
-          <CardContent className="flex flex-col py-sm">
-            {visible.map((item) => (
-              <QueueRow key={item.id} item={item} busy={busy === item.id} onVerify={onVerify} />
-            ))}
-          </CardContent>
-        </Card>
       )}
-    </>
-  );
-}
 
-function QueueRow({
-  item,
-  busy,
-  onVerify,
-}: {
-  item: QueueItem;
-  busy: boolean;
-  onVerify: (item: QueueItem) => void | Promise<void>;
-}) {
-  const f = useFormat();
-  const m = useMessages(evaluation);
-  const sh = useMessages(shell);
-  const c = useMessages(common);
-  const stale = item.verificationState === "stale";
-  return (
-    <div className="flex items-center gap-md border-t border-border/60 py-sm first:border-t-0">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-sm">
-          {/* A stale item is a REGRESSION - it was trusted and lapsed - while an
-              unverified one never was. Same queue, different urgency, so they
-              must not read the same. */}
-          <StatusBadge tone={stale ? "warning" : "neutral"} dot={false}>
-            {stale ? f.verification("stale").label : f.verification("unverified").label}
-          </StatusBadge>
-          <span className="truncate text-body-md font-medium">
-            {item.title ?? <span className="text-muted-foreground">{m.untitledEntry}</span>}
-          </span>
-          {item.source === "connector" && (
-            <StatusBadge tone="info" dot={false}>
-              {m.externalSync}
-            </StatusBadge>
-          )}
-        </div>
-        <div className="mt-2xs flex flex-wrap items-center gap-sm text-body-sm text-muted-foreground">
-          <Link href={`/assets/${item.kbId}`} className="underline-offset-2 hover:underline">
-            {item.kbName}
-          </Link>
-          <span>·</span>
-          <span>{item.kind === "document" ? m.kindDocument : m.kindEntry}</span>
-          {stale && item.expiresAt && (
-            <>
-              <span>·</span>
-              {/* The lapse is the fact that matters: it says how long this has
-                  been quietly missing from the default recall tier. */}
-              <span className="text-warning-text">{m.expiresAt(f.when(item.expiresAt))}</span>
-            </>
-          )}
-          {item.verifiedAt && (
-            <>
-              <span>·</span>
-              <span>
-                {m.lastVerified(f.when(item.verifiedAt))}
-                {item.verifier ? ` · ${item.verifier}` : ""}
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-      <Button size="sm" variant="default" disabled={busy} onClick={() => onVerify(item)}>
-        {busy ? "…" : c.confirm}
-      </Button>
-    </div>
+      <DataTable<QueueItem>
+        columns={columns}
+        rows={pager.pageRows}
+        rowKey={(item) => item.id}
+        loading={visible === null}
+        loadingRows={6}
+        empty={
+          <EmptyState
+            title={done.size > 0 ? m.pageDone : m.queueEmpty}
+            description={done.size > 0 ? m.pageDoneHint : m.queueEmptyHint}
+          />
+        }
+        footer={
+          rows.length > 0 ? (
+            <Pagination
+              page={pager.page}
+              pageCount={pager.pageCount}
+              total={rows.length}
+              pageSize={pager.pageSize}
+              pageSizeOptions={PAGE_SIZE_OPTIONS}
+              onPageChange={pager.onPageChange}
+              onPageSizeChange={pager.onPageSizeChange}
+              previousLabel={c.pagerPrev}
+              nextLabel={c.pagerNext}
+              pageSizeLabel={c.pagerSizeLabel}
+              pageSizeOptionTemplate={c.pagerSizeTemplate}
+              countLabel={c.pagerCount(rows.length)}
+            />
+          ) : undefined
+        }
+      />
+    </>
   );
 }
