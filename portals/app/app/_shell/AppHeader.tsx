@@ -55,15 +55,15 @@ const LOCALE_OPTIONS = [
 
 export function AppHeader({
   pending = 0,
-  dockOpen = false,
-  onToggleDock = () => {},
+  hubOpen = false,
+  onToggleHub = () => {},
   navCollapsed = false,
   onToggleNav = () => {},
 }: {
-  /** 待裁决 count for the steward-dock badge (red, shown when dock closed). */
+  /** 待裁决 count for the agent-dock badge (red, shown when dock closed). */
   pending?: number;
-  dockOpen?: boolean;
-  onToggleDock?: () => void;
+  hubOpen?: boolean;
+  onToggleHub?: () => void;
   navCollapsed?: boolean;
   onToggleNav?: () => void;
 }) {
@@ -182,10 +182,10 @@ export function AppHeader({
       {/* 助手:独立入口,比工具组图标大一号(md=20px vs sm=16px)。收起时
           红底角标标明待办数(owner 2026-08-24)。 */}
       <span className="relative">
-        <ShellIconButton icon="sparkles" label={m.dock} active={dockOpen} onClick={onToggleDock}>
+        <ShellIconButton icon="sparkles" label={m.agentName} active={hubOpen} onClick={onToggleHub}>
           <Icon name="sparkles" size="md" className="text-ai-text" />
         </ShellIconButton>
-        {pending > 0 && !dockOpen && (
+        {pending > 0 && !hubOpen && (
           <span
             aria-label={m.pendingBadge(pending)}
             className="pointer-events-none absolute -right-0.5 -top-0.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-destructive px-2xs font-mono text-code-sm font-semibold text-white"

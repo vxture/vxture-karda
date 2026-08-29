@@ -5,7 +5,7 @@
 import { DEMO_TOTALS_OPS } from "./seed-data";
 import type { EvaluationData } from "./evaluation-types";
 
-const S = DEMO_TOTALS_OPS.steward;
+const S = DEMO_TOTALS_OPS.agent;
 
 /**
  * A demo timestamp, N hours back from now.
@@ -38,7 +38,7 @@ export const DEMO_EVALUATION: EvaluationData = {
   degraded: false,
   // The offline default. /api/evaluation overrides `corpus` to "live" whenever
   // a DB is attached - this constant is what the page shows with none.
-  sources: { corpus: "demo", steward: "demo", evaluation: "demo" },
+  sources: { corpus: "demo", agent: "demo", evaluation: "demo" },
   metrics: [
     {
       key: "recall",

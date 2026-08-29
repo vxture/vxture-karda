@@ -44,7 +44,7 @@ export interface DemoAssetSpec {
     sparkTone: "primary" | "ai" | "warning";
     topConsumers: string[];
     highlight: OverviewHighlight;
-    stewardSuggestions: number;
+    agentSuggestions: number;
   };
 }
 
@@ -96,7 +96,7 @@ export const DEMO_ASSETS: DemoAssetSpec[] = [
         strong: "“近三年市政项目业绩证明的格式要求?”",
         action: "被引 31 次",
       },
-      stewardSuggestions: 1,
+      agentSuggestions: 1,
     },
   },
   {
@@ -144,7 +144,7 @@ export const DEMO_ASSETS: DemoAssetSpec[] = [
         strong: "46 次",
         action: "峰值在早班巡检 08:00-09:00",
       },
-      stewardSuggestions: 0,
+      agentSuggestions: 0,
     },
   },
   {
@@ -192,7 +192,7 @@ export const DEMO_ASSETS: DemoAssetSpec[] = [
         strong: "其中 3 条本周被引用过",
         action: "派发复验",
       },
-      stewardSuggestions: 2,
+      agentSuggestions: 2,
     },
   },
   {
@@ -240,7 +240,7 @@ export const DEMO_ASSETS: DemoAssetSpec[] = [
         strong: "“巡检机器人 R2 的防护等级与续航?”",
         action: "被引 19 次",
       },
-      stewardSuggestions: 0,
+      agentSuggestions: 0,
     },
   },
   {
@@ -286,7 +286,7 @@ export const DEMO_ASSETS: DemoAssetSpec[] = [
         strong: "“华东区去年验收纪要”等 2 类问题查不到",
         action: "补充知识",
       },
-      stewardSuggestions: 1,
+      agentSuggestions: 1,
     },
   },
   {
@@ -319,12 +319,12 @@ export const DEMO_ASSETS: DemoAssetSpec[] = [
       sparkTone: "primary",
       topConsumers: [],
       highlight: {
-        kind: "steward",
+        kind: "agent",
         text: "卡尔达:",
         strong: "GB 51427 新版已比对出 12 处差异",
         action: "入藏后自动生成更新提案",
       },
-      stewardSuggestions: 1,
+      agentSuggestions: 1,
     },
   },
   {
@@ -366,7 +366,7 @@ export const DEMO_ASSETS: DemoAssetSpec[] = [
         strong: "23 次",
         action: "集中在夜班交接前后",
       },
-      stewardSuggestions: 0,
+      agentSuggestions: 0,
     },
   },
   {
@@ -410,7 +410,7 @@ export const DEMO_ASSETS: DemoAssetSpec[] = [
         strong: "“受限空间作业的进入许可条件?”",
         action: "被引 14 次",
       },
-      stewardSuggestions: 0,
+      agentSuggestions: 0,
     },
   },
   {
@@ -454,7 +454,7 @@ export const DEMO_ASSETS: DemoAssetSpec[] = [
         strong: "其中 2 条已过办结时限",
         action: "派发复验",
       },
-      stewardSuggestions: 2,
+      agentSuggestions: 2,
     },
   },
   {
@@ -496,7 +496,7 @@ export const DEMO_ASSETS: DemoAssetSpec[] = [
         strong: "11 次",
         action: "多为隐患自查对照",
       },
-      stewardSuggestions: 1,
+      agentSuggestions: 1,
     },
   },
   {
@@ -541,7 +541,7 @@ export const DEMO_ASSETS: DemoAssetSpec[] = [
         strong: "“泵阀类备件的替代料验证状态”查不到",
         action: "补充知识",
       },
-      stewardSuggestions: 1,
+      agentSuggestions: 1,
     },
   },
   {
@@ -575,19 +575,19 @@ export const DEMO_ASSETS: DemoAssetSpec[] = [
       sparkTone: "ai",
       topConsumers: ["raven", "anlan"],
       highlight: {
-        kind: "steward",
+        kind: "agent",
         text: "卡尔达:",
         strong: "本周回流萃取 14 条,已确认 9 条",
         action: "查看待确认",
       },
-      stewardSuggestions: 3,
+      agentSuggestions: 3,
     },
   },
 ];
 
 // Supply-ledger overlay for the totals strip. Consistent by construction:
 // today = direct + runos; top-agent calls sum below today (the remainder is
-// long-tail); reflux drafts match the steward feed.
+// long-tail); reflux drafts match the agent feed.
 export const DEMO_TOTALS_OPS = {
   todayCalls: 1204,
   // 累计调用。今日之外还需要一个累计,是因为**两个数回答的是两个问题**:今日说
@@ -608,7 +608,7 @@ export const DEMO_TOTALS_OPS = {
     { code: "scribe", calls: 326 },
     { code: "anlan", calls: 231 },
   ],
-  steward: { preVerified: 41, conflicts: 3, refluxDrafts: 27, pending: 5 },
+  agent: { preVerified: 41, conflicts: 3, refluxDrafts: 27, pending: 5 },
 } as const;
 
 /** Deterministic title for the i-th seeded row of a stem list. */

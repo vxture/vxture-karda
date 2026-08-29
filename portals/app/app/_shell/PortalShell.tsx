@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { AppHeader } from "./AppHeader";
 import { NavPane } from "./NavPane";
 import { ShellBackdrop } from "./ShellBackdrop";
-import { StewardDock } from "./StewardDock";
+import { AgentHub } from "./AgentHub";
 import { PORTAL_FULLSCREEN_ID, activeNavKey } from "./nav";
 import type { ShellData } from "../kb/demo/shell-types";
 
@@ -47,11 +47,11 @@ export function PortalShell({ children }: { children: ReactNode }) {
   // SSR renders the default (both side panes open); the persisted
   // preference applies after mount to keep hydration consistent.
   const [navCollapsed, setNavCollapsed] = useState(false);
-  const [dockOpen, setDockOpen] = useState(true);
+  const [hubOpen, setHubOpen] = useState(true);
 
   useEffect(() => {
     setNavCollapsed(readPref(LEFT_KEY, false));
-    setDockOpen(readPref(DOCK_KEY, true));
+    setHubOpen(readPref(DOCK_KEY, true));
   }, []);
 
   useEffect(() => {
@@ -69,8 +69,8 @@ export function PortalShell({ children }: { children: ReactNode }) {
       return !c;
     });
   }, []);
-  const toggleDock = useCallback(() => {
-    setDockOpen((o) => {
+  const toggleHub = useCallback(() => {
+    setHubOpen((o) => {
       writePref(DOCK_KEY, !o);
       return !o;
     });
@@ -82,9 +82,9 @@ export function PortalShell({ children }: { children: ReactNode }) {
     <div id={PORTAL_FULLSCREEN_ID} className="relative flex h-screen flex-col text-foreground">
       <ShellBackdrop />
       <AppHeader
-        pending={shell?.steward.pending ?? 0}
-        dockOpen={dockOpen}
-        onToggleDock={toggleDock}
+        pending={shell?.agent.pending ?? 0}
+        hubOpen={hubOpen}
+        onToggleHub={toggleHub}
         navCollapsed={navCollapsed}
         onToggleNav={toggleNav}
       />
@@ -131,7 +131,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
               (portal)/assets/assets-client.tsx. */}
           <div className="@container flex w-full flex-col gap-md px-md pb-5xl">{children}</div>
         </main>
-        {dockOpen && <StewardDock shell={shell} onClose={toggleDock} />}
+        {hubOpen && <AgentHub shell={shell} onClose={toggleHub} />}
       </div>
     </div>
   );

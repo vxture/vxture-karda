@@ -1,6 +1,6 @@
 import type { Catalog, MessageFn } from "../catalog";
 
-// 加工管道: the steward board, the task queue, one task's detail, and controlled
+// 加工管道: the agent board, the task queue, one task's detail, and controlled
 // rebuild.
 //
 // WHAT IS HERE AND WHAT IS NOT. These four screens are still a design canvas
@@ -11,13 +11,13 @@ import type { Catalog, MessageFn } from "../catalog";
 // therefore still read largely Chinese until the pipeline has real data - that
 // is the content showing through, not a half-done sweep.
 //
-// What IS here is the vocabulary that does not change per run: the five steward
+// What IS here is the vocabulary that does not change per run: the five agent
 // stages, the daily report rows, the three queue tiers, the rebuild steps. Those
 // were authored beside the data as `label` / `desc` / `unit` fields, which made
 // them a second copy of a fixed list - the same shape as the channel dashboard's
 // `stateLabel`. They now come from the enum plus this file.
 export const pipeline = {
-  // --- the five steward stages ------------------------------------------------
+  // --- the five agent stages ------------------------------------------------
   stageUnderstand: { "zh-CN": "理解", "en-US": "Understand" },
   stageUnderstandDesc: {
     "zh-CN": "语义解析 · 表格与图纸多模态",
@@ -55,7 +55,7 @@ export const pipeline = {
     "en-US": (n: number) => `${n} to confirm`,
   } satisfies MessageFn<[number]>,
 
-  // --- steward board -----------------------------------------------------------
+  // --- agent board -----------------------------------------------------------
   errLoad: {
     "zh-CN": "加载加工管道失败，请稍后重试。",
     "en-US": "Could not load the processing pipeline. Please retry shortly.",
@@ -70,8 +70,8 @@ export const pipeline = {
     "en-US": (docs: number, p95: number, auto: number) => `${docs} docs today · P95 ${p95}s/doc · ${auto}% automatic`,
   } satisfies MessageFn<[number, number, number]>,
   batchConfirm: { "zh-CN": "批量确认预验", "en-US": "Confirm pre-verified in bulk" },
-  stewardOnDuty: { "zh-CN": "AI AGENT · 在岗", "en-US": "AI AGENT · ON DUTY" },
-  stewardBlurb: {
+  agentOnDuty: { "zh-CN": "AI AGENT · 在岗", "en-US": "AI AGENT · ON DUTY" },
+  agentBlurb: {
     "zh-CN": "负责理解、萃取、编织、验证与纠错的全程加工；需要裁决的事项才会来找你。",
     "en-US":
       "It runs the whole pass - understand, extract, weave, verify, correct - and comes to you only when something needs deciding.",
@@ -198,7 +198,7 @@ export const pipeline = {
       "bulk never starves interactive; once sync depth passes its threshold the Arda channel back-pressures naturally (notify-then-pull slows down).",
   },
   failureAlertTitle: { "zh-CN": "库级失败率告警", "en-US": "Library failure-rate alert" },
-  stewardVerdict: { "zh-CN": "卡尔达判断：", "en-US": "Karda's read: " },
+  agentVerdict: { "zh-CN": "卡尔达判断：", "en-US": "Karda's read: " },
   viewFailures: { "zh-CN": "查看失败件", "en-US": "See the failures" },
   adjustTemplate: { "zh-CN": "调整模板", "en-US": "Adjust the template" },
   alertBody: {
@@ -261,7 +261,7 @@ export const pipeline = {
   queueDetail: { "zh-CN": "排队详情", "en-US": "Queue detail" },
   whatTriggers: { "zh-CN": "什么会触发重建", "en-US": "What triggers a rebuild" },
   safetyLimits: { "zh-CN": "安全约束", "en-US": "Safety limits" },
-  stewardSuggestion: { "zh-CN": "卡尔达建议", "en-US": "Karda's suggestion" },
+  agentSuggestion: { "zh-CN": "卡尔达建议", "en-US": "Karda's suggestion" },
 
   // --- one task ----------------------------------------------------------------
   errLoadTask: {
@@ -271,17 +271,17 @@ export const pipeline = {
   loadingTask: { "zh-CN": "正在加载任务详情…", "en-US": "Loading the task…" },
   cancelTask: { "zh-CN": "取消任务", "en-US": "Cancel the task" },
   rerunFromChunk: { "zh-CN": "从分块重跑", "en-US": "Re-run from chunking" },
-  stewardPresent: { "zh-CN": "Karda Super Agent · 全程在场", "en-US": "Karda Super Agent · present throughout" },
-  taskStewardLead: {
+  agentPresent: { "zh-CN": "Karda Super Agent · 全程在场", "en-US": "Karda Super Agent · present throughout" },
+  taskAgentLead: {
     "zh-CN": "解析中已做语义修复 2 处；入藏后自动萃取知识单元、关联既有条目并交叉预验——低置信内容标注待人工，",
     "en-US":
       "Two semantic repairs were made while parsing. After commit it extracts knowledge units, links them to existing entries and cross-pre-verifies; low-confidence content is flagged for a person, and ",
   },
-  taskStewardStrong: {
+  taskAgentStrong: {
     "zh-CN": "你只在「待确认」里做裁决",
     "en-US": "you only decide inside awaiting-your-call",
   },
-  taskStewardEnd: { "zh-CN": "。", "en-US": "." },
+  taskAgentEnd: { "zh-CN": "。", "en-US": "." },
   asideConfig: { "zh-CN": "加工配置", "en-US": "Processing config" },
   asideLineage: { "zh-CN": "血缘与幂等", "en-US": "Lineage & idempotency" },
   asideCost: { "zh-CN": "成本 · 经 Atlas 计量", "en-US": "Cost · metered through Atlas" },

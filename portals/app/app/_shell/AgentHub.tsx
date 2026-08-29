@@ -6,11 +6,11 @@ import { Button, Icon, ShellIconButton } from "@vxture/design-system";
 import type { ShellData } from "../kb/demo/shell-types";
 import { useMessages } from "../_i18n/useMessages";
 import { shell as shellMessages } from "../_i18n/messages/shell";
-import type { StewardProposal } from "../kb/demo/pipeline-types";
+import type { AgentProposal } from "../kb/demo/pipeline-types";
 
 // 智枢 (agent hub) - the right pane of the shell body: the cross-page
 // DECISION queue, nothing else (page-specific explanatory cards stay in the
-// 内容区). Human acts, or hands the item to the steward. Collapses INTO the
+// 内容区). Human acts, or hands the item to the agent. Collapses INTO the
 // 顶栏: when closed the header's ai icon carries the red pending badge and
 // reopens it. Shell vocabulary is defined once at the top of NavPane.tsx.
 //
@@ -22,7 +22,7 @@ import type { StewardProposal } from "../kb/demo/pipeline-types";
 // Frame (owner 2026-08-25): a 400px pane with a FIXED head and a FIXED foot -
 // the identity line and the one bulk action never scroll away - and a
 // scrolling middle of collapsible section cards. Widened from 320px so the
-// dock is a working surface rather than a summary strip; the cost is paid by
+// the agent hub is a working surface rather than a summary strip; the cost is paid by
 // the 内容区, which loses those 80px (see 130-portal-shell.md section 3).
 // Scrollbars are hidden product-wide now, so this pane no longer says so
 // itself.
@@ -31,16 +31,19 @@ import type { StewardProposal } from "../kb/demo/pipeline-types";
 // Its inner sections do pad, which is a different thing: this is a surfaced
 // panel, and a surface without inner padding puts text on its own border.
 
+// **这个键不跟着改名走。** 它是与浏览器的契约,不是一个名字:改掉等于把所有人
+// 已经收起的分区重置回展开。命名陈旧的代价是读代码时多想一秒,重置状态的代价
+// 是每个用户的一次困惑。
 const OPEN_KEY = "karda-shell-dock-closed";
 
-const TAG_CLASS: Record<StewardProposal["kind"], string> = {
+const TAG_CLASS: Record<AgentProposal["kind"], string> = {
   conflict: "bg-warning-muted/50 text-warning-text",
   preverify: "bg-success-muted/50 text-success-text",
   fix: "bg-primary-muted/50 text-primary-text",
 };
 
-/** One collapsible block inside the dock: eyebrow + count, body below. */
-function DockSection({
+/** One collapsible block inside the agent hub: eyebrow + count, body below. */
+function HubSection({
   id,
   label,
   count,
@@ -81,9 +84,9 @@ function DockSection({
   );
 }
 
-export function StewardDock({ shell, onClose }: { shell: ShellData | null; onClose: () => void }) {
+export function AgentHub({ shell, onClose }: { shell: ShellData | null; onClose: () => void }) {
   const m = useMessages(shellMessages);
-  const s = shell?.steward;
+  const s = shell?.agent;
   const [closed, setClosed] = useState<Set<string>>(() => new Set());
 
   // Read after mount only - localStorage does not exist during SSR, so the
@@ -123,31 +126,31 @@ export function StewardDock({ shell, onClose }: { shell: ShellData | null; onClo
       <div className="flex shrink-0 items-center gap-sm border-b border-primary/[0.08] px-md py-sm dark:border-primary/10">
         <Icon name="sparkles" size="sm" className="text-ai-text" />
         <span className="flex min-w-0 flex-1 items-baseline gap-xs">
-          <span className="truncate text-title-sm">{m.dock}</span>
-          {/* 中文 tag 只在中文界面出现:英文目录里 `dockTag` 是空串,这里据此不画。
+          <span className="truncate text-title-sm">{m.agentName}</span>
+          {/* 中文 tag 只在中文界面出现:英文目录里 `hubTag` 是空串,这里据此不画。
               名字本身不翻——它是产品名。 */}
-          {m.dockTag ? (
+          {m.hubTag ? (
             <span className="shrink-0 rounded-sm bg-primary/[0.1] px-2xs py-[1px] text-body-sm text-primary-text">
-              {m.dockTag}
+              {m.hubTag}
             </span>
           ) : null}
         </span>
-        <span className="size-2xs rounded-full bg-success" aria-label={m.dockOnDuty} />
+        <span className="size-2xs rounded-full bg-success" aria-label={m.hubOnDuty} />
         {/* Ghost icon button, the DS shell idiom - no boxed background. */}
-        <ShellIconButton icon="chevron-right" label={m.dockCollapse} onClick={onClose} />
+        <ShellIconButton icon="chevron-right" label={m.hubCollapse} onClick={onClose} />
       </div>
 
       {!s ? (
         <div className="flex flex-1 items-center justify-center text-body-md text-muted-foreground">
           <Icon name="spinner" size="xs" className="mr-2 animate-spin" />
-          {m.dockConnecting}
+          {m.hubConnecting}
         </div>
       ) : (
         <>
           <div className="flex min-h-0 flex-1 flex-col gap-sm overflow-y-auto px-md py-md">
-            <DockSection
+            <HubSection
               id="pending"
-              label={m.dockPending}
+              label={m.hubPending}
               count={s.pending}
               tone="text-warning-text"
               open={isOpen("pending")}
@@ -183,15 +186,15 @@ export function StewardDock({ shell, onClose }: { shell: ShellData | null; onClo
               })}
               {s.pending > s.proposals.length && (
                 <Link href="/pipeline" className="text-center text-body-md text-primary">
-                  {m.dockRest(s.pending - s.proposals.length)}
+                  {m.hubRest(s.pending - s.proposals.length)}
                 </Link>
               )}
-            </DockSection>
+            </HubSection>
 
             {s.alert && (
-              <DockSection
+              <HubSection
                 id="alert"
-                label={m.dockAlert}
+                label={m.hubAlert}
                 count={1}
                 tone="text-destructive-text"
                 open={isOpen("alert")}
@@ -202,16 +205,16 @@ export function StewardDock({ shell, onClose }: { shell: ShellData | null; onClo
                   <span>
                     {s.alert.text},
                     <Link href={s.alert.href} className="text-primary">
-                      {m.dockGoHandle}
+                      {m.hubGoHandle}
                     </Link>
                   </span>
                 </span>
-              </DockSection>
+              </HubSection>
             )}
 
-            <DockSection
+            <HubSection
               id="activity"
-              label={m.dockActivity}
+              label={m.hubActivity}
               open={isOpen("activity")}
               onToggle={toggle}
             >
@@ -226,14 +229,14 @@ export function StewardDock({ shell, onClose }: { shell: ShellData | null; onClo
                   </span>
                 ))}
               </div>
-            </DockSection>
+            </HubSection>
           </div>
 
           {/* Fixed foot: the one bulk action must always be reachable. */}
           <div className="shrink-0 border-t border-primary/[0.08] px-md py-sm dark:border-primary/10">
             <button className="flex w-full items-center justify-center gap-sm rounded-lg border border-ai-border/40 bg-ai-muted/30 px-md py-sm text-label-md text-ai-text transition-colors duration-fast ease-standard hover:bg-ai-muted/50">
               <Icon name="sparkles" size="sm" />
-              {m.dockDelegate}
+              {m.hubDelegate}
             </button>
           </div>
         </>

@@ -66,7 +66,7 @@ test("a failed stage keeps its fail dot even after the task moved on", () => {
   assert.deepEqual(dots, ["done", "fail", "todo", "todo", "todo"]);
 });
 
-test("steward-assisted stages get the ai dot, not a plain done", () => {
+test("agent-assisted stages get the ai dot, not a plain done", () => {
   const dots = dotsFor({ state: "running", currentStage: "weave", stages: [{ stage: "parse", outcome: "ai_assisted" }] });
   assert.equal(dots[1], "ai");
 });

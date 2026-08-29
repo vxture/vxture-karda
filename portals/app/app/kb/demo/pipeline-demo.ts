@@ -1,12 +1,12 @@
-// Demo overlay for the 加工管道 page (design canvas V2 · Steward board). The
+// Demo overlay for the 加工管道 page (design canvas V2 · Agent board). The
 // pipeline has no schema yet - every figure here is the demo supply-ledger
 // voice, flagged `demoOps: true` by the API exactly like the overview's ops
-// overlay. Steward figures DERIVE from DEMO_TOTALS_OPS so 知识资产 and 加工管道
+// overlay. Agent figures DERIVE from DEMO_TOTALS_OPS so 知识资产 and 加工管道
 // can never disagree about 预验/冲突/回流/待确认.
 import { DEMO_TOTALS_OPS } from "./seed-data";
 import type { PipelineData, RebuildData, TaskDetail, TasksData } from "./pipeline-types";
 
-const S = DEMO_TOTALS_OPS.steward;
+const S = DEMO_TOTALS_OPS.agent;
 
 export const DEMO_PIPELINE: PipelineData = {
   docsToday: 62,
@@ -275,7 +275,7 @@ export const DEMO_REBUILD: RebuildData = {
     ["org 同时重建上限", "2 库(KD-008)"],
     ["队列", "bulk · 不挤占交互"],
   ],
-  stewardAdvice:
+  agentAdvice:
     "v3 模型在本库抽样召回评测提升 +7.2%;切换后建议保留回退窗口满 24h,并在验证评测页跑一轮基线对比。",
   demoOps: true,
 };

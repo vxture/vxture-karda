@@ -13,7 +13,7 @@ import { shell } from "../../_i18n/messages/shell";
 // 验证评测 first cut. Two orthogonal halves, kept visibly apart because they
 // answer different questions:
 //   · 验证治理 - is the corpus trustworthy? (verified/stale/unverified split,
-//     assets below the coverage floor, steward pre-verification waiting)
+//     assets below the coverage floor, agent pre-verification waiting)
 //   · 质量评测 - does retrieval actually work? (metrics against a baseline,
 //     the authored evaluation sets and the coverage gaps they surface)
 
@@ -290,7 +290,7 @@ export function EvaluationClient() {
           评测 is still the overlay. See EvaluationData.sources. */}
       <span className="text-body-sm text-muted-foreground">
         {data.sources.corpus === "live" ? m.provCorpusLive : m.provCorpusDemo}
-        {m.provStewardDemo}
+        {m.provAgentDemo}
         {data.sources.evaluation === "live" ? m.provEvalLive : m.provEvalDemo}
       </span>
     </>

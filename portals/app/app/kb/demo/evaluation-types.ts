@@ -28,9 +28,9 @@ export interface VerificationState {
    *  because the demo overlay has no real libraries to point at, and a link to
    *  a fabricated id would 404 - a demo row is honestly un-clickable. */
   belowFloor: { id: string | null; name: string; coveragePct: number; staleCount: number }[];
-  /** Steward pre-verification waiting on a human decision. Stays on the demo
-   *  overlay even when the corpus figures are live - there is no steward
-   *  ledger yet (see EvaluationData.sources.steward). */
+  /** Agent pre-verification waiting on a human decision. Stays on the demo
+   *  overlay even when the corpus figures are live - there is no agent
+   *  ledger yet (see EvaluationData.sources.agent). */
   preVerifiedPending: number;
 }
 
@@ -78,9 +78,9 @@ export interface EvaluationData {
    *    corpus     verified/stale/unverified/coverage/belowFloor - LIVE off
    *               document.verification_state + entry.verification_state,
    *               which already exist; no DDL was needed.
-   *    steward    preVerifiedPending - waits on a steward ledger.
+   *    agent    preVerifiedPending - waits on a agent ledger.
    *    evaluation metrics + sets - waits on the evaluation runner. */
-  sources: { corpus: FigureSource; steward: FigureSource; evaluation: FigureSource };
+  sources: { corpus: FigureSource; agent: FigureSource; evaluation: FigureSource };
   /** True while the EVALUATION half is the demo overlay. Kept as its own field
    *  (rather than derived) because it is what the page's footnote renders. */
   demoOps: boolean;

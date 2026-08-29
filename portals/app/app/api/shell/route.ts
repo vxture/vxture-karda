@@ -15,7 +15,7 @@ import type { ShellData } from "../../kb/demo/shell-types";
 // /api/pipeline so the chrome can never disagree with the pages it frames.
 export const dynamic = "force-dynamic";
 
-const S = DEMO_TOTALS_OPS.steward;
+const S = DEMO_TOTALS_OPS.agent;
 
 /** 知识资产卡上单列几个资产。再多条就细到读不出长短了。 */
 const TOP_ASSETS = 4;
@@ -118,7 +118,7 @@ export async function GET(): Promise<Response> {
       coveragePct: V.coveragePct,
       gaps: evalGaps,
     },
-    steward: {
+    agent: {
       pending: S.pending,
       proposals: DEMO_PIPELINE.proposals.slice(0, 2),
       alert: DEMO_TASKS.alert

@@ -5,7 +5,7 @@
 // verification: the latest. Each new verify overwrites them, and the sweep's
 // staling overwrites nothing at all (it keeps them as the lapse record). So
 // there is no history to show, and a panel labelled 验证历史 over a single row
-// would be the same failure the batch's own plan warns about for the steward
+// would be the same failure the batch's own plan warns about for the agent
 // queue - a surface that looks like more than it is.
 //
 // What the columns DO support is the current record with its clock made

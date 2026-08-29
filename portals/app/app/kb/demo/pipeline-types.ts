@@ -2,8 +2,8 @@
 // page can type-import them without dragging server modules into the bundle
 // (same contract style as overview-types.ts).
 
-/** The five steward stages (design canvas V2: 理解/萃取/编织/验证/入藏). */
-export type StewardStageKey = "understand" | "extract" | "weave" | "verify" | "commit";
+/** The five agent stages (design canvas V2: 理解/萃取/编织/验证/入藏). */
+export type AgentStageKey = "understand" | "extract" | "weave" | "verify" | "commit";
 
 /** The pipeline's mechanical stages, as stored in `processing_task.current_stage`. */
 export type ProcessingStage = "fetch" | "parse" | "chunk" | "embed" | "commit";
@@ -20,7 +20,7 @@ export interface PipelineStage {
   /** The stage's name, description, unit and mono kicker all derive from this.
    *  They used to sit beside it as authored fields, which made the five-stage
    *  vocabulary a second copy of a fixed list - see `_i18n/messages/pipeline.ts`. */
-  key: StewardStageKey;
+  key: AgentStageKey;
   /** Headline figure, preformatted. Per-run content: it stays as authored. */
   value: string;
   /** Secondary figure beside the value: WHICH figure, and how many. The word
@@ -28,13 +28,13 @@ export interface PipelineStage {
   aside?: { kind: "conflicts" | "pending"; n: number };
   /** Aside tone - warning gets the amber treatment. */
   asideTone?: "warning" | "muted";
-  /** The stage the steward is currently most active in (ai top edge). */
+  /** The stage the agent is currently most active in (ai top edge). */
   active?: boolean;
 }
 
 export type ProposalKind = "conflict" | "preverify" | "fix";
 
-export interface StewardProposal {
+export interface AgentProposal {
   id: string;
   kind: ProposalKind;
   title: string;
@@ -113,7 +113,7 @@ export interface TasksData {
    *           karda_kb.processing_task(+_stage).
    *    ops    freshness P95 (nothing measures content age vs index age), the
    *           org and per-tier concurrency caps (configuration, not facts), and
-   *           the steward's JUDGMENT on an alert (an opinion, not an aggregate).
+   *           the agent's JUDGMENT on an alert (an opinion, not an aggregate).
    *           Authored on purpose - a half-derived alert that invented a
    *           judgment would be worse than an honest authored one. */
   sources: { tasks: FigureSource; ops: FigureSource };
@@ -175,7 +175,7 @@ export interface RebuildData {
   };
   triggers: string[];
   constraints: [string, string][];
-  stewardAdvice: string;
+  agentAdvice: string;
   demoOps: boolean;
 }
 
@@ -183,12 +183,12 @@ export interface PipelineData {
   /** Docs processed today + end-to-end P95, for the page head meta. */
   docsToday: number;
   p95Seconds: number;
-  /** Share of work the steward completes without a human, 0-100. */
+  /** Share of work the agent completes without a human, 0-100. */
   autoRatePct: number;
   /** 今日战报 label/value pairs (values preformatted). */
   report: { key: ReportRowKey; value: string; unit: ReportUnit; tone?: "warning" | "success" | "ai" }[];
   stages: PipelineStage[];
-  proposals: StewardProposal[];
+  proposals: AgentProposal[];
   /** Total awaiting confirmation (proposals shown may be fewer). */
   pendingTotal: number;
   /** True while figures come from the demo overlay (no pipeline schema yet). */

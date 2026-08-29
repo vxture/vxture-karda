@@ -173,9 +173,9 @@ export function prepare(raw: RawAssertion[], source: ExtractionSource, text: str
  * Deliberately not a similarity score. A conflict is two versions of the same
  * assertion, and "same assertion" is decided by subject - which is why
  * `assertion.subject` exists and is indexed. A similarity threshold would make
- * the steward's adjudication queue a function of an embedding model's mood.
+ * the agent's adjudication queue a function of an embedding model's mood.
  *
- * This finds candidates only. Whether they actually contradict is the steward's
+ * This finds candidates only. Whether they actually contradict is the agent's
  * call, and the answer lands as an `evidence` row with `stance = contradicts`.
  */
 // NOT CALLED IN PRODUCTION YET, deliberately: adjudication is a human act and

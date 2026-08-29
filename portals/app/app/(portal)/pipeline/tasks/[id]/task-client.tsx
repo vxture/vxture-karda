@@ -10,7 +10,7 @@ import { pipeline as pipelineMessages } from "../../../../_i18n/messages/pipelin
 import { shell } from "../../../../_i18n/messages/shell";
 
 // 任务详情 (design canvas: PipelineDoc board). Five-stage timeline with
-// per-stage artifacts on the left (阶段产物留存: raw/IR/块/向量), the steward
+// per-stage artifacts on the left (阶段产物留存: raw/IR/块/向量), the agent
 // presence strip under it, and the three 页内副栏 cards (加工配置 / 血缘与幂等 /
 // 成本) on the right.
 
@@ -140,7 +140,7 @@ export function TaskClient({ id }: { id: string }) {
       </div>
 
       <div className="flex flex-col gap-lg @min-[52rem]:flex-row">
-        {/* stage timeline + steward strip */}
+        {/* stage timeline + agent strip */}
         <div className="flex min-w-0 flex-1 flex-col">
           {data.stages.map((s, i) => (
             <StageNode key={s.kicker} stage={s} last={i === data.stages.length - 1} />
@@ -152,13 +152,13 @@ export function TaskClient({ id }: { id: string }) {
             </span>
             <span className="flex min-w-0 flex-col gap-2xs">
               <span className="flex items-center gap-sm">
-                <span className="text-body-sm font-semibold">{m.stewardPresent}</span>
+                <span className="text-body-sm font-semibold">{m.agentPresent}</span>
                 <span className="font-mono text-code-sm tracking-widest text-ai-text">AI AGENT</span>
               </span>
               <span className="text-body-sm leading-relaxed text-muted-foreground">
-                {m.taskStewardLead}
-                <span className="text-foreground">{m.taskStewardStrong}</span>
-                {m.taskStewardEnd}
+                {m.taskAgentLead}
+                <span className="text-foreground">{m.taskAgentStrong}</span>
+                {m.taskAgentEnd}
               </span>
             </span>
           </div>
