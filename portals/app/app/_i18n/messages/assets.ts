@@ -43,17 +43,18 @@ export const assets = {
   // --- documents panel -------------------------------------------------------
   docUnfiled: { "zh-CN": "未归档", "en-US": "Unfiled" },
   docFilterAria: { "zh-CN": "按目录筛选", "en-US": "Filter by folder" },
-  uploadTo: { "zh-CN": "上传至", "en-US": "Upload to" },
-  uploadTargetAria: { "zh-CN": "上传目标目录", "en-US": "Upload target folder" },
   uploadPickAria: { "zh-CN": "选择要上传的文档", "en-US": "Choose a document to upload" },
   uploadButton: { "zh-CN": "上传文档", "en-US": "Upload document" },
-  uploadHint: {
-    // 原文是「索引在嵌入服务可用前保持暂停」——一句**常驻的**停摆说明,挂在上传框
-    // 旁边,不论此刻加工是不是真的卡住。真卡住时说什么,由每一份文档自己那行
-    // 「加工暂停:…」负责(`states.blocker*`),那一行知道是哪一档、去哪补。
-    "zh-CN": "文件入库即排队加工;卡住时会在该文档下说明原因。",
-    "en-US": "A file is queued for processing the moment it lands; if anything blocks it, the reason is stated under that document.",
-  },
+  /** 筛在某个目录上时,按钮自己说这一份会落在哪儿——那个「上传至」下拉因此可以去掉,
+   *  它和目录芯片问的是同一个问题,而两个控件能给出两个不同的答案。 */
+  uploadToFolder: {
+    "zh-CN": (folder: string) => `上传到「${folder}」`,
+    "en-US": (folder: string) => `Upload to "${folder}"`,
+  } satisfies MessageFn<[string]>,
+  // `uploadHint`(「文件入库即排队加工;卡住时会在该文档下说明原因。」)随上传卡片
+  // 一起去掉了,**不是丢了信息**:空态里的 `docEmptyHint` 说了同一句的前半("上传
+  // 一个文件,它会自动排队加工"),后半由每一份文档自己那行「加工暂停:…」负责——
+  // 那一行知道是哪一档、去哪补,而常驻在工具栏上的那句谁都不针对。
   /** 分布图里把长尾并起来的那一条。带数量,因为「其余」不说几个等于没说。 */
   restAssets: {
     "zh-CN": (n: number) => `其余 ${n} 个资产`,

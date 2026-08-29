@@ -30,6 +30,7 @@ const PROBES: Record<string, unknown[]> = {
   "assets.okVectorLocked": ["bge-m3"],
   "assets.bindRevokedSuffix": [2],
   "assets.verifiedBy": ["usr_a1b2"],
+  "assets.uploadToFolder": ["Bid 2026"],
   "assets.docShowMore": [42],
   "assets.docShownOf": [50, 92],
   "assets.lifeExtractNote": [44],
