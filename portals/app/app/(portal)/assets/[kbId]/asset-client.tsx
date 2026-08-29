@@ -24,6 +24,7 @@ import {
   setProcessingTemplate,
   setEmbeddingModel,
   setRetrievalChannels,
+  setSourceMode,
   setVerifierConfig,
   verifyDocument,
   createFolder,
@@ -40,6 +41,7 @@ import {
   type ProcessingTemplateOption,
   type Binding,
   type ConnectorInfo,
+  type SourceMode,
 } from "../../../_lib/api";
 import { type PublishState } from "../../../_lib/format";
 import { SignInGate } from "../../../_lib/ui";
@@ -54,10 +56,23 @@ import { common } from "../../../_i18n/messages/common";
 import type { Message } from "../../../_i18n/catalog";
 import { assets } from "../../../_i18n/messages/assets";
 
-// One library, two tabs: what is IN it and how it BEHAVES. This page owns all
-// server state and every mutation; the two panels are presentational and take
-// handlers, so there is exactly one place that knows how a failure is reported
-// and when a reload is needed.
+// One library. This component owns all server state and every mutation; the
+// panels are presentational and take handlers, so there is exactly one place
+// that knows how a failure is reported and when a reload is needed.
+//
+// 它渲染**两个视图**,由 `view` 决定,两条路由共用这一个组件:
+//
+//   content   /assets/:id           这个库里有什么
+//   settings  /assets/:id/settings  这个库怎么运转
+//
+// 设置从 tab 里搬出来是因为它和另外两个**不在一个维度上**(owner 2026-08-30):
+// 「文档」「外部来源」回答的是「里面有什么」,而「设置」回答的是「它怎么运转」——
+// 把配置摆成内容的兄弟,等于说改一个库的策略和翻一页文档是同一类动作。搬成子路由
+// 之后,设置有了自己的地址(可收藏、可直达、回退键管用),而不是一个刷新就丢的
+// tab 状态。
+//
+// 共用一个组件而不是复制一份:两页需要的服务端数据是同一批,拆成两个组件就会有
+// 两套加载与两套失败处理,而它们迟早各自长歪。
 //
 // Batch 10 rebuilt this from the ported Console page. What it gained is the
 // whole acceptance criterion: an owner sets the library's templates and policy,
@@ -80,7 +95,10 @@ function bindingCount(bindings: Binding[], m: { bindRevokedSuffix: (n: number) =
   return revoked > 0 ? ` (${live}${m.bindRevokedSuffix(revoked)})` : ` (${live})`;
 }
 
-export function AssetClient() {
+/** 这一页在看什么。见文件头。 */
+export type AssetView = "content" | "settings";
+
+export function AssetClient({ view = "content" }: { view?: AssetView } = {}) {
   const f = useFormat();
   const m = useMessages(assets);
   const c = useMessages(common);
@@ -176,45 +194,224 @@ export function AssetClient() {
     [busy, guard],
   );
 
-  if (needsAuth) return <SignInGate href={loginHref(`/assets/${kbId}`)} />;
+  const settings = view === "settings";
+  if (needsAuth) return <SignInGate href={loginHref(settings ? `/assets/${kbId}/settings` : `/assets/${kbId}`)} />;
+
+  // 「外部来源」这一格出不出现,由**模式**决定,但不是只由模式决定:一个采集库被
+  // 转成自建时,原来那些绑定不会自动消失——如果这里只看模式,它们会变成看不见却
+  // 还在同步的东西。所以还有绑定就照样露出来,让人有地方去撤销。
+  //
+  // 这正是「默认不是约束」的另一半:模式塑造页面,但不隐藏事实。
+  const liveBindings = (bindings ?? []).filter((b) => b.state !== "revoked").length;
+  const showBindings = kb?.sourceMode === "synced" || (bindings ?? []).length > 0;
 
   const failedCount = (docs ?? []).filter((d) => d.contentState === "failed").length;
+
+  // `kb && (...)`：三个面板都要一个非空的 kb，而它们落在 null 判断**之前**。用 `&&`
+  // 而不是把判断提上来，是因为 `kb` 是 const —— 收窄会跟着进闭包，面板里那些回调
+  // 拿到的照样是 Kb 而不是 Kb | null。
+  // 三个面板先落成常量,再由视图决定摆哪几个。它们各自都是一整块带回调的 JSX,
+  // 在两处分支里各抄一遍就等于有两份——而改动只会落到其中一份上。
+  const documentPanel = kb && (
+    <DocumentPanel
+      kb={kb}
+      docs={docs}
+      parked={parked}
+      folders={folders}
+      busy={busy}
+      onUpload={(file, folderId) =>
+        run(assets.errUpload, async () => {
+          await uploadDocument(kbId, file, undefined, folderId);
+          await loadDocs();
+          return m.okUpload(file.name);
+        })
+      }
+      onVerify={(doc) =>
+        run(assets.errVerifyDoc, async () => {
+          await verifyDocument(kbId, doc.id);
+          await loadDocs();
+          return m.okVerifyDoc(doc.title);
+        })
+      }
+      onRetry={(doc) =>
+        run(assets.errReprocess, async () => {
+          await reprocessDocument(kbId, doc.id);
+          await loadDocs();
+          // Deliberately not "已完成": reprocess puts the document back
+          // in the queue, and claiming it succeeded would be a lie the
+          // user only discovers when it fails again.
+          return m.okReprocess(doc.title);
+        })
+      }
+      onDelete={(doc) =>
+        run(common.deleteFailed, async () => {
+          await deleteDocument(kbId, doc.id);
+          await loadDocs();
+        })
+      }
+    />
+  );
+
+  const bindingPanel = kb && (
+    <BindingPanel
+      kb={kb}
+      bindings={bindings}
+      connectors={connectors}
+      busy={busy}
+      onCreate={(connectorCode, externalSourceId) =>
+        run(assets.errBind, async () => {
+          const r = await createBinding(kbId, connectorCode, externalSourceId);
+          setBindings(await listBindings(kbId));
+          return m.okBind(r.connector?.name ?? connectorCode, externalSourceId);
+        })
+      }
+      onAction={(binding, action) =>
+        run(assets.errBindingAction, async () => {
+          const r = await bindingAction(kbId, binding.id, action);
+          setBindings(await listBindings(kbId));
+          if (action === "revoke") {
+            // Report what the cascade ACTUALLY did, not what the preview
+            // predicted - if they ever diverge, the owner should see the
+            // real number.
+            await loadDocs();
+            return m.okRevoke(binding.externalSourceId, r.cascade?.tombstoned ?? 0);
+          }
+          return action === "pause" ? m.okPause : m.okResume;
+        })
+      }
+    />
+  );
+
+  const settingsPanel = kb && (
+    <SettingsPanel
+      kb={kb}
+      folders={folders}
+      templates={templates}
+      fields={fields}
+      budget={budget}
+      busy={busy}
+      liveBindings={liveBindings}
+      onSourceMode={(mode) =>
+        run(assets.errModeSwitch, async () => {
+          if (kb.sourceMode === mode) return;
+          setKb(await setSourceMode(kbId, mode));
+          return m.okModeSwitch(mode === "synced" ? m.modeSynced : m.modeOwned);
+        })
+      }
+      onShare={(target) =>
+        run(assets.errShare, async () => {
+          if (kb.publishState === target) return;
+          setKb(await setSharing(kbId, target));
+          return m.okShare(f.sharing(target).label);
+        })
+      }
+      onTemplate={(templateId) =>
+        run(assets.errTemplate, async () => {
+          setKb(await setProcessingTemplate(kbId, templateId));
+          return m.okTemplate;
+        })
+      }
+      onEmbedding={(model) =>
+        run(assets.errVectorSave, async () => {
+          setKb(await setEmbeddingModel(kbId, model));
+          return model ? m.okVectorLocked(model) : m.okVectorUnlocked;
+        })
+      }
+      onRetrieval={(patch) =>
+        run(assets.errRetrievalSave, async () => {
+          setKb(await setRetrievalChannels(kbId, patch));
+          return m.okRetrievalSave;
+        })
+      }
+      onGovernance={(enabled) =>
+        run(assets.errGovernanceToggle, async () => {
+          setKb(await setGovernance(kbId, enabled));
+        })
+      }
+      onVerifierConfig={(verifier, intervalDays) =>
+        run(assets.errGovernanceSave, async () => {
+          setKb(await setVerifierConfig(kbId, { defaultVerifier: verifier, defaultVerifyIntervalDays: intervalDays }));
+          return m.okGovernanceSave;
+        })
+      }
+      onFields={(next) =>
+        run(assets.errFieldsSave, async () => {
+          const r = await putMetadataFields(kbId, next);
+          setFields(r.fields);
+          setBudget(r.budget);
+          return m.okFieldsSave;
+        })
+      }
+      onCreateFolder={(name) =>
+        run(assets.errFolderCreate, async () => {
+          await createFolder(kbId, name);
+          setFolders(await listFolders(kbId));
+        })
+      }
+      onRenameFolder={(id, name) =>
+        run(assets.errFolderRename, async () => {
+          await renameFolder(kbId, id, name);
+          setFolders(await listFolders(kbId));
+        })
+      }
+      onDeleteFolder={(folder) =>
+        run(assets.errFolderDelete, async () => {
+          await deleteFolder(kbId, folder.id);
+          setFolders(await listFolders(kbId));
+          // The documents survive - reload them so the ones that just
+          // became unfiled show that, rather than staying filed under a
+          // folder the page no longer lists.
+          await loadDocs();
+          return m.okFolderDelete(folder.name);
+        })
+      }
+    />
+  );
 
   return (
     <>
       <PageHead
-        title={kb?.name ?? c.loading}
-        description={kb?.description ?? undefined}
+        title={settings && kb ? m.settingsTitle(kb.name) : (kb?.name ?? c.loading)}
+        description={settings ? m.settingsDesc : (kb?.description ?? undefined)}
         meta={
-          docs
-            ? `${m.metaDocs(docs.length)}${failedCount > 0 ? ` · ${m.metaFailed(failedCount)}` : ""}${
-                kb ? ` · ${f.sharing(kb.publishState).label}` : ""
+          settings || !docs
+            ? undefined
+            : `${m.metaDocs(docs.length)}${failedCount > 0 ? ` \u00b7 ${m.metaFailed(failedCount)}` : ""}${
+                kb ? ` \u00b7 ${f.sharing(kb.publishState).label}` : ""
               }`
-            : undefined
         }
         actions={
-          <Button variant="outline" asChild>
-            {/* `/assets`,不是 `/`。KD-214 之前两者是同一页,迁路由时这一行没跟着改,
-                于是「返回知识资产」会把人送到首页——按 §3.2,返回要回到这个对象
-                **所属的那一层**,而不是任何一个上级。 */}
-            <Link href="/assets">{m.backToAssets}</Link>
-          </Button>
+          settings ? (
+            // 返回回到**上一层**，也就是这个库本身——不是资产列表。KD-214 那次就是在
+            // 这一行上跌的：路由变了，返回目标没跟着变，于是“返回”把人送到了另一层。
+            <Button variant="outline" asChild>
+              <Link href={`/assets/${kbId}`}>{m.backToLibrary}</Link>
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" asChild>
+                <Link href={`/assets/${kbId}/settings`}>{m.settingsLabel}</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/assets">{m.backToAssets}</Link>
+              </Button>
+            </>
+          )
         }
       />
 
       {error && <Banner tone="danger" title={f.failure(error) ?? ""} />}
       {notice && <Banner tone="success" title={notice} />}
 
-      {/* **加载中与加载失败不是同一件事**(owner 2026-08-29)。`getKb` 失败时 `kb`
-          也保持 null,于是页面同时显示一条红 banner 和「正在加载库…」,而且没有
-          任何重试入口——只能刷新。一个把失败画成「还在转」的空态,会让人一直等。
-          现在按 `error` 分开,并给失败那一支一个重试按钮。 */}
-      {/* 五条业务流在这个库上的交汇。放在 tab **之外**:它是「进来就该看到的」,
-          藏进任何一个 tab 都等于没有。 */}
-      {kb && docs && bindings && (
+      {/* 五条业务流在这个库上的交汇。只在内容视图上：设置页回答的是“它怎么运转”，
+          而这条带说的是“它现在怎么样”——摆在设置页顶上只会把真正要改的东西推下去。 */}
+      {!settings && kb && docs && bindings && (
         <LifecycleStrip kb={kb} docs={docs} parked={parked} bindings={bindings} supply={supply} />
       )}
 
+      {/* **加载中与加载失败不是同一件事**（owner 2026-08-29）。`getKb` 失败时 `kb`
+          也保持 null，于是页面同时显示一条红 banner 和「正在加载库…」，而且没有
+          任何重试入口——只能刷新。一个把失败画成「还在转」的空态，会让人一直等。 */}
       {kb === null ? (
         error ? (
           <EmptyState
@@ -230,168 +427,34 @@ export function AssetClient() {
         ) : (
           <EmptyState title={m.kbLoading} />
         )
-      ) : (
-        <Tabs defaultValue="documents" className="flex flex-col gap-md">
+      ) : settings ? (
+        settingsPanel
+      ) : showBindings ? (
+        // 采集库里、或者手上还拿着绑定的库里，内容和来源是两件要分开看的事，所以保留 tab。
+        // 默认落在哪一格跟着模式走：采集库的主角是「来源与同步状态」，而一个已经
+        // 转回自建、只剩下旧绑定等着被撤销的库，主角仍然是它的文档。
+        <Tabs
+          defaultValue={kb.sourceMode === "synced" ? "bindings" : "documents"}
+          className="flex flex-col gap-md"
+        >
           <TabsList>
             <TabsTrigger value="documents">{m.tabDocuments}{docs ? ` (${docs.length})` : ""}</TabsTrigger>
             <TabsTrigger value="bindings">
-              {/* 计数排除已撤销,而面板里仍然列着已撤销那一组——于是标签写着 (0),
-                  下面却有内容(owner 2026-08-29)。改成:有已撤销时把它单独写出来,
+              {/* 计数排除已撤销，而面板里仍然列着已撤销那一组——于是标签写着 (0)，
+                  下面却有内容（owner 2026-08-29）。改成：有已撤销时把它单独写出来，
                   而不是让两个数字互相拆台。 */}
               {m.tabBindings}
               {bindings ? bindingCount(bindings, m) : ""}
             </TabsTrigger>
-            <TabsTrigger value="settings">{m.tabSettings}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="documents">
-            <DocumentPanel
-              kb={kb}
-              docs={docs}
-              parked={parked}
-              folders={folders}
-              busy={busy}
-              onUpload={(file, folderId) =>
-                run(assets.errUpload, async () => {
-                  await uploadDocument(kbId, file, undefined, folderId);
-                  await loadDocs();
-                  return m.okUpload(file.name);
-                })
-              }
-              onVerify={(doc) =>
-                run(assets.errVerifyDoc, async () => {
-                  await verifyDocument(kbId, doc.id);
-                  await loadDocs();
-                  return m.okVerifyDoc(doc.title);
-                })
-              }
-              onRetry={(doc) =>
-                run(assets.errReprocess, async () => {
-                  await reprocessDocument(kbId, doc.id);
-                  await loadDocs();
-                  // Deliberately not "已完成": reprocess puts the document back
-                  // in the queue, and claiming it succeeded would be a lie the
-                  // user only discovers when it fails again.
-                  return m.okReprocess(doc.title);
-                })
-              }
-              onDelete={(doc) =>
-                run(common.deleteFailed, async () => {
-                  await deleteDocument(kbId, doc.id);
-                  await loadDocs();
-                })
-              }
-            />
-          </TabsContent>
-
-          <TabsContent value="bindings">
-            <BindingPanel
-              kb={kb}
-              bindings={bindings}
-              connectors={connectors}
-              busy={busy}
-              onCreate={(connectorCode, externalSourceId) =>
-                run(assets.errBind, async () => {
-                  const r = await createBinding(kbId, connectorCode, externalSourceId);
-                  setBindings(await listBindings(kbId));
-                  return m.okBind(r.connector?.name ?? connectorCode, externalSourceId);
-                })
-              }
-              onAction={(binding, action) =>
-                run(assets.errBindingAction, async () => {
-                  const r = await bindingAction(kbId, binding.id, action);
-                  setBindings(await listBindings(kbId));
-                  if (action === "revoke") {
-                    // Report what the cascade ACTUALLY did, not what the preview
-                    // predicted - if they ever diverge, the owner should see the
-                    // real number.
-                    await loadDocs();
-                    return m.okRevoke(binding.externalSourceId, r.cascade?.tombstoned ?? 0);
-                  }
-                  return action === "pause" ? m.okPause : m.okResume;
-                })
-              }
-            />
-          </TabsContent>
-
-          <TabsContent value="settings">
-            <SettingsPanel
-              kb={kb}
-              folders={folders}
-              templates={templates}
-              fields={fields}
-              budget={budget}
-              busy={busy}
-              onShare={(target) =>
-                run(assets.errShare, async () => {
-                  if (kb.publishState === target) return;
-                  setKb(await setSharing(kbId, target));
-                  return m.okShare(f.sharing(target).label);
-                })
-              }
-              onTemplate={(templateId) =>
-                run(assets.errTemplate, async () => {
-                  setKb(await setProcessingTemplate(kbId, templateId));
-                  return m.okTemplate;
-                })
-              }
-              onEmbedding={(model) =>
-                run(assets.errVectorSave, async () => {
-                  setKb(await setEmbeddingModel(kbId, model));
-                  return model ? m.okVectorLocked(model) : m.okVectorUnlocked;
-                })
-              }
-              onRetrieval={(patch) =>
-                run(assets.errRetrievalSave, async () => {
-                  setKb(await setRetrievalChannels(kbId, patch));
-                  return m.okRetrievalSave;
-                })
-              }
-              onGovernance={(enabled) =>
-                run(assets.errGovernanceToggle, async () => {
-                  setKb(await setGovernance(kbId, enabled));
-                })
-              }
-              onVerifierConfig={(verifier, intervalDays) =>
-                run(assets.errGovernanceSave, async () => {
-                  setKb(await setVerifierConfig(kbId, { defaultVerifier: verifier, defaultVerifyIntervalDays: intervalDays }));
-                  return m.okGovernanceSave;
-                })
-              }
-              onFields={(next) =>
-                run(assets.errFieldsSave, async () => {
-                  const r = await putMetadataFields(kbId, next);
-                  setFields(r.fields);
-                  setBudget(r.budget);
-                  return m.okFieldsSave;
-                })
-              }
-              onCreateFolder={(name) =>
-                run(assets.errFolderCreate, async () => {
-                  await createFolder(kbId, name);
-                  setFolders(await listFolders(kbId));
-                })
-              }
-              onRenameFolder={(id, name) =>
-                run(assets.errFolderRename, async () => {
-                  await renameFolder(kbId, id, name);
-                  setFolders(await listFolders(kbId));
-                })
-              }
-              onDeleteFolder={(folder) =>
-                run(assets.errFolderDelete, async () => {
-                  await deleteFolder(kbId, folder.id);
-                  setFolders(await listFolders(kbId));
-                  // The documents survive - reload them so the ones that just
-                  // became unfiled show that, rather than staying filed under a
-                  // folder the page no longer lists.
-                  await loadDocs();
-                  return m.okFolderDelete(folder.name);
-                })
-              }
-            />
-          </TabsContent>
+          <TabsContent value="documents">{documentPanel}</TabsContent>
+          <TabsContent value="bindings">{bindingPanel}</TabsContent>
         </Tabs>
+      ) : (
+        // 自建库：内容就是全部，不给它套一个只有一格的 tab 条——那只会让人
+        // 找另一格在哪里。
+        documentPanel
       )}
     </>
   );

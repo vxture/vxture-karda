@@ -47,7 +47,7 @@ GRANT UPDATE (flushed_at) ON local_usage.checkpoint TO karda_svc;
 REVOKE UPDATE ON karda_kb.knowledge_base FROM karda_svc;
 GRANT UPDATE (name, description, publish_state, processing_template_id,
               processing_params, embedding_model, fulltext_enabled, graph_enabled,
-              retrieval_defaults, governance_enabled, default_verifier,
+              retrieval_defaults, source_mode, governance_enabled, default_verifier,
               default_verify_interval_days, exempt_synced_content, deleted_at,
               updated_at)
   ON karda_kb.knowledge_base TO karda_svc;

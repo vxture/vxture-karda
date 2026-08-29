@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { KbService } from "./service";
-import { InMemoryKbStore, type CreateKbInput, type UpdateKbInput } from "./store";
+import { InMemoryKbStore, isSourceMode, type CreateKbInput, type UpdateKbInput } from "./store";
 import type { Actor } from "./ownership";
 
 const owner: Actor = { role: "owner", sub: "usr_a" };
@@ -25,12 +25,32 @@ test("create rejects an inconsistent ownership shape before the DB would", () =>
     .then((r) => assert.deepEqual(r, { ok: false, error: { code: "invalid_ownership_shape" } }));
 });
 
-test("create defaults are private / governance off / synced-exempt", async () => {
+test("create defaults are private / governance off / synced-exempt / self-owned", async () => {
   const r = await svc().create(userKbInput());
   assert.ok(r.ok);
   assert.equal(r.value.publishState, "private");
   assert.equal(r.value.governanceEnabled, false);
   assert.equal(r.value.exemptSyncedContent, true);
+  // 没有绑定过外部源的库,真相只可能在这里——`owned` 不是猜的默认,是唯一可能。
+  // 这一行也钉住了内存实现与 DDL 列默认一致:两边分开写,只有断言让它们同步。
+  assert.equal(r.value.sourceMode, "owned");
+});
+
+test("建库时声明的来源模式会被保留", async () => {
+  const r = await svc().create({ ...userKbInput("synced kb"), sourceMode: "synced" });
+  assert.ok(r.ok);
+  assert.equal(r.value.sourceMode, "synced");
+});
+
+test("来源模式的值域在类型之外也认得出来", () => {
+  // 路由收到的是 JSON,类型在那里帮不上忙。这个判定是**边界上**的收口:不认的
+  // 值当没送,而不是让它一路走到 DB 的 CHECK 上炸成一个 500。
+  assert.equal(isSourceMode("owned"), true);
+  assert.equal(isSourceMode("synced"), true);
+  assert.equal(isSourceMode("SYNCED"), false);
+  assert.equal(isSourceMode("external"), false);
+  assert.equal(isSourceMode(null), false);
+  assert.equal(isSourceMode(undefined), false);
 });
 
 test("name uniqueness is enforced per workspace, ignoring soft-deleted rows", async () => {
@@ -168,6 +188,7 @@ test("EVERY updatable config key actually reaches the store", async () => {
     embeddingModel: "bge-m3",
     fulltextEnabled: false,
     graphEnabled: true,
+    sourceMode: "synced",
   } as const satisfies Required<Omit<UpdateKbInput, "publishState">>;
 
   const updated = await svc.update(made.value.id, patch);

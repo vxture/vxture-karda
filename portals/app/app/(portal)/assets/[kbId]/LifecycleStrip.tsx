@@ -66,7 +66,14 @@ export function LifecycleStrip({ kb, docs, parked, bindings, supply }: Lifecycle
       label: m.lifeIngest,
       value: m.metaDocs(total),
       // 来源构成:说的是「这些内容从哪来」,而外部来源数是它的一部分。
-      note: liveBindings > 0 ? m.lifeIngestBindings(liveBindings) : m.lifeIngestUploadOnly,
+      // 三种说法,而不是两种:一个已经声明自己是采集库、却一个来源都没接的库,
+      // 说「上传与 API 写入」是把它描述成了另一种库——它缺的是一次绑定,不是内容。
+      note:
+        liveBindings > 0
+          ? m.lifeIngestBindings(liveBindings)
+          : kb.sourceMode === "synced"
+            ? m.lifeIngestSyncedNone
+            : m.lifeIngestUploadOnly,
       alert: null,
       href: null,
     },

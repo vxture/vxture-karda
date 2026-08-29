@@ -20,6 +20,7 @@ import {
 import {
   type Folder,
   type Kb,
+  type SourceMode,
   type MetadataBudget,
   type MetadataField,
   type ProcessingTemplateOption,
@@ -45,6 +46,8 @@ export function SettingsPanel({
   fields,
   budget,
   busy,
+  liveBindings,
+  onSourceMode,
   onShare,
   onTemplate,
   onEmbedding,
@@ -63,6 +66,9 @@ export function SettingsPanel({
   budget: MetadataBudget | null;
   busy: boolean;
   onShare: (target: PublishState) => void | Promise<void>;
+  /** 还在同步的外部来源数。采集 -> 自建是唯一会留下矛盾的方向,警告要有数字。 */
+  liveBindings: number;
+  onSourceMode: (mode: SourceMode) => void | Promise<void>;
   onTemplate: (templateId: string | null) => void | Promise<void>;
   onEmbedding: (model: string | null) => void | Promise<void>;
   onRetrieval: (patch: { fulltextEnabled?: boolean; graphEnabled?: boolean }) => void | Promise<void>;
@@ -81,6 +87,9 @@ export function SettingsPanel({
   // 内容进来时就要用的第一件。
   return (
     <div className="flex flex-col gap-md">
+      {/* ⓪ 这个库是什么 —— 排在最前,因为它决定后面每一段的默认,也决定详情页有没有
+             「外部来源」那一格。 */}
+      <SourceModeCard kb={kb} liveBindings={liveBindings} onSourceMode={onSourceMode} />
       {/* ① 入库 */}
       <FoldersCard
         folders={folders}
@@ -100,6 +109,62 @@ export function SettingsPanel({
       {/* ⑤ 共享 —— 唯一对外的一件,放最后 */}
       <SharingCard kb={kb} busy={busy} onShare={onShare} />
     </div>
+  );
+}
+
+/**
+ * 来源模式:这个库的**真相住在哪**。
+ *
+ * 它读起来像一个开关,实际上是这一页的前提。自建库的真相在这里,全部内容纳入治理;
+ * 采集库的真相在源头,同步进来的内容默认豁免本地复验——那条规则(`governanceApplies`)
+ * 一直都在,只是此前没有一个地方让**库**把自己是哪一种说出来,答案只能逐条从
+ * `document.source` 推(owner 2026-08-30)。
+ *
+ * 两件必须写在控件旁边的事:
+ *
+ *   1. **这是默认,不是限制**。采集库仍可手工补充,补进来的那份照常纳入治理——
+ *      否则那份文件在页面上看起来像违规。
+ *   2. **切换不搬内容**。人最怕的是「按一下东西就没了」,所以先把这句说掉,再谈
+ *      采集转自建时那些还连着的来源。
+ */
+function SourceModeCard({
+  kb,
+  liveBindings,
+  onSourceMode,
+}: {
+  kb: Kb;
+  liveBindings: number;
+  onSourceMode: (mode: SourceMode) => void | Promise<void>;
+}) {
+  const m = useMessages(assets);
+  const synced = kb.sourceMode === "synced";
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{m.modeCardTitle}</CardTitle>
+        <CardDescription>{synced ? m.modeSyncedDesc : m.modeOwnedDesc}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-sm">
+        <SegmentedControl
+          items={[
+            { value: "owned", label: m.modeOwned },
+            { value: "synced", label: m.modeSynced },
+          ]}
+          value={kb.sourceMode}
+          onChange={(v) => onSourceMode(v as SourceMode)}
+          fill
+          ariaLabel={m.modeCardTitle}
+        />
+        <p className="text-body-sm text-muted-foreground">{m.modeHint}</p>
+        <p className="text-body-sm text-muted-foreground">{m.modeSwitchHint}</p>
+        {/* 采集 -> 自建而来源还连着:转过去之后它们**仍然在同步**,而页面上那一格
+            会因为模式变了而不再是主角。这不是禁止,是把后果说清楚。 */}
+        {synced && liveBindings > 0 && (
+          <p className="text-body-sm text-warning-text">{m.modeSwitchWarn(liveBindings)}</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

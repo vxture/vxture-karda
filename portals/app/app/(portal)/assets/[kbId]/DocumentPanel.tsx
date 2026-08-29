@@ -100,6 +100,12 @@ export function DocumentPanel({
   const failed = (shown ?? []).filter((d) => d.contentState === "failed");
   const rest = (shown ?? []).filter((d) => d.contentState !== "failed");
 
+  // 采集库里手工放进来的内容。解释在**面板顶上说一次**,不挂在每一行:一行一个
+  // 提示既重复又都看不见,而这句话要回答的问题只会被问一次——「为什么这一份要
+  // 复验,旁边同一个库里的那些不用」。
+  const hasLocalAdditions =
+    kb.sourceMode === "synced" && (docs ?? []).some((d) => d.source !== "connector");
+
   // Only offer folders that exist. An empty catalogue means the filter row is
   // noise, not an empty control.
   const filterItems = [
@@ -110,6 +116,9 @@ export function DocumentPanel({
 
   return (
     <div className="flex flex-col gap-md">
+      {hasLocalAdditions && (
+        <p className="text-body-sm text-muted-foreground">{m.docLocalAddHint}</p>
+      )}
       <Card>
         <CardContent className="flex flex-wrap items-center gap-md py-md">
           <label className="flex items-center gap-sm text-body-md">
@@ -262,6 +271,7 @@ function DocumentRow({
   const hint = f.processingHint(doc.contentState);
   const gov = kb.governanceEnabled;
   const readable = previewKind(doc.mime) !== "none";
+  const localAddition = kb.sourceMode === "synced" && doc.source !== "connector";
   const record = verificationRecord(doc.verificationState, doc.verifiedAt, doc.expiresAt, new Date());
 
   return (
@@ -269,11 +279,21 @@ function DocumentRow({
       <div className="flex items-center justify-between gap-md">
         <div className="min-w-0">
           <div className="truncate text-body-md font-medium">{doc.title}</div>
+          {/* `doc.source` 原来是**原样印出来的机器值**——「upload」「api」「connector」,
+              印在中文界面上一行人要读的字里。它说的是「谁把它放进来的」,而这决定了
+              断源之后它还在不在、治理管不管它。 */}
           <div className="text-body-sm text-muted-foreground">
-            {f.when(doc.createdAt)} · {formatBytes(doc.sizeBytes)} · {doc.source}
+            {f.when(doc.createdAt)} · {formatBytes(doc.sizeBytes)} · {f.docSource(doc.source)}
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-sm">
+          {/* 采集库里手工放进来的那一份。它不是错误,但它和周围那些同步来的不是
+              一回事:源头不会更新它,而治理**照常**适用(`governanceApplies` 按
+              每份文档的 `synced` 判断)。不标出来,它看起来就只是一份普通文档,
+              直到有人问「为什么这份要复验、旁边那份不用」。 */}
+          {localAddition && (
+            <ToneBadge tone="info">{m.docLocalAdd}</ToneBadge>
+          )}
           {gov && <ToneBadge tone={vr.tone}>{vr.label}</ToneBadge>}
           <ToneBadge tone={cs.tone}>{cs.label}</ToneBadge>
 
