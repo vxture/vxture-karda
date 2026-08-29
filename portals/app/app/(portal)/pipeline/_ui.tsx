@@ -29,7 +29,7 @@ export function StageDots({ dots }: { dots: readonly StageDot[] }) {
 
 /** 页内副栏 (page aside) card: title row + content, compact density.
  *  The aside is a page's OWN secondary column inside the 内容区 - not to be
- *  confused with 值班台, which is a shell pane. Shell vocabulary is defined in
+ *  confused with 智枢, which is a shell pane. Shell vocabulary is defined in
  *  docs/30-design/130-portal-shell.md. */
 export function AsideCard({
   title,

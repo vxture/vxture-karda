@@ -29,7 +29,7 @@ import type { ShellData } from "../kb/demo/shell-types";
 //   导航栏 nav pane     this file, 280px. Not a "rail": Material reserves that
 //                      for the 80dp icon strip; a 280px menu column is a pane.
 //   内容区 main pane    the middle, scrolling pane (ARIA <main>), width follows
-//   值班台 steward dock the right pane, 400px. Named for what it IS - a duty
+//   智枢 agent hub the right pane, 400px. Named for what it IS - a duty
 //                      desk with pending items - not "action pane"; it is a
 //                      product surface, not a generic inspector.
 //   栏间距 pane spacer  32px between panes (Material pane spacer)

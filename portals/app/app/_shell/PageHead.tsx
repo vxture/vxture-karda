@@ -24,7 +24,7 @@ export function PageHead({
 }) {
   return (
     // The head sits in its own container so all three panes share ONE top edge
-    // (owner 2026-08-24): the nav card, this panel and the 值班台 all start at
+    // (owner 2026-08-24): the nav card, this panel and the 智枢 all start at
     // the same y and repeat the same radius, instead of a card on the left
     // facing bare text in the middle. Surface is a translucent gradient - the
     // product backdrop reads through it, the content does not have to fight

@@ -320,7 +320,7 @@ export const DEMO_ASSETS: DemoAssetSpec[] = [
       topConsumers: [],
       highlight: {
         kind: "steward",
-        text: "管家:",
+        text: "卡尔达:",
         strong: "GB 51427 新版已比对出 12 处差异",
         action: "入藏后自动生成更新提案",
       },
@@ -576,7 +576,7 @@ export const DEMO_ASSETS: DemoAssetSpec[] = [
       topConsumers: ["raven", "anlan"],
       highlight: {
         kind: "steward",
-        text: "管家:",
+        text: "卡尔达:",
         strong: "本周回流萃取 14 条,已确认 9 条",
         action: "查看待确认",
       },

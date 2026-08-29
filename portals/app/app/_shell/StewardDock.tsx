@@ -8,7 +8,7 @@ import { useMessages } from "../_i18n/useMessages";
 import { shell as shellMessages } from "../_i18n/messages/shell";
 import type { StewardProposal } from "../kb/demo/pipeline-types";
 
-// 值班台 (steward dock) - the right pane of the shell body: the cross-page
+// 智枢 (agent hub) - the right pane of the shell body: the cross-page
 // DECISION queue, nothing else (page-specific explanatory cards stay in the
 // 内容区). Human acts, or hands the item to the steward. Collapses INTO the
 // 顶栏: when closed the header's ai icon carries the red pending badge and

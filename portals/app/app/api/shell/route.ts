@@ -8,7 +8,7 @@ import { readCorpus } from "../../kb/governance/corpus-read";
 import type { ShellData } from "../../kb/demo/shell-types";
 
 // GET /api/shell - everything the portal chrome needs in one round trip: the
-// 导航栏 card summaries, the header badge count, the 值班台 payload.
+// 导航栏 card summaries, the header badge count, the 智枢 payload.
 // Asset/entry counts and the 7-day intake are live when a DB is attached; ops
 // figures stay the demo overlay (demoOps: true) until the supply ledger and
 // pipeline land - derived from the same demo constants as /api/overview and
@@ -123,14 +123,14 @@ export async function GET(): Promise<Response> {
       proposals: DEMO_PIPELINE.proposals.slice(0, 2),
       alert: DEMO_TASKS.alert
         ? {
-            text: `「${DEMO_TASKS.alert.kbName}」失败率 ${DEMO_TASKS.alert.rate.replace(" > ", " 超 ")}——管家判断:模板选错`,
+            text: `「${DEMO_TASKS.alert.kbName}」失败率 ${DEMO_TASKS.alert.rate.replace(" > ", " 超 ")}——卡尔达判断:模板选错`,
             href: "/pipeline/tasks",
           }
         : null,
       activity: [
-        { time: "14:32", agent: "forge", text: "沉淀投标问答 12 条,管家萃取中" },
+        { time: "14:32", agent: "forge", text: "沉淀投标问答 12 条,卡尔达萃取中" },
         { time: "14:18", agent: "raven", text: "引用《设备作业手册》46 次(早班峰值)" },
-        { time: "13:55", text: "管家完成 GB 51427 差异比对,生成更新提案" },
+        { time: "13:55", text: "卡尔达完成 GB 51427 差异比对,生成更新提案" },
         { time: "13:41", agent: "anlan", text: "查「华东区验收纪要」未命中 → 记为缺口" },
       ],
     },

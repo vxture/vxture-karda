@@ -14,7 +14,7 @@ import type { ShellData } from "../kb/demo/shell-types";
 // 工作区 (shell body) = everything below the 顶栏, holding three panes:
 //   导航栏 (nav pane)     280px, collapsible - unmounts, no icon strip left
 //   内容区 (main pane)    scrolls on its own, the fullscreen target
-//   值班台 (steward dock) 320px, collapses INTO the 顶栏's ai icon, which then
+//   智枢 (agent hub) 320px, collapses INTO the 顶栏's ai icon, which then
 //                        carries the red pending badge
 // Pane visibility persists per-browser; chrome data comes from ONE fetch
 // (/api/shell). The full vocabulary is defined once at the top of NavPane.tsx
@@ -103,7 +103,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
           the single deliberate exception, declared below. */}
       <div className="flex min-h-0 flex-1 gap-xl p-lg">
         {/* 导航栏 paints no surface and draws no border of its own: its cards
-            sit straight on the shared ground (owner 2026-08-24). Only 值班台
+            sit straight on the shared ground (owner 2026-08-24). Only 智枢
             keeps a pane surface - it is a panel over the page, not part of
             it. */}
         <NavPane active={active} pathname={pathname} shell={shell} collapsed={navCollapsed} />
@@ -116,7 +116,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
         <main className="min-w-0 flex-1 overflow-y-auto">
           {/* 内衬 content inset: px-md = 16px, the ONE edge padding a pane adds
               on top of the 工作区 constants. It puts the reading column 48px
-              clear of 导航栏 and of 值班台 (32px pane spacer + 16px inset) -
+              clear of 导航栏 and of 智枢 (32px pane spacer + 16px inset) -
               the side panes sit at the window margin, the content deliberately
               does not (owner 2026-08-25). pb keeps a safe run-out under the
               last section.
@@ -124,7 +124,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
               @container makes this element the query context for everything
               the pages render: their column counts must follow the WIDTH OF
               THIS PANE, not the viewport. A viewport breakpoint cannot see
-              that 导航栏 and 值班台 are open, which is exactly how a 1600px
+              that 导航栏 and 智枢 are open, which is exactly how a 1600px
               window ended up drawing four columns into an 840px pane. Pages
               query it with `@min-[Nrem]:`; the arithmetic behind each
               threshold is written out at the asset grid in
