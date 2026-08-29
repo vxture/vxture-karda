@@ -397,6 +397,11 @@ export function AssetClient({ view = "content" }: { view?: AssetView } = {}) {
             </Button>
           ) : (
             <>
+              {/* 知识确认台的门。放在设置前面:它是内容的一部分(卡尔达抽出的知识),
+                  比配置离这一页更近。 */}
+              <Button variant="outline" asChild>
+                <Link href={`/assets/${kbId}/knowledge`}>{m.knowledgeLabel}</Link>
+              </Button>
               <Button variant="outline" asChild>
                 <Link href={`/assets/${kbId}/settings`}>{m.settingsLabel}</Link>
               </Button>

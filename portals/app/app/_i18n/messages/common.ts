@@ -40,6 +40,15 @@ export const common = {
   /** 模板而不是拼串:中文是「每页 25 条」,英文是「25 per page」,语序不同——
    *  件替调用方拼就等于替它定了语序(DS 自己在 `pageSizeOptionTemplate` 上写了同一条)。 */
   pagerSizeTemplate: { "zh-CN": "每页 {size} 条", "en-US": "{size} per page" },
+  /** 批量条的计数语。槽位 {count} / {noun}；模板而不是拼串，语序归产品——
+   *  中文数词在前，英文 selected 在后，件替调用方定语序是越界（DS 自己的注释这么写，
+   *  但它的运行时默认是英文的，真库上看见「2 条断言 selected」）。 */
+  bulkSelectedTemplate: { "zh-CN": "已选择 {count} {noun}", "en-US": "{count} {noun} selected" },
+  /** 翻页条左侧计数。DS 默认是英文的 "N records"——同一条「默认文案要覆盖」的规矩。 */
+  pagerCount: {
+    "zh-CN": (n: number) => `共 ${n} 条`,
+    "en-US": (n: number) => `${n} record${n === 1 ? "" : "s"}`,
+  } satisfies MessageFn<[number]>,
 
   // --- states ----------------------------------------------------------------
   loading: { "zh-CN": "载入中…", "en-US": "Loading…" },

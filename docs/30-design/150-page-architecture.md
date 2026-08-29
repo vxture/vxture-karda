@@ -124,7 +124,7 @@
 | **首页 home** | 这套基础设施此刻怎么样 | `/`(KD-214 新增) |
 | **域总览 domain** | 这个域现在怎么样 | `/assets` `/channels` `/pipeline` `/evaluation` |
 | **清单 list** | 这一类东西有哪些 | `/pipeline/tasks` `/evaluation/sets` `/evaluation/queue` `/tools` |
-| **详情 detail** | 这一个东西是什么样 | `/assets/[kbId]` `/assets/[kbId]/settings`(§3.4) `/pipeline/tasks/[id]` |
+| **详情 detail** | 这一个东西是什么样 | `/assets/[kbId]` `/assets/[kbId]/settings`(§3.4) `/assets/[kbId]/knowledge`(KD-222,140 §11.5) `/pipeline/tasks/[id]` |
 | **流程 flow** | 做成这件事要几步 | `/assets/new` `/pipeline/rebuild` `/bench` |
 
 ### 3.1 每类的头部契约
