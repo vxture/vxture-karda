@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import {
   Button,
+  Input,
   DestructiveButton,
   Card,
   CardContent,
@@ -51,6 +52,24 @@ type FolderFilter = string; // folder id, "" = all, UNFILED for null
 
 const UNFILED = "\u0000unfiled";
 
+/** 排序口径。三个,不是六个:**每一个都要能一句话说清它回答什么问题**,而
+ *  「按状态」「按大小」在这一页上没有对应的问题——失败的那些已经被钉在最上面了。 */
+type Sort = "recent" | "oldest" | "title";
+
+/**
+ * 一次先画多少行。
+ *
+ * 这一页此前把全部文档一次铺完:演示库里是 94 到 412 行,真实库只会更长。分页放在
+ * **客户端**而不是服务端,是一个有理由的选择:这一页上另外几样东西——目录芯片上的
+ * 计数、钉在最上面的失败组、「本地补充」的判断、还有页头那条状态条——全都要读**整
+ * 份**清单才算得出来。改成服务端分页就必须另开一套聚合端点,于是同一个数字有了两个
+ * 来源,而这一页本轮修的 bug 里有一半正是「两个数字互相拆台」。
+ *
+ * 服务端分页要到「取回清单本身就太贵」的量级才成为必需,那时它连同计数端点一起做,
+ * 是另一件事。
+ */
+const PAGE = 50;
+
 export function DocumentPanel({
   kb,
   docs,
@@ -77,6 +96,11 @@ export function DocumentPanel({
   const m = useMessages(assets);
   const c = useMessages(common);
   const [filter, setFilter] = useState<FolderFilter>("");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<Sort>("recent");
+  /** 已经展开到第几批。任何一次筛选/搜索/排序变化都把它收回第一批——展开是对
+   *  **当前这份清单**的操作,换了清单还留着「已展开 200 行」是无意义的继承。 */
+  const [page, setPage] = useState(1);
   const [target, setTarget] = useState<string>("");
   const [preview, setPreview] = useState<Doc | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -92,13 +116,36 @@ export function DocumentPanel({
 
   const shown = useMemo(() => {
     if (!docs) return null;
-    if (filter === "") return docs;
-    if (filter === UNFILED) return docs.filter((d) => d.folderId === null);
-    return docs.filter((d) => d.folderId === filter);
-  }, [docs, filter]);
+    const byFolder =
+      filter === ""
+        ? docs
+        : filter === UNFILED
+          ? docs.filter((d) => d.folderId === null)
+          : docs.filter((d) => d.folderId === filter);
+    // 大小写不敏感的子串匹配。**不做分词、不做模糊**:这一格回答的是「我知道它叫
+    // 什么,把它找出来」,而「我不知道该找什么」是检索台(`/bench`)的问题,那里有
+    // 真正的召回。在这里塞一个半吊子的相似匹配,只会让人以为搜过了。
+    const q = query.trim().toLowerCase();
+    const matched = q === "" ? byFolder : byFolder.filter((d) => d.title.toLowerCase().includes(q));
+    // 排序前先复制:`docs` 是上层的 state,原地 sort 会改到它。
+    const sorted = [...matched];
+    if (sort === "title") {
+      // `localeCompare` 而不是 `<`:中文标题按 UTF-16 码点排是笔画和拼音都不沾边的
+      // 顺序,而这一页的标题绝大多数是中文。
+      sorted.sort((a, b) => a.title.localeCompare(b.title));
+    } else {
+      const dir = sort === "oldest" ? 1 : -1;
+      sorted.sort((a, b) => dir * (Date.parse(a.updatedAt) - Date.parse(b.updatedAt)));
+    }
+    return sorted;
+  }, [docs, filter, query, sort]);
 
   const failed = (shown ?? []).filter((d) => d.contentState === "failed");
-  const rest = (shown ?? []).filter((d) => d.contentState !== "failed");
+  const restAll = (shown ?? []).filter((d) => d.contentState !== "failed");
+  // 失败组**不参与分批**:它是这一页上唯一等着人动手的东西,把它折进「显示更多」
+  // 里等于把要办的事藏起来。分批只管下面那一长串已经好好的文档。
+  const rest = restAll.slice(0, page * PAGE);
+  const more = restAll.length - rest.length;
 
   // 采集库里手工放进来的内容。解释在**面板顶上说一次**,不挂在每一行:一行一个
   // 提示既重复又都看不见,而这句话要回答的问题只会被问一次——「为什么这一份要
@@ -167,17 +214,61 @@ export function DocumentPanel({
         </CardContent>
       </Card>
 
-      {filterItems.length > 1 && (
-        <SegmentedControl items={filterItems} value={filter} onChange={setFilter} size="sm" ariaLabel={m.docFilterAria} />
-      )}
+      {/* 目录芯片、搜索、排序在同一行:它们是同一件事的三个把手——「让这份清单只剩
+          我要看的那些」。分成两行会让人以为搜索是对目录筛选之后的结果再筛一次,而
+          那恰好是真的,但读起来像两套。 */}
+      <div className="flex flex-wrap items-center gap-sm">
+        {filterItems.length > 1 && (
+          <SegmentedControl items={filterItems} value={filter} onChange={(v) => { setFilter(v); setPage(1); }} size="sm" ariaLabel={m.docFilterAria} />
+        )}
+        <div className="ml-auto flex items-center gap-sm">
+          <Input
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
+            }}
+            placeholder={m.docSearchPlaceholder}
+            aria-label={m.docSearchAria}
+            className="w-[16rem] max-w-full"
+          />
+          <NativeSelect
+            value={sort}
+            onChange={(e) => {
+              setSort(e.target.value as Sort);
+              setPage(1);
+            }}
+            aria-label={m.docSortAria}
+            wrapperClassName="w-[9rem]"
+          >
+            <option value="recent">{m.docSortRecent}</option>
+            <option value="oldest">{m.docSortOldest}</option>
+            <option value="title">{m.docSortTitle}</option>
+          </NativeSelect>
+        </div>
+      </div>
 
       {shown === null ? (
         <EmptyState title={m.docLoading} />
       ) : shown.length === 0 ? (
-        <EmptyState
-          title={filter === "" ? m.docEmpty : m.docEmptyFolder}
-          description={filter === "" ? m.docEmptyHint : undefined}
-        />
+        // 三种空,三句话。搜不到**不是**这个库是空的:后者要引导上传,前者要给一条
+        // 退路(清空搜索),而用同一句「还没有文档」会让人以为文件丢了。
+        query.trim() !== "" ? (
+          <EmptyState
+            title={m.docNoMatch}
+            description={m.docNoMatchHint}
+            action={
+              <Button variant="outline" onClick={() => { setQuery(""); setPage(1); }}>
+                {m.docClearSearch}
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState
+            title={filter === "" ? m.docEmpty : m.docEmptyFolder}
+            description={filter === "" ? m.docEmptyHint : undefined}
+          />
+        )
       ) : (
         <div className="flex flex-col gap-md">
           {failed.length > 0 && (
@@ -207,7 +298,7 @@ export function DocumentPanel({
             </Card>
           )}
 
-          {rest.length > 0 && (
+          {restAll.length > 0 && (
             <Card>
               <CardContent className="flex flex-col py-sm">
                 {rest.map((doc) => (
@@ -223,6 +314,19 @@ export function DocumentPanel({
                     onDelete={onDelete}
                   />
                 ))}
+                {/* 「还剩多少」必须写出来:只画一个「显示更多」而不说剩几份,读的人
+                    没法判断这是「还有两份」还是「还有三百份」,而这两种情况下他会
+                    做的事不一样(一个是继续翻,一个是改去搜)。 */}
+                {more > 0 && (
+                  <div className="flex items-center gap-sm border-t border-border/60 pt-sm">
+                    <Button variant="outline" size="sm" onClick={() => setPage((n) => n + 1)}>
+                      {m.docShowMore(more)}
+                    </Button>
+                    <span className="text-body-sm text-muted-foreground">
+                      {m.docShownOf(rest.length, restAll.length)}
+                    </span>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
@@ -353,7 +457,7 @@ function DocumentRow({
               <span>·</span>
               <span>
                 {m.verifiedWhen(f.when(doc.verifiedAt))}
-                {doc.verifier ? ` · ${doc.verifier}` : ""}
+                {doc.verifier ? ` · ${m.verifiedBy(doc.verifier)}` : ""}
               </span>
             </>
           )}

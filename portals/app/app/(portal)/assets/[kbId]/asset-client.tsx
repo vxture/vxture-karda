@@ -14,6 +14,7 @@ import {
   listBindings,
   listConnectors,
   getAssetSupply,
+  getLibraryKarda,
   createBinding,
   bindingAction,
   uploadDocument,
@@ -41,6 +42,7 @@ import {
   type ProcessingTemplateOption,
   type Binding,
   type ConnectorInfo,
+  type LibraryKarda,
   type SourceMode,
 } from "../../../_lib/api";
 import { type PublishState } from "../../../_lib/format";
@@ -120,6 +122,9 @@ export function AssetClient({ view = "content" }: { view?: AssetView } = {}) {
   const [notice, setNotice] = useState<string | null>(null);
   /** 供给侧(7 日引用、常读方)。`null` = 还没取到或这个库还没有流量——**不是 0**。 */
   const [supply, setSupply] = useState<{ heat7d: number; topConsumers: string[] } | null>(null);
+  /** 卡尔达产出。`null` = 还没取到——状态条上「抽取」那一段因此整段不出现,而不是
+   *  先画一个 0 再跳成真值。 */
+  const [karda, setKarda] = useState<LibraryKarda | null>(null);
   const [busy, setBusy] = useState(false);
 
   const guard = useCallback((e: unknown, fallback: Message): void => {
@@ -167,6 +172,9 @@ export function AssetClient({ view = "content" }: { view?: AssetView } = {}) {
       // 供给侧取不到不报错:这条线只是状态条上的一格,它缺席时那一格显示「—」,
       // 而为它弹一条红 banner 会让人以为这个库出了问题。
       getAssetSupply(kbId).then(setSupply, () => setSupply(null)),
+      // 同理:抽取读不到就让那一段缺席,而不是为它弹一条红 banner——这个库的文档、
+      // 设置、来源全都还是好的。
+      getLibraryKarda(kbId).then(setKarda, () => setKarda(null)),
     ]);
   }, [kbId, guard, loadDocs]);
 
@@ -406,7 +414,7 @@ export function AssetClient({ view = "content" }: { view?: AssetView } = {}) {
       {/* 五条业务流在这个库上的交汇。只在内容视图上：设置页回答的是“它怎么运转”，
           而这条带说的是“它现在怎么样”——摆在设置页顶上只会把真正要改的东西推下去。 */}
       {!settings && kb && docs && bindings && (
-        <LifecycleStrip kb={kb} docs={docs} parked={parked} bindings={bindings} supply={supply} />
+        <LifecycleStrip kb={kb} docs={docs} parked={parked} bindings={bindings} supply={supply} karda={karda} />
       )}
 
       {/* **加载中与加载失败不是同一件事**（owner 2026-08-29）。`getKb` 失败时 `kb`

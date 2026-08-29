@@ -18,16 +18,25 @@
 // 「再画一个仪表盘」的区别:仪表盘想把别处的内容搬过来,这条带只想说「你在这儿,
 // 详细的在那边」。
 //
-// 「抽取」这一段暂缺:没有库级的断言/冲突读端点(`/api/kb/*` 下没有),而按现有数据
-// 硬凑一个数会是编的。缺一段比编一段好,补上端点之后再加。
+// 「抽取」那一段曾经暂缺,理由是没有库级的断言读端点,而按现有数据硬凑一个数会是
+// 编的。端点补上了(`GET /api/kb/:id/karda`,读 `kb/assertions/library-read.ts`),
+// 于是这一段也补上了——**五条线到齐**。
 import Link from "next/link";
 import { Icon } from "@vxture/design-system";
-import type { Doc, Binding, Kb, ParkedByDocument } from "../../../_lib/api";
+import type { Doc, Binding, Kb, LibraryKarda, ParkedByDocument } from "../../../_lib/api";
 import { useMessages } from "../../../_i18n/useMessages";
 import { useFormat } from "../../../_i18n/useFormat";
 import { assets as assetMessages } from "../../../_i18n/messages/assets";
 // 「待复验 N」在验证评测目录里已经有一份,不在这里另加。
 import { evaluation as evalMessages } from "../../../_i18n/messages/evaluation";
+
+/** 段数 -> 列数。写成一张表而不是三目套三目:段数会随着业务流增减而变,而每加一种
+ *  都要有一条**完整**的类名(见下面渲染处的注释)。 */
+const COLS: Record<number, string> = {
+  3: "@min-[64rem]:grid-cols-3",
+  4: "@min-[64rem]:grid-cols-4",
+  5: "@min-[64rem]:grid-cols-3 @min-[88rem]:grid-cols-5",
+};
 
 /** 一段。`href` 为空表示这条线在本页内就能看全,不必送出去。 */
 interface Segment {
@@ -46,9 +55,11 @@ export interface LifecycleInput {
   bindings: Binding[];
   /** 7 日引用与常读方。供给账本没有这个库的流量时为 null。 */
   supply: { heat7d: number; topConsumers: string[] } | null;
+  /** 卡尔达产出。还没取到时为 null——与「取到了,是 0」不同。 */
+  karda: LibraryKarda | null;
 }
 
-export function LifecycleStrip({ kb, docs, parked, bindings, supply }: LifecycleInput) {
+export function LifecycleStrip({ kb, docs, parked, bindings, supply, karda }: LifecycleInput) {
   const m = useMessages(assetMessages);
   const ev = useMessages(evalMessages);
   const f = useFormat();
@@ -84,6 +95,21 @@ export function LifecycleStrip({ kb, docs, parked, bindings, supply }: Lifecycle
       alert: parkedCount > 0 ? m.lifeParked(parkedCount) : failed > 0 ? m.metaFailed(failed) : null,
       href: "/pipeline/tasks",
     },
+    // 抽取:还没取到(karda === null)时整段不出现,而不是画一个 0——一个还在路上的
+    // 数字和一个真的为零的数字,在界面上长得一样就是在骗人。取到了但从没跑过,则
+    // 显示「—」并说明原因,那是真话。
+    ...(karda
+      ? [
+          {
+            label: m.lifeExtract,
+            value: karda.lastExtractedAt === null ? "\u2014" : f.number(karda.assertions),
+            note: karda.lastExtractedAt === null ? m.lifeExtractNone : m.lifeExtractNote(karda.entities),
+            // 待确认是这条线上唯一等着人的量,所以它走告警色,和别的段一个规矩。
+            alert: karda.unverified > 0 ? m.lifeExtractPending(karda.unverified) : null,
+            href: "/pipeline",
+          },
+        ]
+      : []),
     // 治理关着时这一段整段不出现,而不是显示「覆盖 0%」——没纳入跟踪与覆盖为零
     // 是两件完全不同的事,后者会让人以为这个库很糟。
     ...(kb.governanceEnabled
@@ -110,15 +136,16 @@ export function LifecycleStrip({ kb, docs, parked, bindings, supply }: Lifecycle
   ];
 
   return (
-    // 列数**跟着段数走**,不写死 4:治理关着时验证段整段不出现,写死四列会留一个
-    // 空格子——而一个空格子读起来像「这里本该有东西但坏了」。
+    // 列数**跟着段数走**,不写死:治理关着、或卡尔达那一段还没取到时,段数会少,
+    // 而写死列数会留一个空格子——一个空格子读起来像「这里本该有东西但坏了」。
     //
-    // 三/四列各写一条完整类名,不拼字符串:Tailwind 在构建期扫源码,`grid-cols-${n}`
-    // 这种拼出来的类名扫不到,生产构建里那个类根本不存在(本轮已经被这条坑过一次)。
+    // 每种列数各写一条**完整类名**,不拼字符串:Tailwind 在构建期扫源码,
+    // `grid-cols-${n}` 这种拼出来的类名扫不到,生产构建里那个类根本不存在
+    // (本轮已经被这条坑过一次)。
+    //
+    // 五段时多加一档断点:五格挤在 64rem 里每格只剩十几个字符宽,数字会换行。
     <div
-      className={`grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-border bg-border @min-[40rem]:grid-cols-2 ${
-        segments.length === 4 ? "@min-[64rem]:grid-cols-4" : "@min-[64rem]:grid-cols-3"
-      }`}
+      className={`grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-border bg-border @min-[40rem]:grid-cols-2 ${COLS[segments.length] ?? COLS[4]}`}
     >
       {segments.map((s) => (
         <div key={s.label} className="flex flex-col gap-2xs bg-card px-lg py-md">

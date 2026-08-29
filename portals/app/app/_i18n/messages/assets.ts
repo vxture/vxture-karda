@@ -59,6 +59,32 @@ export const assets = {
     "zh-CN": (n: number) => `其余 ${n} 个资产`,
     "en-US": (n: number) => `${n} more assets`,
   },
+  // --- 文档清单:找得到一份 ------------------------------------------------------
+  //
+  // 这一页此前把库里**全部**文档一次铺完(演示库里是 94 到 412 行),没有搜索、没有
+  // 排序。在那种长度上,「这份文件在不在库里」这个最常见的问题只能靠滚动和肉眼。
+  docSearchPlaceholder: { "zh-CN": "按标题搜索", "en-US": "Search by title" },
+  docSearchAria: { "zh-CN": "按标题搜索文档", "en-US": "Search documents by title" },
+  docSortAria: { "zh-CN": "文档排序方式", "en-US": "Sort documents" },
+  docSortRecent: { "zh-CN": "最近更新", "en-US": "Recently updated" },
+  docSortOldest: { "zh-CN": "最早加入", "en-US": "Oldest first" },
+  docSortTitle: { "zh-CN": "标题", "en-US": "Title" },
+  /** 搜出来是空的,和这个库是空的**不是一回事**——后者要引导上传,前者要给一条退路。 */
+  docNoMatch: { "zh-CN": "没有匹配的文档", "en-US": "No documents match" },
+  docNoMatchHint: {
+    "zh-CN": "换个词,或清空搜索看全部。",
+    "en-US": "Try another word, or clear the search to see everything.",
+  },
+  docClearSearch: { "zh-CN": "清空搜索", "en-US": "Clear search" },
+  /** 只渲染前一批时,底下这句要说清**还剩多少**,否则「列表到此为止」是个错觉。 */
+  docShowMore: {
+    "zh-CN": (rest: number) => `显示更多(还有 ${rest} 份)`,
+    "en-US": (rest: number) => `Show more (${rest} left)`,
+  } satisfies MessageFn<[number]>,
+  docShownOf: {
+    "zh-CN": (shown: number, total: number) => `显示 ${shown} / ${total}`,
+    "en-US": (shown: number, total: number) => `Showing ${shown} of ${total}`,
+  } satisfies MessageFn<[number, number]>,
   docLoading: { "zh-CN": "正在加载文档…", "en-US": "Loading documents…" },
   docEmpty: { "zh-CN": "还没有文档", "en-US": "No documents yet" },
   docEmptyFolder: { "zh-CN": "该目录下没有文档", "en-US": "No documents in this folder" },
@@ -91,6 +117,17 @@ export const assets = {
   verifiedWhen: {
     "zh-CN": (when: string) => `${when} 验证`,
     "en-US": (when: string) => `Verified ${when}`,
+  } satisfies MessageFn<[string]>,
+  /**
+   * 验证人。
+   *
+   * 这里印的是**账号标识**(`usr_...`),不是姓名——产品里没有人员目录,凭空显示一个
+   * 名字就是编的。能做的是给这串东西一个标签:在此之前它只是「· 」后面一串来历不明
+   * 的字符,读的人无从知道那是谁、还是什么编号。
+   */
+  verifiedBy: {
+    "zh-CN": (who: string) => `验证人 ${who}`,
+    "en-US": (who: string) => `by ${who}`,
   } satisfies MessageFn<[string]>,
 
   // --- preview dialog --------------------------------------------------------
@@ -250,6 +287,23 @@ export const assets = {
   // 每一段只说这个库在那条线上的位置,不重做那个域的事。
   lifeIngest: { "zh-CN": "入库", "en-US": "Ingested" },
   lifeIngestUploadOnly: { "zh-CN": "上传与 API 写入", "en-US": "Uploads and API writes" },
+  // --- 抽取:卡尔达在这个库上的产出 ----------------------------------------------
+  lifeExtract: { "zh-CN": "抽取", "en-US": "Extraction" },
+  /** 主数字是**断言总数**,注解是「其中多少还等着人看」——后者才是要人动手的量。 */
+  lifeExtractNote: {
+    "zh-CN": (entities: number) => `卡尔达断言 · ${entities} 实体`,
+    "en-US": (entities: number) => `Karda assertions · ${entities} entities`,
+  } satisfies MessageFn<[number]>,
+  lifeExtractPending: {
+    "zh-CN": (n: number) => `${n} 待确认`,
+    "en-US": (n: number) => `${n} to confirm`,
+  } satisfies MessageFn<[number]>,
+  /** 一条断言都没有。**不写 0**——「还没抽过」和「抽过但一条没抽到」是两件事,
+   *  而这一段只有在从没跑过时才什么都不说。 */
+  lifeExtractNone: {
+    "zh-CN": "卡尔达还没有在这个库上跑过",
+    "en-US": "Karda has not run on this library yet",
+  },
   /** 采集库但一个来源都还没接。写「上传与 API 写入」会把一个**声明过真相在源头**
    *  的库描述成自持库，而它真正缺的是一次绑定。 */
   lifeIngestSyncedNone: { "zh-CN": "采集库，尚未接入来源", "en-US": "A synced library with no source connected yet" },
@@ -484,6 +538,13 @@ export const assets = {
   },
   fieldNameAria: { "zh-CN": "新字段名", "en-US": "New field name" },
   fieldTypeAria: { "zh-CN": "字段类型", "en-US": "Field type" },
+  // 字段**类型**是一份固定词表,和内容状态一样该说人话——此前中文界面上直接印着
+  // `string` / `datetime`。字段**名**不在此列:它是过滤条件里真正要用的键,必须
+  // 逐字保留,所以那一列仍然是等宽字体的原文。
+  fieldTypeString: { "zh-CN": "文本", "en-US": "Text" },
+  fieldTypeNumber: { "zh-CN": "数字", "en-US": "Number" },
+  fieldTypeDatetime: { "zh-CN": "日期时间", "en-US": "Date & time" },
+  fieldTypeEnum: { "zh-CN": "枚举", "en-US": "Enum" },
   fieldAdd: { "zh-CN": "添加字段", "en-US": "Add field" },
   fieldNameInvalid: {
     "zh-CN": "字段名需以小写字母开头，只含小写字母、数字与下划线。",
