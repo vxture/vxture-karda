@@ -156,6 +156,34 @@ export async function setSharing(id: string, target: PublishState): Promise<Kb> 
   return need(body, "knowledgeBase", `/api/kb/${id}/publish`);
 }
 
+/** 名称与描述。此前设置页根本没有改名入口——服务端一直支持,缺的只是出口。 */
+export async function updateKbMeta(
+  id: string,
+  meta: { name: string; description: string | null },
+): Promise<Kb> {
+  const body = await req<{ knowledgeBase: Kb }>(`/api/kb/${id}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(meta),
+  });
+  return need(body, "knowledgeBase", `/api/kb/${id}`);
+}
+
+/** 同步内容是否豁免本地验证(KD-218 的库级覆盖,100-kb-model §5.2)。 */
+export async function setSyncedExemption(id: string, exemptSyncedContent: boolean): Promise<Kb> {
+  const body = await req<{ knowledgeBase: Kb }>(`/api/kb/${id}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ exemptSyncedContent }),
+  });
+  return need(body, "knowledgeBase", `/api/kb/${id}`);
+}
+
+/** 软删。行进入保留期,检索与供给立即停止;产品内没有恢复入口。 */
+export async function deleteKb(id: string): Promise<void> {
+  await req<void>(`/api/kb/${id}`, { method: "DELETE" });
+}
+
 export async function setGovernance(id: string, governanceEnabled: boolean): Promise<Kb> {
   const body = await req<{ knowledgeBase: Kb }>(`/api/kb/${id}`, {
     method: "PATCH",

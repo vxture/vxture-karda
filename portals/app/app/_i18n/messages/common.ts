@@ -28,6 +28,8 @@ export const common = {
   signIn: { "zh-CN": "登录", "en-US": "Sign in" },
   expand: { "zh-CN": "展开", "en-US": "Expand" },
   collapse: { "zh-CN": "收起", "en-US": "Collapse" },
+  on: { "zh-CN": "开", "en-US": "On" },
+  off: { "zh-CN": "关", "en-US": "Off" },
 
   // --- 翻页 ---------------------------------------------------------------
   //

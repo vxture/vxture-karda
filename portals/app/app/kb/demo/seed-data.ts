@@ -608,7 +608,9 @@ export const DEMO_TOTALS_OPS = {
     { code: "scribe", calls: 326 },
     { code: "anlan", calls: 231 },
   ],
-  agent: { preVerified: 41, conflicts: 3, refluxDrafts: 27, pending: 5 },
+  // `admitted` 是离线态给总览卡的演示值;`preVerified` 只剩 pipeline-demo 在用
+  // (预验 pass 未建,真实载荷里没有它)。
+  agent: { preVerified: 41, conflicts: 3, refluxDrafts: 27, pending: 5, admitted: 236 },
 } as const;
 
 /** Deterministic title for the i-th seeded row of a stem list. */

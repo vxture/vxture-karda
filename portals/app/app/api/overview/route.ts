@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { readAssetHeat, type AssetHeat } from "../../kb/tools/supply-read";
+import { readWorkspaceKarda } from "../../kb/assertions/workspace-read";
 import { requireAuth } from "../../kb/api/http";
 import { prismaEnabled, getPrismaClient } from "../../lib/db";
 import { DEMO_ASSETS, DEMO_TOTALS_OPS, demoAssetByName, type DemoAssetSpec } from "../../kb/demo/seed-data";
@@ -61,6 +62,12 @@ function specToAsset(spec: DemoAssetSpec, id: string, agg: KbAggregates | null):
   };
 }
 
+/** 演示 agent 块 -> 真实口径的形状。离线态没有确认台,演示值按原样映射。 */
+function demoAgentTotals(): OverviewData["totals"]["agent"] {
+  const d = DEMO_TOTALS_OPS.agent;
+  return { pending: d.pending, conflicts: d.conflicts, admitted: d.admitted, refluxDrafts: d.refluxDrafts };
+}
+
 function totalsFor(assets: OverviewAsset[]): OverviewData["totals"] {
   const entryCount = assets.reduce((n, a) => n + a.entryCount + a.docCount, 0);
   const verifiedCount = assets.reduce(
@@ -77,7 +84,7 @@ function totalsFor(assets: OverviewAsset[]): OverviewData["totals"] {
     runosCalls: DEMO_TOTALS_OPS.runosCalls,
     deltaPct: DEMO_TOTALS_OPS.deltaPct,
     topAgents: [...DEMO_TOTALS_OPS.topAgents],
-    agent: { ...DEMO_TOTALS_OPS.agent },
+    agent: demoAgentTotals(),
   };
 }
 
@@ -139,6 +146,10 @@ export async function GET(): Promise<Response> {
   // A library with no citations yet gets no entry, and reads as 0 below rather
   // than inheriting the demo overlay's numbers.
   const heat = await readAssetHeat(workspaceId);
+  // 卡尔达块自确认台(KD-222)起有真值:待确认 / 冲突组 / 已收录 / 回流草稿全部
+  // 来自 workspace-read,不再是演示口径。供给侧数字(调用、热点)仍是演示——
+  // demoOps 说的是它们。
+  const karda = await readWorkspaceKarda(workspaceId);
   const NO_HEAT: AssetHeat = { heat7d: 0, sparkline: [0, 0, 0, 0, 0, 0, 0], topConsumers: [] };
 
   const assets: OverviewAsset[] = kbs.map((kb) => {
@@ -184,6 +195,15 @@ export async function GET(): Promise<Response> {
     };
   });
 
-  const data: OverviewData = { totals: totalsFor(assets), assets, demoOps: true };
+  const totals = {
+    ...totalsFor(assets),
+    agent: {
+      pending: karda.pending,
+      conflicts: karda.conflictGroups,
+      admitted: karda.admitted,
+      refluxDrafts: karda.refluxDrafts,
+    },
+  };
+  const data: OverviewData = { totals, assets, demoOps: true };
   return NextResponse.json(data);
 }

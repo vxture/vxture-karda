@@ -342,8 +342,11 @@ export function AssetsClient() {
                 {m.agentPendingLink}
               </a>
             ),
+            // 三个标签全是真值(workspace-read):已收录是可被检索的知识量,
+            // 冲突组等一次裁决,回流草稿是 agent 写回来等人看的。「预验 N」退役
+            // ——预验 pass 还没建,一个恒为演示值的标签会把整张卡拖成不可信。
             tags: [
-              m.preVerifiedTag(totals.agent.preVerified),
+              m.admittedTag(totals.agent.admitted),
               m.conflictTag(totals.agent.conflicts),
               m.refluxTag(totals.agent.refluxDrafts),
             ],
