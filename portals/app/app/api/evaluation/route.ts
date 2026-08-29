@@ -13,7 +13,7 @@ import type { EvaluationData } from "../../kb/demo/evaluation-types";
 //
 //   验证治理 (corpus)     LIVE off document/entry verification_state - see
 //                        kb/governance/corpus-read.ts. Needed no new table.
-//   卡尔达预验 (steward)    demo. No steward ledger yet.
+//   卡尔达预验 (agent)    demo. No agent ledger yet.
 //   质量评测 (evaluation) LIVE off eval_run once a set has been RUN; demo until
 //                        then. Batch 14 built the runner and its four tables, so
 //                        this half stopped being a constant - but a workspace
@@ -31,7 +31,7 @@ export async function GET(): Promise<Response> {
   if (!prismaEnabled()) {
     const data: EvaluationData = {
       ...DEMO_EVALUATION,
-      sources: { corpus: "demo", steward: "demo", evaluation: "demo" },
+      sources: { corpus: "demo", agent: "demo", evaluation: "demo" },
     };
     return NextResponse.json(data);
   }
@@ -42,8 +42,8 @@ export async function GET(): Promise<Response> {
     ...DEMO_EVALUATION,
     verification: {
       ...corpus,
-      // Steward figure, not a corpus figure - stays on the overlay until a
-      // steward ledger exists. sources.steward says so.
+      // Agent figure, not a corpus figure - stays on the overlay until a
+      // agent ledger exists. sources.agent says so.
       preVerifiedPending: DEMO_EVALUATION.verification.preVerifiedPending,
     },
     // The evaluation half goes live ONLY when there is a completed run to read.
@@ -53,7 +53,7 @@ export async function GET(): Promise<Response> {
     ...(quality
       ? { metrics: quality.metrics, sets: quality.sets, baseline: quality.baseline, degraded: quality.degraded }
       : {}),
-    sources: { corpus: "live", steward: "demo", evaluation: quality ? "live" : "demo" },
+    sources: { corpus: "live", agent: "demo", evaluation: quality ? "live" : "demo" },
   };
   return NextResponse.json(data);
 }

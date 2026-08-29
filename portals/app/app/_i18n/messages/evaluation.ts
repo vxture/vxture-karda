@@ -1,6 +1,6 @@
 import type { Catalog, MessageFn } from "../catalog";
 
-// 验证评测: the governance overview, the steward's re-verification queue, and
+// 验证评测: the governance overview, Karda's re-verification queue, and
 // the evaluation sets.
 //
 // This domain's numbers are the ones the product is judged on, so the wording
@@ -75,7 +75,7 @@ export const evaluation = {
   } satisfies MessageFn<[number]>,
   provCorpusLive: { "zh-CN": "验证治理为实时数据", "en-US": "Verification governance is live data" },
   provCorpusDemo: { "zh-CN": "验证治理为演示数据", "en-US": "Verification governance is demo data" },
-  provStewardDemo: { "zh-CN": " · 卡尔达预验为演示数据 · ", "en-US": " · Karda pre-verification is demo data · " },
+  provAgentDemo: { "zh-CN": " · 卡尔达预验为演示数据 · ", "en-US": " · Karda pre-verification is demo data · " },
   provEvalLive: { "zh-CN": "评测为实时数据", "en-US": "Evaluation is live data" },
   provEvalDemo: {
     "zh-CN": "评测口径为演示数据，评测运行器建设中",

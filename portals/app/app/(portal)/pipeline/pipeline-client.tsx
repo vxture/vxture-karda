@@ -13,16 +13,16 @@ import {
 } from "@vxture/design-system";
 import { loginHref } from "../../_lib/api";
 import { PageHead } from "../../_shell/PageHead";
-import type { ReportUnit, ReportRowKey, StewardStageKey, PipelineData, ProposalKind } from "../../kb/demo/pipeline-types";
+import type { ReportUnit, ReportRowKey, AgentStageKey, PipelineData, ProposalKind } from "../../kb/demo/pipeline-types";
 import { useMessages } from "../../_i18n/useMessages";
 import { common } from "../../_i18n/messages/common";
 import { pipeline as pipelineMessages } from "../../_i18n/messages/pipeline";
 import { shell } from "../../_i18n/messages/shell";
 import { assets } from "../../_i18n/messages/assets";
 
-// 加工管道 client (design canvas V2 · Steward board, light-theme translation).
+// 加工管道 client (design canvas V2 · Agent board, light-theme translation).
 // Three 板块 under the unified PageHead, spaced by the layout's global gap-lg:
-// steward presence (identity + 今日战报) -> 加工流水 five stage cards -> 待你
+// agent presence (identity + 今日战报) -> 加工流水 five stage cards -> 待你
 // 确认 proposal list. Figures come from GET /api/pipeline (demo overlay until
 // the pipeline schema lands - the strip says so).
 
@@ -45,7 +45,7 @@ type PKey = {
 /** The five stages: their kicker, name, blurb and unit all hang off the key.
  *  The kicker is a mono design element in English in every locale, so it is a
  *  literal here rather than a catalog entry. */
-const STAGE_META: Record<StewardStageKey, { kicker: string; label: PKey; desc: PKey; unit: PKey }> = {
+const STAGE_META: Record<AgentStageKey, { kicker: string; label: PKey; desc: PKey; unit: PKey }> = {
   understand: { kicker: "01 UNDERSTAND", label: "stageUnderstand", desc: "stageUnderstandDesc", unit: "unitDocs" },
   extract: { kicker: "02 EXTRACT", label: "stageExtract", desc: "stageExtractDesc", unit: "unitEntries" },
   weave: { kicker: "03 WEAVE", label: "stageWeave", desc: "stageWeaveDesc", unit: "unitGroups" },
@@ -139,7 +139,7 @@ export function PipelineClient() {
         }
       />
 
-      {/* steward presence: identity left, 今日战报 right - the AI layer's
+      {/* agent presence: identity left, 今日战报 right - the AI layer's
           face. AI tone rides the 2px top edge; foreground stays ai-text. */}
       <Card className="border-t-medium border-t-ai-border py-md">
         <CardContent className="flex flex-wrap items-center gap-lg px-lg">
@@ -149,13 +149,13 @@ export function PipelineClient() {
             </span>
             <span className="flex min-w-0 flex-col gap-2xs">
               <span className="flex items-baseline gap-sm">
-                {/* 名字取自 `shell.dock` —— 它只该有一份。原来 pipeline 目录里另有一条
+                {/* 名字取自 `shell.agentName` —— 它只该有一份。原来 pipeline 目录里另有一条
                     `stewardName`,两处说同一件事,迟早只改其中一份。 */}
-                <span className="text-label-lg">{sh.dock}</span>
-                <span className="font-mono text-code-sm tracking-widest text-ai-text">{m.stewardOnDuty}</span>
+                <span className="text-label-lg">{sh.agentName}</span>
+                <span className="font-mono text-code-sm tracking-widest text-ai-text">{m.agentOnDuty}</span>
               </span>
               <span className="text-body-sm text-muted-foreground">
-                {m.stewardBlurb}
+                {m.agentBlurb}
               </span>
             </span>
           </div>

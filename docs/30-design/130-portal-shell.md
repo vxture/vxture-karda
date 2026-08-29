@@ -84,17 +84,25 @@ super agent(owner 2026-08-28 定名)。
 | 身份出场(面板标题、页面署名) | `Karda Super Agent` | `Karda Super Agent` | 它作为主体登场,用全名 |
 | 行内指代(句子里当主语或定语) | `卡尔达` | `Karda` | 全名塞进句子会把句子撑散;短名能当主语,读起来是个「谁」 |
 
-名字**只存一份**:`shell.dock`。加工管道页此前另有一条 `pipeline.stewardName` 说同一件事,
+名字**只存一份**:`shell.agentName`。加工管道页此前另有一条 `pipeline.stewardName` 说同一件事,
 已删并指向同一个键——同一句话存在两份,迟早只改其中一份。
 
-**代码标识符保留 `steward*`**(`_shell/StewardDock.tsx`、`ShellData.steward`、
-`stewardProposal`),这是刻意的:用户可见的文案是**客户读的**,而 `steward` 作为标识符
-描述的是它扮演的**角色**(照管这批知识的那个),不是它的名字。角色词没有错,改它要动
-一条跨文件的数据契约,零用户收益。`kb/demo/shell-types.ts` 的 `steward` 字段上留了一段
-说明,免得下一个人以为是漏改——**它不是漏改,是分层**。
+**代码标识符也已对齐**(2026-08-29 第二趟,单独一次机械改名):
 
-**区分**:仓内仍用 **智枢 / agent hub** 指那块**外壳区域**(§1 词汇表)。区域是家具,
-super agent 是住在里面的那个——文件名 `_shell/StewardDock.tsx`、消息键 `dock*` 都保持原样。
+| 旧 | 新 | 为什么 |
+|---|---|---|
+| `_shell/StewardDock.tsx` / `StewardDock` | `AgentHub.tsx` / `AgentHub` | 它同时与两次改名对不上:既不是 steward,也不再是 dock |
+| `ShellData.steward` | `ShellData.agent` | 那一份 payload 属于**那个 agent**,不属于它待的房间 |
+| `StewardProposal` / `StewardStageKey` | `AgentProposal` / `AgentStageKey` | 提案与阶段都是它做的 |
+| 目录键 `steward*` / `dock*` | `agent*` / `hub*` | 键名是改文案时天天读的,留着旧词等于每天提醒一次「这里还没清」 |
+| `shell.dock`(存的是名字) | `shell.agentName` | 旧键名说的是房间,存的却是住客的名字 |
+
+**一处刻意不改**:`localStorage` 的 `karda-shell-dock-closed`。它是**与浏览器的契约**,
+不是一个名字——改掉等于把所有人已经收起的分区重置回展开。命名陈旧的代价是读代码时多想
+一秒,重置状态的代价是每个用户的一次困惑。
+
+第一趟(#180)我判过「标识符保留,那是分层」。那个判断在当时只面对**一次**改名是成立的;
+`值班台 → 智枢` 落地后它就不成立了——一个名字同时和两次改名对不上,已经不是分层,是欠账。
 
 ## 2. 空间常量
 

@@ -14,9 +14,9 @@ import { assets } from "../../../_i18n/messages/assets";
 
 // 任务与队列 (design canvas: PipelineQueue board, light-theme translation).
 // Observability strip -> in-flight task list (five-stage dots, links into the
-// task detail) -> 页内副栏 (three-tier queues + steward failure-rate alert
-// + failure classes). AI empowerment stays visible: the steward on-duty chip,
-// the agent-deposit row (runos · karda.kb-write), the steward judgment on the
+// task detail) -> 页内副栏 (three-tier queues + agent failure-rate alert
+// + failure classes). AI empowerment stays visible: the agent on-duty chip,
+// the agent-deposit row (runos · karda.kb-write), the agent judgment on the
 // alert.
 
 const STATUS_CLASS: Record<PipelineTask["statusTone"], string> = {
@@ -310,13 +310,13 @@ export function TasksClient() {
                 </div>
                 <div className="text-body-sm leading-relaxed text-muted-foreground">
                   {m.alertBody(data.alert.kbName, data.alert.body)}
-                  {/* The judgment renders ONLY when the steward actually formed
+                  {/* The judgment renders ONLY when the agent actually formed
                       one. A derived alert carries the rate but no opinion, and
                       an empty "卡尔达判断:" label implying one exists would be the
                       most misleading thing on this page. */}
                   {data.alert.judgment ? (
                     <>
-                      <span className="text-ai-text">{m.stewardVerdict}</span>
+                      <span className="text-ai-text">{m.agentVerdict}</span>
                       <span className="text-foreground">{data.alert.judgment}</span>
                     </>
                   ) : null}
@@ -352,7 +352,7 @@ export function TasksClient() {
       </div>
       {/* Provenance, per group. Counts, queues, stage timings and the task list
           come off karda_kb.processing_task; freshness, the concurrency caps and
-          the steward's judgment are authored - see TasksData.sources. */}
+          the agent's judgment are authored - see TasksData.sources. */}
       <span className="text-body-sm text-muted-foreground">
         {data.sources.tasks === "live" ? m.provTasksLive : m.provTasksDemo}
         {m.provTasksRegistry}

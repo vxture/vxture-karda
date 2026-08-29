@@ -77,7 +77,7 @@ test("page size is clamped, and unreadable input is the default", () => {
 
 test("an ungrounded assertion is not browsable either", () => {
   // Browse is the tool most likely to be argued into an exception. It is not one:
-  // the Console is where a steward audits drafts, with a session and an identity.
+  // the Console is where a agent audits drafts, with a session and an identity.
   const r = shapeAssertions(KB, [a({ supportingEvidenceCount: 0 })], 10);
   assert.deepEqual(r.items, []);
 });

@@ -426,7 +426,7 @@ export const assets = {
   } satisfies MessageFn<[number]>,
   noOpsYet: { "zh-CN": "尚无运营数据", "en-US": "No operating data yet" },
 
-  stewardProcessing: { "zh-CN": "卡尔达加工中", "en-US": "Karda is processing" },
+  agentProcessing: { "zh-CN": "卡尔达加工中", "en-US": "Karda is processing" },
   parkedCount: {
     "zh-CN": (n: number) => `${n} 份停放待向量化`,
     "en-US": (n: number) => `${n} parked, awaiting vectorization`,
@@ -470,8 +470,8 @@ export const assets = {
   // every language. A string with no natural language in it does not belong in
   // a translation catalog - it is built at the call site.
   metricTopAgents: { "zh-CN": "调用 TOP 3 · 今日", "en-US": "Top 3 callers · today" },
-  metricSteward: { "zh-CN": "卡尔达 · 今日", "en-US": "Karda · today" },
-  stewardPendingLink: { "zh-CN": "项待确认 →", "en-US": "awaiting confirmation →" },
+  metricAgent: { "zh-CN": "卡尔达 · 今日", "en-US": "Karda · today" },
+  agentPendingLink: { "zh-CN": "项待确认 →", "en-US": "awaiting confirmation →" },
   preVerifiedTag: {
     "zh-CN": (n: number) => `预验 ${n}`,
     "en-US": (n: number) => `Pre-verified ${n}`,

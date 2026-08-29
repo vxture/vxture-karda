@@ -16,7 +16,7 @@ import type { TasksData } from "../../../kb/demo/pipeline-types";
 //   · freshness P95 - nothing in the pipeline measures content age against
 //     index age, so there is no figure to derive;
 //   · the org and per-tier concurrency caps - configuration, not facts;
-//   · the steward's JUDGMENT on a failure-rate alert - an opinion. The RATE and
+//   · the agent's JUDGMENT on a failure-rate alert - an opinion. The RATE and
 //     the library are computed; the judgment is not invented to match.
 export const dynamic = "force-dynamic";
 
@@ -62,7 +62,7 @@ export async function GET(): Promise<Response> {
           kbName: t.alert.kbName,
           rate: `${t.alert.ratePct}% > 30%`,
           body: `近 24h 失败 ${t.alert.failed}/${t.alert.total}。`,
-          // No judgment when the alert is derived. The steward has not looked at
+          // No judgment when the alert is derived. The agent has not looked at
           // this one, and printing a plausible-sounding cause it never formed
           // would be the single most misleading thing on the page.
           judgment: "",

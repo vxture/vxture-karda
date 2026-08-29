@@ -90,7 +90,7 @@ const PROBES: Record<string, unknown[]> = {
   "pipeline.alertBody": ["Standards library", "failure rate 31% over the 30% threshold"],
   "shell.collapseItem": ["Knowledge assets"],
   "shell.expandItem": ["Knowledge assets"],
-  "shell.dockRest": [4],
+  "shell.hubRest": [4],
   "shell.workspaceLabel": ["ws_0a1b"],
   "shell.orgLabel": ["org_9f2c"],
   "shell.roleLine": ["Admin"],
@@ -170,8 +170,8 @@ test("every message carries EVERY supported locale", () => {
  * 措辞、标签、说明一律不进这里。
  */
 const UNTRANSLATED_ON_PURPOSE: Record<string, string> = {
-  "shell.dock":
-    "Karda Super Agent —— karda 平台独有 super agent 的产品名(owner 2026-08-28 定名)。中文「卡尔达」是它旁边的 tag(`shell.dockTag`),不是它的译名",
+  "shell.agentName":
+    "Karda Super Agent —— karda 平台独有 super agent 的产品名(owner 2026-08-28 定名)。中文「卡尔达」是它旁边的 tag(`shell.hubTag`),不是它的译名",
 };
 
 test("no message is left as an untranslated copy of the other language", () => {

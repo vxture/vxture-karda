@@ -7,7 +7,7 @@ export type AssetHealth = "healthy" | "attention" | "processing" | "gap";
 
 export interface OverviewHighlight {
   /** What kind of "live line" the card shows. */
-  kind: "hot_question" | "agent_usage" | "reverify" | "gap" | "steward";
+  kind: "hot_question" | "agent_usage" | "reverify" | "gap" | "agent";
   /** The authored sentence, or null when the producer has only the FIGURE and
    *  the card should compose it in the reader's language. */
   text: string | null;
@@ -45,7 +45,7 @@ export interface OverviewAsset {
   highlight: OverviewHighlight;
   tags: string[];
   processing?: { indexed: number; total: number; parked: number };
-  stewardSuggestions: number;
+  agentSuggestions: number;
 }
 
 export interface OverviewTotals {
@@ -58,7 +58,7 @@ export interface OverviewTotals {
   runosCalls: number;
   deltaPct: number;
   topAgents: { code: string; calls: number }[];
-  steward: { preVerified: number; conflicts: number; refluxDrafts: number; pending: number };
+  agent: { preVerified: number; conflicts: number; refluxDrafts: number; pending: number };
 }
 
 export interface OverviewData {

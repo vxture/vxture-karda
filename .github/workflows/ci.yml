@@ -167,6 +167,9 @@ jobs:
       - name: Tech-debt register guardrail (every entry states its status)
         run: node scripts/guardrails/check-tech-debt.mjs --strict
 
+      - name: Retired-name guardrail (a retired name never comes back)
+        run: node scripts/guardrails/check-retired-names.mjs
+
   # -- Quality gate (aggregator; stable required-check name) ------------------
   quality-gate:
     name: quality-gate

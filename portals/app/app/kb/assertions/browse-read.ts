@@ -8,7 +8,7 @@
 // words, and those two look identical from the outside. Browse is the only tool
 // that can answer "is there anything in here about my domain" honestly.
 //
-// It is also the tool a steward uses to audit what extraction actually produced,
+// It is also the tool a agent uses to audit what extraction actually produced,
 // which is why it lists assertions and entities rather than documents: documents
 // are what we ingested, assertions are what we claim to KNOW, and only the
 // second one is checkable.
@@ -126,7 +126,7 @@ export interface AssertionRow extends BrowseAssertion {
  * The recallable filter applies here exactly as it does in `find_entity` and
  * retrieval. Browse is the tool most likely to be argued into an exception -
  * "it is for auditing, show everything" - and that argument is wrong on this
- * surface: the Console is where a steward audits drafts, with a session and an
+ * surface: the Console is where a agent audits drafts, with a session and an
  * identity. An agent tool that served what retrieval refuses would be the back
  * door, whatever we called it.
  *

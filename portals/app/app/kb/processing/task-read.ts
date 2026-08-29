@@ -13,7 +13,7 @@ import { decodeUnavailable, type Unavailable } from "./unavailable";
 //
 // What this file does NOT compute, deliberately: freshness P95 (nothing here
 // measures content age vs index age), the org concurrency cap and the per-tier
-// concurrency labels (configuration, not facts), and the steward's judgment on a
+// concurrency labels (configuration, not facts), and the agent's judgment on a
 // failure-rate alert (an opinion, not an aggregate). Those stay authored and the
 // payload's `sources` marker says so - a half-derived alert that invents a
 // judgment would be worse than an honest authored one.

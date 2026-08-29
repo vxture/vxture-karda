@@ -140,7 +140,7 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
         {asset.processing ? (
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between text-body-sm text-muted-foreground">
-              <span>{m.stewardProcessing}</span>
+              <span>{m.agentProcessing}</span>
               <span className="font-mono">
                 {asset.processing.indexed} / {asset.processing.total}
               </span>
@@ -169,7 +169,7 @@ function AssetCard({ asset }: { asset: OverviewAsset }) {
           className={`rounded-lg px-3 py-2 text-body-sm leading-relaxed ${
             warn
               ? "border border-warning/30 bg-warning-muted/40 text-muted-foreground"
-              : asset.highlight.kind === "steward"
+              : asset.highlight.kind === "agent"
                 ? "border border-ai-border/40 bg-ai-muted/40 text-muted-foreground"
                 : "bg-muted/60 text-muted-foreground"
           }`}
@@ -332,20 +332,20 @@ export function AssetsClient() {
             tags: totals.topAgents.slice(1).map((a) => `${a.code} ${a.calls}`),
           },
           {
-            id: "steward",
-            label: m.metricSteward,
-            value: totals.steward.pending,
+            id: "agent",
+            label: m.metricAgent,
+            value: totals.agent.pending,
             icon: "sparkles",
             tone: "brand",
             description: (
               <a href="/pipeline" className="text-primary">
-                {m.stewardPendingLink}
+                {m.agentPendingLink}
               </a>
             ),
             tags: [
-              m.preVerifiedTag(totals.steward.preVerified),
-              m.conflictTag(totals.steward.conflicts),
-              m.refluxTag(totals.steward.refluxDrafts),
+              m.preVerifiedTag(totals.agent.preVerified),
+              m.conflictTag(totals.agent.conflicts),
+              m.refluxTag(totals.agent.refluxDrafts),
             ],
           },
         ]}

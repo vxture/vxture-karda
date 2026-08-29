@@ -21,7 +21,7 @@ import type { KnowledgeBaseRow } from "../lib/store";
 //      item is connector-synced and the library exempts synced content
 //      (`governance_exempt`). Listing those rows would put a button in front of
 //      the operator that is guaranteed to fail - the exact "looks actionable but
-//      isn't" failure the batch-11 plan calls out for the steward queue. So the
+//      isn't" failure the batch-11 plan calls out for the agent queue. So the
 //      same `governanceApplies` predicate the service enforces is applied here,
 //      rather than a second copy of the rule that can drift from it.
 //

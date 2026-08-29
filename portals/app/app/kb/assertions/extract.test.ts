@@ -94,7 +94,7 @@ test("mentions are deduplicated - the mention key would reject the second", () =
 // --- conflict candidates -------------------------------------------------------
 
 test("conflict candidates are found by SUBJECT, not by similarity", () => {
-  // A similarity threshold would make the steward's queue a function of an
+  // A similarity threshold would make the agent's queue a function of an
   // embedding model's mood. Same subject + different statement is the whole rule.
   const { accepted } = prepare(
     [

@@ -57,7 +57,7 @@ function specToAsset(spec: DemoAssetSpec, id: string, agg: KbAggregates | null):
     highlight: spec.ops.highlight,
     tags: spec.tags,
     processing,
-    stewardSuggestions: spec.ops.stewardSuggestions,
+    agentSuggestions: spec.ops.agentSuggestions,
   };
 }
 
@@ -77,7 +77,7 @@ function totalsFor(assets: OverviewAsset[]): OverviewData["totals"] {
     runosCalls: DEMO_TOTALS_OPS.runosCalls,
     deltaPct: DEMO_TOTALS_OPS.deltaPct,
     topAgents: [...DEMO_TOTALS_OPS.topAgents],
-    steward: { ...DEMO_TOTALS_OPS.steward },
+    agent: { ...DEMO_TOTALS_OPS.agent },
   };
 }
 
@@ -178,9 +178,9 @@ export async function GET(): Promise<Response> {
       // to say it in the reader's language from `kind` + `heat7d`.
       highlight: h
         ? { kind: "agent_usage", text: null, strong: "", action: undefined }
-        : { kind: "steward", text: null, strong: "", action: undefined },
+        : { kind: "agent", text: null, strong: "", action: undefined },
       tags: [],
-      stewardSuggestions: 0,
+      agentSuggestions: 0,
     };
   });
 

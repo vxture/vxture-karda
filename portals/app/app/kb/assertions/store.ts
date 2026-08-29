@@ -27,7 +27,7 @@ export interface StoredExtraction {
 
 export interface ExtractionContext {
   kbId: string;
-  /** The steward run or model that produced these. Process accountability -
+  /** The agent run or model that produced these. Process accountability -
    *  never conflated with `assertedBy`, which is the source's authority. */
   extractedBy: string;
   /** The processing task this extraction belongs to, if it ran inside one. */

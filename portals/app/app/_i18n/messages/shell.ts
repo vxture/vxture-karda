@@ -43,10 +43,10 @@ export const shell = {
   // **Karda Super Agent(卡尔达)** —— karda 平台独有的 super agent(owner 2026-08-28)。
   // 名字是**英文**,两个语言下都一样:它是一个产品名,不是一段可翻译的措辞,翻掉了
   // 就成了另一个东西。中文「卡尔达」降为它旁边的 tag,只在中文界面出现——
-  // `dockTag` 的 en-US 是空串,渲染处据此不画那个 tag。
+  // `hubTag` 的 en-US 是空串,渲染处据此不画那个 tag。
   //
   // 旧名「管家值班台 / Steward desk」与散落各处的「知识管家」都已退役(2026-08-29 全仓清扫)。
-  // 用名规则:**身份出场用全名**(这一条、`pipeline.stewardPresent`),**行内指代用短名**
+  // 用名规则:**身份出场用全名**(这一条、`pipeline.agentPresent`),**行内指代用短名**
   // (中文「卡尔达」/ 英文 "Karda")——全名塞进句子会把句子撑散,短名能当主语。
   //
   // 右侧那块 pane 叫 **智枢 / agent hub**(2026-08-29 改名,旧名「值班台」太传统,
@@ -54,10 +54,10 @@ export const shell = {
   // 内容区一样是**区域词汇**,不出现在界面上;面板标题显示的是**住在里面的那个**。
   // 指这块**外壳区域**(130-portal-shell §1 的词汇表),那是布局用词,与这个 agent
   // 的名字不是一回事:区域是家具,super agent 是住在里面的那个。
-  dock: { "zh-CN": "Karda Super Agent", "en-US": "Karda Super Agent" },
-  dockTag: { "zh-CN": "卡尔达", "en-US": "" },
+  agentName: { "zh-CN": "Karda Super Agent", "en-US": "Karda Super Agent" },
+  hubTag: { "zh-CN": "卡尔达", "en-US": "" },
   // 收起的是那块 pane,不是那个 agent —— 与 `navCollapse`(收起导航)同一个句式。
-  dockCollapse: { "zh-CN": "收起智枢", "en-US": "Collapse the agent hub" },
+  hubCollapse: { "zh-CN": "收起智枢", "en-US": "Collapse the agent hub" },
   // 导航栏的 landmark 名。菜单化之后这个 pane 才成为一个真正的 <nav>——
   // 之前它是一列卡片,没有 landmark 可言。
   navLandmark: { "zh-CN": "主导航", "en-US": "Main navigation" },
@@ -158,17 +158,17 @@ export const shell = {
   } satisfies MessageFn<[string]>,
 
   // --- 智枢 ------------------------------------------------------------------
-  dockOnDuty: { "zh-CN": "在岗", "en-US": "On duty" },
-  dockConnecting: { "zh-CN": "正在接入…", "en-US": "Connecting…" },
-  dockPending: { "zh-CN": "待你裁决", "en-US": "Awaiting your call" },
-  dockRest: {
+  hubOnDuty: { "zh-CN": "在岗", "en-US": "On duty" },
+  hubConnecting: { "zh-CN": "正在接入…", "en-US": "Connecting…" },
+  hubPending: { "zh-CN": "待你裁决", "en-US": "Awaiting your call" },
+  hubRest: {
     "zh-CN": (n: number) => `其余 ${n} 项 →`,
     "en-US": (n: number) => `${n} more →`,
   } satisfies MessageFn<[number]>,
-  dockAlert: { "zh-CN": "告警", "en-US": "Alert" },
-  dockGoHandle: { "zh-CN": "去处理", "en-US": "Go handle it" },
-  dockActivity: { "zh-CN": "Agent 活动 · 实时", "en-US": "Agent activity · live" },
-  dockDelegate: {
+  hubAlert: { "zh-CN": "告警", "en-US": "Alert" },
+  hubGoHandle: { "zh-CN": "去处理", "en-US": "Go handle it" },
+  hubActivity: { "zh-CN": "Agent 活动 · 实时", "en-US": "Agent activity · live" },
+  hubDelegate: {
     "zh-CN": "低风险项全部交给卡尔达",
     "en-US": "Hand every low-risk item to Karda",
   },

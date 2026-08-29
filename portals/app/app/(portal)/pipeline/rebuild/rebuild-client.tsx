@@ -13,7 +13,7 @@ import { common } from "../../../_i18n/messages/common";
 // 受控重建 (design canvas: PipelineRebuild board, light-theme translation).
 // build-then-swap: active rebuild (4-step progress, old index keeps serving),
 // a switched library inside its rollback window, a queued package
-// instantiation; 页内副栏 = triggers, safety constraints, the steward's advice.
+// instantiation; 页内副栏 = triggers, safety constraints, the agent's advice.
 
 const STEP_KEYS = ["stepDeclare", "stepShadow", "stepSwap", "stepWindow"] as const;
 
@@ -215,9 +215,9 @@ export function RebuildClient() {
             <CardContent className="flex flex-col gap-xs px-lg">
               <span className="flex items-center gap-sm">
                 <Icon name="sparkles" size="sm" className="text-ai-text" />
-                <span className="text-label-lg">{m.stewardSuggestion}</span>
+                <span className="text-label-lg">{m.agentSuggestion}</span>
               </span>
-              <span className="text-body-sm leading-relaxed text-muted-foreground">{data.stewardAdvice}</span>
+              <span className="text-body-sm leading-relaxed text-muted-foreground">{data.agentAdvice}</span>
             </CardContent>
           </Card>
         </div>
