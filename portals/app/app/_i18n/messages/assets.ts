@@ -64,6 +64,29 @@ export const assets = {
   //
   // 这一页此前把库里**全部**文档一次铺完(演示库里是 94 到 412 行),没有搜索、没有
   // 排序。在那种长度上,「这份文件在不在库里」这个最常见的问题只能靠滚动和肉眼。
+  // --- 文档表:列名与视图 ----------------------------------------------------
+  //
+  // 它此前不是一张表,是一堆用 flex 摆出来的「看起来像表」的行:没有表头,于是那四
+  // 列没有名字;没有排序控件,于是排序只能另放一个下拉;没有分页,于是自己写了一个
+  // 「显示更多」。DS 里这三件都有(`DataTable` / `Pagination` / `ViewModeSwitch`),
+  // 而自己搭的那一套既少功能又与别的清单页长得不一样(owner 2026-08-30)。
+  docColStatus: { "zh-CN": "状态", "en-US": "Status" },
+  docColUpdated: { "zh-CN": "更新", "en-US": "Updated" },
+  docColSize: { "zh-CN": "大小", "en-US": "Size" },
+  docColActions: { "zh-CN": "操作", "en-US": "Actions" },
+  docViewAria: { "zh-CN": "文档展示方式", "en-US": "Document view" },
+  docViewList: { "zh-CN": "列表", "en-US": "List" },
+  docViewCards: { "zh-CN": "卡片", "en-US": "Cards" },
+  docTableAria: { "zh-CN": "文档表", "en-US": "Documents table" },
+  /** 分页器左侧那句计数。DS 默认写「共 N 条记录」,这里要的是「份」。 */
+  docPageCount: {
+    "zh-CN": (total: number) => `共 ${total} 份文档`,
+    "en-US": (total: number) => `${total} document${total === 1 ? "" : "s"} in total`,
+  } satisfies MessageFn<[number]>,
+  docPageCountFiltered: {
+    "zh-CN": (shown: number, total: number) => `筛选后 ${shown} 份 · 共 ${total} 份`,
+    "en-US": (shown: number, total: number) => `${shown} of ${total} after filtering`,
+  } satisfies MessageFn<[number, number]>,
   docSearchPlaceholder: { "zh-CN": "按标题搜索", "en-US": "Search by title" },
   docSearchAria: { "zh-CN": "按标题搜索文档", "en-US": "Search documents by title" },
   docSortAria: { "zh-CN": "文档排序方式", "en-US": "Sort documents" },
@@ -77,15 +100,6 @@ export const assets = {
     "en-US": "Try another word, or clear the search to see everything.",
   },
   docClearSearch: { "zh-CN": "清空搜索", "en-US": "Clear search" },
-  /** 只渲染前一批时,底下这句要说清**还剩多少**,否则「列表到此为止」是个错觉。 */
-  docShowMore: {
-    "zh-CN": (rest: number) => `显示更多(还有 ${rest} 份)`,
-    "en-US": (rest: number) => `Show more (${rest} left)`,
-  } satisfies MessageFn<[number]>,
-  docShownOf: {
-    "zh-CN": (shown: number, total: number) => `显示 ${shown} / ${total}`,
-    "en-US": (shown: number, total: number) => `Showing ${shown} of ${total}`,
-  } satisfies MessageFn<[number, number]>,
   docLoading: { "zh-CN": "正在加载文档…", "en-US": "Loading documents…" },
   docEmpty: { "zh-CN": "还没有文档", "en-US": "No documents yet" },
   docEmptyFolder: { "zh-CN": "该目录下没有文档", "en-US": "No documents in this folder" },
