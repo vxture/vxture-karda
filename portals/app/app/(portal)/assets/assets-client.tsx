@@ -395,23 +395,33 @@ export function AssetsClient() {
         // 智枢 are open, which is how a 1600px window used to draw four
         // columns into an 840px pane.
         //
-        // The 内容区 measures (viewport - 48 window margin - 280 导航栏 -
-        // 400 智枢 - 64 pane spacers - 32 content inset):
-        //   both panes open   1440 -> 38.5rem   1600 -> 48.5rem   1920 -> 68.5rem
-        //   both collapsed    1440 -> 85rem     1600 -> 95rem
+        // 内容区 = 视口 − 48(外边距)− 280(导航栏,开着时)− 400(智枢,开着时)
+        //          − 32×(开着的 pane 数,栏间距)− 32(内衬)
         //
-        // The frame changed on 2026-08-25 (智枢 320 -> 400, spacer 24 -> 32,
-        // inset 32 -> 16) and cost the open state a flat 4rem at every
-        // viewport. The GATES BELOW DID NOT MOVE, deliberately: a gate encodes
-        // how much room this content needs, and the frame getting wider does
-        // not change that. Shifting them down to preserve the old column count
-        // would be re-deriving the content's minimum to protect an appearance.
+        // 1920 上四种状态:
+        //   两栏全开   68.5rem      只开智枢   88rem
+        //   只开导航栏 95.5rem      两栏全收   115rem
         //
-        // What that costs, stated plainly: at 1440 with both panes open the
-        // pane is 38.5rem, under the 40rem gate, so the grid draws TWO columns
-        // where it used to draw three. Collapsing either pane returns it to
-        // three or four - which is what the collapse controls are for.
-        <div className="grid grid-cols-1 gap-lg @min-[26rem]:grid-cols-2 @min-[40rem]:grid-cols-3 @min-[76rem]:grid-cols-4">
+        // **四列的闸门 76 -> 100rem(owner 2026-08-29)。** 76 太低:只要收起任意一栏
+        // 就跨过它,于是 95.5rem 里塞四张卡,每张约 22.8rem——owner 的原话是「太拥挤」。
+        // 100rem 处每张约 24rem,而这正是这次定下的**四列下限**:低于它就该是三列。
+        //
+        // 由此,四列只在**两栏全收**时出现;开着任意一栏都是三列。这不是把 pane 状态
+        // 写进了规则——规则仍然只看宽度,是 100rem 这个数恰好落在「只开一栏」与「全收」
+        // 之间。
+        //
+        // **一处必须说破的代价**:1600 全收时内容区是 95rem,低于闸门,所以画三列而不是
+        // 四列。它与「全收就该四列」的说法冲突,但**不与那句话背后的标准冲突**——95rem
+        // 摊四张也是 22.8rem 一张,和被判为拥挤的那个宽度一模一样。宽度是唯一的判据,
+        // 同样的宽度不能一处叫拥挤、另一处叫宽敞。
+        //
+        // 更早的一条仍然成立(2026-08-25):帧宽变了不该反向去调闸门。闸门编码的是
+        // **内容需要多少地方**,而这次调它,正是因为拿到了新的内容标准(四列 24rem),
+        // 不是为了保住某个列数的观感。
+        //
+        // 代价:1440 两栏全开是 38.5rem,低于 40rem,画两列。收起任一栏即回到三列或四列
+        // ——那正是折叠控件存在的理由。
+        <div className="grid grid-cols-1 gap-lg @min-[26rem]:grid-cols-2 @min-[40rem]:grid-cols-3 @min-[100rem]:grid-cols-4">
           {visible.map((a) => (
             <AssetCard key={a.id} asset={a} />
           ))}
