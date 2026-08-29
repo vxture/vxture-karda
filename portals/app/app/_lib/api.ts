@@ -132,7 +132,13 @@ export async function getKb(id: string): Promise<Kb> {
   return need(body, "knowledgeBase", `/api/kb/${id}`);
 }
 
-export async function createKb(input: { name: string; description?: string }): Promise<Kb> {
+export async function createKb(input: {
+  name: string;
+  description?: string;
+  /** 建库时就要选(KD-218):它决定这个库的页面长什么样。省略 = 自建。 */
+  sourceMode?: SourceMode;
+  processingTemplateId?: string | null;
+}): Promise<Kb> {
   const body = await req<{ knowledgeBase: Kb }>("/api/kb", {
     method: "POST",
     headers: { "content-type": "application/json" },

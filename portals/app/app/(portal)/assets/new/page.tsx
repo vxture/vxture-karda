@@ -16,7 +16,10 @@ export const metadata = {
 
 // Creating a library IS the classification step: a document is classified by
 // which library it goes into, and each library carries its own sharing grade.
-// So this is a first-class product surface, not a settings form.
+//
+// 纯流程页(KD-223,150 §3.1):此前它还同时列库——与 /assets 重复,一份第二个会
+// 漂的清单。列表是 /assets 的职责,这里只做一件事:问四个问题,建一个库,把人送
+// 进去。
 export default function NewAssetPage() {
   return <NewAssetClient />;
 }

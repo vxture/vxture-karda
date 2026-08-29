@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { KbService } from "../../kb/lib/service";
-import { getKbStore } from "../../kb/lib/store";
+import { getKbStore, isSourceMode } from "../../kb/lib/store";
 import { requireAuth, errorJson, readJson } from "../../kb/api/http";
 
 // GET  /api/kb        list the active workspace's libraries
@@ -43,6 +43,9 @@ export async function POST(req: Request): Promise<Response> {
     description: typeof body.description === "string" ? body.description : null,
     processingTemplateId:
       typeof body.processingTemplateId === "string" ? body.processingTemplateId : null,
+    // 建库时就要选(KD-218):它决定这个库的页面长什么样。值域在边界上收口,
+    // 不认的值当没送(= 默认自建),与 PATCH 路由同一条规矩。
+    sourceMode: isSourceMode(body.sourceMode) ? body.sourceMode : undefined,
   });
   if (!result.ok) return errorJson(result.error);
   return NextResponse.json({ knowledgeBase: result.value }, { status: 201 });
