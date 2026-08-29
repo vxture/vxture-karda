@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Banner, Button, EmptyState, Tabs, TabsContent, TabsList, TabsTrigger } from "@vxture/design-system";
 import {
@@ -26,6 +26,9 @@ import {
   setEmbeddingModel,
   setRetrievalChannels,
   setSourceMode,
+  updateKbMeta,
+  setSyncedExemption,
+  deleteKb,
   setVerifierConfig,
   verifyDocument,
   createFolder,
@@ -105,6 +108,7 @@ export function AssetClient({ view = "content" }: { view?: AssetView } = {}) {
   const m = useMessages(assets);
   const c = useMessages(common);
   const params = useParams<{ kbId: string }>();
+  const router = useRouter();
   const kbId = params.kbId;
 
   const [kb, setKb] = useState<Kb | null>(null);
@@ -299,6 +303,24 @@ export function AssetClient({ view = "content" }: { view?: AssetView } = {}) {
       budget={budget}
       busy={busy}
       liveBindings={liveBindings}
+      onMeta={(name, description) =>
+        run(assets.errIdentitySave, async () => {
+          setKb(await updateKbMeta(kbId, { name, description }));
+          return m.okIdentitySave;
+        })
+      }
+      onExempt={(exemptSyncedContent) =>
+        run(assets.errGovernanceSave, async () => {
+          setKb(await setSyncedExemption(kbId, exemptSyncedContent));
+        })
+      }
+      onDelete={() =>
+        run(common.deleteFailed, async () => {
+          await deleteKb(kbId);
+          // 删完不留在一个已不存在的对象页上——回它所属的那一层(150 §3.2)。
+          router.push("/assets");
+        })
+      }
       onSourceMode={(mode) =>
         run(assets.errModeSwitch, async () => {
           if (kb.sourceMode === mode) return;

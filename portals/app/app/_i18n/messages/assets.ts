@@ -310,8 +310,10 @@ export const assets = {
     "en-US": (name: string) => `${name} - settings`,
   } satisfies MessageFn<[string]>,
   settingsDesc: {
-    "zh-CN": "按内容的一生排:入库 → 加工 → 检索 → 治理 → 共享。",
-    "en-US": "Ordered the way content lives: ingest, process, retrieve, govern, share.",
+    // 重设计(KD-224)后顺序自己长在左导航上,页头这句改说导航的用法——旧句复述
+    // 顺序,新句说明「看导航即看配置」这个不自明的点。
+    "zh-CN": "左侧即概要:每一项的副行就是当前配置,点击直达板块。",
+    "en-US": "The nav is the summary: each row's second line is the current value; click to jump.",
   },
 
   // --- 来源模式 ----------------------------------------------------------------
@@ -747,6 +749,60 @@ export const assets = {
 
   // --- settings: folders -----------------------------------------------------
   foldersCardTitle: { "zh-CN": "目录", "en-US": "Folders" },
+
+  // --- 设置页重设计(KD-224):左导航即概要 ---------------------------------------
+  //
+  // 旧页是八张等宽等重的卡竖排到底:改一个开关要滚过全部,而「这个库现在是怎么配
+  // 的」没有任何一处一眼可见。重设计的核心是**左导航同时是配置概要**——每一项的
+  // 副行就是当前值,看导航即看配置,点导航即达板块。
+  setNavAria: { "zh-CN": "设置板块导航", "en-US": "Settings sections" },
+  secIdentity: { "zh-CN": "名称与描述", "en-US": "Name & description" },
+  secIdentityDesc: {
+    "zh-CN": "库在列表、检索引用与供给账本里如何被称呼。",
+    "en-US": "How this library is referred to in lists, citations and the supply ledger.",
+  },
+  secIngest: { "zh-CN": "入库", "en-US": "Ingest" },
+  secProcessing: { "zh-CN": "加工", "en-US": "Processing" },
+  secProcessingDesc: {
+    "zh-CN": "文件如何被切块、进入哪个向量空间——这两件事共同决定内容怎样变得可检索。",
+    "en-US": "How files are chunked and which vector space they enter - together they decide how content becomes retrievable.",
+  },
+  secRetrieval: { "zh-CN": "检索", "en-US": "Retrieval" },
+  secRetrievalDesc: {
+    "zh-CN": "召回除了向量还走哪几路,以及查询时可以按哪些业务字段过滤。",
+    "en-US": "Which recall channels run beside vectors, and which business fields queries may filter on.",
+  },
+  secSharing: { "zh-CN": "共享", "en-US": "Sharing" },
+  secDanger: { "zh-CN": "危险区", "en-US": "Danger zone" },
+  navFolders: {
+    "zh-CN": (n: number) => `${n} 个目录`,
+    "en-US": (n: number) => `${n} folder${n === 1 ? "" : "s"}`,
+  } satisfies MessageFn<[number]>,
+  /** 向量空间在导航副行里的说法:锁定显示模型名,未锁显示这一句。 */
+  navVectorRouted: { "zh-CN": "按授权路由", "en-US": "Routed by grant" },
+  navNoDescription: { "zh-CN": "未填写描述", "en-US": "No description yet" },
+
+  okIdentitySave: { "zh-CN": "名称与描述已更新。", "en-US": "Name and description updated." },
+  errIdentitySave: { "zh-CN": "名称保存失败。", "en-US": "Could not save the name." },
+
+  /** 同步内容的验证豁免(KD-218 的库级覆盖)。开关问的是「纳不纳入」,不是「豁不
+   *  豁免」——双重否定的开关没人能一眼读对。 */
+  govSyncedLabel: { "zh-CN": "同步内容纳入验证", "en-US": "Verify synced content too" },
+  govSyncedHint: {
+    "zh-CN": "默认不纳入——同步内容的真相在源头,本地复验是演戏。打开后,同步进来的内容也进入验证跟踪与到期复验。",
+    "en-US": "Off by default - synced content's truth lives upstream. Turn on to pull synced content into verification tracking and expiry.",
+  },
+
+  deleteKbAction: { "zh-CN": "删除本库", "en-US": "Delete this library" },
+  deleteKbConsequence: {
+    "zh-CN": "库从列表、检索与供给中立即消失,外部来源停止同步;内容保留在审计窗口内,但产品内没有恢复入口。",
+    "en-US": "The library disappears from lists, retrieval and serving at once; sources stop syncing. Content is kept for the audit window, but there is no way back inside the product.",
+  },
+  deleteKbHint: {
+    "zh-CN": "删除是软删:内容进入保留期,引用它的历史回答不会变成断链。",
+    "en-US": "Deletion is soft: content enters a retention window, so historical answers that cited it do not break.",
+  },
+
   foldersCardDesc: {
     "zh-CN": "库内单层目录，只做整理，不带权限语义（权限在库这一级）。删除目录不会丢文档——它们变成「未归档」。",
     "en-US": "One flat level of folders inside the library, for tidiness only - they carry no permission meaning (permissions live at the library level). Deleting a folder loses no documents; they simply become unfiled.",
@@ -839,9 +895,9 @@ export const assets = {
   metricTopAgents: { "zh-CN": "调用 TOP 3 · 今日", "en-US": "Top 3 callers · today" },
   metricAgent: { "zh-CN": "卡尔达 · 今日", "en-US": "Karda · today" },
   agentPendingLink: { "zh-CN": "项待确认 →", "en-US": "awaiting confirmation →" },
-  preVerifiedTag: {
-    "zh-CN": (n: number) => `预验 ${n}`,
-    "en-US": (n: number) => `Pre-verified ${n}`,
+  admittedTag: {
+    "zh-CN": (n: number) => `已收录 ${n}`,
+    "en-US": (n: number) => `Admitted ${n}`,
   } satisfies MessageFn<[number]>,
   conflictTag: {
     "zh-CN": (n: number) => `冲突 ${n}`,

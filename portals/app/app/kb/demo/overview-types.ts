@@ -58,7 +58,10 @@ export interface OverviewTotals {
   runosCalls: number;
   deltaPct: number;
   topAgents: { code: string; calls: number }[];
-  agent: { preVerified: number; conflicts: number; refluxDrafts: number; pending: number };
+  /** 真实口径(workspace-read):待确认 / 冲突组 / 已收录 / 回流草稿。离线态由
+   *  demo 种子给同形状的演示值。`preVerified` 已退役——预验 pass 还没建,一个恒为
+   *  演示值的字段留在真实载荷里,读的人分不清哪半是真的。 */
+  agent: { pending: number; conflicts: number; admitted: number; refluxDrafts: number };
 }
 
 export interface OverviewData {

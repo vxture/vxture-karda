@@ -6,6 +6,7 @@ import { DEMO_PIPELINE, DEMO_TASKS } from "../../kb/demo/pipeline-demo";
 import { DEMO_EVALUATION } from "../../kb/demo/evaluation-demo";
 import { readCorpus } from "../../kb/governance/corpus-read";
 import type { ShellData } from "../../kb/demo/shell-types";
+import { readWorkspaceKarda, emptyWorkspaceKarda } from "../../kb/assertions/workspace-read";
 
 // GET /api/shell - everything the portal chrome needs in one round trip: the
 // 导航栏 card summaries, the header badge count, the 智枢 payload.
@@ -92,6 +93,12 @@ export async function GET(): Promise<Response> {
     ? await readCorpus(auth.user.activeWorkspace)
     : DEMO_EVALUATION.verification;
 
+  // 待确认自确认台(KD-222)起有真值。离线态维持演示——导航卡与智枢的这个数字
+  // 必须和总览页一致,两边同一个读模型。
+  const karda = prismaEnabled()
+    ? await readWorkspaceKarda(auth.user.activeWorkspace ?? "")
+    : { ...emptyWorkspaceKarda(), pending: S.pending };
+
   const data: ShellData = {
     overview: { assetCount, entryCount, weeklyNew, needsAttention, topAssets, rest, restCount },
     channels: {
@@ -106,7 +113,7 @@ export async function GET(): Promise<Response> {
     },
     pipeline: {
       inflight: DEMO_TASKS.counts.inflight,
-      pending: S.pending,
+      pending: karda.pending,
       failedResident: DEMO_TASKS.failures.permanent,
       docsToday: DEMO_TASKS.throughput.docsToday,
       rebuilding: 1,
@@ -119,7 +126,7 @@ export async function GET(): Promise<Response> {
       gaps: evalGaps,
     },
     agent: {
-      pending: S.pending,
+      pending: karda.pending,
       proposals: DEMO_PIPELINE.proposals.slice(0, 2),
       alert: DEMO_TASKS.alert
         ? {
