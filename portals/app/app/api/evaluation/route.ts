@@ -4,6 +4,7 @@ import { prismaEnabled } from "../../lib/db";
 import { readCorpus } from "../../kb/governance/corpus-read";
 import { readQuality } from "../../kb/evaluation/quality-read";
 import { DEMO_EVALUATION } from "../../kb/demo/evaluation-demo";
+import { readWorkspaceKarda } from "../../kb/assertions/workspace-read";
 import type { EvaluationData } from "../../kb/demo/evaluation-types";
 
 // GET /api/evaluation - the 验证评测 read model.
@@ -38,13 +39,14 @@ export async function GET(): Promise<Response> {
 
   const corpus = await readCorpus(auth.user.activeWorkspace);
   const quality = await readQuality(auth.user.activeWorkspace);
+  const karda = await readWorkspaceKarda(auth.user.activeWorkspace ?? "");
   const data: EvaluationData = {
     ...DEMO_EVALUATION,
     verification: {
       ...corpus,
-      // Agent figure, not a corpus figure - stays on the overlay until a
-      // agent ledger exists. sources.agent says so.
-      preVerifiedPending: DEMO_EVALUATION.verification.preVerifiedPending,
+      // 自确认台(KD-222)起是真值:工作区各库待确认队列之和,与总览卡、外壳导航
+      // 卡同一读模型——三个面不能报不同的数。sources.agent 随之转 live。
+      preVerifiedPending: karda.pending,
     },
     // The evaluation half goes live ONLY when there is a completed run to read.
     // Falling back to the overlay when a metric is missing would put a demo
@@ -53,7 +55,7 @@ export async function GET(): Promise<Response> {
     ...(quality
       ? { metrics: quality.metrics, sets: quality.sets, baseline: quality.baseline, degraded: quality.degraded }
       : {}),
-    sources: { corpus: "live", agent: "demo", evaluation: quality ? "live" : "demo" },
+    sources: { corpus: "live", agent: "live", evaluation: quality ? "live" : "demo" },
   };
   return NextResponse.json(data);
 }
