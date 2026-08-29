@@ -11,30 +11,26 @@ export const assets = {
   // --- library index / create ------------------------------------------------
   // Split around the bench link because the two languages put it in different
   // places: Chinese trails it with a clause, English opens a sentence with it.
-  indexLead: {
-    "zh-CN": "当前工作区的知识资产。把文档传进某个资产，再决定它共享给谁。",
-    "en-US": "The knowledge assets in this workspace. Upload a document into an asset, then decide who it is shared with.",
-  },
-  indexBenchLink: { "zh-CN": "检验台", "en-US": "The bench" },
-  indexBenchTail: {
-    "zh-CN": " 可跨你能看到的全部资产试问。",
-    "en-US": " can query across every asset you can see.",
-  },
   createNameLabel: { "zh-CN": "资产名称", "en-US": "Asset name" },
   createDescLabel: { "zh-CN": "资产描述", "en-US": "Asset description" },
   createDescPlaceholder: { "zh-CN": "描述（可选）", "en-US": "Description (optional)" },
   createPending: { "zh-CN": "创建中…", "en-US": "Creating…" },
+  // --- 新建流程(150 §3.1:title=动作名,description=做完会发生什么,返回=取消) ----
+  createFlowDesc: {
+    "zh-CN": "创建后直接进入新库——上传、接源、配置都在那里。",
+    "en-US": "You land in the new library right after - uploading, sources and settings all live there.",
+  },
+  createGo: { "zh-CN": "创建", "en-US": "Create" },
+  createNamePlaceholder: { "zh-CN": "例如「投标知识库」", "en-US": 'e.g. "Bid library"' },
+  /** 语义与治理默认写在选择器旁边(KD-218:模式决定页面形状),复用设置页那三句。 */
+  createTemplateHint: {
+    "zh-CN": "决定文件如何被切成可检索的块;之后可在设置里换。",
+    "en-US": "How files are chunked for retrieval; changeable later in settings.",
+  },
   createHint: {
     "zh-CN": "新建的资产默认私有，创建后再决定共享范围。",
     "en-US": "New assets start private; choose the sharing grade after creating.",
   },
-  indexLoading: { "zh-CN": "正在加载资产…", "en-US": "Loading assets…" },
-  indexEmpty: {
-    "zh-CN": "还没有资产。用上面的表单建第一个。",
-    "en-US": "No assets yet. Use the form above to create the first one.",
-  },
-  governedBadge: { "zh-CN": "已开启治理", "en-US": "Governed" },
-  integrationStatus: { "zh-CN": "集成状态", "en-US": "Integration status" },
 
   // --- failures --------------------------------------------------------------
   errLoadList: { "zh-CN": "资产列表加载失败。", "en-US": "Could not load the asset list." },
