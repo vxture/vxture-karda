@@ -115,6 +115,9 @@ export class KbService {
       "exemptSyncedContent",
       "defaultVerifier",
       "defaultVerifyIntervalDays",
+      "embeddingModel",
+      "fulltextEnabled",
+      "graphEnabled",
     ] as const;
     const safe: Omit<UpdateKbInput, "publishState"> = {};
     for (const k of ALLOWED) {

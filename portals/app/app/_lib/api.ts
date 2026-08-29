@@ -33,6 +33,10 @@ export interface Kb {
   exemptSyncedContent: boolean;
   defaultVerifier: string | null;
   defaultVerifyIntervalDays: number | null;
+  /** 向量空间锁(KD-107)。null = 不锁,按授权路由(KD-018)。 */
+  embeddingModel: string | null;
+  fulltextEnabled: boolean;
+  graphEnabled: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -164,6 +168,21 @@ export async function setVerifierConfig(
   return need(body, "knowledgeBase", `/api/kb/${id}`);
 }
 
+/**
+ * 这个库的供给侧数据(7 日引用、常读方)。
+ *
+ * 走 `/api/overview` 再按 id 挑,而不是新开一个库级端点:那个端点已经在算全部库的
+ * 这两个数(列表页卡片就用它),再加一个只为一个库的端点,等于让同一个口径存在两份。
+ *
+ * 找不到(库太新、或供给账本还没有它)返回 null——**不是返回 0**。「没有数据」和
+ * 「被引用了 0 次」在界面上要说的不是同一句话。
+ */
+export async function getAssetSupply(kbId: string): Promise<{ heat7d: number; topConsumers: string[] } | null> {
+  const body = await req<{ assets?: { id: string; heat7d: number; topConsumers: string[] }[] }>("/api/overview");
+  const hit = (body.assets ?? []).find((a) => a.id === kbId);
+  return hit ? { heat7d: hit.heat7d, topConsumers: hit.topConsumers } : null;
+}
+
 // --- documents ----------------------------------------------------------------
 
 /** 按 `document_id` 索引的驻留原因。空对象 = 没有任何文档卡住。 */
@@ -276,6 +295,34 @@ export interface ProcessingTemplateOption {
 export async function listProcessingTemplates(): Promise<ProcessingTemplateOption[]> {
   const body = await req<{ templates: ProcessingTemplateOption[] }>(`/api/kb/processing-templates`);
   return need(body, "templates", `/api/kb/processing-templates`);
+}
+
+/**
+ * 锁定/解锁这个库的向量空间(KD-107)。`null` = 不锁,按授权路由。
+ *
+ * 与模板、治理共用 `PATCH /api/kb/:id` —— 那个端点是「改这个库的配置」,不是
+ * 「改模板」;三个语义不同的设置项走同一个端点是刻意的,各自的失败文案在调用点区分。
+ */
+export async function setEmbeddingModel(kbId: string, embeddingModel: string | null): Promise<Kb> {
+  const body = await req<{ knowledgeBase: Kb }>(`/api/kb/${kbId}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ embeddingModel }),
+  });
+  return need(body, "knowledgeBase", `/api/kb/${kbId}`);
+}
+
+/** 召回通道开关(全文 / 图谱)。只发被改的那一个。 */
+export async function setRetrievalChannels(
+  kbId: string,
+  patch: { fulltextEnabled?: boolean; graphEnabled?: boolean },
+): Promise<Kb> {
+  const body = await req<{ knowledgeBase: Kb }>(`/api/kb/${kbId}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+  return need(body, "knowledgeBase", `/api/kb/${kbId}`);
 }
 
 export async function setProcessingTemplate(kbId: string, processingTemplateId: string | null): Promise<Kb> {

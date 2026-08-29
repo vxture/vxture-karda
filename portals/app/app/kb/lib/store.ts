@@ -22,6 +22,19 @@ export interface KnowledgeBaseRow {
   defaultVerifier: string | null;
   /** Re-verification interval in days; null = verify once, never expires. */
   defaultVerifyIntervalDays: number | null;
+  /**
+   * 这个库的**向量空间锁**(KD-107):它决定这批内容被哪一个嵌入模型切进了哪个向量
+   * 空间。`null` = 不锁,按授权路由(KD-018)。
+   *
+   * 一直在库里、也一直在列授权里,只是**没有出口**——而首页那条驻留
+   * (`model_not_routable`)写着「请改库的模型锁」,指向一个用户找不到的控件。
+   * 补出口就是补上那句话的落点(owner 2026-08-29)。
+   */
+  embeddingModel: string | null;
+  /** 全文检索是否参与召回。 */
+  fulltextEnabled: boolean;
+  /** 图谱是否参与召回。 */
+  graphEnabled: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,6 +60,10 @@ export interface UpdateKbInput {
   exemptSyncedContent?: boolean;
   defaultVerifier?: string | null;
   defaultVerifyIntervalDays?: number | null;
+  /** 见 `KnowledgeBaseRow.embeddingModel`。列授权里本就允许改,缺的只是出口。 */
+  embeddingModel?: string | null;
+  fulltextEnabled?: boolean;
+  graphEnabled?: boolean;
 }
 
 export interface KbStore {
@@ -97,6 +114,10 @@ export class InMemoryKbStore implements KbStore {
       publishState: "private" as PublishState,
       processingTemplateId: input.processingTemplateId ?? null,
       governanceEnabled: false,
+      // 与 DDL 的列默认一致:不锁模型(按授权路由,KD-018),全文开、图谱关。
+      embeddingModel: null as string | null,
+      fulltextEnabled: true,
+      graphEnabled: false,
       exemptSyncedContent: true,
       defaultVerifier: null as string | null,
       defaultVerifyIntervalDays: null as number | null,

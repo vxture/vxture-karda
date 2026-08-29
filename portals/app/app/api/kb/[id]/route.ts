@@ -65,6 +65,19 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       body.defaultVerifyIntervalDays === null
         ? body.defaultVerifyIntervalDays
         : undefined,
+    // 向量空间与召回通道(2026-08-29)。列授权里一直允许改这三列,缺的只是出口——
+    // 而 `model_not_routable` 那条驻留写着「请改库的模型锁」,指的就是第一个。
+    //
+    // 空串归一成 null(= 不锁,按授权路由 KD-018),不是留一个空字符串当模型名:
+    // 「锁到一个叫『』的模型」在路由那头一定失败,而失败得莫名其妙。
+    embeddingModel:
+      typeof body.embeddingModel === "string"
+        ? body.embeddingModel.trim() || null
+        : body.embeddingModel === null
+          ? null
+          : undefined,
+    fulltextEnabled: typeof body.fulltextEnabled === "boolean" ? body.fulltextEnabled : undefined,
+    graphEnabled: typeof body.graphEnabled === "boolean" ? body.graphEnabled : undefined,
   });
   if (!result.ok) return errorJson(result.error);
   return NextResponse.json({ knowledgeBase: result.value });

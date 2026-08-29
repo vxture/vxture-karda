@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { KbService } from "./service";
-import { InMemoryKbStore, type CreateKbInput } from "./store";
+import { InMemoryKbStore, type CreateKbInput, type UpdateKbInput } from "./store";
 import type { Actor } from "./ownership";
 
 const owner: Actor = { role: "owner", sub: "usr_a" };
@@ -148,6 +148,15 @@ test("EVERY updatable config key actually reaches the store", async () => {
   const made = await svc.create({ workspaceId: "ws1", ownerType: "user", ownerSub: "u1", name: "L" });
   assert.ok(made.ok);
 
+  // `satisfies Required<...>`:**这一行才是这条测试的护栏**。
+  //
+  // 原本这里是一份手写清单,于是 `UpdateKbInput` 上新增一个键时,测试照样全绿——
+  // 它证明的是「这七个键能落库」,不是「每个可改的键都能落库」。2026-08-29 加
+  // embeddingModel / fulltextEnabled / graphEnabled 时正好撞上:三个键加进类型和
+  // 白名单,测试一声不吭。
+  //
+  // 挂上 `Required` 之后,类型上多一个键而这里没列,**编译就过不去**——那正是
+  // 「不能被忘记」该有的形状。
   const patch = {
     name: "改名后",
     description: "描述",
@@ -156,7 +165,10 @@ test("EVERY updatable config key actually reaches the store", async () => {
     exemptSyncedContent: false,
     defaultVerifier: "usr_v",
     defaultVerifyIntervalDays: 30,
-  } as const;
+    embeddingModel: "bge-m3",
+    fulltextEnabled: false,
+    graphEnabled: true,
+  } as const satisfies Required<Omit<UpdateKbInput, "publishState">>;
 
   const updated = await svc.update(made.value.id, patch);
   assert.ok(updated.ok);
