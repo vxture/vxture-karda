@@ -587,7 +587,39 @@ karda_kb.assertion_mention
 一 subject 上互相矛盾的一组断言(`overlap.ts`),判断它要读全部候选并两两比对,那是一
 次跑批的工作,不是一次页面读取;这里只报**已经落成事实**的计数。
 
-这也意味着 §11.3 那三个「已建未接」里的前两个仍然未接:读面有了,**裁决的面还没有**。
+~~这也意味着 §11.3 那三个「已建未接」里的前两个仍然未接:读面有了,裁决的面还没有。~~
+**已过时,见 §11.5——确认与裁决面 2026-08-30 落地。**
+
+## 11.5 确认与裁决面落地(KD-222,owner 2026-08-30)
+
+owner 指令「核心业务流程需要全部实现」触发了对抽取流的重查,查出它在中途是**断**的:
+`storeExtraction` 落草稿(「写入不等于进入检索」),`isRecallable` 只认 `indexed`,而
+全仓没有任何生产路径做这个晋升——抽取跑得再多,agent 侧的 browse / get_evidence /
+find_entity 永远读到空。§5 推迟的是「断言作检索单元」,但把**确认面**一并推迟是把
+两件事捆在了一起:没有确认面,溯源层自己也永远空转。
+
+落地为 `/assets/[kbId]/knowledge`(知识确认台)+ `GET/POST /api/kb/:id/knowledge`
+(Console 会话路由,按 §7 判据不入 260 册)+ `kb/assertions/curate.ts`:
+
+| 动作 | 语义 | 拦不拦 |
+|---|---|---|
+| **确认收录** | `draft/indexed` -> `indexed` + `verified`,**一个动作**(KD-222)。拆成两个按钮会出现「已收录但没人确认」——既进了检索又没人负责,正是 KD-209 拦的中间态 | 不拦:主动作,后果正是人要的;支持勾选批量 |
+| **剔除** | 软删,行保留在审计窗口,无恢复入口 | 拦一道(危险确认) |
+| **采信**(裁决) | 赢家走确认(采信蕴含确认),输家逐条 `recordConflictOutcome`(取代 + contradicts 边,保留) | 拦一道:不销毁任何东西,但**没有反向操作** |
+
+复验钟:只有**开了治理且设了周期**的库,确认时才写 `expires_at`——断言不单开第二套
+治理,与 KD-208 口径一致。
+
+冲突候选来自**存储行**的跨批次分组(`curate.groupConflicts`:同 subject、不同
+statement、未被取代),与 `extract.ts` 的批内 `conflictCandidates` 不是一回事也不能
+合并——上月抽的和今天抽的互相矛盾,只有跨批次的查询看得见。**§11.3 的账目因此更新**:
+`recordConflictOutcome` 已接线;批内 `conflictCandidates` 仍无调用方,它等的是抽取
+运行内的预验 pass(需 `chat/extract` 授权),继续按「一半已建、另一半按裁定不建」持有;
+`confidenceWeight` 状态不变(断言仍不作检索单元)。
+
+确认台读**草稿**是职权不是漏洞:browse-read 的注释早写好了这条边界——「Console 是
+属主带着会话与身份审草稿的地方」,agent 面过滤到 recallable-only 的纪律不适用于
+属主自己的确认台。同理,确认台的实体提及数**含草稿断言**;agent 面只数 recallable。
 
 ---
 
@@ -602,4 +634,6 @@ karda_kb.assertion_mention
 - `210-data-model`:`incr/0006_*` 与 Prisma 同步,受 `check-data-architecture` 硬门;
 - `20-decisions.md`:§11 拍板后逐条登记 KD 号;
 - 2026-08-30:§11.4 库级读面(`GET /api/kb/:id/karda`),`150-page-architecture` §3.4
-  的状态条据此补齐第五段。
+  的状态条据此补齐第五段;
+- 2026-08-30:§11.5 确认与裁决面(KD-222),抽取流闭环;状态条「抽取」段的落点从
+  `/pipeline` 改为 `/assets/[kbId]/knowledge`。

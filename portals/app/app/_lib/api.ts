@@ -212,6 +212,88 @@ export async function getLibraryKarda(kbId: string): Promise<LibraryKarda> {
   return need(body, "karda", `/api/kb/${kbId}/karda`);
 }
 
+// --- 知识确认台(KD-222) -------------------------------------------------------
+
+/** 字段含义见 `kb/assertions/curate.ts`——那边是权威,这边是它的客户端一侧。 */
+export interface KnowledgeEvidence {
+  excerpt: string;
+  documentId: string;
+  documentTitle: string;
+  documentVersion: number;
+}
+
+export interface KnowledgeAssertion {
+  id: string;
+  kind: string;
+  subject: string | null;
+  statement: string;
+  assertedBy: string | null;
+  asOf: string | null;
+  validUntil: string | null;
+  confidence: number | null;
+  contentState: string;
+  verificationState: string;
+  verifier: string | null;
+  verifiedAt: string | null;
+  supersededById: string | null;
+  createdAt: string;
+  evidence: KnowledgeEvidence | null;
+}
+
+export interface KnowledgeEntity {
+  id: string;
+  name: string;
+  kind: string;
+  aliases: string[];
+  mentionCount: number;
+}
+
+export interface ConflictGroup {
+  subject: string;
+  items: KnowledgeAssertion[];
+}
+
+export interface LibraryKnowledge {
+  drafts: KnowledgeAssertion[];
+  admitted: KnowledgeAssertion[];
+  entities: KnowledgeEntity[];
+  conflicts: ConflictGroup[];
+  extractedAt: string | null;
+  capped: boolean;
+}
+
+export async function getLibraryKnowledge(kbId: string): Promise<LibraryKnowledge> {
+  const body = await req<{ knowledge: LibraryKnowledge }>(`/api/kb/${kbId}/knowledge`);
+  return need(body, "knowledge", `/api/kb/${kbId}/knowledge`);
+}
+
+async function knowledgeAct<T>(kbId: string, payload: Record<string, unknown>): Promise<T> {
+  return req<T>(`/api/kb/${kbId}/knowledge`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+/** 确认收录 = 收录 + 验证,一个动作(KD-222)。返回实际改动数——差额意味着有几条
+ *  已被并发处置,调用方要照实告诉人,而不是报一个笼统的成功。 */
+export async function confirmKnowledge(kbId: string, ids: string[]): Promise<{ confirmed: number; requested: number }> {
+  return knowledgeAct(kbId, { action: "confirm", ids });
+}
+
+export async function discardKnowledge(kbId: string, ids: string[]): Promise<{ discarded: number; requested: number }> {
+  return knowledgeAct(kbId, { action: "discard", ids });
+}
+
+/** 裁决:采信 winner(蕴含确认),其余判负保留。409 = 裁决对象已经变了,刷新再判。 */
+export async function adjudicateKnowledge(
+  kbId: string,
+  winnerId: string,
+  loserIds: string[],
+): Promise<{ confirmed: number; superseded: number }> {
+  return knowledgeAct(kbId, { action: "adjudicate", winnerId, loserIds });
+}
+
 // --- documents ----------------------------------------------------------------
 
 /** 按 `document_id` 索引的驻留原因。空对象 = 没有任何文档卡住。 */

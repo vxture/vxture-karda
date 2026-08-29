@@ -106,7 +106,9 @@ export function LifecycleStrip({ kb, docs, parked, bindings, supply, karda }: Li
             note: karda.lastExtractedAt === null ? m.lifeExtractNone : m.lifeExtractNote(karda.entities),
             // 待确认是这条线上唯一等着人的量,所以它走告警色,和别的段一个规矩。
             alert: karda.unverified > 0 ? m.lifeExtractPending(karda.unverified) : null,
-            href: "/pipeline",
+            // 落到这个库自己的确认台,不再送去加工管道:「27 待确认」点过去就该是
+            // 那 27 条,而不是另一个域的总览。
+            href: `/assets/${kb.id}/knowledge`,
           },
         ]
       : []),

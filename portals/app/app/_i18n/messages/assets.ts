@@ -64,6 +64,153 @@ export const assets = {
   //
   // 这一页此前把库里**全部**文档一次铺完(演示库里是 94 到 412 行),没有搜索、没有
   // 排序。在那种长度上,「这份文件在不在库里」这个最常见的问题只能靠滚动和肉眼。
+  // --- 知识确认台(KD-222) -----------------------------------------------------
+  //
+  // 抽取流在这一页闭环:卡尔达抽出的断言落为草稿(「写入不等于进入检索」),
+  // **人确认**才收录进检索与供给。确认 = 收录 + 验证,一个动作——拆成两个按钮,
+  // 就会出现「已收录但没人确认」这个既进了检索又没人负责的中间态。
+  knowledgeLabel: { "zh-CN": "知识", "en-US": "Knowledge" },
+  knowledgeTitle: {
+    "zh-CN": (name: string) => `${name} · 知识`,
+    "en-US": (name: string) => `${name} - knowledge`,
+  } satisfies MessageFn<[string]>,
+  knowledgeDesc: {
+    "zh-CN": "卡尔达从这个库抽取的断言与实体;经你确认后才进入检索与供给。",
+    "en-US": "What Karda extracted from this library; nothing enters retrieval until you confirm it.",
+  },
+  knowledgeMeta: {
+    "zh-CN": (d: number, a: number, e: number) => `${d} 待确认 · ${a} 已收录 · ${e} 实体`,
+    "en-US": (d: number, a: number, e: number) => `${d} to confirm · ${a} admitted · ${e} entities`,
+  } satisfies MessageFn<[number, number, number]>,
+  kNeverRanHint: {
+    "zh-CN": "文档入藏后,抽取会按批自动进行;产出先落在「待确认」,由你决定收录与否。",
+    "en-US": "Extraction runs in batches once documents are indexed; output lands in the confirmation queue for you to admit or discard.",
+  },
+  /** 触到读取上限。说「最近 N 条」而不是装作展示了全部——静默截断读起来像全量。 */
+  kCapped: {
+    "zh-CN": (n: number) => `已达读取上限,仅显示最近 ${n} 条断言。`,
+    "en-US": (n: number) => `Read cap reached - showing the most recent ${n} assertions.`,
+  } satisfies MessageFn<[number]>,
+
+  kScopeDrafts: { "zh-CN": "待确认", "en-US": "To confirm" },
+  kScopeAdmitted: { "zh-CN": "已收录", "en-US": "Admitted" },
+  kScopeEntities: { "zh-CN": "实体", "en-US": "Entities" },
+  kSearchAssertions: { "zh-CN": "按断言或主题搜索", "en-US": "Search statement or subject" },
+  kSearchEntities: { "zh-CN": "按名称搜索", "en-US": "Search by name" },
+
+  kColAssertion: { "zh-CN": "断言", "en-US": "Assertion" },
+  kColKind: { "zh-CN": "类型", "en-US": "Kind" },
+  kColConfidence: { "zh-CN": "置信", "en-US": "Confidence" },
+  kColSource: { "zh-CN": "出处", "en-US": "Source" },
+  kColVerification: { "zh-CN": "验证状态", "en-US": "Verification" },
+  kColValidity: { "zh-CN": "时效", "en-US": "Validity" },
+  kColMentions: { "zh-CN": "被提及", "en-US": "Mentions" },
+
+  // 断言类型词表(kinds.ts 的语言侧)。认不出的值原样返回,与状态标签同一条规矩。
+  kKindFact: { "zh-CN": "事实", "en-US": "Fact" },
+  kKindClaim: { "zh-CN": "主张", "en-US": "Claim" },
+  kKindEvent: { "zh-CN": "事件", "en-US": "Event" },
+  kKindProcedure: { "zh-CN": "规程", "en-US": "Procedure" },
+  kKindRule: { "zh-CN": "规则", "en-US": "Rule" },
+
+  actConfirm: { "zh-CN": "确认收录", "en-US": "Confirm & admit" },
+  actDiscard: { "zh-CN": "剔除", "en-US": "Discard" },
+  actAdopt: { "zh-CN": "采信此条", "en-US": "Adopt this one" },
+  /** BulkActionBar 的计数名词:「已选择 3 条断言」。 */
+  kNoun: { "zh-CN": "条断言", "en-US": "assertions" },
+  kDiscardConsequence: {
+    "zh-CN": "剔除后这条断言从所有读面消失;行保留在审计窗口内,但没有恢复入口。",
+    "en-US": "A discarded assertion disappears from every read surface; the row is kept for the audit window, but there is no way back.",
+  },
+  kDiscardBulkTarget: {
+    "zh-CN": (n: number) => `${n} 条断言`,
+    "en-US": (n: number) => `${n} assertion${n === 1 ? "" : "s"}`,
+  } satisfies MessageFn<[number]>,
+
+  // --- 冲突与裁决 ---------------------------------------------------------------
+  kConflictsTitle: {
+    "zh-CN": (n: number) => `${n} 组互相矛盾的断言`,
+    "en-US": (n: number) => `${n} conflicting group${n === 1 ? "" : "s"}`,
+  } satisfies MessageFn<[number]>,
+  kConflictsHint: {
+    "zh-CN": "同一主题下有不同说法。采信其中一条,其余保留、但标记为已被取代。",
+    "en-US": "Different statements about the same subject. Adopt one; the rest are kept but marked superseded.",
+  },
+  kAdoptDialogTitle: { "zh-CN": "采信这一条?", "en-US": "Adopt this statement?" },
+  /** 「没有反向操作」必须写在按钮前面,不能等人问。 */
+  kAdoptConsequence: {
+    "zh-CN": (n: number) =>
+      `这一条将被确认收录;其余 ${n} 条标记为「已被取代」——保留可查,检索与工具会标注其已让位。这一步没有反向操作。`,
+    "en-US": (n: number) =>
+      `This one is confirmed and admitted; the other ${n} are marked superseded - kept and inspectable, but every tool will flag them as displaced. There is no undo.`,
+  } satisfies MessageFn<[number]>,
+  kAdoptGo: { "zh-CN": "采信", "en-US": "Adopt" },
+  kSuperseded: { "zh-CN": "已被取代", "en-US": "Superseded" },
+
+  // --- 行内事实 ----------------------------------------------------------------
+  kAssertedBy: {
+    "zh-CN": (who: string) => `据 ${who}`,
+    "en-US": (who: string) => `per ${who}`,
+  } satisfies MessageFn<[string]>,
+  kAsOf: {
+    "zh-CN": (when: string) => `${when} 起`,
+    "en-US": (when: string) => `from ${when}`,
+  } satisfies MessageFn<[string]>,
+  kValidUntil: {
+    "zh-CN": (when: string) => `至 ${when}`,
+    "en-US": (when: string) => `until ${when}`,
+  } satisfies MessageFn<[string]>,
+  kSourceOf: {
+    "zh-CN": (title: string, v: number) => `出处:${title} · 第 ${v} 版`,
+    "en-US": (title: string, v: number) => `Source: ${title} · v${v}`,
+  } satisfies MessageFn<[string, number]>,
+
+  // --- 处置结果 ----------------------------------------------------------------
+  okKConfirm: {
+    "zh-CN": (n: number) => `已确认收录 ${n} 条。`,
+    "en-US": (n: number) => `Confirmed and admitted ${n}.`,
+  } satisfies MessageFn<[number]>,
+  /** 差额照实说:请求与实际改动不一致 = 有几条被并发处置了,不是这次失败了。 */
+  okKConfirmPartial: {
+    "zh-CN": (n: number, missed: number) => `已确认 ${n} 条;另有 ${missed} 条已被并发处置,列表已刷新。`,
+    "en-US": (n: number, missed: number) => `Confirmed ${n}; ${missed} had already been handled elsewhere - the list is refreshed.`,
+  } satisfies MessageFn<[number, number]>,
+  okKDiscard: {
+    "zh-CN": (n: number) => `已剔除 ${n} 条。`,
+    "en-US": (n: number) => `Discarded ${n}.`,
+  } satisfies MessageFn<[number]>,
+  okKAdopt: {
+    "zh-CN": (n: number) => `已采信;${n} 条标记为被取代。`,
+    "en-US": (n: number) => `Adopted; ${n} marked superseded.`,
+  } satisfies MessageFn<[number]>,
+  errKnowledgeLoad: { "zh-CN": "知识数据加载失败。", "en-US": "Could not load the knowledge data." },
+  errKnowledgeAct: { "zh-CN": "处置失败。", "en-US": "The action failed." },
+  errAdjStale: {
+    "zh-CN": "这组冲突刚被别处处理过,列表已刷新——请重新判断。",
+    "en-US": "This conflict was just handled elsewhere; the list is refreshed - judge again.",
+  },
+
+  // --- 空态(三个 scope 三句话,与文档清单同一条规矩) ----------------------------
+  kDraftsEmpty: { "zh-CN": "没有等着你的断言", "en-US": "Nothing waiting for you" },
+  kDraftsEmptyHint: {
+    "zh-CN": "卡尔达抽取后,新断言会先落在这里,由你确认收录。",
+    "en-US": "Freshly extracted assertions land here for you to confirm.",
+  },
+  kAdmittedEmpty: { "zh-CN": "还没有已收录的断言", "en-US": "Nothing admitted yet" },
+  kAdmittedEmptyHint: {
+    "zh-CN": "在「待确认」里确认收录后,断言才进入检索与供给。",
+    "en-US": "Assertions enter retrieval and serving only after you confirm them in the queue.",
+  },
+  kEntitiesEmpty: { "zh-CN": "还没有实体", "en-US": "No entities yet" },
+  kEntitiesEmptyHint: {
+    "zh-CN": "实体随断言抽出;有断言提及它们时才会出现在这里。",
+    "en-US": "Entities come out of assertions; they appear once assertions mention them.",
+  },
+  // 分两个键而不是一句通用的「没有匹配的结果」：那句已经是顶栏全局搜索的词（shell.searchEmpty），
+  // 而且越具体越好——人知道自己搜的是断言还是实体。
+  kNoMatchAssertions: { "zh-CN": "没有匹配的断言", "en-US": "No assertions match" },
+  kNoMatchEntities: { "zh-CN": "没有匹配的实体", "en-US": "No entities match" },
+
   // --- 文档表:列名与视图 ----------------------------------------------------
   //
   // 它此前不是一张表,是一堆用 flex 摆出来的「看起来像表」的行:没有表头,于是那四
