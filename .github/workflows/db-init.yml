@@ -167,7 +167,20 @@ jobs:
             exit 0
           fi
 
-          for f in database/ddl/00_baseline.sql database/ddl/97_service_role.sql database/ddl/98_column_locks.sql; do
+          # ORDER (TD-010 closed 2026-08-30): baseline -> 97 -> incr/* -> 98.
+          #
+          # 98 must run LAST. On a LIVE database baseline's CREATE TABLE IF NOT
+          # EXISTS no-ops, so a column added by an increment does not exist until
+          # that increment runs - and 98 grants on the FULL column set. With the
+          # old order (98 before incr) every column-adding release failed the
+          # same way twice: #178 hit it through a baseline index (v0.9.0), the
+          # v0.10.0 db-init hit it through 98's GRANT on source_mode - and worse,
+          # 98 dies mid-file AFTER its REVOKE, leaving the service role without
+          # UPDATE until the next successful run. Increments need 97 first (they
+          # GRANT to the service role, which 97 creates) and must precede 98
+          # (which assumes the complete column set). Verified against real
+          # Postgres 18 on both a live (v0.9.0-shaped) and a fresh database.
+          for f in database/ddl/00_baseline.sql database/ddl/97_service_role.sql; do
             echo "[db-init] applying $f"
             apply_file "$f"
           done
@@ -176,6 +189,8 @@ jobs:
             echo "[db-init] applying incr $(basename "$f")"
             apply_file "$f"
           done
+          echo "[db-init] applying database/ddl/98_column_locks.sql"
+          apply_file "database/ddl/98_column_locks.sql"
 
           # Give the service role its password so the app can authenticate. Source
           # of truth is the operator .env's DATABASE_URL. If it has none yet,
