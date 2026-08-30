@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { readAssetHeat, type AssetHeat } from "../../kb/tools/supply-read";
+import { readAssetHeat, readSupply, hasSupplyTraffic, type AssetHeat } from "../../kb/tools/supply-read";
 import { readWorkspaceKarda } from "../../kb/assertions/workspace-read";
 import { requireAuth } from "../../kb/api/http";
 import { prismaEnabled, getPrismaClient } from "../../lib/db";
@@ -150,6 +150,11 @@ export async function GET(): Promise<Response> {
   // 来自 workspace-read,不再是演示口径。供给侧数字(调用、热点)仍是演示——
   // demoOps 说的是它们。
   const karda = await readWorkspaceKarda(workspaceId);
+  // 供给总数的接线开关:账本有过真流量就全面转真(含真实的零);一条都没有过则整套
+  // 演示叙事一起保留——半真半假的页面自己打自己。/api/channels 早已走同一账本,
+  // 这里不接,总览和通道页就会互相矛盾。
+  const live = await hasSupplyTraffic(workspaceId);
+  const supply = live ? await readSupply(workspaceId) : null;
   const NO_HEAT: AssetHeat = { heat7d: 0, sparkline: [0, 0, 0, 0, 0, 0, 0], topConsumers: [] };
 
   const assets: OverviewAsset[] = kbs.map((kb) => {
@@ -197,6 +202,15 @@ export async function GET(): Promise<Response> {
 
   const totals = {
     ...totalsFor(assets),
+    ...(supply
+      ? {
+          todayCalls: supply.totals.todayCalls,
+          directCalls: supply.totals.directCalls,
+          runosCalls: supply.totals.runosCalls,
+          deltaPct: supply.totals.deltaPct,
+          topAgents: supply.consumers.slice(0, 3).map((c) => ({ code: c.code, calls: c.calls })),
+        }
+      : {}),
     agent: {
       pending: karda.pending,
       conflicts: karda.conflictGroups,
@@ -204,6 +218,7 @@ export async function GET(): Promise<Response> {
       refluxDrafts: karda.refluxDrafts,
     },
   };
-  const data: OverviewData = { totals, assets, demoOps: true };
+  // demoOps 只指供给叙事(demoNote 那行脚注说的就是它);转真即撤。
+  const data: OverviewData = { totals, assets, demoOps: !live };
   return NextResponse.json(data);
 }
