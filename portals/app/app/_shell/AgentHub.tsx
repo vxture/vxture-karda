@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Button, Icon, ShellIconButton } from "@vxture/design-system";
+import { Button, Icon, ShellDock, ShellIconButton } from "@vxture/design-system";
 import type { ShellData } from "../kb/demo/shell-types";
 import { useMessages } from "../_i18n/useMessages";
 import { shell as shellMessages } from "../_i18n/messages/shell";
@@ -118,11 +118,12 @@ export function AgentHub({ shell, onClose }: { shell: ShellData | null; onClose:
   const isOpen = (id: string) => !closed.has(id);
 
   return (
-    // A card inside the window margin, not a full-height slab clamped to the
-    // browser edge: same hairline and radius as the nav cards and the page
-    // head, translucent so the product backdrop carries through.
+    // DS 标准停靠列(owner 2026-08-31,随外包裹层一起退役的还有浮卡外皮):
+    // 智枢是 panel over the page,这正是 ShellDock 的定义——narrow 档 420px、
+    // 左发丝线、card 面、overlay 阴影,贴右缘全高。半透明渐变随浮卡形制退役:
+    // 悬在页面之上的面板要不透明,背景穿透只属于「页面本身」的地面。
     // Fixed head / scrolling middle / fixed foot.
-    <aside className="flex w-[25rem] shrink-0 flex-col overflow-hidden rounded-lg border border-primary/[0.06] bg-gradient-to-b from-card/80 to-card/35 dark:border-primary/10">
+    <ShellDock mode="narrow" className="overflow-hidden">
       <div className="flex shrink-0 items-center gap-sm border-b border-primary/[0.08] px-md py-sm dark:border-primary/10">
         <Icon name="sparkles" size="sm" className="text-ai-text" />
         <span className="flex min-w-0 flex-1 items-baseline gap-xs">
@@ -241,6 +242,6 @@ export function AgentHub({ shell, onClose }: { shell: ShellData | null; onClose:
           </div>
         </>
       )}
-    </aside>
+    </ShellDock>
   );
 }

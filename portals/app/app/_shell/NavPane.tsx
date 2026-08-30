@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShellSidebarFrame, ShellSidebarNav } from "@vxture/design-system";
+import { ShellSidebarNav } from "@vxture/design-system";
 import { NAV_SECTIONS, navHrefActive } from "./nav";
 import { useMessages } from "../_i18n/useMessages";
 import { shell as shellMessages } from "../_i18n/messages/shell";
@@ -57,7 +57,10 @@ export function NavPane({
   }));
 
   return (
-    <div data-karda-nav className="flex min-h-0 shrink-0">
+    // 宽度状态机(ShellSidebarFrame)不在这里:工作区几何归 PortalShell 的
+    // ShellViewport 所有,Frame 是它的 sidebar 槽位自带的。本组件只出内容,
+    // 与 DS 的分工一致:「Frame 拥有宽度/显隐状态机,Nav 不管外壳只管内容」。
+    <div data-karda-nav className="flex h-full min-h-0 flex-col">
       {/* 双行的展开/收回(TD-016 的本地实现):subLabel 是项内唯一的 font-mono,
           未激活且未悬停/未聚焦时隐藏它——行高回到单行,列表安静;hover、键盘
           focus-visible、或 aria-current=page 时第二行浮现。选择器借的是 DS 的
@@ -67,23 +70,21 @@ export function NavPane({
           display: none;
         }
       `}</style>
-      <ShellSidebarFrame mode={collapsed ? "collapsed" : "expanded"}>
-        <ShellSidebarNav
-          domainName="Karda"
-          sections={sections}
-          collapsed={collapsed}
-          onToggleCollapsed={onToggleCollapsed}
-          isActive={(href) => navHrefActive(href, pathname)}
-          storageKeyPrefix="karda-shell-nav"
-          linkComponent={Link}
-          labels={{
-            expandNav: m.navExpand,
-            collapseNav: m.navCollapse,
-            expandAllGroups: m.navGroupsExpand,
-            collapseAllGroups: m.navGroupsCollapse,
-          }}
-        />
-      </ShellSidebarFrame>
+      <ShellSidebarNav
+        domainName="Karda"
+        sections={sections}
+        collapsed={collapsed}
+        onToggleCollapsed={onToggleCollapsed}
+        isActive={(href) => navHrefActive(href, pathname)}
+        storageKeyPrefix="karda-shell-nav"
+        linkComponent={Link}
+        labels={{
+          expandNav: m.navExpand,
+          collapseNav: m.navCollapse,
+          expandAllGroups: m.navGroupsExpand,
+          collapseAllGroups: m.navGroupsCollapse,
+        }}
+      />
     </div>
   );
 }
