@@ -57,15 +57,11 @@ export function AppHeader({
   pending = 0,
   hubOpen = false,
   onToggleHub = () => {},
-  navCollapsed = false,
-  onToggleNav = () => {},
 }: {
   /** 待裁决 count for the agent-dock badge (red, shown when dock closed). */
   pending?: number;
   hubOpen?: boolean;
   onToggleHub?: () => void;
-  navCollapsed?: boolean;
-  onToggleNav?: () => void;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -144,15 +140,10 @@ export function AppHeader({
   // launcher + brand - two navs must not coexist.
   const leading = (
     <>
-      {/* 导航栏 toggle, leftmost in the 顶栏 (owner 2026-08-24) - everything
-          else shifts right behind it. Kept very light: it governs chrome, not
-          content, so it must not compete with the brand beside it. */}
-      <ShellIconButton
-        icon="sidebar"
-        label={navCollapsed ? m.navExpand : m.navCollapse}
-        onClick={onToggleNav}
-        iconClassName="text-muted-foreground/60"
-      />
+      {/* 导航栏的收放不再从顶栏遥控(owner 2026-08-31):DS 标准导航自带
+          收放控件,顶栏那颗 sidebar 图标自 KD-225/KD-226 起就是同一状态的
+          第二个开关——两个开关摆两处,读者要猜它们是不是一回事。撤掉后
+          顶栏回到「launcher + 品牌」,收放归导航栏自己。 */}
       <ShellLauncher
         buttonLabel={m.launcherLabel}
         panelLabel={m.launcherPanel}

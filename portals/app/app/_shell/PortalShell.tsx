@@ -96,8 +96,6 @@ export function PortalShell({ children }: { children: ReactNode }) {
             pending={shell?.agent.pending ?? 0}
             hubOpen={hubOpen}
             onToggleHub={toggleHub}
-            navCollapsed={navCollapsed}
-            onToggleNav={toggleNav}
           />
         }
         sidebar={<NavPane collapsed={navCollapsed} onToggleCollapsed={toggleNav} />}
