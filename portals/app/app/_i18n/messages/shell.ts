@@ -9,6 +9,11 @@ import type { Catalog, MessageFn } from "../catalog";
 // structure declaration means it stays readable as an IA document.
 export const shell = {
   // --- domains ---------------------------------------------------------------
+  navGroupOverview: { "zh-CN": "概览", "en-US": "Overview" },
+  // DS 侧栏内建的「全组收合」可访问名(双语产品必须传,否则英文档下显中文默认值;
+  // 展开/收起导航复用下方既有的 navExpand / navCollapse——同一个动作同一句话)。
+  navGroupsExpand: { "zh-CN": "展开全部分组", "en-US": "Expand all groups" },
+  navGroupsCollapse: { "zh-CN": "收起全部分组", "en-US": "Collapse all groups" },
   navHome: { "zh-CN": "首页", "en-US": "Home" },
   navHomeDesc: { "zh-CN": "此刻能不能用、在服务谁、可不可信", "en-US": "Usable now, serving whom, trustworthy" },
   navAssets: { "zh-CN": "知识资产", "en-US": "Knowledge assets" },

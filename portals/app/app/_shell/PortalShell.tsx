@@ -6,7 +6,7 @@ import { AppHeader } from "./AppHeader";
 import { NavPane } from "./NavPane";
 import { ShellBackdrop } from "./ShellBackdrop";
 import { AgentHub } from "./AgentHub";
-import { PORTAL_FULLSCREEN_ID, activeNavKey } from "./nav";
+import { PORTAL_FULLSCREEN_ID } from "./nav";
 import type { ShellData } from "../kb/demo/shell-types";
 
 // The portal shell (owner 2026-08-24): a 48px 顶栏 over the 工作区.
@@ -42,7 +42,6 @@ function writePref(key: string, value: boolean) {
 
 export function PortalShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "/";
-  const active = activeNavKey(pathname);
   const [shell, setShell] = useState<ShellData | null>(null);
   // SSR renders the default (both side panes open); the persisted
   // preference applies after mount to keep hydration consistent.
@@ -106,7 +105,9 @@ export function PortalShell({ children }: { children: ReactNode }) {
             sit straight on the shared ground (owner 2026-08-24). Only 智枢
             keeps a pane surface - it is a panel over the page, not part of
             it. */}
-        <NavPane active={active} pathname={pathname} shell={shell} collapsed={navCollapsed} />
+        {/* 导航栏走 DS 标准件(ShellSidebarFrame 拥有宽度状态机):收起是图标栏,
+            不再整栏卸载——「收起=消失」的旧语义随手搓菜单退役(owner 2026-08-30)。 */}
+        <NavPane collapsed={navCollapsed} onToggleCollapsed={toggleNav} />
         {/* 内容区: scrolls on its own inside the 工作区. NO background of its
             own - the product backdrop must read through the whole body, not
             stop at 导航栏. It is no longer the fullscreen target either (that

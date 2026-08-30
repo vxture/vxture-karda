@@ -109,6 +109,76 @@ export const NAV_ITEMS = [
   },
 ] as const satisfies readonly NavItem[];
 
+/**
+ * 侧栏(DS `ShellSidebarNav`)的分组结构——**导航栏的新单一来源**(owner 2026-08-30:
+ * 导航改用 DS 标准件,参考 opera 的双行形制)。
+ *
+ * 与 `NAV_ITEMS` 并存而不是替换:启动器与首页域卡仍按「四个域」的扁平表消费,
+ * 侧栏按「组 + 项」的标准形制消费——两者都从本文件出,词都在 shell 目录里,
+ * 不会漂成两套 IA。
+ *
+ * `subLabel` 是**英文原词**,照 opera 规则一:中文主名给人读,英文原词给人对上
+ * 路由与 API——它们是词表标识不是散文,所以是数据常量,不进 i18n 目录(与错误码
+ * 同一条「码在线上,散文在调用点」)。
+ */
+export interface NavSectionDef {
+  /** 分组标题的目录键。 */
+  titleKey: ShellKey;
+  /** 在本组之前画层级分隔线(DS 语义:分层,不是装饰)。 */
+  dividerBefore?: boolean;
+  items: readonly {
+    key: string;
+    href: string;
+    icon: IconName;
+    labelKey: ShellKey;
+    /** 英文原词,双行的第二行。 */
+    subLabel: string;
+  }[];
+}
+
+export const NAV_SECTIONS = [
+  {
+    titleKey: "navGroupOverview",
+    dividerBefore: false,
+    items: [
+      { key: "home", href: "/", icon: "home", labelKey: "navHome", subLabel: "Home" },
+      { key: "assets", href: "/assets", icon: "squares-four", labelKey: "navAssets", subLabel: "Assets" },
+    ],
+  },
+  {
+    titleKey: "navChannels",
+    dividerBefore: true,
+    items: [
+      { key: "channels", href: "/channels", icon: "plugs-connected", labelKey: "subChannelsOverview", subLabel: "Channels" },
+      { key: "tools", href: "/tools", icon: "api", labelKey: "subTools", subLabel: "Tools" },
+      { key: "bench", href: "/bench", icon: "terminal", labelKey: "subBench", subLabel: "Bench" },
+    ],
+  },
+  {
+    titleKey: "navPipeline",
+    dividerBefore: false,
+    items: [
+      { key: "pipeline", href: "/pipeline", icon: "workflow", labelKey: "subFlow", subLabel: "Pipeline" },
+      { key: "tasks", href: "/pipeline/tasks", icon: "rows", labelKey: "subTasks", subLabel: "Tasks" },
+      { key: "rebuild", href: "/pipeline/rebuild", icon: "refresh", labelKey: "subRebuild", subLabel: "Rebuild" },
+    ],
+  },
+  {
+    titleKey: "navEvaluation",
+    dividerBefore: false,
+    items: [
+      { key: "evaluation", href: "/evaluation", icon: "list-checks", labelKey: "subEvaluation", subLabel: "Evaluation" },
+      { key: "queue", href: "/evaluation/queue", icon: "clock-counter-clockwise", labelKey: "subQueue", subLabel: "Queue" },
+      { key: "sets", href: "/evaluation/sets", icon: "clipboard", labelKey: "subSets", subLabel: "Sets" },
+    ],
+  },
+] as const satisfies readonly NavSectionDef[];
+
+/** 侧栏项的激活判定:`/` 只精确匹配,其余按前缀——`/assets/xxx` 亮「知识资产」。 */
+export function navHrefActive(href: string, pathname: string): boolean {
+  return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+}
+
 /** Resolve the active nav entry from a pathname ("/" matches only exactly). */
 export function activeNavKey(pathname: string): string | null {
   for (const item of NAV_ITEMS) {

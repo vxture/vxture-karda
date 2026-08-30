@@ -27,6 +27,7 @@ Append-only. Each entry is a known, deliberately-deferred debt with a stable ID
 | `TD-013` | OPEN (worked around locally; filed upstream as `vxture-design`#8) | DS DialogTitle ships `leading-none`, so every dialog title is zero-height |
 | `TD-014` | closed 2026-08-30 | page titles cannot follow the locale (server metadata, client locale) |
 | `TD-015` | **open** | recall does not reach copies: the lineage column exists and nothing reads it |
+| `TD-016` | **open** | 双行导航的 hover/active 显隐靠覆盖 DS 内部 DOM 的 CSS(等 vxture-design#47 的一等 prop) |
 
 ---
 
@@ -631,3 +632,15 @@ deliberately not carried over.
 - **Interaction with KD-204**: none. KD-204 governs TIME (nothing is cleared just
   because it aged); KD-212 governs REQUESTS. The two only looked like they
   collided because both said "clear" without naming the trigger.
+
+## TD-016 - 双行导航的显隐策略是覆盖 DS 内部 DOM 的 CSS
+
+- **Status**: open, low severity - a presentation override, filed upstream as
+  `vxture-design#47`.
+- **What**: owner 2026-08-30 定的双行规则(页面激活或悬停/聚焦才展开 subLabel,
+  离开恢复单行),DS `ShellSidebarNav` 没有对应开关。`NavPane.tsx` 用一段作用域
+  CSS 实现,选择器依赖两个**内部**事实:subLabel 是项内唯一 `font-mono`;active
+  项带 `aria-current="page"`。DS 内部任一重构都会让它静默失效——失效的表现是
+  双行变常驻,不报错。
+- **Recovery condition**: vxture-design#47 落地 `subLabelReveal` 一类的一等
+  prop,删掉 NavPane 里的 `<style>` 块并传 prop,本条关闭。
