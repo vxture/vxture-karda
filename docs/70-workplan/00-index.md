@@ -872,6 +872,8 @@ model behind it has not moved.
 | `v0.10.1` | **生产发布(2026-08-30)**:DS 标准导航 + 健康全契约 + db-init 顺序修复(TD-010 关)。无 schema 变更,单门直达;公网验证 /api/health 带 uptimeSec、/api/ready 报 ready + checks 全 ok | 已发布 |
 | `#200` `#201` | 产品前门(vxtpl 移植:middleware 无 cookie 即送 /gate,/api/access 单次裁决杀双读竞态)+ 登录验证收口:SignInGate 改送前门(replace 不 assign,八处调用点收编)、/auth/login 成唯一登录动词(dev-login 移交)、/api/access 认得 dev 会话(无会话 anonymous,blanket open 只留纯离线态)、dev compose 补 MOCK_TIER(门与页面同宽) | 已合 |
 | `v0.10.2` | **生产发布(2026-08-31)**:前门 + 登录收口一起上。无 schema 变更,无新生产 env;公网验证:匿名 /assets 307 到 /gate?from=/assets,/api/access 报 anonymous,/auth/login 307 到 accounts.vxture.com 真授权端点,/api/health 报 v0.10.2/008428ea,/api/ready 全 ok | 已发布 |
+| `#203` `#204` | **工作区几何归 DS ShellViewport(KD-226)**:外包裹层(24/32 浮卡刻度,owner 2026-08-25)随手搓形制退役,三块贴缘各自内供留白——侧栏 Frame 归 Viewport 槽位、内容区 ShellPageContainer(流体 page-inset + 封顶 wide-2xl)、智枢换 ShellDock;逐像素实测 256+892+420=1568 零缝隙,1440 展开重回资产卡三列。随后顶栏撤下导航收放图标(DS 导航自带收放,同一状态不摆两个开关) | 已合 |
+| `v0.10.3` | **生产发布(2026-08-31)**:shell 几何标准化一起上。无 schema 变更,无新生产 env;公网验证 /api/health 报 v0.10.3/2f7b142a,/api/ready 全 ok,前门 307 如常 | 已发布 |
 
 **新的我方待办(对端已交付)**:`vxture-atlas#21` 要的契约制品**已在生产跑了三个版本**——`GET /.well-known/vxture-contract` 带 `errorCodes`(v0.5.0)与 `requests`(v0.6.0),用我方现有 S2S 令牌就能拉。改为消费这份制品,不再人工抄码表(`#100` 那次 `QUOTA_EXHAUSTED` / `QUOTA_EXCEEDED` 就是人工抄的产物)。**先不要钉指纹**:对端有 PR 待合,合后从 `c1-e132a38fae1a` 移到 `c1-d2ecccf5b20d`。
 
