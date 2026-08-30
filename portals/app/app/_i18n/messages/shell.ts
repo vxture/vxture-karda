@@ -9,6 +9,7 @@ import type { Catalog, MessageFn } from "../catalog";
 // structure declaration means it stays readable as an IA document.
 export const shell = {
   // --- domains ---------------------------------------------------------------
+  gateTitle: { "zh-CN": "访问验证", "en-US": "Access check" },
   navGroupOverview: { "zh-CN": "概览", "en-US": "Overview" },
   // DS 侧栏内建的「全组收合」可访问名(双语产品必须传,否则英文档下显中文默认值;
   // 展开/收起导航复用下方既有的 navExpand / navCollapse——同一个动作同一句话)。
