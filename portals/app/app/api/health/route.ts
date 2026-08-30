@@ -12,5 +12,10 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export function GET() {
-  return Response.json(buildHealthIdentity({ service: `${BRAND.productCode}-app`, product: BRAND.productCode }));
+  // `uptimeSec` 是 025 §3 契约里的可选字段,shared 1.5.0 的助手尚未产出——加在
+  // 权威身份块**之上**,不改块本身;助手补上之后删这一行即可。仍零依赖。
+  return Response.json({
+    ...buildHealthIdentity({ service: `${BRAND.productCode}-app`, product: BRAND.productCode }),
+    uptimeSec: Math.round(process.uptime()),
+  });
 }

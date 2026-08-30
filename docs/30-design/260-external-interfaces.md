@@ -99,7 +99,8 @@ user × product 的概念,而 Runos 通道整条是 service 模式、无用户�
 | `/provisioning/webhook` | POST | 平台(C3) | HMAC over **原始字节** + 时间戳,幂等 + 有序 | 已交付 |
 | `/auth/callback` | GET | 浏览器(OIDC 回跳) | code + state + PKCE | 已交付 |
 | `/auth/backchannel-logout` | POST | 平台 IdP | logout_token 验签 | 已交付 |
-| `/api/health` | GET | 编排/探活 | 无(**零依赖**:不碰 DB / Redis / 上游) | 已交付 |
+| `/api/health` | GET | 编排/探活 | 无(**零依赖**:不碰 DB / Redis / 上游) | 已交付(2026-08-30 补 025 可选字段 `uptimeSec`) |
+| `/api/ready` | GET | 发布闸门/编排 | 无鉴权(身份块可公开,checks 只有 ok/fail/off);探 DB+Redis,fail -> **503** | 已交付 2026-08-30——025 §2 的第二类端点。口径:db fail=fail,redis fail=degraded(S2S 工具面不走会话,照常供给);atlas 刻意不探(对端抖动不是我方未就绪) |
 | `/api/kb/processing/tick` | POST | 调度器 | `x-internal-job-token` | 已交付 |
 | `/api/kb/governance/sweep` | POST | 调度器 | `x-internal-job-token` | 已交付 |
 | `/api/kb/extraction/tick` | POST | 调度器 | `x-internal-job-token` | 已交付——**与加工 tick 分开**(KD-211),抽取是 bulk、无人等待,慢抽取不该拖住上传 |
