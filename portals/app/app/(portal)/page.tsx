@@ -1,5 +1,4 @@
-import { BRAND } from "@karda/shared/brand";
-import { t } from "../_i18n/catalog";
+import { pageTitle } from "../_i18n/server-locale";
 import { shell } from "../_i18n/messages/shell";
 import { HomeClient } from "./home-client";
 
@@ -12,9 +11,9 @@ import { HomeClient } from "./home-client";
 // 见 docs/30-design/150-page-architecture §2。资产总览搬到了 /assets。
 //
 // 标题在默认语言下解析——与其他页同一条限制,见 TD-014。
-export const metadata = {
-  title: `${t(shell.navHome, BRAND.defaultLocale)} - ${BRAND.displayName}`,
-};
+export async function generateMetadata() {
+  return pageTitle(shell.navHome);
+}
 
 export default function HomePage() {
   return <HomeClient />;

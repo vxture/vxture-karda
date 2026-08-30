@@ -1,5 +1,4 @@
-import { BRAND } from "@karda/shared/brand";
-import { t } from "../../../../_i18n/catalog";
+import { pageTitle } from "../../../../_i18n/server-locale";
 import { assets } from "../../../../_i18n/messages/assets";
 import { KnowledgeClient } from "./knowledge-client";
 
@@ -9,9 +8,9 @@ import { KnowledgeClient } from "./knowledge-client";
 // 都要一个能直达的落点,而 tab 状态给不了。与设置页**不同**的是它不共用
 // `AssetClient`——共用的前提是「两页要的服务端数据是同一批」,这一页要的是另一批
 // (knowledge 端点),共用只会让两页各自多载对方的数据。
-export const metadata = {
-  title: `${t(assets.knowledgeLabel, BRAND.defaultLocale)} - ${BRAND.displayName}`,
-};
+export async function generateMetadata() {
+  return pageTitle(assets.knowledgeLabel);
+}
 
 export default function AssetKnowledgePage() {
   return <KnowledgeClient />;
