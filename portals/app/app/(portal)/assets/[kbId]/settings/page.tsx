@@ -1,5 +1,4 @@
-import { BRAND } from "@karda/shared/brand";
-import { t } from "../../../../_i18n/catalog";
+import { pageTitle } from "../../../../_i18n/server-locale";
 import { assets } from "../../../../_i18n/messages/assets";
 import { AssetClient } from "../asset-client";
 
@@ -12,9 +11,9 @@ import { AssetClient } from "../asset-client";
 //
 // 渲染的是**同一个** `AssetClient`，只是换一个视图。两页要的服务端数据是同一批，
 // 拆成两个组件就会有两套加载和两套失败处理。
-export const metadata = {
-  title: `${t(assets.settingsLabel, BRAND.defaultLocale)} - ${BRAND.displayName}`,
-};
+export async function generateMetadata() {
+  return pageTitle(assets.settingsLabel);
+}
 
 export default function AssetSettingsPage() {
   return <AssetClient view="settings" />;

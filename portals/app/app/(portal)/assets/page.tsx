@@ -1,13 +1,12 @@
-import { BRAND } from "@karda/shared/brand";
-import { t } from "../../_i18n/catalog";
+import { pageTitle } from "../../_i18n/server-locale";
 import { shell } from "../../_i18n/messages/shell";
 import { AssetsClient } from "./assets-client";
 
 // Title from the catalog, resolved at the DEFAULT locale - see the note in
 // `(portal)/assets/[kbId]/page.tsx` and TD-014.
-export const metadata = {
-  title: `${t(shell.navAssets, BRAND.defaultLocale)} - ${BRAND.displayName}`,
-};
+export async function generateMetadata() {
+  return pageTitle(shell.navAssets);
+}
 
 // The 知识资产 domain overview. It USED to be the product homepage (owner ruling
 // 「资产为核,首页即知识资产」); that ruling was amended on 2026-08-27 - see

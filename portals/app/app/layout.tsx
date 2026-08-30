@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Providers } from "./providers";
 import { BRAND } from "@karda/shared/brand";
+import { serverLocale } from "./_i18n/server-locale";
 import "@vxture/design-system/styles/fonts.css";
 import "./globals.css";
 
@@ -43,8 +44,10 @@ const lightDefaultScript =
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const bootstrap = await themeScript();
+  // TD-014:cookie 让首个字节的 <html lang> 就正确;客户端切换后仍由 Provider 补印。
+  const locale = await serverLocale();
   return (
-    <html lang={BRAND.defaultLocale} suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: lightDefaultScript }} />
         {bootstrap && <script dangerouslySetInnerHTML={{ __html: bootstrap }} />}

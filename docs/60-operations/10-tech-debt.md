@@ -25,7 +25,7 @@ Append-only. Each entry is a known, deliberately-deferred debt with a stable ID
 | `TD-010` | **open** | db-init applies increments after 97/98, so live-added columns break |
 | `TD-011` | closed 2026-07-28 | main ruleset let admins bypass all checks (bypass_actors always) |
 | `TD-013` | OPEN (worked around locally; filed upstream as `vxture-design`#8) | DS DialogTitle ships `leading-none`, so every dialog title is zero-height |
-| `TD-014` | **open** | page titles cannot follow the locale (server metadata, client locale) |
+| `TD-014` | closed 2026-08-30 | page titles cannot follow the locale (server metadata, client locale) |
 | `TD-015` | **open** | recall does not reach copies: the lineage column exists and nothing reads it |
 
 ---
@@ -46,7 +46,7 @@ deliberately not carried over.
 
 | ID | Title | Opened | Status |
 |----|-------|--------|--------|
-| TD-014 | Page titles cannot follow the locale: `metadata` is server-rendered, the locale preference is client-side | 2026-08-25 | open - needs a cookie-backed server locale; now one locale argument in five files, no guard exemptions |
+| TD-014 | Page titles cannot follow the locale: `metadata` is server-rendered, the locale preference is client-side | 2026-08-25 | **closed** 2026-08-30 - cookie-backed server locale landed exactly as the Fix section specified |
 | TD-009 | Tool surface: ALL nine tools wired (list_kbs/search/ask/write_document/create_entry/create_kb/attach_kb/detach_kb + manifest); `ask` activates once `ATLAS_CHAT_PATH`/`ATLAS_ASK_MODEL` are set | 2026-07-24 | effectively closed - only runtime config (ATLAS_*) + Atlas-blocked recall quality remain |
 | TD-008 | BM25 recaller built + `karda.search` wired end-to-end (2026-07-27); vector recall + real rerank built 2026-08-18 (TD-004 closure) | 2026-07-24 | open - only the PLATFORM-namespace (P-tier) visible-set C2 fill remains |
 | TD-007 | Processing pipeline has no real queue worker or raw object storage yet | 2026-07-24 | open - 5a is the pure pipeline; the runtime around it is deferred |
@@ -558,7 +558,14 @@ deliberately not carried over.
 
 ## TD-014 - page titles cannot follow the locale (server metadata, client locale)
 
-- **Status**: open, low severity, known boundary rather than a defect.
+- **Status**: **closed 2026-08-30** - implemented exactly as the Fix section below
+  specified: `LocaleProvider` mirrors the preference into a `karda-locale` cookie
+  (on every switch AND once on mount, so existing users migrate without
+  re-toggling); `_i18n/server-locale.ts` reads it in `generateMetadata`
+  (`pageTitle()`, all 16 pages converted) and in the root layout, so
+  `<html lang>` is correct from the first byte. The guard name and cookie name
+  live in one shared module (`locale-cookie.ts`) because server and client must
+  agree on both.
 - **Symptom**: with the language set to `en-US`, every page renders correctly
   except its browser-tab title, which stays Chinese (`资产详情 - Karda`).
 - **Cause**: the locale is a client preference. `LocaleProvider` reads it from
