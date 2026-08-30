@@ -1,137 +1,89 @@
 "use client";
 
 import Link from "next/link";
-import { Icon } from "@vxture/design-system";
-import { NAV_ITEMS } from "./nav";
+import { usePathname } from "next/navigation";
+import { ShellSidebarFrame, ShellSidebarNav } from "@vxture/design-system";
+import { NAV_SECTIONS, navHrefActive } from "./nav";
 import { useMessages } from "../_i18n/useMessages";
 import { shell as shellMessages } from "../_i18n/messages/shell";
-import { DomainTag } from "./DomainCard";
-import type { ShellData } from "../kb/demo/shell-types";
 
-// 导航栏 (nav pane) - the left pane of the shell body. A STANDARD MENU: one
-// row per functional domain, the active domain's views nested under it.
+// 导航栏 (nav pane) - the left pane of the shell body, now the DS STANDARD
+// sidebar (owner 2026-08-30: 把手搓的导航修正为标准规范导航).
 //
-// It used to be four chart cards (rings, a pie, bar rows, a split bar). The
-// owner retired that on 2026-08-28: **a card is the right shape for a landing
-// surface, and the wrong shape for a thing that hangs beside every page**. On
-// the 首页 those cards are the content; on `/pipeline/tasks/[id]` they are a
-// second dashboard competing with the page you actually opened. So the card
-// vocabulary MOVED (`DomainCard.tsx` -> the 首页) rather than being deleted -
-// it had been tuned over several rounds and none of that work is thrown away.
-// What is left here is what a menu owes: where am I, where else can I go.
+// 换标准件换掉的是三样手搓品,每一样 DS 都自带且做得更全:
 //
-// Shell vocabulary, product-wide (owner 2026-08-24, spacing revised
-// 2026-08-25). Use these words and no synonyms - "rail", "flank", "column",
-// "sidebar" are all retired, and so are the casual English placeholders
-// ("nav / content / action") the sizes were first discussed in:
-//   顶栏 header        the 48px bar (Material: top app bar)
-//   工作区 shell body   EVERYTHING below the header - the three panes together
-//   导航栏 nav pane     this file, 280px. Not a "rail": Material reserves that
-//                      for the 80dp icon strip; a 280px menu column is a pane.
-//   内容区 main pane    the middle, scrolling pane (ARIA <main>), width follows
-//   智枢 agent hub the right pane, 400px. Named for what it IS - a duty
-//                      desk with pending items - not "action pane"; it is a
-//                      product surface, not a generic inspector.
-//   栏间距 pane spacer  32px between panes (Material pane spacer)
-//   外边距 window margin 24px from the browser edge (Material margins)
-//   内衬 content inset  16px the 内容区 adds inside its own pane
+//   宽度状态机   之前 collapsed = 整栏卸载(旧裁定);现在走 `ShellSidebarFrame`
+//               的 expanded/collapsed:收起是**图标栏**,tooltip 报主名,
+//               图标横坐标两态间不跳(DS 注释里那套 justify-start 的坑早踩平了)。
+//               旧的「收起=消失」语义就此退役——owner 点名要标准件自带的收放。
+//   分组折叠     每组自带 chevron,展开态持久化(storageKeyPrefix 命名空间隔离),
+//               还有 title 行 hover 才出现的全组收合。
+//   双行形制     opera 规则一:中文主名 + 英文原词(subLabel)。英文对上路由与
+//               API 的词表,「与 API 分叉的词表在控制台这头买到的清晰,会在两者
+//               相接的每一个点上还回去」。
 //
-// Collapsed = the pane unmounts entirely (no icon strip left behind).
+// karda 在标准之上只加**一条**呈现规则(owner 2026-08-30):双行只在「页面激活」
+// 或「鼠标/键盘停在项上」时展开,离开即收回单行——导航的常态要安静,英文原词是
+// 「停下来对概念」时才需要的。DS 尚无此开关,用一段作用域 CSS 盖在 subLabel 的
+// 行上(TD-016:内部 DOM 选择器是借的,已在 vxture-design 提 issue 要一等 prop,
+// DS 跟上后删掉 <style> 即可)。
 //
-// TYPOGRAPHY: every size here is a DS role (`text-label-md`, `text-body-md`),
-// never an arbitrary px - a role lands family/size/weight/line-height together,
-// and the user's 字号 preference only moves the roles. Do NOT write
-// `leading-none`: under the DS it computes to line-height:0 (the spacing
-// namespace fallback) and any box that also clips renders EMPTY.
-
-/** Sub-views are shown for the ACTIVE domain only.
- *
- *  There is no per-card collapse toggle and no `localStorage` any more. The
- *  toggle existed because a card body could be tall enough to be in the way;
- *  a three-row menu group never is, and a control whose only job is to hide
- *  three links costs more attention than the links do. Expanding-on-active is
- *  also the one rule that needs no memory: the menu always agrees with the
- *  page you are on, including on a cold load and in a second tab. */
+// 域徽章(DomainTag 的未读计数)随手搓菜单一起退役:数字已经活在首页域卡与智枢
+// 上,菜单回答的是「去哪」,不是「有多少」——这本来就是 KD-215 把卡片请出导航栏
+// 的同一条理由,这次走完最后一步。
+//
+// Shell vocabulary (owner 2026-08-24/25): 顶栏 header · 工作区 shell body ·
+// 导航栏 nav pane(本文件) · 内容区 main pane · 智枢 agent hub ·
+// 栏间距 32px · 外边距 24px · 内衬 16px。收起态宽度由 Frame 的 token 管。
 export function NavPane({
-  active,
-  pathname,
-  shell,
   collapsed,
+  onToggleCollapsed,
 }: {
-  active: string | null;
-  pathname: string;
-  shell: ShellData | null;
   collapsed: boolean;
+  onToggleCollapsed: () => void;
 }) {
   const m = useMessages(shellMessages);
+  const pathname = usePathname() ?? "/";
 
-  const isActive = (href: string): boolean =>
-    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
-
-  // Collapsed = gone. Not a 64px icon strip, not width:0 - the pane
-  // unmounts entirely (owner), the DS `ShellSidebarFrame` "hidden" semantics.
-  if (collapsed) return null;
+  const sections = NAV_SECTIONS.map((s) => ({
+    title: m[s.titleKey],
+    dividerBefore: s.dividerBefore ?? false,
+    items: s.items.map((i) => ({
+      href: i.href,
+      label: m[i.labelKey],
+      icon: i.icon,
+      subLabel: i.subLabel,
+    })),
+  }));
 
   return (
-    // No padding of its own: the window margin owns the outer edge and the
-    // pane spacer owns the gap to the 内容区.
-    <nav aria-label={m.navLandmark} className="flex w-[17.5rem] shrink-0 flex-col gap-3xs overflow-y-auto">
-      {NAV_ITEMS.map((item) => {
-        // 域是否当前所在,用 `activeNavKey` 的结果,不用路径前缀:/tools 与
-        // /bench 属于供给通道,却不以 /channels 开头——按前缀判断会让那两页在
-        // 菜单里没有任何高亮。
-        const domainActive = active === item.key;
-        const subs = item.sub ?? [];
-
-        return (
-          <div key={item.key} className="flex shrink-0 flex-col">
-            <Link
-              href={item.href}
-              aria-current={domainActive ? "page" : undefined}
-              className={`flex min-h-control-lg items-center gap-xs rounded-md px-xs text-label-md transition-colors duration-fast ease-standard ${
-                domainActive
-                  ? "bg-primary/10 text-primary-text"
-                  : "text-foreground hover:bg-accent"
-              }`}
-            >
-              <Icon
-                name={item.icon}
-                size="sm"
-                className={domainActive ? "text-primary" : "text-muted-foreground"}
-              />
-              <span className="min-w-0 flex-1 truncate">{m[item.labelKey]}</span>
-              {/* 徽章只说「这个域有东西要看」,是什么由域页面说。菜单里的计数是
-                  标准词汇(未读数),与被退掉的图表不是一回事。 */}
-              <DomainTag itemKey={item.key} shell={shell} />
-            </Link>
-
-            {domainActive && subs.length > 0 ? (
-              // 缩进对齐到上一行的文字,不是任意 padding:图标 sm(1rem)+ gap-xs
-              // (0.5rem)+ px-xs(0.5rem)= 2rem。对不齐的缩进会让二级看起来像
-              // 另一组顶级项。
-              <div className="flex flex-col pt-3xs">
-                {subs.map((s) => {
-                  const subActive = isActive(s.href);
-                  return (
-                    <Link
-                      key={s.key}
-                      href={s.href}
-                      aria-current={subActive ? "page" : undefined}
-                      className={`flex min-h-control-md items-center rounded-md pl-[2rem] pr-xs text-body-md transition-colors duration-fast ease-standard ${
-                        subActive
-                          ? "font-medium text-primary-text"
-                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                      }`}
-                    >
-                      {m[s.labelKey]}
-                    </Link>
-                  );
-                })}
-              </div>
-            ) : null}
-          </div>
-        );
-      })}
-    </nav>
+    <div data-karda-nav className="flex min-h-0 shrink-0">
+      {/* 双行的展开/收回(TD-016 的本地实现):subLabel 是项内唯一的 font-mono,
+          未激活且未悬停/未聚焦时隐藏它——行高回到单行,列表安静;hover、键盘
+          focus-visible、或 aria-current=page 时第二行浮现。选择器借的是 DS 的
+          内部 DOM,升级 DS 时以 vxture-design#9 的一等 prop 替换。 */}
+      <style>{`
+        [data-karda-nav] a:not(:hover):not(:focus-visible):not([aria-current="page"]) .font-mono {
+          display: none;
+        }
+      `}</style>
+      <ShellSidebarFrame mode={collapsed ? "collapsed" : "expanded"}>
+        <ShellSidebarNav
+          domainName="Karda"
+          sections={sections}
+          collapsed={collapsed}
+          onToggleCollapsed={onToggleCollapsed}
+          isActive={(href) => navHrefActive(href, pathname)}
+          storageKeyPrefix="karda-shell-nav"
+          linkComponent={Link}
+          labels={{
+            expandNav: m.navExpand,
+            collapseNav: m.navCollapse,
+            expandAllGroups: m.navGroupsExpand,
+            collapseAllGroups: m.navGroupsCollapse,
+          }}
+        />
+      </ShellSidebarFrame>
+    </div>
   );
 }
