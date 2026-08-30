@@ -22,7 +22,7 @@ Append-only. Each entry is a known, deliberately-deferred debt with a stable ID
 | `TD-007` | closed 2026-08-27 | processing pipeline runtime not yet built |
 | `TD-008` | closed 2026-08-27 | retrieval recall backends not yet built |
 | `TD-009` | closed 2026-08-27 | tool surface backends partially wired |
-| `TD-010` | **open** | db-init applies increments after 97/98, so live-added columns break |
+| `TD-010` | closed 2026-08-30 | db-init applies increments after 97/98, so live-added columns break |
 | `TD-011` | closed 2026-07-28 | main ruleset let admins bypass all checks (bypass_actors always) |
 | `TD-013` | OPEN (worked around locally; filed upstream as `vxture-design`#8) | DS DialogTitle ships `leading-none`, so every dialog title is zero-height |
 | `TD-014` | closed 2026-08-30 | page titles cannot follow the locale (server metadata, client locale) |
@@ -445,7 +445,25 @@ deliberately not carried over.
 
 ## TD-010 - db-init applies increments after 97/98, so live-added columns break
 
-- **Status**: open - increment ordering unchanged, but the failure class is now caught by a guardrail
+- **Status**: **closed 2026-08-30** - the ordering itself is fixed:
+  `baseline -> 97 -> incr/* -> 98` (previously 98 ran before the increments).
+  Increments run after 97 because they GRANT to the service role 97 creates;
+  98 runs LAST because it grants on the FULL column set, which on a live DB only
+  exists once the increments have run. Changed in `db-init.yml` and
+  `deploy/database/apply.sh` (apply-local-dev.sh untouched - it is baseline-only
+  for fresh DBs by design). Verified against real Postgres 18 by replaying the
+  exact v0.10.0 production trajectory: v0.9.0-shaped DB -> old order dies in 98
+  on `source_mode` (and leaves knowledge_base with ZERO UPDATE column-grants,
+  i.e. the degraded state production sat in until the re-run) -> new order
+  repairs (column added, 16 UPDATE grants restored) -> fresh-DB path clean ->
+  UPDATE grant sets byte-identical live-vs-fresh.
+- **The third bite forced the closure** (2026-08-30, v0.10.0 db-init run
+  33290491337): 98's `GRANT UPDATE (... source_mode ...)` ran before
+  `incr/0009` added the column. #178 (baseline index) and #153 (grant only in
+  the increment) were the first two bites; each got a tactical patch while the
+  ordering stayed. Three failures of the same predicted class is the register
+  saying the tactical fixes were interest payments on an unpaid principal.
+- (superseded by the closure above - kept as history:)
 - **Still open, and it bit us on 2026-08-26** (`vxture-karda#153`): the
   `active_chunk_version` UPDATE grant lived only in `incr/0001`, so every MIGRATED
   database had it and every FRESHLY INITIALISED one did not - the atomic chunk swap
