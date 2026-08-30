@@ -870,6 +870,8 @@ model behind it has not moved.
 | `v0.10.0` | **生产发布(2026-08-30)**:五条业务流全部可操作(知识确认台闭环、纯新建流程、来源模式、三张清单 DS 化、设置页重设计、三层数字同源真值)。db-init 先行(incr/0009 + 授权修复,35/35 表断言),部署 verify OK,公网健康端点报 v0.10.0/27e10d95 | 已发布 |
 | `#197` `#198` | 健康面补齐 025 全契约(uptimeSec + /api/ready,db=fail/redis=degraded/atlas 不探);导航栏换 DS 标准件(KD-225:双行 + 悬停/激活显隐,TD-016 + vxture-design#47) | 已合 |
 | `v0.10.1` | **生产发布(2026-08-30)**:DS 标准导航 + 健康全契约 + db-init 顺序修复(TD-010 关)。无 schema 变更,单门直达;公网验证 /api/health 带 uptimeSec、/api/ready 报 ready + checks 全 ok | 已发布 |
+| `#200` `#201` | 产品前门(vxtpl 移植:middleware 无 cookie 即送 /gate,/api/access 单次裁决杀双读竞态)+ 登录验证收口:SignInGate 改送前门(replace 不 assign,八处调用点收编)、/auth/login 成唯一登录动词(dev-login 移交)、/api/access 认得 dev 会话(无会话 anonymous,blanket open 只留纯离线态)、dev compose 补 MOCK_TIER(门与页面同宽) | 已合 |
+| `v0.10.2` | **生产发布(2026-08-31)**:前门 + 登录收口一起上。无 schema 变更,无新生产 env;公网验证:匿名 /assets 307 到 /gate?from=/assets,/api/access 报 anonymous,/auth/login 307 到 accounts.vxture.com 真授权端点,/api/health 报 v0.10.2/008428ea,/api/ready 全 ok | 已发布 |
 
 **新的我方待办(对端已交付)**:`vxture-atlas#21` 要的契约制品**已在生产跑了三个版本**——`GET /.well-known/vxture-contract` 带 `errorCodes`(v0.5.0)与 `requests`(v0.6.0),用我方现有 S2S 令牌就能拉。改为消费这份制品,不再人工抄码表(`#100` 那次 `QUOTA_EXHAUSTED` / `QUOTA_EXCEEDED` 就是人工抄的产物)。**先不要钉指纹**:对端有 PR 待合,合后从 `c1-e132a38fae1a` 移到 `c1-d2ecccf5b20d`。
 
