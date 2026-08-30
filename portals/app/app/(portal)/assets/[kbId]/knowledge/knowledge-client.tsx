@@ -225,7 +225,7 @@ export function KnowledgeClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- resetPage 每次渲染都是新函数,挂进依赖会每帧重置
   }, [scope, query]);
 
-  if (needsAuth) return <SignInGate href={loginHref(`/assets/${kbId}/knowledge`)} />;
+  if (needsAuth) return <SignInGate from={`/assets/${kbId}/knowledge`} />;
 
   const neverRan = knowledge !== null && knowledge.extractedAt === null;
 

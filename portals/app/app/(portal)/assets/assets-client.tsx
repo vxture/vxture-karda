@@ -15,12 +15,12 @@ import {
   StatusBadge,
   type IconName,
 } from "@vxture/design-system";
-import { loginHref } from "../../_lib/api";
 import { useMessages } from "../../_i18n/useMessages";
 import { common } from "../../_i18n/messages/common";
 import { useFormat } from "../../_i18n/useFormat";
 import { assets } from "../../_i18n/messages/assets";
 import { shell } from "../../_i18n/messages/shell";
+import { SignInGate } from "../../_lib/ui";
 import { PageHead } from "../../_shell/PageHead";
 import type { OverviewAsset, OverviewData } from "../../kb/demo/overview-types";
 
@@ -238,22 +238,8 @@ export function AssetsClient() {
   // DS's bare max-w-* utilities resolve against the density spacing scale
   // (--space-md etc.), not Tailwind's default container scale - arbitrary
   // values below sidestep that collision entirely.
-  if (needsAuth) {
-    return (
-      <div className="mx-auto flex max-w-[28rem] flex-col items-center gap-4 py-24">
-        <EmptyState
-          icon="lock"
-          title={m.needSignIn}
-          description={m.needSignInDesc}
-          action={
-            <Button asChild>
-              <a href={loginHref("/assets")}>{c.signIn}</a>
-            </Button>
-          }
-        />
-      </div>
-    );
-  }
+  // 检查点在前门,不在这一页:这里只负责送过去(owner 2026-08-30)。
+  if (needsAuth) return <SignInGate from="/assets" />;
 
   if (error) {
     return (

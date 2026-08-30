@@ -207,7 +207,7 @@ export function AssetClient({ view = "content" }: { view?: AssetView } = {}) {
   );
 
   const settings = view === "settings";
-  if (needsAuth) return <SignInGate href={loginHref(settings ? `/assets/${kbId}/settings` : `/assets/${kbId}`)} />;
+  if (needsAuth) return <SignInGate from={settings ? `/assets/${kbId}/settings` : `/assets/${kbId}`} />;
 
   // 「外部来源」这一格出不出现,由**模式**决定,但不是只由模式决定:一个采集库被
   // 转成自建时,原来那些绑定不会自动消失——如果这里只看模式,它们会变成看不见却
