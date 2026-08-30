@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect } from "react";
 // Shared presentational primitives, DS-backed (KD-020): the local prop APIs are
 // kept so pages don't change, but every primitive renders through
 // @vxture/design-system - basic controls are L1 and belong to the DS
@@ -12,7 +15,6 @@
 // objects are legacy from the pre-DS console. New code must NOT add design
 // values to them - use DS components and vx-* utility classes; the remaining
 // page-level inline layout styles migrate to DS layout/patterns page by page.
-"use client";
 
 import { useMessages } from "../_i18n/useMessages";
 import { common } from "../_i18n/messages/common";
@@ -117,17 +119,19 @@ export function Empty({ children }: { children: ReactNode }) {
   return <EmptyState title={children} />;
 }
 
-export function SignInGate({ href }: { href: string }) {
-  const c = useMessages(common);
-  return (
-    <EmptyState
-      title={c.signInTitle}
-      description={c.signInBody}
-      action={
-        <DsButton asChild>
-          <a href={href}>{c.signIn}</a>
-        </DsButton>
-      }
-    />
-  );
+/**
+ * 会话缺失/过期时的处置:**送去前门,不在内部页面里摆一扇门**(owner 2026-08-30)。
+ *
+ * 旧版在产品壳里渲染一张「请登录」卡——登录验证长在内部页面上,壳、导航、智枢
+ * 全都还挂着,像一个登录了一半的产品。检查点只有一个(/gate):它先验证再示门,
+ * 状态齐全(匿名/停用/无工作区/未订阅各有各的话),回跳自带。这里只负责把人送
+ * 过去;渲染 null 而不是过渡文案——replace 在同一帧发出,画什么都只是闪一下。
+ *
+ * `replace` 不 `assign`:这一页没渲染成过,不该留在历史里让 Back 弹回来。
+ */
+export function SignInGate({ from }: { from: string }) {
+  useEffect(() => {
+    window.location.replace(`/gate?from=${encodeURIComponent(from)}`);
+  }, [from]);
+  return null;
 }

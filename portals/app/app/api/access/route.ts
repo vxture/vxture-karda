@@ -2,6 +2,8 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getOidcConfig } from "../../auth/lib/config";
 import { getAuthUser } from "../../auth/lib/session";
+import { devLoginEnabled, decodeDevSession, DEV_LOGIN_COOKIE } from "../../auth/lib/dev-login";
+import type { AuthUser } from "../../auth/lib/claims";
 import { getEntitlementResolver } from "../../entitlement/resolver";
 import { ctaFor, hasDataAccess, hasProductAccess } from "../../entitlement/types";
 import { isDeployedStage } from "../../lib/deploy-stage";
@@ -25,20 +27,27 @@ export const dynamic = "force-dynamic";
 export async function GET(): Promise<Response> {
   const cfg = getOidcConfig();
 
-  // Sign-in not provisioned. On a deployed stack this is a real dead end and
-  // the gate must say so rather than offer a button that lands on a 503. On a
-  // developer machine it is the normal state, and the gate opens instead -
-  // otherwise the front door becomes a wall nobody local can pass.
-  if (!cfg.enabled) {
+  const jar = await cookies();
+
+  // karda 对模板的一处扩展:本地有 dev-login(三重门,见 auth/lib/dev-login)时,
+  // 前门**照常裁决**——dev 会话在就 authenticated,不在就 anonymous(登录按钮经
+  // /auth/login 移交到 dev-login)。模板在无 OIDC 时一律放行,那是因为 vxtpl 本地
+  // 没有任何登录机制;karda 有,放行反而制造死循环:门放人进去,页面的 API 又
+  // 401,把人再送回门。
+  let user: AuthUser | null = null;
+  if (devLoginEnabled(cfg.enabled)) {
+    user = decodeDevSession(jar.get(DEV_LOGIN_COOKIE)?.value);
+  } else if (!cfg.enabled) {
+    // 真没有任何登录机制:部署态是待修的死角(unconfigured),本地/CI 的纯离线
+    // 演示态放行——否则前门是一堵谁都过不去的墙。
     const state: AccessState = isDeployedStage()
       ? { status: "unconfigured" }
       : { status: "open", reason: "dev-no-oidc" };
     return NextResponse.json(state);
+  } else {
+    const rpsid = jar.get(cfg.cookieName)?.value;
+    user = rpsid ? await getAuthUser(cfg, rpsid).catch(() => null) : null;
   }
-
-  const jar = await cookies();
-  const rpsid = jar.get(cfg.cookieName)?.value;
-  const user = rpsid ? await getAuthUser(cfg, rpsid).catch(() => null) : null;
 
   if (!user) return NextResponse.json({ status: "anonymous" } satisfies AccessState);
 

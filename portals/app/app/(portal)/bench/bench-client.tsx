@@ -136,7 +136,7 @@ export function BenchClient() {
     }
   }
 
-  if (needsAuth) return <SignInGate href={loginHref("/bench")} />;
+  if (needsAuth) return <SignInGate from={"/bench"} />;
 
   const chosenFilter = FILTERS.find((f) => f.value === filter);
   const result = search ?? ask;

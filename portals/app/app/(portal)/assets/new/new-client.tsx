@@ -102,7 +102,7 @@ export function NewAssetClient() {
     // 恢复成可点状态只会招来第二次提交。
   }
 
-  if (needsAuth) return <SignInGate href={loginHref("/assets/new")} />;
+  if (needsAuth) return <SignInGate from={"/assets/new"} />;
 
   return (
     <>

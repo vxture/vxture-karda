@@ -166,7 +166,7 @@ export function EvalSetsClient() {
     }
   }
 
-  if (needsAuth) return <SignInGate href={loginHref("/evaluation/sets")} />;
+  if (needsAuth) return <SignInGate from={"/evaluation/sets"} />;
 
   const activeSet = sets?.find((s) => s.id === active) ?? null;
 

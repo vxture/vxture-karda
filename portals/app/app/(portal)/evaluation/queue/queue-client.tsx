@@ -172,7 +172,7 @@ export function QueueClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- resetPage 每次渲染都是新函数,挂进依赖会每帧重置
   }, [filter]);
 
-  if (needsAuth) return <SignInGate href={loginHref("/evaluation/queue")} />;
+  if (needsAuth) return <SignInGate from={"/evaluation/queue"} />;
 
   const remaining = counts.stale + counts.unverified;
   const scopeName = data?.items[0]?.kbName;

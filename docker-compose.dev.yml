@@ -65,6 +65,11 @@ services:
       # Triple-gated dev-only virtual login (see app/auth/lib/dev-login.ts):
       # only takes effect because OIDC_RP_ENABLED is off and DEPLOY_STAGE != production.
       AUTH_DEV_LOGIN: "on"
+      # Mock entitlement for the front door (entitlement/resolver.ts): the gate
+      # adjudicates for real even under dev-login, so give the dev workspace an
+      # active tier - otherwise a signed-in visit to /gate reads "not subscribed"
+      # while the pages behind it serve normally. Status defaults to "active".
+      MOCK_TIER: pro
       # Absolute-redirect origin (auth/lib/config.ts appOrigin). Without this,
       # routes that build a redirect from req.url pick up the standalone
       # server's bind hostname (0.0.0.0 - required for the Docker port publish

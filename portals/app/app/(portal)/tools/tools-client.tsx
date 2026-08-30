@@ -75,7 +75,7 @@ export function ToolsClient() {
     });
   }, []);
 
-  if (needsAuth) return <SignInGate href={loginHref("/tools")} />;
+  if (needsAuth) return <SignInGate from={"/tools"} />;
 
   const metered = data?.tools.filter((t) => t.metering.kind !== "none") ?? [];
   const free = data?.tools.filter((t) => t.metering.kind === "none") ?? [];
