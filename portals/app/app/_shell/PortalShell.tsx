@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { ShellPageContainer, ShellViewport } from "@vxture/design-system";
 import { AppHeader } from "./AppHeader";
 import { NavPane } from "./NavPane";
 import { ShellBackdrop } from "./ShellBackdrop";
@@ -76,64 +77,40 @@ export function PortalShell({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    // No opaque background here: the body carries the ground and ShellBackdrop
-    // washes it, so every panel above can be translucent and let it through.
-    <div id={PORTAL_FULLSCREEN_ID} className="relative flex h-screen flex-col text-foreground">
+    // No opaque background on the shell itself: the body carries the ground and
+    // ShellBackdrop washes it (bg-transparent below overrides the Viewport's
+    // bg-background for the same reason).
+    <div id={PORTAL_FULLSCREEN_ID} className="relative text-foreground">
       <ShellBackdrop />
-      <AppHeader
-        pending={shell?.agent.pending ?? 0}
-        hubOpen={hubOpen}
-        onToggleHub={toggleHub}
-        navCollapsed={navCollapsed}
-        onToggleNav={toggleNav}
-      />
-      {/* 工作区. Two spacing constants live here and nowhere else, both on the
-          Material adaptive-layout scale (owner 2026-08-25):
-            外边距 window margin  p-lg  = 24px, all four sides
-            栏间距 pane spacer    gap-xl = 32px, between panes
-          Written as TOKENS, not literals, on purpose: `lg`/`xl` resolve to
-          24/32px at the default density and shrink with the user's density
-          preference. A shell frame that stayed at 24/32 while every control
-          inside it compacted would read as broken. The pane WIDTHS stay
-          literal - they are content-driven (a card column is 280px because of
-          what it holds), not rhythm-driven.
-
-          No pane adds edge padding of its own - the 内容区's content inset is
-          the single deliberate exception, declared below. */}
-      <div className="flex min-h-0 flex-1 gap-xl p-lg">
-        {/* 导航栏 paints no surface and draws no border of its own: its cards
-            sit straight on the shared ground (owner 2026-08-24). Only 智枢
-            keeps a pane surface - it is a panel over the page, not part of
-            it. */}
-        {/* 导航栏走 DS 标准件(ShellSidebarFrame 拥有宽度状态机):收起是图标栏,
-            不再整栏卸载——「收起=消失」的旧语义随手搓菜单退役(owner 2026-08-30)。 */}
-        <NavPane collapsed={navCollapsed} onToggleCollapsed={toggleNav} />
-        {/* 内容区: scrolls on its own inside the 工作区. NO background of its
-            own - the product backdrop must read through the whole body, not
-            stop at 导航栏. It is no longer the fullscreen target either (that
-            moved to the shell root), so the hand-rolled `fixed inset-0` layer
-            that used to live here is gone, and with it the only place this
-            file painted a ground. */}
-        <main className="min-w-0 flex-1 overflow-y-auto">
-          {/* 内衬 content inset: px-md = 16px, the ONE edge padding a pane adds
-              on top of the 工作区 constants. It puts the reading column 48px
-              clear of 导航栏 and of 智枢 (32px pane spacer + 16px inset) -
-              the side panes sit at the window margin, the content deliberately
-              does not (owner 2026-08-25). pb keeps a safe run-out under the
-              last section.
-
-              @container makes this element the query context for everything
-              the pages render: their column counts must follow the WIDTH OF
-              THIS PANE, not the viewport. A viewport breakpoint cannot see
-              that 导航栏 and 智枢 are open, which is exactly how a 1600px
-              window ended up drawing four columns into an 840px pane. Pages
-              query it with `@min-[Nrem]:`; the arithmetic behind each
-              threshold is written out at the asset grid in
-              (portal)/assets/assets-client.tsx. */}
-          <div className="@container flex w-full flex-col gap-md px-md pb-5xl">{children}</div>
-        </main>
-        {hubOpen && <AgentHub shell={shell} onClose={toggleHub} />}
-      </div>
+      {/* 工作区几何归 DS ShellViewport 所有(owner 2026-08-31,KD-226):header
+          之下一行 flex,无外包裹 padding、无栏间距,三块齐平各自内供留白——
+          侧栏 Frame(Viewport 自带)管宽度状态机,内容区 ShellPageContainer 管
+          流体 page-inset + 封顶行宽 + 居中,智枢 ShellDock 管面与宽。
+          2026-08-25 的 24/32 手搓刻度(p-lg/gap-xl)是为浮卡形制定的,随手搓
+          包裹层一起退役;标准件的几何前提是贴缘贯通,垫在 24px 里就是
+          「位置不正确」本身。 */}
+      <ShellViewport
+        className="bg-transparent"
+        header={
+          <AppHeader
+            pending={shell?.agent.pending ?? 0}
+            hubOpen={hubOpen}
+            onToggleHub={toggleHub}
+            navCollapsed={navCollapsed}
+            onToggleNav={toggleNav}
+          />
+        }
+        sidebar={<NavPane collapsed={navCollapsed} onToggleCollapsed={toggleNav} />}
+        sidebarMode={navCollapsed ? "collapsed" : "expanded"}
+        dock={hubOpen ? <AgentHub shell={shell} onClose={toggleHub} /> : undefined}
+      >
+        {/* @container:页面的列数跟随内容区宽度而非视口(数不清导航栏/智枢
+            开合的视口断点画过四列进 840px 的历史,见 assets-client 的算式)。
+            gap-md 是页面段落的纵向节奏,沿用原值。内衬/行宽/底部安全区全部
+            来自 ShellPageContainer(px-page-inset / pt-page-inset / pb-6xl +
+            封顶 wide-2xl),不再手搓。 */}
+        <ShellPageContainer className="@container gap-md">{children}</ShellPageContainer>
+      </ShellViewport>
     </div>
   );
 }
