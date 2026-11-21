@@ -122,7 +122,7 @@ test("missingLimitKeys names what the platform forgot", () => {
   assert.deepEqual(missingLimitKeys(complete), []);
 
   const partial = ent({ tier: "pro", limits: { "kb.max": 10 } });
-  assert.deepEqual(missingLimitKeys(partial), ["document.max", "storage.bytes", "binding.max", "member.max"]);
+  assert.deepEqual(missingLimitKeys(partial), ["document.max", "storage.bytes", "binding.max", "seat.max"]);
 });
 
 test("a zero or unlimited cap counts as DECLARED, not as missing", () => {
@@ -135,8 +135,8 @@ test("a zero or unlimited cap counts as DECLARED, not as missing", () => {
   assert.deepEqual(missingLimitKeys(unlimited), []);
 });
 
-test("member.max is a limit key, not a feature key - it is what makes a tier personal", () => {
-  assert.ok(LIMIT_KEYS.includes("member.max"));
+test("seat.max is a limit key, not a feature key - it is what makes a tier personal", () => {
+  assert.ok(LIMIT_KEYS.includes("seat.max"));
 });
 
 test("credits are never a CAP here - the platform judges them, karda serves", () => {

@@ -8,19 +8,19 @@ function ent(over: Partial<Entitlement>): Entitlement {
 }
 
 test("withinCap admits below the cap, denies at/above", () => {
-  const e = ent({ limits: { "member.max": 3 } });
-  assert.equal(withinCap(e, "member.max", 2), true);
-  assert.equal(withinCap(e, "member.max", 3), false);
+  const e = ent({ limits: { "seat.max": 3 } });
+  assert.equal(withinCap(e, "seat.max", 2), true);
+  assert.equal(withinCap(e, "seat.max", 3), false);
 });
 
 test("-1 is unlimited", () => {
   assert.equal(isUnlimited(-1), true);
-  assert.equal(withinCap(ent({ limits: { "member.max": -1 } }), "member.max", 999999), true);
+  assert.equal(withinCap(ent({ limits: { "seat.max": -1 } }), "seat.max", 999999), true);
 });
 
 test("absent cap denies by default (fail-closed) unless a default is given", () => {
-  assert.equal(withinCap(ent({}), "member.max", 0), false);
-  assert.equal(withinCap(ent({}), "member.max", 0, { defaultWhenAbsent: 1 }), true);
+  assert.equal(withinCap(ent({}), "seat.max", 0), false);
+  assert.equal(withinCap(ent({}), "seat.max", 0, { defaultWhenAbsent: 1 }), true);
 });
 
 test("limitOf and poolRemaining", () => {
