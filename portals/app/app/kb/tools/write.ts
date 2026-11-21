@@ -100,6 +100,10 @@ export async function writeDocument(
   );
 
   if (!result.ok) {
+    if (result.error.code === "capacity_exceeded") return { status: 403, body: { error: result.error.code } };
+    if (result.error.code === "capacity_unconfigured" || result.error.code === "capacity_unavailable") {
+      return { status: 503, body: { error: result.error.code } };
+    }
     if (result.error.code === "duplicate_document") {
       return { status: 409, body: { error: "duplicate_document", detail: "identical content already in this library" } };
     }

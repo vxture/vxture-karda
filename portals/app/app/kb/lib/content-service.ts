@@ -16,10 +16,12 @@ import type {
   EntryRow,
   FolderRow,
 } from "./content-store";
+import { CapacityError, type CapacityCode } from "./capacity";
 import { FIELD_NAME_RE } from "./metadata";
 import type { ContentPreset } from "./presets";
 
 export type ContentError =
+  | { code: CapacityCode; metric: string }
   | { code: "not_found" }
   | { code: "folder_name_taken" }
   | { code: "connector_code_required" }
@@ -83,7 +85,11 @@ export class ContentService {
       );
       if (exists) return err({ code: "duplicate_document" });
     }
-    return ok(await this.store.createDocument(input));
+    try { return ok(await this.store.createDocument(input)); }
+    catch (error) {
+      if (error instanceof CapacityError) return err({ code: error.code, metric: error.metric });
+      throw error;
+    }
   }
 
   async getDocument(id: string): Promise<Result<DocumentRow>> {
@@ -134,7 +140,11 @@ export class ContentService {
   ): Promise<Result<EntryRow>> {
     const shape = validateEntryFields(input.fields, template);
     if (shape) return err(shape);
-    return ok(await this.store.createEntry(input));
+    try { return ok(await this.store.createEntry(input)); }
+    catch (error) {
+      if (error instanceof CapacityError) return err({ code: error.code, metric: error.metric });
+      throw error;
+    }
   }
 
   async getEntry(id: string): Promise<Result<EntryRow>> {

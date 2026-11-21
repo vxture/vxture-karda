@@ -64,7 +64,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     createdBy: auth.user.sub,
   });
   if (!result.ok) {
-    const status = result.error.code === "binding_exists" ? 409 : 400;
+    const status = result.error.code === "binding_exists" ? 409
+      : result.error.code === "capacity_exceeded" ? 403
+      : result.error.code === "capacity_unconfigured" || result.error.code === "capacity_unavailable" ? 503 : 400;
     return NextResponse.json({ error: result.error.code }, { status });
   }
 

@@ -11,6 +11,7 @@ import type {
 } from "./content-store";
 import type { ContentState, VerificationState } from "./state";
 import { getPrismaClient } from "../../lib/db";
+import { capacityWorkspace, createWithinCapacity, type CapacityLimitSource } from "./capacity";
 
 // Prisma-backed ContentStore over karda_kb. Only the columns the port exposes
 // are touched; the state transitions the DB cannot express (e.g. that `failed`
@@ -66,6 +67,7 @@ function toEntry(r: any): EntryRow {
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 export class PrismaContentStore implements ContentStore {
+  constructor(private readonly capacityLimit?: CapacityLimitSource) {}
   async createFolder(kbId: string, name: string): Promise<FolderRow> {
     const p = await getPrismaClient();
     return toFolder(await p.folder.create({ data: { kbId, name } }));
@@ -100,8 +102,8 @@ export class PrismaContentStore implements ContentStore {
   }
 
   async createDocument(input: CreateDocumentInput): Promise<DocumentRow> {
-    const p = await getPrismaClient();
-    return p.$transaction(async tx => {
+    const workspaceId = await capacityWorkspace(input.kbId, "document.max");
+    return createWithinCapacity(workspaceId, "document.max", async tx => {
       const row = await tx.document.create({
         data: {
           kbId: input.kbId,
@@ -122,7 +124,21 @@ export class PrismaContentStore implements ContentStore {
       await tx.raw.create({ data: { workspaceId: kb.workspaceId, metric: "karda.ingest", amount: 1n,
         idempotencyKey: `karda.ingest:${row.id}` } });
       return toDoc(row);
-    });
+    }, this.capacityLimit, input.supersedesDocumentId ? async tx => {
+      if (input.source !== "connector" || !input.connectorCode
+        || typeof input.sourceRef?.source_doc_id !== "string" || typeof input.sourceRef?.binding_id !== "string") {
+        throw new Error("connector_supersede_conflict");
+      }
+      const changed = await tx.document.updateMany({ where: {
+        id: input.supersedesDocumentId, kbId: input.kbId, source: "connector",
+        connectorCode: input.connectorCode, contentState: { not: "deleted" },
+        AND: [
+          { sourceRef: { path: ["source_doc_id"], equals: input.sourceRef.source_doc_id } },
+          { sourceRef: { path: ["binding_id"], equals: input.sourceRef.binding_id } },
+        ],
+      }, data: { contentState: "deleted", updatedAt: new Date() } });
+      if (changed.count !== 1) throw new Error("connector_supersede_conflict");
+    } : undefined);
   }
   async getDocument(id: string): Promise<DocumentRow | null> {
     const p = await getPrismaClient();
@@ -203,8 +219,8 @@ export class PrismaContentStore implements ContentStore {
   }
 
   async createEntry(input: CreateEntryInput): Promise<EntryRow> {
-    const p = await getPrismaClient();
-    return p.$transaction(async tx => {
+    const workspaceId = await capacityWorkspace(input.kbId, "document.max");
+    return createWithinCapacity(workspaceId, "document.max", async tx => {
       const row = await tx.entry.create({
         data: {
           kbId: input.kbId,
@@ -221,7 +237,7 @@ export class PrismaContentStore implements ContentStore {
       await tx.raw.create({ data: { workspaceId: kb.workspaceId, metric: "karda.ingest", amount: 1n,
         idempotencyKey: `karda.ingest:${row.id}` } });
       return toEntry(row);
-    });
+    }, this.capacityLimit);
   }
   async getEntry(id: string): Promise<EntryRow | null> {
     const p = await getPrismaClient();

@@ -79,6 +79,8 @@ export interface DueItem {
 }
 
 export interface CreateDocumentInput {
+  // Internal connector replacement only; never copied from an HTTP body.
+  supersedesDocumentId?: string;
   kbId: string;
   folderId?: string | null;
   title: string;
@@ -194,6 +196,15 @@ export class InMemoryContentStore implements ContentStore {
   }
 
   async createDocument(input: CreateDocumentInput): Promise<DocumentRow> {
+    if (input.supersedesDocumentId) {
+      const old = this.docs.get(input.supersedesDocumentId);
+      if (!old || old.deleted || old.kbId !== input.kbId || input.source !== "connector"
+        || old.source !== "connector" || old.connectorCode !== input.connectorCode
+        || !input.sourceRef?.source_doc_id || !input.sourceRef?.binding_id
+        || old.sourceRef?.source_doc_id !== input.sourceRef.source_doc_id
+        || old.sourceRef?.binding_id !== input.sourceRef.binding_id) throw new Error("connector_supersede_conflict");
+      old.deleted = true; old.contentState = "deleted";
+    }
     const now = new Date();
     const row = {
       id: nid("doc"),
