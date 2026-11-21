@@ -1,3 +1,4 @@
+import { eventChannel, sessionTarget } from "../../events/bus";
 import Redis from "ioredis";
 import { randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
@@ -92,8 +93,8 @@ export async function deleteSession(cid: string, rpsid: string): Promise<void> {
   await redis().eval(
     "local raw=redis.call('get',KEYS[1]); redis.call('del',KEYS[1]); "
     + "if raw then local ok,s=pcall(cjson.decode,raw); "
-    + "if ok and s.sid then redis.call('srem',ARGV[1]..s.sid,ARGV[2]) end end; return 1",
-    1, k.sess(cid, rpsid), `vx:rp:${cid}:sididx:`, rpsid);
+    + "if ok and s.sid then redis.call('srem',ARGV[1]..s.sid,ARGV[2]) end end; redis.call('publish',ARGV[3],ARGV[4]); return 1",
+    1, k.sess(cid, rpsid), `vx:rp:${cid}:sididx:`, rpsid, eventChannel(cid), JSON.stringify({ target: sessionTarget(rpsid), kind: "revoked" }));
 }
 
 /** Bounded cross-replica refresh serialization, fenced by a unique lease owner. */
@@ -132,9 +133,10 @@ export async function rotateSession(cid: string, rpsid: string, expectedToken: s
 export async function deleteSessionsBySid(cid: string, sid: string): Promise<void> {
   await redis().eval(
     "local ids=redis.call('smembers',KEYS[1]); "
-    + "for _,id in ipairs(ids) do redis.call('del',ARGV[1]..id) end; "
+    + "for _,id in ipairs(ids) do redis.call('del',ARGV[1]..id); "
+    + "redis.call('publish',ARGV[2],cjson.encode({target='session:'..id,kind='revoked'})) end; "
     + "redis.call('del',KEYS[1]); return #ids",
-    1, k.sididx(cid, sid), `vx:rp:${cid}:sess:`);
+    1, k.sididx(cid, sid), `vx:rp:${cid}:sess:`, eventChannel(cid));
 }
 
 export async function sessionsForSid(cid: string, sid: string): Promise<string[]> {

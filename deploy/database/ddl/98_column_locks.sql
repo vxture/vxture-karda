@@ -245,3 +245,7 @@ BEGIN
     REVOKE UPDATE ON karda_kb.assertion_mention FROM karda_svc;
   END IF;
 END $$;
+
+REVOKE UPDATE, DELETE ON vx_provision.access_revision FROM karda_svc;
+GRANT SELECT, INSERT ON vx_provision.access_revision TO karda_svc;
+GRANT UPDATE (generation, published_generation, updated_at) ON vx_provision.access_revision TO karda_svc;

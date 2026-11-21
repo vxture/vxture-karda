@@ -5,6 +5,7 @@ import { PrismaProvisioningStore } from "./prisma-store";
 export interface DeliveryMeta { type: string; result: string; payloadHash?: string }
 export interface ProvisioningStore {
   atomic<T>(workspaceId: string, deliveryId: string, fn: (store: ProvisioningStore) => Promise<T>): Promise<T>;
+  touchAccess(workspaceId: string): Promise<void>;
   delivered(deliveryId: string): Promise<DeliveryMeta | null>;
   instance(workspaceId: string, product: string): Promise<{ status: string; tenantId?: string | null } | null>;
   isDelivered(deliveryId: string): Promise<boolean>;
@@ -14,21 +15,23 @@ export interface ProvisioningStore {
   upsertInstance(workspaceId: string, product: string, status: string, tenantId?: string): Promise<void>;
 }
 export class InMemoryProvisioningStore implements ProvisioningStore {
+  private revisions = new Map<string, number>();
   private deliveries = new Map<string, DeliveryMeta>();
   private seq = new Map<string, number>();
   private instances = new Map<string, { status: string; tenantId?: string }>();
   private queue: Promise<unknown> = Promise.resolve();
   async atomic<T>(_ws: string, _id: string, fn: (store: ProvisioningStore) => Promise<T>): Promise<T> {
     const work = this.queue.then(async () => {
-      const snapshot = [new Map(this.deliveries), new Map(this.seq), new Map(this.instances)] as const;
+      const snapshot = [new Map(this.deliveries), new Map(this.seq), new Map(this.instances), new Map(this.revisions)] as const;
       try { return await fn(this); }
-      catch (error) { [this.deliveries, this.seq, this.instances] = snapshot; throw error; }
+      catch (error) { [this.deliveries, this.seq, this.instances, this.revisions] = snapshot; throw error; }
     });
     this.queue = work.catch(() => {});
     return work;
   }
   private key(w: string, p: string) { return JSON.stringify([w, p]); }
   async instance(w: string, p: string) { return this.instances.get(this.key(w, p)) ?? null; }
+  async touchAccess(ws: string) { this.revisions.set(ws, (this.revisions.get(ws) ?? 0) + 1); }
   async delivered(id: string) { return this.deliveries.get(id) ?? null; }
   async isDelivered(id: string) { return this.deliveries.has(id); }
   async markDelivered(id: string, meta: DeliveryMeta = { type: "unknown", result: "processed" }) { this.deliveries.set(id, meta); }

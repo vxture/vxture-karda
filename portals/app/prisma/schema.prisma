@@ -789,3 +789,15 @@ model AssertionMention {
   @@map("assertion_mention")
   @@schema("karda_kb")
 }
+
+
+/// Durable latest-state invalidation outbox, committed with lifecycle receipt.
+model AccessRevision {
+  workspaceId String @id @map("workspace_id") @db.Uuid
+  generation BigInt @default(1)
+  publishedGeneration BigInt @default(0) @map("published_generation")
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+
+  @@map("access_revision")
+  @@schema("vx_provision")
+}

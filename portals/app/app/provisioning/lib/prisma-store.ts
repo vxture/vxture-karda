@@ -18,6 +18,10 @@ export class PrismaProvisioningStore implements ProvisioningStore {
     return (await this.client()).appInstance.findUnique({ where: {
       workspaceId_productCode: { workspaceId, productCode: product } } });
   }
+  async touchAccess(workspaceId: string) {
+    await (await this.client()).accessRevision.upsert({ where: { workspaceId },
+      create: { workspaceId }, update: { generation: { increment: 1 }, updatedAt: new Date() } });
+  }
   async delivered(id: string): Promise<DeliveryMeta | null> {
     const row = await (await this.client()).webhookDelivery.findUnique({ where: { deliveryId: id } });
     return row ? { type: row.type, result: row.result, payloadHash: row.payloadHash ?? undefined } : null;

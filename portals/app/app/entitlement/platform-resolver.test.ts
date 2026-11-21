@@ -38,3 +38,17 @@ test("deployed commercial authorization cannot use mock override", () => {
     assert.throws(getEntitlementResolver, /unconfigured/);
   } finally { process.env = saved; resetResolver(); }
 });
+
+
+test("shared revision changes invalidate another replica and fence late cache writes", async () => {
+  let revision = "a", calls = 0;
+  const resolver = new PlatformEntitlementResolver(cfg, async () => { calls++; return value; }, Date.now, async () => revision);
+  await resolver.resolve("w"); await resolver.resolve("w"); assert.equal(calls, 1);
+  revision = "b"; await resolver.resolve("w"); assert.equal(calls, 2);
+  let finish!: () => void;
+  const blocked = new Promise<void>(resolve => { finish = resolve; });
+  const late = new PlatformEntitlementResolver(cfg, async () => { calls++; await blocked; return value; }, Date.now, async () => revision);
+  const pending = late.resolve("w"); await new Promise(resolve => setTimeout(resolve, 0));
+  revision = "c"; finish(); await pending;
+  await late.resolve("w"); assert.equal(calls, 4, "late old-version response is never cached");
+});

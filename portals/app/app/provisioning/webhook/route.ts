@@ -1,3 +1,4 @@
+import { publishWorkspaceRevision } from "../../events/outbox";
 import { acknowledgeProvisioning } from "../lib/ack";
 import { verifySignature, webhookSecrets } from "../lib/verify";
 import { handleProvisioning } from "../lib/handler";
@@ -24,7 +25,10 @@ export async function POST(req: Request): Promise<Response> {
   }
   try {
     const result = await handleProvisioning(event, { store: getProvisioningStore(), product: "karda",
-      onSubscriptionChanged: ws => getEntitlementResolver().invalidate(ws) });
+      onSubscriptionChanged: async ws => {
+        getEntitlementResolver().invalidate(ws);
+        await publishWorkspaceRevision(ws);
+      } });
     if (event.type === "tenant.provisioned") await acknowledgeProvisioning(event.workspace_id, event.seq!, event.id);
     return Response.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch {

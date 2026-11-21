@@ -47,7 +47,7 @@ test("subscription_changed evicts the C2 cache", async () => {
   let evicted: string | null = null;
   await handleProvisioning(
     ev({ id: "s1", type: "subscription_changed", seq: undefined, workspace_id: "ws_9" }),
-    deps({ onSubscriptionChanged: (ws) => (evicted = ws) }),
+    deps({ onSubscriptionChanged: (ws) => { evicted = ws; } }),
   );
   assert.equal(evicted, "ws_9");
 });
@@ -94,4 +94,14 @@ test("new lifecycle event cannot change an established tenant anchor", async () 
   const d = deps(); await handleProvisioning(ev({}), d);
   await assert.rejects(handleProvisioning(ev({ id: "new", seq: 2, tenant_id: "other" }), d), /tenant_conflict/);
   assert.equal(await d.store.isDelivered("new"), false);
+});
+
+
+test("post-commit notification failure is retried even after receipt commit", async () => {
+  const d = deps(); let attempts = 0;
+  d.onSubscriptionChanged = async () => { attempts++; if (attempts === 1) throw new Error("redis_down"); };
+  await assert.rejects(handleProvisioning(ev({}), d), /redis_down/);
+  assert.equal(await d.store.isDelivered("d1"), true);
+  assert.equal((await handleProvisioning(ev({}), d)).reason, "duplicate");
+  assert.equal(attempts, 2);
 });

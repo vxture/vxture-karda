@@ -46,3 +46,5 @@ the Prisma schema - `lint:data-design` is a hard gate on their lockstep.
 - `280-durable-usage` - C3 持久业务计量、回执、自动排空及运维恢复。
 
 - `290-public-entry` - Karda independent public entry, shared layout and action semantics.
+
+- `295-access-events` - Durable invalidation outbox, replica cache versions and browser SSE.

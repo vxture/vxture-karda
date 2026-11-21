@@ -1,3 +1,4 @@
+import { publishWorkspaceRevision } from "../../events/outbox";
 import { getProvisioningReadClient } from "../../platform/provisioning-read";
 import { getEntitlementResolver } from "../../entitlement/resolver";
 import { getProvisioningStore, type ProvisioningStore } from "./store";
@@ -29,7 +30,10 @@ export async function applySnapshot(item: ProvisioningItem, store: ProvisioningS
     // Equal-version reads may restore a missing historical tenant anchor. They
     // never overwrite a newer lifecycle or change an established tenant.
     await tx.upsertInstance(item.workspace_id, "karda", item.state, item.tenant_id);
-    if (last < item.seq) await tx.setSeq(item.workspace_id, "karda", item.seq);
+    if (last < item.seq) {
+      await tx.setSeq(item.workspace_id, "karda", item.seq);
+      await tx.touchAccess(item.workspace_id);
+    }
   });
 }
 interface Dependencies { page: (cursor?: string) => Promise<unknown>; apply: (item: ProvisioningItem) => Promise<void> }
@@ -38,6 +42,7 @@ export async function reconcileProvisioning(deps?: Dependencies) {
   const source = deps ?? { page: (cursor?: string) => client!.page(cursor), apply: async (item: ProvisioningItem) => {
     await applySnapshot(item);
     getEntitlementResolver().invalidate(item.workspace_id);
+    await publishWorkspaceRevision(item.workspace_id);
     if (item.state === "provisioned") await acknowledgeProvisioning(item.workspace_id, item.seq);
   } };
   let cursor: string | undefined, pages = 0, scanned = 0, failed = 0;
