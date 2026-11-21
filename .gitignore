@@ -63,3 +63,7 @@ __pycache__/
 # Scratch staging for pre-formalized design drafts. Anything that survives
 # review moves into docs/ under a number; nothing here is repo history.
 temp/
+
+# Local browser verification artifacts
+.playwright-cli/
+output/playwright/

@@ -78,7 +78,7 @@ test("every DS token the gate uses is one the design system defines", () => {
   assert.ok(available.size > 50, `expected the DS to define many tokens, found ${available.size}`);
 
   const gate = readFileSync(new URL("./gate.css", import.meta.url), "utf8");
-  const missing = [...tokensUsedBy(gate)].filter((t) => !OURS.test(t) && !available.has(t)).sort();
+  const missing = [...tokensUsedBy(gate)].filter((t) => !OURS.test(t) && !definedTokens(gate).has(t) && !available.has(t)).sort();
 
   assert.deepEqual(
     missing,

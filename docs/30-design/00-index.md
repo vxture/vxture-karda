@@ -44,3 +44,5 @@ the Prisma schema - `lint:data-design` is a hard gate on their lockstep.
 - `270-platform-lifecycle` - Karda 平台生命周期消费、本地不可改写引用及 ACK/对账边界。
 
 - `280-durable-usage` - C3 持久业务计量、回执、自动排空及运维恢复。
+
+- `290-public-entry` - Karda independent public entry, shared layout and action semantics.
