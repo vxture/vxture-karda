@@ -59,7 +59,11 @@ export function errorStatus(code: string): number {
     case "not_found":
       return 404;
     case "forbidden":
+    case "capacity_exceeded":
       return 403;
+    case "capacity_unavailable":
+    case "capacity_unconfigured":
+      return 503;
     case "name_taken":
     case "folder_name_taken":
     case "duplicate_document":

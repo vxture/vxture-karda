@@ -48,3 +48,5 @@ the Prisma schema - `lint:data-design` is a hard gate on their lockstep.
 - `290-public-entry` - Karda independent public entry, shared layout and action semantics.
 
 - `295-access-events` - Durable invalidation outbox, replica cache versions and browser SSE.
+
+- `300-capacity-enforcement` - Product capacity counting, concurrency and staged delivery.

@@ -10,6 +10,8 @@ import type { Catalog, Message, MessageFn } from "../catalog";
 // the point: a tone is a structural fact about a state (failed is bad, indexed
 // is ok) and does not vary by language; a label is nothing but language.
 export const states = {
+  errLibraryCapacity: { "zh-CN": "\u77e5\u8bc6\u5e93\u6570\u91cf\u5df2\u8fbe\u4e0a\u9650\uff0c\u8bf7\u6e05\u7406\u4e0d\u518d\u4f7f\u7528\u7684\u5e93\u6216\u8054\u7cfb\u7ba1\u7406\u5458\u3002", "en-US": "The knowledge library limit has been reached. Remove unused libraries or contact your administrator." },
+  errCapacityUnavailable: { "zh-CN": "\u6682\u65f6\u65e0\u6cd5\u786e\u8ba4\u53ef\u7528\u5bb9\u91cf\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5\u6216\u8054\u7cfb\u7ba1\u7406\u5458\u3002", "en-US": "Available capacity could not be confirmed. Please retry later or contact your administrator." },
   // --- sharing ladder --------------------------------------------------------
   sharePrivate: { "zh-CN": "私有", "en-US": "Private" },
   sharePrivateHelp: { "zh-CN": "只有你能看到这个库。", "en-US": "Only you can see this library." },

@@ -24,6 +24,8 @@ export function apiErrorKey(status: number, code?: string): ApiErrorMapping {
   const at = (key: ErrKey): ApiErrorMapping => ({ key, withCode: false });
 
   if (status === 401) return at("errSessionExpired");
+  if (status === 403 && code === "capacity_exceeded") return at("errLibraryCapacity");
+  if (status === 503 && (code === "capacity_unconfigured" || code === "capacity_unavailable")) return at("errCapacityUnavailable");
   if (status === 403) return at(code === "forbidden" ? "errForbidden" : "errRefused");
   if (status === 404) return at("errNotFound");
   if (status === 409) {

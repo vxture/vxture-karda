@@ -227,3 +227,24 @@ P8 capacity enforcement/cost and package design remain open. No Karda paid plan
 has been inferred from Arda or published. The integration-status diagnostic is
 currently public and includes internal host/db/role metadata; production access
 restriction is a separate product configuration follow-up, not a leaked secret.
+
+
+## P8.3a library capacity implementation (not deployed)
+
+The shared browser/Agent library creation store now performs a workspace-scoped
+transaction lock, actual nondeleted-row count and insertion in one transaction.
+Capacity comes from anchored scoped C2, with no production fallback quota.
+Missing/invalid limits or upstream failures return503; exhausted capacity403.
+Browser messages and Agent codes match; failure cannot auto-attach a library.
+Production/beta demo fixture seeding is disabled, including internal-token use.
+
+Real isolated PostgreSQL verified eight competing requests with two slots,
+workspace isolation, rollback, deletion/reuse, zero/unlimited/missing limits and
+sanitized upstream failures. This source increment is not live. Documents,
+entries, bindings and stored bytes remain separate pending increments; public
+Free configuration must not be assumed to contain kb.max. Package publication
+and rollout require actual C2 grants and the reviewed complete capacity scope.
+See 30-design/300-capacity-enforcement and the updated ordered sub-batch table.
+
+P8.3a validation: all863 local tests passed with zero skips; TypeScript and
+strict docs numbering passed. Required Linux build/security gates run on its PR.
