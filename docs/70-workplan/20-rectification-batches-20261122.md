@@ -6,16 +6,16 @@
 
 | 批次 | 范围与交付 | 状态 | 依据 / 退出条件 |
 | --- | --- | --- | --- |
-| P0 | 当前版本及接口盘点；退出最小修正；依赖审计修复 | **已合入，未部署** | PR207 / ecc382d；805 项本地测试及最终 CI 通过；线上仍 v0.10.3 |
-| P1 | Accounts 会话正确性：刷新互斥、防复活、状态检查兜底、故障语义 | **实现及 CI 验证完成，未部署** | [PR208](https://github.com/vxture/vxture-karda/pull/208) 跟踪合入；815 项测试含真实 Redis 无跳过，生产/真实 Accounts 验收仍待执行 |
-| P2 | S2S、C2 准入及额度池 | **已合入，未部署** | [PR209](https://github.com/vxture/vxture-karda/pull/209) / d342a2a；822 项测试及全部必需 CI 通过；真实平台验收待 P9 |
-| P3 | 生命周期、通知与配置对账 | **已合入，未部署** | [PR210](https://github.com/vxture/vxture-karda/pull/210) / 0e4f643；837 项含真实 PostgreSQL 测试、全部 CI 通过；需先 db-init 0010 |
-| P4 | C3 持久用量与自动排空 | **已合入，未部署** | [PR211](https://github.com/vxture/vxture-karda/pull/211) / bf948da；841 项测试和全部 CI 通过；需先 db-init 0011；真实 C3 待 P9 |
-| P5 | Atlas 现行契约与知识链路 | **已合入，未部署** | [PR212](https://github.com/vxture/vxture-karda/pull/212) / 35d33ae；845 项及全部 CI 通过；线上契约及真实知识链路待 P9 |
-| P6 | Karda 独立页面设计与入口实施 | **已合入，未部署** | [PR213](https://github.com/vxture/vxture-karda/pull/213) / 43004f1；847 项及全部 CI 通过；CoSpace v1.3.1，独立 Karda 图形/背景，保留 Ruyin/版权及 ShellViewport |
-| P7 | 浏览器消息同步 | **已合入，未部署** | [PR214](https://github.com/vxture/vxture-karda/pull/214) / d216861；851 项及全部 CI 通过；同事务 outbox、共享版本、SSE；需 db-init 0012；平台身份通知缺口 issue726 |
+| P0 | 当前版本及接口盘点；退出最小修正；依赖审计修复 | **已部署 v0.11.1，真实验收待完成** | PR207 / ecc382d；805 项本地测试及最终 CI 通过；线上仍 v0.10.3；现网发布 run44945579438，后附 P9 事实覆盖早期未部署描述 |
+| P1 | Accounts 会话正确性：刷新互斥、防复活、状态检查兜底、故障语义 | **已部署 v0.11.1，真实验收待完成** | [PR208](https://github.com/vxture/vxture-karda/pull/208) 跟踪合入；815 项测试含真实 Redis 无跳过，生产/真实 Accounts 验收仍待执行；现网发布 run44945579438，后附 P9 事实覆盖早期未部署描述 |
+| P2 | S2S、C2 准入及额度池 | **已部署 v0.11.1，真实验收待完成** | [PR209](https://github.com/vxture/vxture-karda/pull/209) / d342a2a；822 项测试及全部必需 CI 通过；真实平台验收待 P9；现网发布 run44945579438，后附 P9 事实覆盖早期未部署描述 |
+| P3 | 生命周期、通知与配置对账 | **已部署 v0.11.1，真实验收待完成** | [PR210](https://github.com/vxture/vxture-karda/pull/210) / 0e4f643；837 项含真实 PostgreSQL 测试、全部 CI 通过；需先 db-init 0010；现网发布 run44945579438，后附 P9 事实覆盖早期未部署描述 |
+| P4 | C3 持久用量与自动排空 | **已部署 v0.11.1，真实验收待完成** | [PR211](https://github.com/vxture/vxture-karda/pull/211) / bf948da；841 项测试和全部 CI 通过；需先 db-init 0011；真实 C3 待 P9；现网发布 run44945579438，后附 P9 事实覆盖早期未部署描述 |
+| P5 | Atlas 现行契约与知识链路 | **已部署 v0.11.1，真实验收待完成** | [PR212](https://github.com/vxture/vxture-karda/pull/212) / 35d33ae；845 项及全部 CI 通过；线上契约及真实知识链路待 P9；现网发布 run44945579438，后附 P9 事实覆盖早期未部署描述 |
+| P6 | Karda 独立页面设计与入口实施 | **已部署 v0.11.1，真实验收待完成** | [PR213](https://github.com/vxture/vxture-karda/pull/213) / 43004f1；847 项及全部 CI 通过；CoSpace v1.3.1，独立 Karda 图形/背景，保留 Ruyin/版权及 ShellViewport；现网发布 run44945579438，后附 P9 事实覆盖早期未部署描述 |
+| P7 | 浏览器消息同步 | **已部署 v0.11.1，真实验收待完成** | [PR214](https://github.com/vxture/vxture-karda/pull/214) / d216861；851 项及全部 CI 通过；同事务 outbox、共享版本、SSE；需 db-init 0012；平台身份通知缺口 issue726；现网发布 run44945579438，后附 P9 事实覆盖早期未部署描述 |
 | P8 | 成本、套餐与产品配置 | **登记基线已核对，容量/定价待完成** | 整包成本和贡献率、公开关键指标、内部额度映射；用户确认后发布套餐/域名/终端配置，不复制 Arda 参数 |
-| P9 | 实际发布通道及业务验收交付 | 待开始，依赖候选范围前序完成 | 实际仅 production，TD-001 尚无 beta；候选须经完整 CI、db-init 与生产人工审批；登录退出隔离、知识链路/计量及清理；不声称 beta 验收 |
+| P9 | 实际发布通道及业务验收交付 | **生产发布成功，域名/业务验收未完成** | v0.11.1 / cba6e16a，run44945579438；health/ready通过；目标域名520见issue727；真实登录、知识链路及C3未验收 |
 
 顺序代表实施主线，不要求为做页面而等待所有商业决策；独立的只读核查可交错推进。若拆 PR，采用 Pn.1/Pn.2 子批次，保留主批次号，不悄悄缩小验收范围。生产推广应按验证过的候选和上线风险分阶段规划，不因表内编号自动发版。
 
@@ -135,3 +135,7 @@ Domain-profile validation: all858 tests passed, zero skips; TypeScript passed. A
 用户完成二次验证后回读：04:16:52 CST，七项正式域名配置全部保存为karda.ruyin.work；仅web开启，机密客户端/PKCE/全域退出不变。此前500故障已恢复，不能据此关闭剩余路由问题；04:17:37新域名仍Cloudflare520，已补平台issue727。
 
 PR218 / cba6e16及main CI44942740610通过（858项测试），v0.11.1候选run44945579438执行正常构建，生产推广仍需人工门禁。v0.11.0已取消，不移动标签。数据库增量已通过run44941098583应用；应用尚未声称部署成功。
+
+## P9 生产部署确认
+
+v0.11.1 / cba6e16a 已经用户审批并由 run44945579438 于04:29:59 CST发布成功。旧域名health/ready为200，DB/Redis正常；新域名仍520，旧域名仍可访问，域名迁移未验收。三条归属锚点已存在，后台对账scanned3/failed0；一条7月28日历史问答用量缺归属，拒绝猜测租户并保留重试。真实C1/C2/C3和Atlas业务验收仍待进行。P8容量与定价未完成；完整证据及限制见交付记录末节。

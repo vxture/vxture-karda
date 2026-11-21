@@ -7,9 +7,9 @@ CoSpace v1.3.1 presentation. No platform sources, worktrees, server variables or
 files were modified. Product registration changes use Opera configuration.
 Platform gaps are issues, not local patches.
 
-Baseline live production: v0.10.3 / 2f7b142a. Source merges do not deploy. No new
-application deployment, paid inference, customer-data mutation or plan publication
-has occurred. Owner-approved production db-init44941098583 applied the additive
+Current production: v0.11.1 / cba6e16a, deployed by owner-approved run44945579438
+at 2026-11-22 04:29:59 CST. Baseline before this rollout was v0.10.3 / 2f7b142a.
+No new paid inference, customer-data mutation or plan publication has occurred. Owner-approved production db-init44941098583 applied the additive
 0010/0011/0012 increments successfully; baseline assertion found all37 tables. All Redis/PostgreSQL test
 writes target explicitly isolated local containers.
 
@@ -192,3 +192,38 @@ v0.11.1 / cba6e16 includes reviewed origin profile and858 passing tests. Deploy
 run44945579438 builds through the normal pipeline and requires production human
 approval. No application rollout success is yet claimed. Cancelled v0.11.0 is
 retained as cancelled and its tag is not moved.
+
+
+## Production rollout and acceptance - 2026-11-22 04:35 CST
+
+Owner approved production run [44945579438](https://github.com/vxture/vxture-karda/actions/runs/44945579438);
+all build/deploy jobs completed successfully. The deployed image is v0.11.1 /
+cba6e16a, not the later documentation-only main commit. Additive DDL was applied
+by the separately approved db-init run. Cancelled v0.11.0 remains cancelled.
+
+Read-only public checks through the still-active legacy host returned health200
+with the expected version/SHA and ready200 with DB/Redis both ok. The new logo
+asset returns200. Login redirects to Accounts with client karda and the exact new
+https://karda.ruyin.work/auth/callback. This confirms deployed runtime origin,
+not completion of the browser login flow. No state/token/secret was recorded.
+
+The target new-domain health still returns Cloudflare520. Legacy host retirement,
+new-domain TLS/routing, real login/callback/logout isolation, signed webhook/ACK,
+C2 business access and Atlas/C3 receipts remain unaccepted. Platform issue727
+tracks managed edge synchronization and retirement; product deployment success
+does not close it. No manual platform routing changes were made.
+
+Runtime reconciliation reported pages1/scanned3/failed0. Read-only SQL found
+three tenant-bound instances and three immutable anchors. One pending karda.ask
+usage record dates to 2026-07-28 15:36:51 UTC; its provisioned legacy instance
+has no tenant_id or anchor. It fails locally with workspace_platform_anchor_required,
+before any scoped billing request. It remains retained with bounded retries;
+no guessed tenant, manual anchor insertion, deletion, fake receipt or forced
+billing replay was used. Trusted platform attribution or an explicit historical
+recovery decision is required before replay. This is not evidence of successful
+current C3 acceptance.
+
+P8 capacity enforcement/cost and package design remain open. No Karda paid plan
+has been inferred from Arda or published. The integration-status diagnostic is
+currently public and includes internal host/db/role metadata; production access
+restriction is a separate product configuration follow-up, not a leaked secret.
