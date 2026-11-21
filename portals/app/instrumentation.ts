@@ -5,5 +5,7 @@ export async function register(): Promise<void> {
       || !process.env.OIDC_CLIENT_SECRET || !process.env.DATABASE_URL) return;
     const { startProvisioningReconciliation } = await import("./app/provisioning/lib/reconcile");
     startProvisioningReconciliation();
+    const { startUsageWorker } = await import("./app/usage/lib/worker");
+    startUsageWorker();
   }
 }

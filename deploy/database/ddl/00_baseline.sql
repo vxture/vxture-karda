@@ -144,6 +144,10 @@ CREATE TABLE IF NOT EXISTS local_usage.raw (
   amount           BIGINT NOT NULL,
   idempotency_key  VARCHAR(128) NOT NULL,
   flushed          BOOLEAN NOT NULL DEFAULT false,
+  attempts         INTEGER NOT NULL DEFAULT 0,
+  next_attempt_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_error       VARCHAR(200),
+  flushed_at       TIMESTAMPTZ,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT chk_raw_amount CHECK (amount > 0),
   CONSTRAINT uidx_raw_idempotency_key UNIQUE (idempotency_key)

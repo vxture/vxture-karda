@@ -138,6 +138,10 @@ model Raw {
   amount         BigInt
   idempotencyKey String   @map("idempotency_key") @db.VarChar(128)
   flushed        Boolean  @default(false)
+  attempts       Int      @default(0)
+  nextAttemptAt  DateTime @default(now()) @map("next_attempt_at") @db.Timestamptz()
+  lastError      String?  @map("last_error") @db.VarChar(200)
+  flushedAt      DateTime? @map("flushed_at") @db.Timestamptz()
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
 
   @@unique([idempotencyKey], map: "uidx_raw_idempotency_key")

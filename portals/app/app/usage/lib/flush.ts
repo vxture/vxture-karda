@@ -2,87 +2,55 @@ import { getUsageStore, type UsageRow, type UsageStore } from "./store";
 import { getPlatformClientConfig } from "../../entitlement/platform-client";
 import { getEntitlementResolver } from "../../entitlement/resolver";
 import { platformRequest, workspacePlatformContext } from "../../platform/client";
-
-// Async flush job (product_200 section 4.1): drain buffered counter usage and
-// report to the platform consume service (the single writer). 200 -> flushed;
-// 409 gated (quota exhausted) is a TERMINAL success (gating only blocks UI, not
-// the ledger) and evicts the C2 cache; anything else stays buffered for retry.
-
-export interface ConsumeResult {
-  status: number;
-}
+import { isDeployedStage } from "../../lib/deploy-stage";
+export interface ConsumeResult { status: number; body?: unknown }
 export type ConsumeFn = (row: UsageRow) => Promise<ConsumeResult>;
-
-export interface FlushOptions {
-  store?: UsageStore;
-  consume?: ConsumeFn;
-  onGated?: (workspaceId: string) => void;
-  batchSize?: number;
+export interface FlushOptions { store?: UsageStore; consume?: ConsumeFn; onGated?: (ws: string) => void; batchSize?: number }
+export interface FlushSummary { scanned: number; flushed: number; gated: number; retried: number; skipped?: boolean }
+export function parseReceipt(result: ConsumeResult): { gated: boolean } {
+  if (result.status !== 200) throw new Error(`usage_report_http_${result.status}`);
+  const body = result.body as Record<string, unknown> | null;
+  if (!body || typeof body !== "object" || Array.isArray(body)
+    || typeof body.consumed !== "number" || !Number.isFinite(body.consumed) || body.consumed < 0
+    || typeof body.remaining_total !== "number" || !Number.isFinite(body.remaining_total)
+    || body.gated !== undefined && typeof body.gated !== "boolean"
+    || body.event_id !== undefined && (typeof body.event_id !== "string" || !body.event_id)) throw new Error("usage_report_invalid_receipt");
+  return { gated: body.gated === true };
 }
-
-export interface FlushSummary {
-  scanned: number;
-  flushed: number;
-  gated: number;
-  retried: number;
-  skipped?: boolean;
-}
-
 export async function flushUsage(opts: FlushOptions = {}): Promise<FlushSummary> {
   const store = opts.store ?? getUsageStore();
   const consume = opts.consume ?? defaultConsume();
-  if (!consume) return { scanned: 0, flushed: 0, gated: 0, retried: 0, skipped: true };
-
-  const rows = await store.unflushed(opts.batchSize ?? 50);
-  const done: string[] = [];
-  let flushed = 0;
-  let gated = 0;
-  let retried = 0;
-
-  for (const row of rows) {
-    let res: ConsumeResult;
-    try {
-      res = await consume(row);
-    } catch {
-      retried++;
-      continue; // stays buffered
-    }
-    if (res.status === 200) {
-      done.push(row.idempotencyKey);
-      flushed++;
-    } else if (res.status === 409) {
-      // Gated is terminal: the platform recorded the attempt and refused the
-      // quota; do not retry, and refresh entitlement so the UI reflects it.
-      done.push(row.idempotencyKey);
-      gated++;
-      (opts.onGated ?? ((ws: string) => getEntitlementResolver().invalidate(ws)))(row.workspaceId);
-    } else {
-      retried++; // 4xx/5xx (incl. 404 fail-closed) -> stays buffered
-    }
+  if (!consume) {
+    if (isDeployedStage()) throw new Error("usage_platform_unconfigured");
+    return { scanned: 0, flushed: 0, gated: 0, retried: 0, skipped: true };
   }
-  await store.markFlushed(done);
-  return { scanned: rows.length, flushed, gated, retried };
+  const rows = await store.unflushed(opts.batchSize ?? 50);
+  const summary = { scanned: rows.length, flushed: 0, gated: 0, retried: 0 };
+  for (const row of rows) {
+    let gated: boolean;
+    try { gated = parseReceipt(await consume(row)).gated; }
+    catch (error) {
+      await store.failed(row.idempotencyKey, error instanceof Error ? error.message : "usage_report_failed");
+      summary.retried++; continue;
+    }
+    // Persistence errors propagate; unchanged idempotency keys recover safely.
+    await store.markFlushed([row.idempotencyKey]);
+    if (gated) {
+      summary.gated++;
+      (opts.onGated ?? ((ws: string) => getEntitlementResolver().invalidate(ws)))(row.workspaceId);
+    } else summary.flushed++;
+  }
+  return summary;
 }
-
-/** Platform consume caller, or null when the platform is not configured (offline). */
 function defaultConsume(): ConsumeFn | null {
   const cfg = getPlatformClientConfig();
   if (!cfg) return null;
-  return async (row) => {
-    const context = await workspacePlatformContext(row.workspaceId);
-    const res = await platformRequest("/usage/consume", context, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        workspace_id: row.workspaceId,
-        product: cfg.product,
-        metric: row.metric,
-        amount: row.amount,
-        idempotency_key: row.idempotencyKey,
-      }),
+  return async row => {
+    const response = await platformRequest("/usage/consume", await workspacePlatformContext(row.workspaceId), {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ workspace_id: row.workspaceId, product: cfg.product, metric: row.metric,
+        amount: row.amount, idempotency_key: row.idempotencyKey, intent: "report" }),
     }, cfg.baseUrl);
-    return { status: res.status };
+    return { status: response.status, body: await response.json().catch(() => null) };
   };
 }
