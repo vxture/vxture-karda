@@ -15,7 +15,7 @@ export interface HandleResult { ok: true; handled: boolean; reason: "wrong-produ
 export interface HandlerDeps {
   store: ProvisioningStore;
   product: string;
-  onSubscriptionChanged?: (workspaceId: string) => void;
+  onSubscriptionChanged?: (workspaceId: string) => void | Promise<void>;
   onProvisioned?: (workspaceId: string) => Promise<void> | void;
 }
 export function eventHash(value: unknown): string {
@@ -50,10 +50,11 @@ export async function handleProvisioning(event: ProvisioningEvent, deps: Handler
         await store.setSeq(event.workspace_id, deps.product, event.seq!);
       }
     } else if (event.type !== "subscription_changed" && event.type !== "grant.invalidated") reason = "ignored";
+    if (reason === "processed") await store.touchAccess(event.workspace_id);
     await store.markDelivered(event.id, { type: event.type, result: reason, payloadHash: hash });
     return { ok: true as const, handled: reason === "processed", reason };
   });
   // Including duplicate retries repairs a crash between commit and eviction.
-  deps.onSubscriptionChanged?.(event.workspace_id);
+  await deps.onSubscriptionChanged?.(event.workspace_id);
   return result;
 }

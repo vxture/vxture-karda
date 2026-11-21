@@ -12,8 +12,8 @@
 | P3 | 生命周期、通知与配置对账 | **已合入，未部署** | [PR210](https://github.com/vxture/vxture-karda/pull/210) / 0e4f643；837 项含真实 PostgreSQL 测试、全部 CI 通过；需先 db-init 0010 |
 | P4 | C3 持久用量与自动排空 | **已合入，未部署** | [PR211](https://github.com/vxture/vxture-karda/pull/211) / bf948da；841 项测试和全部 CI 通过；需先 db-init 0011；真实 C3 待 P9 |
 | P5 | Atlas 现行契约与知识链路 | **已合入，未部署** | [PR212](https://github.com/vxture/vxture-karda/pull/212) / 35d33ae；845 项及全部 CI 通过；线上契约及真实知识链路待 P9 |
-| P6 | Karda 独立页面设计与入口实施 | **入口已实现，本地视觉验收完成；CI 待执行、未部署** | CoSpace v1.3.1；Logo/背景/登录预览与各状态；确认后冻结，再接真实动作；保留 Ruyin/版权及既有 ShellViewport/导航决策 |
-| P7 | 浏览器消息同步 | 待开始，依赖 P1/P3及通知覆盖核实 | 参考 Arda ADR-014：可靠事件、共享缓存版本、SSE/断线恢复；正常 tab 切换零权限查询；不引入定时权限轮询 |
+| P6 | Karda 独立页面设计与入口实施 | **已合入，未部署** | [PR213](https://github.com/vxture/vxture-karda/pull/213) / 43004f1；847 项及全部 CI 通过；CoSpace v1.3.1，独立 Karda 图形/背景，保留 Ruyin/版权及 ShellViewport |
+| P7 | 浏览器消息同步 | **实现及本地验证完成；CI 待执行，未部署** | 参考 Arda ADR-014：可靠事件、共享缓存版本、SSE/断线恢复；正常 tab 切换零权限查询；不引入定时权限轮询 |
 | P8 | 成本、套餐与产品配置 | 待开始，可先盘点历史决策 | 整包成本和贡献率、公开关键指标、内部额度映射；用户确认后发布套餐/域名/终端配置，不复制 Arda 参数 |
 | P9 | beta → production 及业务验收交付 | 待开始，依赖候选范围前序完成 | 同镜像晋级、必要人工审批；登录退出隔离、授权真实知识链路、计量及测试清理；更新交付报告 |
 
@@ -86,3 +86,9 @@ P3.2：独立 provisioning:read 票据、启动及每 5 分钟后台全量分页
 独立 Karda 标记、知识书页图形及浅色网络背景；继承 CoSpace v1.3.1 共享布局与 Ruyin/法律信息。欢迎语/底部常驻，最小高度和背景装饰位置统一；不改 PortalShell。订阅改产品定价页，按管理资格显示；未分配产品、停用及未知状态不导向购买。重试合并请求，15 秒超时，不以 focus 或计时器重新查权限。
 
 本地 Playwright 覆盖 1440/390/320px、五种状态，最小高度及图形中心符合规范，无横向溢出；focus/visibility 触发查询为零。6 项针对性测试及 TypeScript 通过；全量回归与 CI 继续执行。未发布、不修改规范或平台配置。细节见 290-public-entry。
+
+## P7 当前记录
+
+PostgreSQL 同事务 access_revision outbox，Redis 单调版本和原子推送；投递完成前通知失败保留重试，后台仅重试未发布记录，Redis 丢失版本从数据库恢复。共享版本阻止其他实例使用已失效 C2 服务缓存。RP 删除与退出通知同一 Redis 操作。SSE 同源会话鉴权，仅推送对应上下文失效，不传令牌或身份标识；保活不查询权限、不续活动。
+
+本地 851 项通过、无跳过；含真实 Redis/PostgreSQL 的事务回滚、重复/乱序、断线补齐及旧回执不清除新版本。Playwright 验证首次核验一次、真实版本变化一次、相同版本重连及 focus 均零查询，撤销清理业务视图并回入口。类型及数据架构检查通过；需 db-init 0012，未部署。缺失的跨产品身份事件契约见 [平台 issue726](https://github.com/vxture-platform/vxture-platform/issues/726)，不假定平台已推送。细节见 295-access-events。

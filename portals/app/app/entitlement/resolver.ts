@@ -1,3 +1,4 @@
+import { getEventBus } from "../events/bus";
 import type { PlatformContext } from "../platform/ticket";
 import { isDeployedStage } from "../lib/deploy-stage";
 import { EMPTY_ENTITLEMENT, type Entitlement, type SubscriptionStatus, type Tier } from "./types";
@@ -44,7 +45,7 @@ export function getEntitlementResolver(): EntitlementResolver {
   if (singleton) return singleton;
   const cfg = getPlatformClientConfig();
   if (!cfg && isDeployedStage()) throw new Error("platform_entitlement_unconfigured");
-  singleton = cfg ? new PlatformEntitlementResolver(cfg) : new MockEntitlementResolver(productCode());
+  singleton = cfg ? new PlatformEntitlementResolver(cfg, undefined, undefined, ws => getEventBus().version(ws)) : new MockEntitlementResolver(productCode());
   return singleton;
 }
 

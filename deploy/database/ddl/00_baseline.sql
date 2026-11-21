@@ -1069,3 +1069,11 @@ CREATE TABLE IF NOT EXISTS karda_kb.eval_run_result (
 );
 CREATE INDEX IF NOT EXISTS idx_eval_run_result_run
   ON karda_kb.eval_run_result (run_id);
+
+-- Same-transaction invalidation outbox. Apply through db-init only.
+CREATE TABLE IF NOT EXISTS vx_provision.access_revision (
+  workspace_id UUID PRIMARY KEY,
+  generation BIGINT NOT NULL DEFAULT 1 CHECK (generation > 0),
+  published_generation BIGINT NOT NULL DEFAULT 0 CHECK (published_generation >= 0),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

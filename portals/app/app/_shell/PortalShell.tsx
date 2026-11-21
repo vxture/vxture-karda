@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useAccessEvents } from "../events/use-access-events";
+import { useLocale } from "./locale";
 import { usePathname } from "next/navigation";
 import { ShellPageContainer, ShellViewport } from "@vxture/design-system";
 import { AppHeader } from "./AppHeader";
@@ -43,6 +45,8 @@ function writePref(key: string, value: boolean) {
 
 export function PortalShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "/";
+  const accessEvents = useAccessEvents();
+  const { locale } = useLocale();
   const [shell, setShell] = useState<ShellData | null>(null);
   // SSR renders the default (both side panes open); the persisted
   // preference applies after mount to keep hydration consistent.
@@ -55,13 +59,17 @@ export function PortalShell({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    fetch("/api/shell", { cache: "no-store" })
+    const request = new AbortController();
+    setShell(null);
+    fetch("/api/shell", { cache: "no-store", signal: request.signal })
       .then(async (res) => {
         if (!res.ok) return; // unauthenticated: chrome renders without figures
-        setShell((await res.json()) as ShellData);
+        const value = (await res.json()) as ShellData;
+        if (!request.signal.aborted) setShell(value);
       })
       .catch(() => {});
-  }, [pathname]);
+    return () => request.abort();
+  }, [pathname, accessEvents.context]);
 
   const toggleNav = useCallback(() => {
     setNavCollapsed((c) => {
@@ -75,6 +83,8 @@ export function PortalShell({ children }: { children: ReactNode }) {
       return !o;
     });
   }, []);
+
+  if (accessEvents.blocked) return null;
 
   return (
     // No opaque background on the shell itself: the body carries the ground and
@@ -107,7 +117,10 @@ export function PortalShell({ children }: { children: ReactNode }) {
             gap-md 是页面段落的纵向节奏,沿用原值。内衬/行宽/底部安全区全部
             来自 ShellPageContainer(px-page-inset / pt-page-inset / pb-6xl +
             封顶 wide-2xl),不再手搓。 */}
-        <ShellPageContainer className="@container gap-md">{children}</ShellPageContainer>
+        <ShellPageContainer className="@container gap-md">
+          {accessEvents.recovering && <p role="status" className="text-sm text-muted-foreground">{locale === "en-US" ? "Connection interrupted. Reconnecting..." : "\u8fde\u63a5\u6682\u65f6\u4e2d\u65ad\uff0c\u6b63\u5728\u6062\u590d\u2026"}</p>}
+          <div key={accessEvents.context} className="contents">{children}</div>
+        </ShellPageContainer>
       </ShellViewport>
     </div>
   );
