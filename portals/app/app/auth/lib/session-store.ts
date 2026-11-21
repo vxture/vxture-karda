@@ -83,11 +83,13 @@ export async function getSession(cid: string, rpsid: string): Promise<RpSession 
 export async function deleteSession(cid: string, rpsid: string): Promise<void> {
   const r = redis();
   const raw = await r.get(k.sess(cid, rpsid));
+  // Delete authority before removing the retry index. Failure leaves either a
+  // live indexed session or a harmless indexed tombstone for a later retry.
+  await r.del(k.sess(cid, rpsid));
   if (raw) {
     const sess = JSON.parse(raw) as RpSession;
     if (sess.sid) await r.srem(k.sididx(cid, sess.sid), rpsid);
   }
-  await r.del(k.sess(cid, rpsid));
 }
 
 export async function sessionsForSid(cid: string, sid: string): Promise<string[]> {

@@ -5,6 +5,7 @@ import { deleteSession } from "../lib/session-store";
 import { clearCookieOptions } from "../lib/cookie";
 import { randomToken } from "../lib/pkce";
 import { devLoginEnabled, DEV_LOGIN_COOKIE } from "../lib/dev-login";
+import { endSessionUrl } from "../lib/logout";
 
 // POST /auth/logout (080-rp section 2.2): destroy the local RP session + clear
 // the cookie, then 302 to the IdP end_session endpoint to trigger global logout.
@@ -25,13 +26,7 @@ export async function POST(): Promise<Response> {
   const rpsid = jar.get(cfg.cookieName)?.value;
   if (rpsid) await deleteSession(cfg.clientId, rpsid).catch(() => {});
 
-  const endSession = new URL(cfg.endSessionUrl);
-  if (cfg.postLogoutRedirectUri) {
-    endSession.searchParams.set("post_logout_redirect_uri", cfg.postLogoutRedirectUri);
-  }
-  endSession.searchParams.set("state", randomToken(16));
-
-  const res = NextResponse.redirect(endSession.toString());
+  const res = NextResponse.redirect(endSessionUrl(cfg, randomToken(16)));
   res.cookies.set(cfg.cookieName, "", clearCookieOptions(cfg));
   return res;
 }
