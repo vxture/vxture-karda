@@ -10,7 +10,7 @@ AI credits remain centrally judged; this work adds no local AI balance gate.
 | Increment | Mutation scope | State |
 | --- | --- | --- |
 | P8.3a | Knowledge library creation, browser and Agent | Merged PR221 / f8b3788; all gates passed; not deployed |
-| P8.3b | Documents/entries and connector bindings, including reactivation | Implemented; local869 tests passed; CI pending; not deployed |
+| P8.3b | Documents/entries and connector bindings, including reactivation | Merged PR223 / b57426a; all gates passed; not deployed |
 | P8.3c | Stored bytes, upload reservation, failure recovery and deletion lifecycle | Pending |
 
 ## P8.3a: library count
@@ -120,3 +120,6 @@ BEFORE document insertion; capacity rejection may leave an unreferenced object.
 This increment enforces row counts only. Byte reservations and reference-aware
 cleanup must be completed before release/real upload acceptance; never blindly
 delete a content-addressed object on rejection, since a live record may share it.
+
+P8.3b merge evidence: PR223 / b57426a; CI44951664609 and secret scan44951664551
+passed all required gates. Runtime release remains v0.11.1.
