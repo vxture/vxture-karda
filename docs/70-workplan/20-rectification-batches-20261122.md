@@ -10,8 +10,8 @@
 | P1 | Accounts 会话正确性：刷新互斥、防复活、状态检查兜底、故障语义 | **实现及 CI 验证完成，未部署** | [PR208](https://github.com/vxture/vxture-karda/pull/208) 跟踪合入；815 项测试含真实 Redis 无跳过，生产/真实 Accounts 验收仍待执行 |
 | P2 | S2S、C2 准入及额度池 | **已合入，未部署** | [PR209](https://github.com/vxture/vxture-karda/pull/209) / d342a2a；822 项测试及全部必需 CI 通过；真实平台验收待 P9 |
 | P3 | 生命周期、通知与配置对账 | **已合入，未部署** | [PR210](https://github.com/vxture/vxture-karda/pull/210) / 0e4f643；837 项含真实 PostgreSQL 测试、全部 CI 通过；需先 db-init 0010 |
-| P4 | C3 持久用量与自动排空 | **实现及本地验证完成，CI 待执行；未部署** | receipt 校验、幂等、自动 worker、失败留存；真实业务产生的用量可自动抵达平台，拒绝伪造用量 |
-| P5 | Atlas 现行契约与知识链路 | 待开始，依赖 P2 | 接现行契约快照及 issue206；加工/embedding/检索/重排/问答错误与重试语义；合法样本及 token 归属验证，保留既有功能 |
+| P4 | C3 持久用量与自动排空 | **已合入，未部署** | [PR211](https://github.com/vxture/vxture-karda/pull/211) / bf948da；841 项测试和全部 CI 通过；需先 db-init 0011；真实 C3 待 P9 |
+| P5 | Atlas 现行契约与知识链路 | **契约及错误语义实现，本地验证完成；未部署** | 接现行契约快照及 issue206；加工/embedding/检索/重排/问答错误与重试语义；合法样本及 token 归属验证，保留既有功能 |
 | P6 | Karda 独立页面设计与入口实施 | 待开始，可与契约核查交错 | CoSpace v1.3.1；Logo/背景/登录预览与各状态；确认后冻结，再接真实动作；保留 Ruyin/版权及既有 ShellViewport/导航决策 |
 | P7 | 浏览器消息同步 | 待开始，依赖 P1/P3及通知覆盖核实 | 参考 Arda ADR-014：可靠事件、共享缓存版本、SSE/断线恢复；正常 tab 切换零权限查询；不引入定时权限轮询 |
 | P8 | 成本、套餐与产品配置 | 待开始，可先盘点历史决策 | 整包成本和贡献率、公开关键指标、内部额度映射；用户确认后发布套餐/域名/终端配置，不复制 Arda 参数 |
@@ -68,6 +68,14 @@ P3.2：独立 provisioning:read 票据、启动及每 5 分钟后台全量分页
 文档/条目创建与 karda.ingest outbox 同事务；后续工具重放同 key 不重复计量，冲突 key 拒绝。报告 intent=report，只按有效 200 receipt 确认，409 和畸形成功保留；确认存储失败以原 key 重试。自动 worker 启动 2 秒后、每 30 秒最多 50 条，持久退避与失败摘要，最多 10 次自动尝试后保留并报告运维错误。生产缺配置或 DB 不回落内存。
 
 本地 841 项通过、无跳过，含真实 Redis/PostgreSQL、内容与用量原子回滚、幂等冲突、退避持久化、回执后确认失败恢复。TypeScript、数据结构守卫通过。部署前需 db-init 0010/0011；未执行线上 DDL、付费调用或生产计量。细节与恢复规则见 280-durable-usage。
+
+## P5 当前记录
+
+从 Atlas main 的 contract/atlas-contract.json 更新 43 → 59 错误码，指纹 c1-ccd1b2cb48f8（仓库发布快照来源，线上指纹仍需验收）。覆盖 issue206 的 UPSTREAM_ACCOUNT_REFUSED：加工/提取驻留，面向管理员显示上游服务账户不可用，不误导去给产品授权；RATE_LIMITED 保留 retryable 语义。
+
+共享 /v1 调用验证工作空间上下文、禁止替代路径/重定向，并设 120 秒上限；无范围不换票。重排拒绝非整数/重复索引与非有限分数，避免污染排序。示例配置更新为现有产品 endpoint 授权轴，移除已不用的 TASK_PROFILE 设置；不代授 Atlas 能力、不发付费请求。
+
+本地 845 项测试通过、无跳过，含加工/提取错误、真实 Redis/PostgreSQL，契约守卫与 TypeScript 通过。CI 及实际知识加工/检索/重排/问答、真实 token 计量归属待后续候选验收。产品外观与订阅参数未混入该批。
 
 ## 跟踪规则
 

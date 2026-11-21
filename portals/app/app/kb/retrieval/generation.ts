@@ -85,7 +85,7 @@ export function getGenerationClient(): GenerationClient | null {
 /**
  * How karda.ask picks a model on Atlas: grant-driven (KD-018, superseding the
  * KD-109 env-pin default). The fixed `chat/default` endpoint routes via the
- * tenant's grants; ATLAS_ASK_TASK_PROFILE / ATLAS_ASK_MODEL remain break-glass
+ * product endpoint grants; ATLAS_ASK_ENDPOINT / ATLAS_ASK_MODEL remain break-glass
  * overrides. Exactly one field is emitted (Atlas requires one selector; they
  * are alternatives).
  */

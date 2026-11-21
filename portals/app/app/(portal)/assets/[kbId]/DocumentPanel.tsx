@@ -528,6 +528,7 @@ const BLOCKER_KEY = {
   workspace_not_provisioned: "blockerWorkspaceNotProvisioned",
   endpoint_not_granted: "blockerEndpointNotGranted",
   model_not_routable: "blockerModelNotRoutable",
+  upstream_account_refused: "blockerUpstreamAccountRefused",
 } as const satisfies Record<UnavailableCause, keyof typeof states>;
 
 /** 这一份有没有话要说。空的展开区比没有展开区更糟:箭头在,点开是空的。 */

@@ -62,3 +62,23 @@ test("taskIdOr threads a caller id, clamps to 128, and falls back", () => {
   assert.equal(taskIdOr("   ", "fb"), "fb");
   assert.equal(taskIdOr(42, "fb"), "fb");
 });
+
+test("Atlas requests are bounded and refuse alternate paths and missing tenant scope", async () => {
+  let calls = 0;
+  const fetchImpl = (async (_url, init) => {
+    calls++; assert.equal(init?.redirect, "error"); assert.ok(init?.signal);
+    return Response.json({ content: "ok" });
+  }) as typeof fetch;
+  const core = { baseUrl: "https://atlas.example.test", tokenSource, fetchImpl };
+  await atlasPost(core, "/v1/chat", { org: "o", ws: "w" }, { taskId: "t" });
+  assert.equal(calls, 1);
+  await assert.rejects(atlasPost(core, "//elsewhere", { org: "o", ws: "w" }, {}));
+  await assert.rejects(atlasPost(core, "/v1/chat", { org: "o", ws: "" }, {}));
+  assert.equal(calls, 1);
+});
+test("retry delay rejects invalid values and body retryability wins over HTTP status", () => {
+  assert.equal(toAtlasError(503, { code: "UPSTREAM_ACCOUNT_REFUSED", retryable: false }).retryable, false);
+  for (const retryAfterMs of [Infinity, -1, NaN]) {
+    assert.equal(toAtlasError(429, { code: "RATE_LIMITED", retryable: true, retryAfterMs }).retryAfterMs, null);
+  }
+});

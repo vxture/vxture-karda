@@ -104,3 +104,11 @@ test("an Atlas failure throws - the chain's degrade contract turns it into RRF o
     (e: unknown) => (e as { code?: string }).code === "PROVIDER_UNAVAILABLE",
   );
 });
+
+test("malformed rerank scores cannot contaminate retrieval ordering", () => {
+  for (const results of [[{ index: 0.5, score: 1 }], [{ index: 0, score: Infinity }],
+    [{ index: 0, score: 1 }, { index: 0, score: 0 }]]) {
+    assert.equal(extractScores({ results }, 2), null);
+  }
+  assert.equal(extractScores({ scores: [NaN, 1] }, 2), null);
+});

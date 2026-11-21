@@ -100,11 +100,11 @@ test("askModelSelection: grant-routed by default (chat/default); env pins are br
   }
 });
 
-test("a missing workspaceId mints for the empty-ws context (does not throw)", async () => {
+test("a missing workspaceId is rejected before minting any service ticket", async () => {
   const { cfg, seen } = makeCfg();
   const { fetch: f } = fakeFetch(200, { content: "x" });
-  await new AtlasA4Client(cfg, f).chat({ ...req, workspaceId: undefined });
-  assert.deepEqual(seen, [{ org: "org1", ws: "" }]);
+  await assert.rejects(new AtlasA4Client(cfg, f).chat({ ...req, workspaceId: undefined }), /context_required/);
+  assert.deepEqual(seen, []);
 });
 
 test("a non-2xx status throws, and a 2xx with no content throws", async () => {

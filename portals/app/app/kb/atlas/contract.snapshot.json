@@ -1,4 +1,5 @@
 {
+  "fingerprint": "c1-ccd1b2cb48f8",
   "errorCodes": [
     {
       "code": "APPLICATION_ID_REQUIRED",
@@ -29,7 +30,23 @@
       "retryable": false
     },
     {
+      "code": "CHAT_THINKING_INVALID",
+      "retryable": false
+    },
+    {
+      "code": "CHAT_TIMEOUT_INVALID",
+      "retryable": false
+    },
+    {
       "code": "CLIENT_ABORTED",
+      "retryable": false
+    },
+    {
+      "code": "CONTEXT_LENGTH_EXCEEDED",
+      "retryable": false
+    },
+    {
+      "code": "DEADLINE_EXCEEDED",
       "retryable": false
     },
     {
@@ -42,6 +59,26 @@
     },
     {
       "code": "ENDPOINT_NOT_ROUTABLE",
+      "retryable": false
+    },
+    {
+      "code": "HEALTH_TOKEN_INVALID",
+      "retryable": false
+    },
+    {
+      "code": "HEALTH_TOKEN_INVALID_MODE",
+      "retryable": false
+    },
+    {
+      "code": "HEALTH_TOKEN_MISSING",
+      "retryable": false
+    },
+    {
+      "code": "HEALTH_TOKEN_MISSING_ACT",
+      "retryable": false
+    },
+    {
+      "code": "HEALTH_TOKEN_WRONG_SCOPE",
       "retryable": false
     },
     {
@@ -73,6 +110,10 @@
       "retryable": false
     },
     {
+      "code": "OUTPUT_BUDGET_EXHAUSTED",
+      "retryable": false
+    },
+    {
       "code": "PARSE_PAGES_INVALID",
       "retryable": false
     },
@@ -89,6 +130,10 @@
       "retryable": false
     },
     {
+      "code": "PAYLOAD_TOO_LARGE",
+      "retryable": false
+    },
+    {
       "code": "PROVIDER_UNAVAILABLE",
       "retryable": true
     },
@@ -99,6 +144,10 @@
     {
       "code": "RATE_LIMITED",
       "retryable": true
+    },
+    {
+      "code": "REQUEST_BODY_MALFORMED",
+      "retryable": false
     },
     {
       "code": "RERANK_CANDIDATES_INVALID",
@@ -157,12 +206,28 @@
       "retryable": false
     },
     {
+      "code": "THINKING_MODE_UNSUPPORTED",
+      "retryable": false
+    },
+    {
+      "code": "TOOL_CALLING_UNSUPPORTED",
+      "retryable": false
+    },
+    {
       "code": "UNKNOWN_FILTER",
+      "retryable": false
+    },
+    {
+      "code": "UPSTREAM_ACCOUNT_REFUSED",
       "retryable": false
     },
     {
       "code": "UPSTREAM_FRAME_UNPARSEABLE",
       "retryable": true
+    },
+    {
+      "code": "UPSTREAM_REJECTED_REQUEST",
+      "retryable": false
     },
     {
       "code": "USAGE_TYPE_INVALID",
@@ -173,168 +238,167 @@
       "retryable": false
     }
   ],
-  "fingerprint": "c1-d2ecccf5b20d",
   "requests": {
     "/v1/chat": [
       {
-        "code": "TASK_ID_REQUIRED",
+        "kind": "always",
         "fields": [
           "taskId"
         ],
-        "kind": "always"
+        "code": "TASK_ID_REQUIRED"
       },
       {
-        "code": "TENANT_ID_REQUIRED",
+        "kind": "always",
         "fields": [
           "tenantId"
         ],
-        "kind": "always"
+        "code": "TENANT_ID_REQUIRED"
       },
       {
-        "code": "TARGET_SELECTOR_REQUIRED",
+        "kind": "oneOf",
         "fields": [
           "modelCode",
           "endpointCode",
           "taskProfile"
         ],
-        "kind": "oneOf"
+        "code": "TARGET_SELECTOR_REQUIRED"
       },
       {
-        "code": "CHAT_MESSAGES_REQUIRED",
+        "kind": "always",
         "fields": [
           "messages"
         ],
-        "kind": "always"
+        "code": "CHAT_MESSAGES_REQUIRED"
       },
       {
-        "code": "APPLICATION_TYPE_REQUIRED",
+        "kind": "requiredWith",
         "fields": [
           "applicationType"
         ],
         "given": [
           "applicationId"
         ],
-        "kind": "requiredWith"
+        "code": "APPLICATION_TYPE_REQUIRED"
       },
       {
-        "code": "APPLICATION_ID_REQUIRED",
+        "kind": "requiredWith",
         "fields": [
           "applicationId"
         ],
         "given": [
           "applicationId"
         ],
-        "kind": "requiredWith"
+        "code": "APPLICATION_ID_REQUIRED"
       }
     ],
     "/v1/embed": [
       {
-        "code": "TASK_ID_REQUIRED",
+        "kind": "always",
         "fields": [
           "taskId"
         ],
-        "kind": "always"
+        "code": "TASK_ID_REQUIRED"
       },
       {
-        "code": "WORKSPACE_ID_REQUIRED",
+        "kind": "always",
         "fields": [
           "workspaceId"
         ],
-        "kind": "always"
+        "code": "WORKSPACE_ID_REQUIRED"
       },
       {
-        "code": "TARGET_SELECTOR_REQUIRED",
+        "kind": "oneOf",
         "fields": [
           "modelCode",
           "endpointCode",
           "taskProfile"
         ],
-        "kind": "oneOf"
+        "code": "TARGET_SELECTOR_REQUIRED"
       },
       {
-        "code": "EMBED_TEXTS_REQUIRED",
+        "kind": "always",
         "fields": [
           "texts"
         ],
-        "kind": "always"
-      }
-    ],
-    "/v1/parse": [
-      {
-        "code": "TASK_ID_REQUIRED",
-        "fields": [
-          "taskId"
-        ],
-        "kind": "always"
-      },
-      {
-        "code": "WORKSPACE_ID_REQUIRED",
-        "fields": [
-          "workspaceId"
-        ],
-        "kind": "always"
-      },
-      {
-        "code": "TARGET_SELECTOR_REQUIRED",
-        "fields": [
-          "modelCode",
-          "endpointCode",
-          "taskProfile"
-        ],
-        "kind": "oneOf"
-      },
-      {
-        "code": "PARSE_TASK_REQUIRED",
-        "fields": [
-          "task"
-        ],
-        "kind": "always"
-      },
-      {
-        "code": "PARSE_PAGES_REQUIRED",
-        "fields": [
-          "pages"
-        ],
-        "kind": "always"
+        "code": "EMBED_TEXTS_REQUIRED"
       }
     ],
     "/v1/rerank": [
       {
-        "code": "TASK_ID_REQUIRED",
+        "kind": "always",
         "fields": [
           "taskId"
         ],
-        "kind": "always"
+        "code": "TASK_ID_REQUIRED"
       },
       {
-        "code": "WORKSPACE_ID_REQUIRED",
+        "kind": "always",
         "fields": [
           "workspaceId"
         ],
-        "kind": "always"
+        "code": "WORKSPACE_ID_REQUIRED"
       },
       {
-        "code": "TARGET_SELECTOR_REQUIRED",
+        "kind": "oneOf",
         "fields": [
           "modelCode",
           "endpointCode",
           "taskProfile"
         ],
-        "kind": "oneOf"
+        "code": "TARGET_SELECTOR_REQUIRED"
       },
       {
-        "code": "RERANK_QUERY_REQUIRED",
+        "kind": "always",
         "fields": [
           "query"
         ],
-        "kind": "always"
+        "code": "RERANK_QUERY_REQUIRED"
       },
       {
-        "code": "RERANK_CANDIDATES_REQUIRED",
+        "kind": "always",
         "fields": [
           "candidates"
         ],
-        "kind": "always"
+        "code": "RERANK_CANDIDATES_REQUIRED"
+      }
+    ],
+    "/v1/parse": [
+      {
+        "kind": "always",
+        "fields": [
+          "taskId"
+        ],
+        "code": "TASK_ID_REQUIRED"
+      },
+      {
+        "kind": "always",
+        "fields": [
+          "workspaceId"
+        ],
+        "code": "WORKSPACE_ID_REQUIRED"
+      },
+      {
+        "kind": "oneOf",
+        "fields": [
+          "modelCode",
+          "endpointCode",
+          "taskProfile"
+        ],
+        "code": "TARGET_SELECTOR_REQUIRED"
+      },
+      {
+        "kind": "always",
+        "fields": [
+          "task"
+        ],
+        "code": "PARSE_TASK_REQUIRED"
+      },
+      {
+        "kind": "always",
+        "fields": [
+          "pages"
+        ],
+        "code": "PARSE_PAGES_REQUIRED"
       }
     ]
   }
