@@ -28,3 +28,13 @@ test("rejects a missing idempotency key or non-positive amount", async () => {
     recordUsage({ workspaceId: "ws", metric: "m", amount: 0, idempotencyKey: "k" }, store),
   );
 });
+
+test("non-integer usage and idempotency payload conflicts are rejected", async () => {
+  const store = new InMemoryUsageStore();
+  const row = { workspaceId: "w", metric: "karda.ingest", amount: 1, idempotencyKey: "one" };
+  for (const amount of [Infinity, NaN, 1.5, Number.MAX_SAFE_INTEGER + 1]) await assert.rejects(recordUsage({ ...row, amount }, store));
+  await recordUsage(row, store);
+  for (const change of [{ workspaceId: "other" }, { metric: "other" }, { amount: 2 }]) {
+    await assert.rejects(recordUsage({ ...row, ...change }, store), /idempotency_conflict/);
+  }
+});

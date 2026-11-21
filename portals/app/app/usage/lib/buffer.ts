@@ -17,7 +17,7 @@ export async function recordUsage(
   store: UsageStore = getUsageStore(),
 ): Promise<void> {
   if (!event.idempotencyKey) throw new Error("idempotency_key is required");
-  if (!(event.amount > 0)) throw new Error("amount must be positive");
+  if (!Number.isSafeInteger(event.amount) || !(event.amount > 0)) throw new Error("amount must be positive");
   await store.record({
     workspaceId: event.workspaceId,
     metric: event.metric,

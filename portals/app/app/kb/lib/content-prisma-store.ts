@@ -101,8 +101,8 @@ export class PrismaContentStore implements ContentStore {
 
   async createDocument(input: CreateDocumentInput): Promise<DocumentRow> {
     const p = await getPrismaClient();
-    return toDoc(
-      await p.document.create({
+    return p.$transaction(async tx => {
+      const row = await tx.document.create({
         data: {
           kbId: input.kbId,
           folderId: input.folderId ?? null,
@@ -117,8 +117,12 @@ export class PrismaContentStore implements ContentStore {
           createdInProduct: input.createdInProduct ?? null,
           createdBy: input.createdBy ?? null,
         },
-      }),
-    );
+      });
+      const kb = await tx.knowledgeBase.findUniqueOrThrow({ where: { id: input.kbId }, select: { workspaceId: true } });
+      await tx.raw.create({ data: { workspaceId: kb.workspaceId, metric: "karda.ingest", amount: 1n,
+        idempotencyKey: `karda.ingest:${row.id}` } });
+      return toDoc(row);
+    });
   }
   async getDocument(id: string): Promise<DocumentRow | null> {
     const p = await getPrismaClient();
@@ -200,8 +204,8 @@ export class PrismaContentStore implements ContentStore {
 
   async createEntry(input: CreateEntryInput): Promise<EntryRow> {
     const p = await getPrismaClient();
-    return toEntry(
-      await p.entry.create({
+    return p.$transaction(async tx => {
+      const row = await tx.entry.create({
         data: {
           kbId: input.kbId,
           folderId: input.folderId ?? null,
@@ -212,8 +216,12 @@ export class PrismaContentStore implements ContentStore {
           createdInProduct: input.createdInProduct ?? null,
           createdBy: input.createdBy ?? null,
         },
-      }),
-    );
+      });
+      const kb = await tx.knowledgeBase.findUniqueOrThrow({ where: { id: input.kbId }, select: { workspaceId: true } });
+      await tx.raw.create({ data: { workspaceId: kb.workspaceId, metric: "karda.ingest", amount: 1n,
+        idempotencyKey: `karda.ingest:${row.id}` } });
+      return toEntry(row);
+    });
   }
   async getEntry(id: string): Promise<EntryRow | null> {
     const p = await getPrismaClient();

@@ -9,8 +9,8 @@
 | P0 | 当前版本及接口盘点；退出最小修正；依赖审计修复 | **已合入，未部署** | PR207 / ecc382d；805 项本地测试及最终 CI 通过；线上仍 v0.10.3 |
 | P1 | Accounts 会话正确性：刷新互斥、防复活、状态检查兜底、故障语义 | **实现及 CI 验证完成，未部署** | [PR208](https://github.com/vxture/vxture-karda/pull/208) 跟踪合入；815 项测试含真实 Redis 无跳过，生产/真实 Accounts 验收仍待执行 |
 | P2 | S2S、C2 准入及额度池 | **已合入，未部署** | [PR209](https://github.com/vxture/vxture-karda/pull/209) / d342a2a；822 项测试及全部必需 CI 通过；真实平台验收待 P9 |
-| P3 | 生命周期、通知与配置对账 | **实现及本地验证完成，CI 待执行；未部署** | 签名载荷绑定、无版本通知分离、事务串行/幂等、水位、ACK 重试及产品级读对账；真实 DB 回归、环境隔离 |
-| P4 | C3 持久用量与自动排空 | 待开始，依赖 P2 | receipt 校验、幂等、自动 worker、失败留存；真实业务产生的用量可自动抵达平台，拒绝伪造用量 |
+| P3 | 生命周期、通知与配置对账 | **已合入，未部署** | [PR210](https://github.com/vxture/vxture-karda/pull/210) / 0e4f643；837 项含真实 PostgreSQL 测试、全部 CI 通过；需先 db-init 0010 |
+| P4 | C3 持久用量与自动排空 | **实现及本地验证完成，CI 待执行；未部署** | receipt 校验、幂等、自动 worker、失败留存；真实业务产生的用量可自动抵达平台，拒绝伪造用量 |
 | P5 | Atlas 现行契约与知识链路 | 待开始，依赖 P2 | 接现行契约快照及 issue206；加工/embedding/检索/重排/问答错误与重试语义；合法样本及 token 归属验证，保留既有功能 |
 | P6 | Karda 独立页面设计与入口实施 | 待开始，可与契约核查交错 | CoSpace v1.3.1；Logo/背景/登录预览与各状态；确认后冻结，再接真实动作；保留 Ruyin/版权及既有 ShellViewport/导航决策 |
 | P7 | 浏览器消息同步 | 待开始，依赖 P1/P3及通知覆盖核实 | 参考 Arda ADR-014：可靠事件、共享缓存版本、SSE/断线恢复；正常 tab 切换零权限查询；不引入定时权限轮询 |
@@ -62,6 +62,12 @@ P3.2：独立 provisioning:read 票据、启动及每 5 分钟后台全量分页
 本地 837 项测试通过、无跳过，含真实 Redis 与 PostgreSQL 服务角色：并发投递只执行一次、事务回滚、版本乱序、通知不动水位、载荷冲突、旧快照不复活已停用空间、不可改写租户引用。TypeScript、DDL/Prisma/权限和工作流守卫通过。CI 增加隔离 PostgreSQL，以受控 DDL 初始化后运行相同测试。
 
 平台 ACK 的在途旧版本竞态继续归 [issue720](https://github.com/vxture-platform/vxture-platform/issues/720)，本仓发送 detail.seq 不能替代平台原子版本校验。环境隔离已发送 [平台 issue724](https://github.com/vxture-platform/vxture-platform/issues/724)，不修改平台仓。多实例缓存失效仍属 P7。未执行现网 DDL、平台写配置或部署，不能把本地通过当成线上验收。
+
+## P4 当前记录
+
+文档/条目创建与 karda.ingest outbox 同事务；后续工具重放同 key 不重复计量，冲突 key 拒绝。报告 intent=report，只按有效 200 receipt 确认，409 和畸形成功保留；确认存储失败以原 key 重试。自动 worker 启动 2 秒后、每 30 秒最多 50 条，持久退避与失败摘要，最多 10 次自动尝试后保留并报告运维错误。生产缺配置或 DB 不回落内存。
+
+本地 841 项通过、无跳过，含真实 Redis/PostgreSQL、内容与用量原子回滚、幂等冲突、退避持久化、回执后确认失败恢复。TypeScript、数据结构守卫通过。部署前需 db-init 0010/0011；未执行线上 DDL、付费调用或生产计量。细节与恢复规则见 280-durable-usage。
 
 ## 跟踪规则
 

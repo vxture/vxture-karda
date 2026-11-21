@@ -34,7 +34,7 @@ REVOKE UPDATE ON local_authz.role_permission FROM karda_svc;
 -- --- local_usage ---
 -- raw: the flush job flips `flushed`; nothing else is mutable.
 REVOKE UPDATE ON local_usage.raw FROM karda_svc;
-GRANT UPDATE (flushed) ON local_usage.raw TO karda_svc;
+GRANT UPDATE (flushed, attempts, next_attempt_at, last_error, flushed_at) ON local_usage.raw TO karda_svc;
 
 REVOKE UPDATE ON local_usage.checkpoint FROM karda_svc;
 GRANT UPDATE (flushed_at) ON local_usage.checkpoint TO karda_svc;

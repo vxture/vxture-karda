@@ -12,17 +12,17 @@ async function seeded(): Promise<InMemoryUsageStore> {
 
 test("200 marks rows flushed", async () => {
   const store = await seeded();
-  const summary = await flushUsage({ store, consume: async () => ({ status: 200 }) });
+  const summary = await flushUsage({ store, consume: async () => ({ status: 200, body: { consumed: 1, remaining_total: 10 } }) });
   assert.equal(summary.flushed, 2);
   assert.equal((await store.unflushed(10)).length, 0);
 });
 
-test("409 (gated) is terminal - flushed, not retried, and evicts C2", async () => {
+test("acknowledged report with gated=true is terminal and evicts C2", async () => {
   const store = await seeded();
   const evicted: string[] = [];
   const summary = await flushUsage({
     store,
-    consume: async () => ({ status: 409 }),
+    consume: async () => ({ status: 200, body: { consumed: 0, remaining_total: -2, gated: true } }),
     onGated: (ws) => evicted.push(ws),
   });
   assert.equal(summary.gated, 2);
@@ -47,4 +47,25 @@ test("a thrown consume error leaves rows buffered", async () => {
   });
   assert.equal(summary.retried, 2);
   assert.equal((await store.unflushed(10)).length, 2);
+});
+
+test("200 without valid receipt and every 409 retain durable usage", async () => {
+  for (const result of [{ status: 409 }, { status: 200 }, { status: 200, body: {} },
+    { status: 200, body: { consumed: NaN, remaining_total: 0 } },
+    { status: 200, body: { consumed: 1, remaining_total: 0, gated: "false" } }]) {
+    const store = await seeded();
+    assert.equal((await flushUsage({ store, consume: async () => result })).retried, 2);
+    assert.equal((await store.unflushed(10)).length, 2);
+  }
+});
+test("a crash after remote receipt retries the original idempotency key", async () => {
+  const store = await seeded(); let fail = true;
+  const save = store.markFlushed.bind(store);
+  store.markFlushed = async keys => { if (fail) throw new Error("database unavailable"); return save(keys); };
+  const keys: string[] = [];
+  const consume = async (row: { idempotencyKey: string }) => { keys.push(row.idempotencyKey);
+    return { status: 200, body: { consumed: 1, remaining_total: 10, event_id: "receipt" } }; };
+  await assert.rejects(flushUsage({ store, consume })); fail = false;
+  await flushUsage({ store, consume });
+  assert.deepEqual(keys, ["k1", "k1", "k2"]);
 });

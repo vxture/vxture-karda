@@ -66,3 +66,6 @@ comment in `98` so the whitelist still documents the column as writable.
   tenant scope recovery anchors. No runtime DDL; no tenant_id UPDATE grant.
   Apply via db-init before deploying the P3 consumer. Authority:
   `docs/30-design/270-platform-lifecycle.md`.
+
+- `0011_usage_retry.sql` - durable usage retry state and receipt confirmation time.
+  Apply via db-init before the P4 consumer; see `280-durable-usage`.
