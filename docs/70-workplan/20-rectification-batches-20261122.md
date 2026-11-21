@@ -117,3 +117,14 @@ P8.1 已以 PR216 / 5c4a97f 合入，全部必需 CI 通过。发布前发现 P7
 P7.1 本地 856 项测试通过、无跳过，TypeScript 与严格文档编号检查通过。正式 CI 随独立补批执行。
 
 Deployment verification also now requires both /api/health and /api/ready, each with a bounded request timeout. Liveness alone cannot pass the rollout gate.
+
+
+## P8.2 正式域名配置收口
+
+用户明确目标 karda.ruyin.work，仅保留该域名、不加旧域名跳转。回查 Arda 交付记录后，本仓新增受版本管理的非密钥生产 profile，Compose 在持久 secrets 后加载，deploy.sh 指定交付路径；不改平台变量、不复制 Arda 内部地址或凭据。同步正式示例/清单，撤销手工 nginx 安装指引。回调使用本仓真实 /auth/callback，修复 appOrigin 对回调别名的回退解析。
+
+运维保存新域名七项配置返回500，刷新和根页面也500；尚无法证明全部保存或回滚，已发送平台 issue727。DNS 已有 Cloudflare 代理记录，新域名普通 health403，不声称接入完成。
+
+P9：PR217/main CI 已通过，受审 db-init44941098583 成功应用0010/11/12并断言37表；v0.11.0 发布44941363441已在应用部署前取消，不移动该标签。现网仍 v0.10.3。下一个候选须包含本次域名 profile 并通过 CI/人工生产门禁。
+
+Domain-profile validation: all858 tests passed, zero skips; TypeScript passed. Actual docker compose config verified repository and delivered layouts both override old origins while retaining dummy operator secret/DB values. Bash syntax passed; platform config save remains unverified due issue727.

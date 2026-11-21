@@ -31,6 +31,10 @@ services:
     env_file:
       - path: ${APP_ENV_FILE:-.env}
         required: false
+      # Public origin settings are versioned separately from persistent secrets.
+      # deploy.sh selects the delivered path; local compose uses the repo path.
+      - path: ${INTEGRATION_ENV_FILE:-./deploy/config/integration-production.env}
+        required: true
     environment:
       NODE_ENV: production
       # R3 (port registry): local dev port = in-code fallback = the IN-CONTAINER

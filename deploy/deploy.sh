@@ -46,6 +46,7 @@ compose() {
   PROJECT_NAME="$PROJECT_NAME" \
   DATA_DIR="$DATA_DIR" \
   APP_ENV_FILE="$ENV_FILE" \
+  INTEGRATION_ENV_FILE="$DEPLOY_DIR/config/integration-production.env" \
   IMAGE_REGISTRY="${IMAGE_REGISTRY:-ghcr.io}" \
   IMAGE_NAMESPACE="${IMAGE_NAMESPACE:-vxture}" \
   IMAGE_TAG="${IMAGE_TAG:-latest}" \
@@ -55,6 +56,7 @@ compose() {
 cmd_environment() {
   test -f "$ENV_FILE" || { log "missing $ENV_FILE"; exit 1; }
   test -f "$COMPOSE_FILE" || { log "missing $COMPOSE_FILE"; exit 1; }
+  test -f "$DEPLOY_DIR/config/integration-production.env" || { log "missing reviewed integration profile"; exit 1; }
   log "environment OK ($ROOT)"
 }
 

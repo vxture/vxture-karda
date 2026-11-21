@@ -5,6 +5,7 @@
 !.env.example
 !.env.local.example
 !deploy/env/*.env
+!deploy/config/integration-production.env
 .env.bak.*
 .npmrc
 # The .npmrc only declares the @vxture GitHub Packages registry and references
