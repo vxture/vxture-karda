@@ -133,3 +133,5 @@ implemented capabilities, current seat key and non-successful 409 receipts.
 ## Release preflight follow-up P7.1
 
 PR216 merged at 5c4a97f with all required gates green. Preflight found readiness still treated Redis as browser-only and degraded, despite shared service admission now requiring Redis versions. P7.1 makes Redis failure and missing deployed DB/Redis fail readiness (503), preserving offline omission and zero-dependency liveness. No deployment or live DDL has occurred yet.
+
+Deployment verification also now requires both /api/health and /api/ready, each with a bounded request timeout. Liveness alone cannot pass the rollout gate.

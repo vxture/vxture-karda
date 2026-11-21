@@ -115,3 +115,5 @@ P8.1 本地全量 854 项通过、无跳过，TypeScript 通过；正式 CI 随�
 P8.1 已以 PR216 / 5c4a97f 合入，全部必需 CI 通过。发布前发现 P7 后 Redis 已是服务准入共享版本的必要依赖，就绪度仍沿用旧降级判定。补正 Redis 故障和部署态缺 DB/Redis 为 fail/503，离线缺配置仍兼容；不改 liveness、不调用付费模型探测。生产仍未部署。
 
 P7.1 本地 856 项测试通过、无跳过，TypeScript 与严格文档编号检查通过。正式 CI 随独立补批执行。
+
+Deployment verification also now requires both /api/health and /api/ready, each with a bounded request timeout. Liveness alone cannot pass the rollout gate.
