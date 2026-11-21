@@ -13,7 +13,7 @@ import { Bm25Recaller } from "./bm25-recaller";
 import type { RecallCorpus, RecallTextResolver } from "./corpus";
 import type { VisibleSetResolver } from "./visible-set";
 import type { AttachmentStore } from "../attachments/store";
-import { recordUsage } from "../../usage/lib/buffer";
+import { recordDeliveredUsage } from "../../usage/lib/buffer";
 import type { CallerContext } from "../tools/s2s";
 import { retrievalAtlas, type RetrievalAtlas } from "../atlas/wiring";
 import { taskIdOr } from "../atlas/client";
@@ -84,15 +84,11 @@ export async function askTool(caller: CallerContext, args: Record<string, unknow
     contextK: typeof args.top_k === "number" && args.top_k > 0 ? args.top_k : 5,
   });
 
-  // Per-call metering (catalog: karda.ask -> per_call). Only a call that actually
-  // generated is billable; a no-context answer did not hit the model, so it is
-  // not metered. Best-effort.
+  // A no-context response does not generate and is not billable. A grounded
+  // result is delivered only after durable business usage; Atlas meters tokens.
   if (!result.noContext) {
-    try {
-      await recordUsage({ workspaceId: ws, metric: "karda.ask", amount: 1, idempotencyKey: `karda.ask:${randomUUID()}` });
-    } catch {
-      // swallow - metering is off the critical path.
-    }
+    await recordDeliveredUsage({ workspaceId: ws, metric: "karda.ask", amount: 1,
+      idempotencyKey: `karda.ask:${randomUUID()}` });
   }
 
   return {

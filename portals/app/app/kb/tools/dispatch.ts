@@ -1,3 +1,4 @@
+import { UsagePersistenceError } from "../../usage/lib/buffer";
 // Tool dispatch: given an authenticated caller and a tool name + args, enforce
 // the mode gate, then route. The gate runs BEFORE any backend check, so a
 // service-mode call to an OBO-only tool gets 403 access_denied whether or not
@@ -57,7 +58,16 @@ const accessDenied = (reason: string): DispatchResult => ({
   body: { error: "access_denied", detail: reason },
 });
 
-export async function dispatchTool(
+export async function dispatchTool(name: string, args: Record<string, unknown>,
+  caller: CallerContext, backends: ToolBackends): Promise<DispatchResult> {
+  try { return await dispatchUnchecked(name, args, caller, backends); }
+  catch (error) {
+    if (error instanceof UsagePersistenceError) return { status: 503, body: { error: "usage_unavailable" } };
+    throw error;
+  }
+}
+
+async function dispatchUnchecked(
   name: string,
   args: Record<string, unknown>,
   caller: CallerContext,

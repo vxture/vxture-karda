@@ -77,3 +77,21 @@ test("a grounded ask meters a per-call karda.ask; a no-context ask does not", as
     setUsageStore(null);
   }
 });
+
+
+test("query result is not delivered when durable metering fails", async () => {
+  class FailedStore extends InMemoryUsageStore {
+    override async record(): Promise<void> { throw new Error("private database details"); }
+  }
+  setUsageStore(new FailedStore());
+  try {
+    const gen = mockGen();
+    const { deps, attachments, corpus, kbId } = await fixture(gen);
+    await attachments.attach({ workspaceId: "ws1", userSub: "u1", productCode: "agent", kbId });
+    corpus.add({ id: "c1", kbId, kind: "chunk", text: "atlas", verificationState: "unverified" });
+    await assert.rejects(askTool(caller(), { question: "atlas" }, deps), /usage_persistence_unavailable/);
+    assert.equal(gen.calls.length, 1);
+    const noContext = await askTool(caller(), { question: "nomatchxyz" }, deps);
+    assert.equal(noContext.no_context, true, "no-context response needs no business receipt");
+  } finally { setUsageStore(null); }
+});

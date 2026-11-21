@@ -73,3 +73,15 @@ test("search meters a per-call karda.search event", async () => {
     setUsageStore(null);
   }
 });
+
+
+test("query result is not delivered when durable metering fails", async () => {
+  class FailedStore extends InMemoryUsageStore {
+    override async record(): Promise<void> { throw new Error("private database details"); }
+  }
+  setUsageStore(new FailedStore());
+  try {
+    const { deps } = await fixture();
+    await assert.rejects(searchTool(caller(), { query: "atlas" }, deps), /usage_persistence_unavailable/);
+  } finally { setUsageStore(null); }
+});
