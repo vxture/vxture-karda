@@ -40,3 +40,5 @@ the Prisma schema - `lint:data-design` is a hard gate on their lockstep.
 - `decisions/` - architecture decision records (`ADR-NNN`, append-only, stable
   IDs). Unnumbered by org mandate (taxonomy section 4 pins this path); it is one
   of the two named exceptions in the docs convention section 4.
+
+- `270-platform-lifecycle` - Karda 平台生命周期消费、本地不可改写引用及 ACK/对账边界。

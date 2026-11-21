@@ -25,15 +25,18 @@ export function parseSignatureHeader(header: string | null): ParsedSignature | n
     if (eq === -1) continue;
     const key = part.slice(0, eq).trim();
     const val = part.slice(eq + 1).trim();
-    if (key === "t") t = Number(val);
+    if (key === "t") {
+      if (t !== null || !/^\d+$/.test(val)) return null;
+      t = Number(val);
+    }
     else if (key === "v1") v1.push(val);
   }
-  if (t === null || !Number.isFinite(t) || v1.length === 0) return null;
+  if (t === null || !Number.isSafeInteger(t) || v1.length === 0) return null;
   return { t, v1 };
 }
 
 function hexEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
+  if (!/^[0-9a-f]{64}$/i.test(a) || !/^[0-9a-f]{64}$/i.test(b)) return false;
   try {
     return timingSafeEqual(Buffer.from(a, "hex"), Buffer.from(b, "hex"));
   } catch {

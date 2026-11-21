@@ -9,6 +9,8 @@ REVOKE UPDATE ON vx_provision.app_instance FROM karda_svc;
 GRANT UPDATE (status, env, provisioned_at, updated_at)
   ON vx_provision.app_instance TO karda_svc;
 
+REVOKE UPDATE, DELETE ON vx_provision.provision_anchor FROM karda_svc;
+
 -- webhook_delivery: append-only idempotency ledger -> no UPDATE.
 REVOKE UPDATE ON vx_provision.webhook_delivery FROM karda_svc;
 

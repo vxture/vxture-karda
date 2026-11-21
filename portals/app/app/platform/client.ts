@@ -4,7 +4,7 @@ import { getPlatformTicketSource, type PlatformContext } from "./ticket";
 /** Background jobs use signed-event/reconciliation anchors, never request-body org IDs. */
 export async function workspacePlatformContext(workspaceId: string): Promise<PlatformContext> {
   const { getPrismaClient } = await import("../lib/db");
-  const instance = await (await getPrismaClient()).appInstance.findUnique({
+  const instance = await (await getPrismaClient()).provisionAnchor.findUnique({
     where: { workspaceId_productCode: { workspaceId, productCode: "karda" } },
     select: { tenantId: true },
   });

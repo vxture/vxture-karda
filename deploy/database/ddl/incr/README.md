@@ -61,3 +61,8 @@ comment in `98` so the whitelist still documents the column as writable.
   `docs/30-design/240-ops-read-models.md`). Four brand-new tables, so BOTH the
   service-role grants and the column-lock whitelist travel with the increment.
   The two ledger tables get `SELECT, INSERT` only - no UPDATE and no DELETE.
+
+- `0010_provisioning_receipts.sql` - signed-payload fingerprints and immutable
+  tenant scope recovery anchors. No runtime DDL; no tenant_id UPDATE grant.
+  Apply via db-init before deploying the P3 consumer. Authority:
+  `docs/30-design/270-platform-lifecycle.md`.
