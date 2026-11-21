@@ -8,6 +8,7 @@ import type {
 import type { MetadataFieldDecl } from "./metadata";
 import type { OwnerType, PublishState } from "./ownership";
 import { getPrismaClient } from "../../lib/db";
+import { createWithinLibraryCapacity, type CapacityLimitSource } from "./capacity";
 
 // Prisma-backed KbStore over the karda_kb schema. Used when DATABASE_URL is set;
 // @prisma/client loads lazily via getPrismaClient(). Only the subset of columns
@@ -59,9 +60,10 @@ function toRow(r: PrismaKbRow): KnowledgeBaseRow {
 }
 
 export class PrismaKbStore implements KbStore {
+  constructor(private readonly capacityLimit?: CapacityLimitSource) {}
+
   async createKb(input: CreateKbInput): Promise<KnowledgeBaseRow> {
-    const p = await getPrismaClient();
-    const r = await p.knowledgeBase.create({
+    const r = await createWithinLibraryCapacity(input.workspaceId, tx => tx.knowledgeBase.create({
       data: {
         workspaceId: input.workspaceId,
         ownerType: input.ownerType,
@@ -71,7 +73,7 @@ export class PrismaKbStore implements KbStore {
         processingTemplateId: input.processingTemplateId ?? null,
         ...(input.sourceMode ? { sourceMode: input.sourceMode } : {}),
       },
-    });
+    }), this.capacityLimit);
     return toRow(r);
   }
 

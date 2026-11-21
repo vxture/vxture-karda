@@ -4,6 +4,7 @@ import { seedPresets } from "../../../../kb/lib/seed";
 import { DEMO_ASSETS, demoTitle } from "../../../../kb/demo/seed-data";
 import { devLoginEnabled, DEV_DEFAULTS } from "../../../../auth/lib/dev-login";
 import { getOidcConfig } from "../../../../auth/lib/config";
+import { isDeployedStage } from "../../../../lib/deploy-stage";
 
 // POST /api/kb/admin/seed-demo: write the demo/seed content set (six knowledge
 // assets with their documents and entries) into karda_kb, for the 知识资产
@@ -26,6 +27,9 @@ interface SeededAsset {
 }
 
 export async function POST(req: Request): Promise<Response> {
+  // Fixture insertion is not a production business write path or a way around
+  // workspace capacity. Keep the internal-token fallback local-only too.
+  if (isDeployedStage()) return new NextResponse("not found", { status: 404 });
   const expected = process.env.INTERNAL_JOB_TOKEN;
   const tokenOk = Boolean(expected) && req.headers.get("x-internal-job-token") === expected;
   const devOk = devLoginEnabled(getOidcConfig().enabled);

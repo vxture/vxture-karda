@@ -14,8 +14,10 @@ import {
 } from "./ownership";
 import type { CreateKbInput, KbStore, KnowledgeBaseRow, UpdateKbInput } from "./store";
 import { validateMetadataFields, type MetadataFieldDecl, type ValidationError } from "./metadata";
+import { CapacityError, type CapacityCode } from "./capacity";
 
 export type ServiceError =
+  | { code: CapacityCode; metric: string }
   | { code: "invalid_ownership_shape" }
   | { code: "name_taken" }
   | { code: "not_found" }
@@ -69,7 +71,11 @@ export class KbService {
     if (await this.store.nameTaken(input.workspaceId, input.name)) {
       return err({ code: "name_taken" });
     }
-    return ok(await this.store.createKb(input));
+    try { return ok(await this.store.createKb(input)); }
+    catch (error) {
+      if (error instanceof CapacityError) return err({ code: error.code, metric: error.metric });
+      throw error;
+    }
   }
 
   async get(id: string): Promise<Result<KnowledgeBaseRow>> {

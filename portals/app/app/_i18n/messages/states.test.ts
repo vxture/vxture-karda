@@ -16,6 +16,9 @@ test("apiErrorKey maps the statuses the product actually surfaces", () => {
   assert.equal(apiErrorKey(409, "name_taken").key, "errNameTaken");
   assert.equal(apiErrorKey(409, "binding_exists").key, "errBindingExists");
   assert.equal(apiErrorKey(500).key, "errServer");
+  assert.equal(apiErrorKey(403, "capacity_exceeded").key, "errLibraryCapacity");
+  assert.equal(apiErrorKey(503, "capacity_unconfigured").key, "errCapacityUnavailable");
+  assert.equal(apiErrorKey(503, "capacity_unavailable").key, "errCapacityUnavailable");
 });
 
 test("an unrecognised 409 still gets the generic conflict wording", () => {

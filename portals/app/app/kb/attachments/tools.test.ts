@@ -5,6 +5,20 @@ import type { CallerContext } from "../tools/s2s";
 import { KbService } from "../lib/service";
 import { InMemoryKbStore } from "../lib/store";
 import { InMemoryAttachmentStore } from "./store";
+import { CapacityError } from "../lib/capacity";
+
+test("create_kb returns capacity refusal consistently and never auto-attaches a failed create", async () => {
+  for (const code of ["capacity_exceeded", "capacity_unconfigured", "capacity_unavailable"] as const) {
+    class RefusingStore extends InMemoryKbStore {
+      override async createKb(): Promise<never> { throw new CapacityError(code); }
+    }
+    const attachments = new InMemoryAttachmentStore();
+    const result = await createKb(oboCaller(), { name: "capacity-test" }, { kb: new KbService(new RefusingStore()), attachments });
+    assert.equal(result.status, code === "capacity_exceeded" ? 403 : 503);
+    assert.equal(result.body.error, code);
+    assert.deepEqual(await attachments.listKbIds("ws1", "u1", "agent"), []);
+  }
+});
 
 const oboCaller = (over: Partial<CallerContext> = {}): CallerContext => ({
   callerProduct: "agent",

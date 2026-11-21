@@ -35,6 +35,10 @@ export async function createKb(caller: CallerContext, args: Record<string, unkno
 
   const created = await deps.kb.create({ workspaceId: who.ws, ownerType: "user", ownerSub: who.user, name });
   if (!created.ok) {
+    if (created.error.code === "capacity_exceeded") return { status: 403, body: { error: created.error.code } };
+    if (created.error.code === "capacity_unavailable" || created.error.code === "capacity_unconfigured") {
+      return { status: 503, body: { error: created.error.code } };
+    }
     if (created.error.code === "name_taken") return { status: 409, body: { error: "name_taken" } };
     return bad(created.error.code);
   }
