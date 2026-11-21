@@ -3,6 +3,7 @@ import { serviceIdentity } from "@vxture/shared";
 import { BRAND } from "@karda/shared/brand";
 import { probeDb, probeRedis } from "../../lib/probes";
 import { readiness } from "../../lib/readiness";
+import { isDeployedStage } from "../../lib/deploy-stage";
 
 // GET /api/ready - readiness (025 §2: identity block + per-dependency checks).
 //
@@ -21,7 +22,7 @@ export async function GET(): Promise<Response> {
     probeDb(process.env.DATABASE_URL),
     probeRedis(process.env.REDIS_URL),
   ]);
-  const r = readiness(db, redis);
+  const r = readiness(db, redis, isDeployedStage());
   const identity = serviceIdentity({ service: `${BRAND.productCode}-app`, product: BRAND.productCode });
   return NextResponse.json(
     { status: r.status, ...identity, uptimeSec: Math.round(process.uptime()), checks: r.checks },

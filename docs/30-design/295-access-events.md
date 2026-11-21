@@ -76,3 +76,7 @@ Browser transports were mocked locally; real Accounts delivery remains P9.
 DDL 0012 must follow 0010/0011 through db-init before deployment. Startup never
 executes DDL. Baseline, incremental SQL, Prisma and service-role column grants
 are synchronized. CI, deployment and production acceptance are separately tracked.
+
+## 发布前就绪检查补查
+
+Redis 同时承载 RP 会话和共享权限版本，已不能按浏览器单一依赖判为 degraded。Redis 或数据库探测失败时 /api/ready 返回 fail/503；部署环境任一缺配置同样失败，checks 保留 off 事实。本地离线允许缺配置。不向 Atlas 发付费探测，不改零依赖 liveness。
