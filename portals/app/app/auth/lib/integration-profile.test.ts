@@ -13,6 +13,8 @@ test("reviewed origin profile overrides old public settings without replacing se
       OIDC_REDIRECT_URI: "https://legacy.invalid/auth/callback",
       NEXT_PUBLIC_APP_URL: "https://legacy.invalid", RP_SESSION_COOKIE_NAME: "" }, profile);
     const cfg = getOidcConfig();
+    assert.equal(cfg.enabled, true);
+    assert.equal(cfg.issuer, "https://accounts.vxture.com");
     assert.equal(cfg.clientId, "karda");
     assert.equal(cfg.redirectUri, "https://karda.ruyin.work/auth/callback");
     assert.equal(cfg.postLogoutRedirectUri, "https://karda.ruyin.work/");
