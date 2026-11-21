@@ -9,7 +9,7 @@ AI credits remain centrally judged; this work adds no local AI balance gate.
 
 | Increment | Mutation scope | State |
 | --- | --- | --- |
-| P8.3a | Knowledge library creation, browser and Agent | Implemented, candidate validation; not deployed |
+| P8.3a | Knowledge library creation, browser and Agent | Merged PR221 / f8b3788; all gates passed; not deployed |
 | P8.3b | Documents/entries and connector bindings, including reactivation | Pending |
 | P8.3c | Stored bytes, upload reservation, failure recovery and deletion lifecycle | Pending |
 
@@ -64,3 +64,13 @@ P8.3b/c must first cover every API/Agent/connector write path and define retaine
 storage accounting. Raw upload must reserve bytes before object-store writes;
 failure and orphan cleanup must return capacity safely. A read-then-write check
 in a route alone is insufficient. These paths are not enforced by P8.3a.
+
+
+## Storage prerequisite found during P8.3b/c inventory
+
+Live deployment has neither OSS configuration nor a filesystem root, so current
+uploads select the in-memory adapter. P9.4 tracks restoring the intended durable
+filesystem interim deployment and extending readiness before real upload
+acceptance. KD-019 migration is still HELD; no cloud migration was started.
+A persistent object volume does not itself enforce storage.bytes. Reservations,
+retained bytes, orphan recovery and deletion remain P8.3c, not completed here.

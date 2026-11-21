@@ -7,7 +7,7 @@ export type ReadyState = "ready" | "degraded" | "fail";
 
 export interface Readiness {
   status: ReadyState;
-  checks: { db: CheckOutcome; redis: CheckOutcome };
+  checks: { db: CheckOutcome; redis: CheckOutcome; storageConfig: CheckOutcome };
 }
 
 export function checkOutcome(probe: boolean | null): CheckOutcome {
@@ -15,10 +15,12 @@ export function checkOutcome(probe: boolean | null): CheckOutcome {
 }
 
 // Offline development may omit dependencies. A deployed stack must configure
-// both; an absent dependency is reported as off while overall readiness fails.
-export function readiness(db: boolean | null, redis: boolean | null, deployed = false): Readiness {
-  const checks = { db: checkOutcome(db), redis: checkOutcome(redis) };
+// DB, Redis and durable object storage; an absent dependency is reported as off
+// while overall readiness fails. storageConfig validates filesystem access or
+// complete OSS configuration, not a paid/network OSS request.
+export function readiness(db: boolean | null, redis: boolean | null, deployed = false, storageConfig: boolean | null = null): Readiness {
+  const checks = { db: checkOutcome(db), redis: checkOutcome(redis), storageConfig: checkOutcome(storageConfig) };
   const failed = db === false || redis === false
-    || deployed && (db === null || redis === null);
+    || storageConfig === false || deployed && (db === null || redis === null || storageConfig === null);
   return { status: failed ? "fail" : "ready", checks };
 }

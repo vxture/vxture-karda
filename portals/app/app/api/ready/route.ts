@@ -4,6 +4,7 @@ import { BRAND } from "@karda/shared/brand";
 import { probeDb, probeRedis } from "../../lib/probes";
 import { readiness } from "../../lib/readiness";
 import { isDeployedStage } from "../../lib/deploy-stage";
+import { probeStorageConfiguration } from "../../kb/storage/config";
 
 // GET /api/ready - readiness (025 §2: identity block + per-dependency checks).
 //
@@ -18,11 +19,13 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(): Promise<Response> {
-  const [db, redis] = await Promise.all([
+  const [db, redis, storageConfig] = await Promise.all([
     probeDb(process.env.DATABASE_URL),
     probeRedis(process.env.REDIS_URL),
+    probeStorageConfiguration(process.env),
   ]);
-  const r = readiness(db, redis, isDeployedStage());
+  const deployed = isDeployedStage();
+  const r = readiness(db, redis, deployed, storageConfig);
   const identity = serviceIdentity({ service: `${BRAND.productCode}-app`, product: BRAND.productCode });
   return NextResponse.json(
     { status: r.status, ...identity, uptimeSec: Math.round(process.uptime()), checks: r.checks },

@@ -8,6 +8,20 @@
 > construction: the OSS adapter activates only when the `ALIYUN_OSS_*` keys are
 > set, and no host config has been touched.
 
+
+## November22 prerequisite correction (candidate, not deployed)
+
+Read-only live inspection found neither OSS credentials nor KARDA_OBJECT_ROOT;
+the presumed filesystem interim deployment above was not actually configured.
+P9.4 adds reviewed root /var/lib/karda/objects and the Compose objects named
+volume, initialized with the image's existing nextjs ownership. The volume lives
+outside deployment rsync and survives container recreation. Preserve this volume
+in backup/restore and rollback; never use compose down -v during deployment.
+This fixes interim durability without lifting the cloud-migration hold. Verify
+upload/download across container recreation after the approved release, before
+claiming durable raw storage acceptance. Do not migrate or replay historical
+content merely because its database row exists; ephemeral bytes may be missing.
+
 Owner direction 2026-08-19: business data moves to managed Aliyun services for
 durability. Three stores, three very different moves - in THIS order, because
 their criticality differs:
