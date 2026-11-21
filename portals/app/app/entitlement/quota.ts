@@ -2,7 +2,7 @@ import type { Entitlement, QuotaPool } from "./types";
 
 // Generic quota/limits accessors over the C2 envelope. Domain-neutral by
 // design: limits stay an open `metric -> number` map plus consumable
-// `quota_pools`; karda's concrete metric keys (e.g. member.max, storage.bytes)
+// `quota_pools`; karda's concrete metric keys (e.g. seat.max, storage.bytes)
 // are a product concern and are not baked in here.
 
 export const UNLIMITED = -1;

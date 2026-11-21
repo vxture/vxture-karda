@@ -17,7 +17,7 @@ import { TIERS, hasProductAccess } from "./types";
 //   adoption never happens, and an agent knowledge platform never becomes
 //   infrastructure. What separates free / starter / pro is AI credits and
 //   capacity caps, nothing else: their feature-key sets are IDENTICAL, and
-//   `member.max = 1` is their only hard boundary.
+//   `seat.max = 1` is their only hard boundary.
 //
 //   What protects the corpus from a free-tier agent is not the price plan - it
 //   is the governance ladder: every write lands as processing/draft and passes
@@ -129,12 +129,12 @@ export function minTierFor(key: FeatureKey): Tier | null {
 //   AI credits   PLATFORM judges. karda never pre-checks a balance, never
 //                refuses on credits, and builds no out-of-credits flow. If the
 //                call reaches karda, karda serves it; usage flushes to
-//                /usage/consume and a 409 marks the row gated - the record still
-//                stands. There is deliberately NO credit code in this file.
+//                /usage/consume. Only a validated success receipt confirms it;
+//                409 remains pending. There is NO credit code in this file.
 //   these caps   PRODUCT judges, because only karda can count them: the platform
 //                cannot know how many libraries a workspace has.
 
-export const LIMIT_KEYS = ["kb.max", "document.max", "storage.bytes", "binding.max", "member.max"] as const;
+export const LIMIT_KEYS = ["kb.max", "document.max", "storage.bytes", "binding.max", "seat.max"] as const;
 
 export type LimitKey = (typeof LIMIT_KEYS)[number];
 

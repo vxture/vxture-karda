@@ -17,7 +17,7 @@ test("coerces known fields, drops non-number limits and metric-less pools", () =
     bundled: true,
     status: "active",
     cancel_at_period_end: true,
-    limits: { "member.max": 20, bad: "x" },
+    limits: { "seat.max": 20, bad: "x" },
     quota_pools: [
       { metric: "ai.credit", limit: 100, remaining: 50, priority: 100 },
       { limit: 1 }, // no metric -> dropped
@@ -27,7 +27,7 @@ test("coerces known fields, drops non-number limits and metric-less pools", () =
   assert.equal(e.tier, "pro");
   assert.equal(e.bundled, true);
   assert.equal(e.cancel_at_period_end, true);
-  assert.deepEqual(e.limits, { "member.max": 20 });
+  assert.deepEqual(e.limits, { "seat.max": 20 });
   assert.equal(e.quota_pools.length, 1);
   assert.equal(e.quota_pools[0].metric, "ai.credit");
 });
