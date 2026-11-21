@@ -113,6 +113,8 @@ export class InMemoryObjectStore implements ObjectStore {
 // --- selection --------------------------------------------------------------
 
 import { getOssObjectStore } from "./oss";
+import { storageConfiguration } from "./config";
+import { isDeployedStage } from "../../lib/deploy-stage";
 
 /**
  * Selection order (KD-019): Aliyun OSS when its four env keys are configured
@@ -122,6 +124,11 @@ import { getOssObjectStore } from "./oss";
  * migration verbatim (copy the tree with ossutil, flip the env).
  */
 export function getObjectStore(): ObjectStore {
+  const deployed = isDeployedStage();
+  const config = storageConfiguration(process.env);
+  if (config === false || deployed && config !== true) {
+    throw new Error("durable_object_storage_unconfigured");
+  }
   const oss = getOssObjectStore();
   if (oss) return oss;
   const root = process.env.KARDA_OBJECT_ROOT;

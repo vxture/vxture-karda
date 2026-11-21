@@ -248,3 +248,33 @@ See 30-design/300-capacity-enforcement and the updated ordered sub-batch table.
 
 P8.3a validation: all863 local tests passed with zero skips; TypeScript and
 strict docs numbering passed. Required Linux build/security gates run on its PR.
+
+
+## P9.4 durable raw storage finding (candidate, not deployed)
+
+P8.3a merged as PR221 / f8b3788; all required gates passed (CI44948963453,
+secret scan44948963404). It remains undeployed pending full capacity configuration.
+
+Read-only product-container checks found all four OSS required settings and
+KARDA_OBJECT_ROOT absent. Only presence booleans were printed. Production currently
+selects an ephemeral in-memory object store; existing health/ready success only
+proved DB/Redis, not durable uploads. No real upload or customer mutation was
+used to discover this. Upload acceptance remains blocked.
+
+The August cloud migration runbook is explicitly HELD, so this does not start an
+OSS/RDS migration. Candidate adds a persistent Compose objects volume at the
+existing image-owned /var/lib/karda/objects directory and sets the same runtime
+root in the reviewed non-secret production profile. No existing object tree is
+moved, overwritten or deleted; no manual production settings were changed.
+The runtime refuses memory fallback on deployed stages and rejects partial OSS
+configuration instead of silently selecting another backend. Readiness includes
+storageConfig: filesystem directory must be readable/writable, OSS configuration
+must be complete (no remote object request is claimed). Liveness stays independent.
+
+Targeted tests cover persistence across new store instances, missing/file paths,
+production/beta fallback rejection, partial OSS and DB/Redis-only false readiness.
+Compose rendering confirms named volume and runtime root agree. Cloud migration
+hold is retained; future backup and rollback must preserve the objects volume.
+
+P9.4 local validation: all867 tests passed with zero skips; TypeScript, Compose
+rendering and strict docs numbering passed. Required CI gates run on this PR.

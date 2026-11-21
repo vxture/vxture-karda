@@ -45,6 +45,10 @@ services:
       DATABASE_URL: ${DATABASE_URL:-}
     ports:
       - "${APP_PUBLISH_PORT:-3240}:3240"
+    volumes:
+      # Seed ownership from the image's nextjs-owned directory on first mount.
+      # Named volume survives container recreation and deploy rsync --delete.
+      - objects:/var/lib/karda/objects
     depends_on:
       - redis
       - db
@@ -97,3 +101,6 @@ services:
 networks:
   appnet:
     name: ${PROJECT_NAME:-karda}-net
+
+volumes:
+  objects:
