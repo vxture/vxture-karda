@@ -32,6 +32,7 @@ export type IngestOutcome =
   | { status: "absent" };
 
 export type IngestError =
+  | { code: "capacity_exceeded" | "capacity_unconfigured" | "capacity_unavailable" }
   | { code: "binding_not_found" }
   | { code: "binding_inactive" }
   | { code: "kb_not_found" }
@@ -87,6 +88,7 @@ export async function ingestEnvelope(env: IngestEnvelope, deps: IngestDeps): Pro
   }
 
   const created = await deps.content.createDocument({
+    supersedesDocumentId: live?.id,
     kbId: kb.id,
     title: env.sourceRef?.uri || env.sourceDocId,
     source: "connector",
@@ -97,10 +99,14 @@ export async function ingestEnvelope(env: IngestEnvelope, deps: IngestDeps): Pro
     mime: env.content?.mime ?? null,
     sizeBytes,
   });
-  if (!created.ok) return err({ code: "bad_content" });
+  if (!created.ok) {
+    const code = created.error.code;
+    if (code === "capacity_exceeded" || code === "capacity_unconfigured" || code === "capacity_unavailable") return err({ code });
+    return err({ code: "bad_content" });
+  }
 
   // Supersede: the old version for this stable id leaves the live set.
-  if (live) await deps.content.transitionDocument(live.id, "deleted");
+  // The store replaces the old row in the same capacity/write transaction.
 
   // Enqueue for processing: backfill goes to the bulk tier, steady incremental to
   // sync (110-processing; tierForTrigger).

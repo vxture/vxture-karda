@@ -278,3 +278,25 @@ hold is retained; future backup and rollback must preserve the objects volume.
 
 P9.4 local validation: all867 tests passed with zero skips; TypeScript, Compose
 rendering and strict docs numbering passed. Required CI gates run on this PR.
+
+
+## P8.3b content/binding capacity (not deployed)
+
+P9.4 merged PR222 / db2c9c8 with all required gates passing (CI44949816060,
+secret scan44949816128). Production remains v0.11.1; no upload acceptance claimed.
+
+P8.3b counts documents + entries under document.max and active + paused bindings
+under binding.max, with shared workspace transaction locks. All actual content
+creation paths share the guarded store and atomic usage insertion. Archive and
+pause retain capacity; delete/revoke release it. Terminal revoke predicates
+prevent stale resume from reviving a binding. Connector supersede validates
+same-library/source/binding and replaces atomically, with rollback preserving
+old content when insertion fails, including at the limit.
+
+Capacity failures preserve403/503 across browser/Agent/connector. Local869 tests
+pass with zero skips, real isolated PostgreSQL/Redis included; TypeScript passes.
+The new tests cover mixed concurrency, usage atomicity, deletion/reuse, paused
+slots, revoke/resume race, net-zero replace and foreign replacement rejection.
+No platform sources/config changes, prices, quantities, DDL or release were added.
+P8.3c byte reservations/orphan recovery remain required before release, because
+bytes are still put before row creation; rejection may leave a stored orphan.

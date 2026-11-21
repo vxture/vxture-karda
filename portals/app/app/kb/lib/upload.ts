@@ -14,6 +14,7 @@ import { contentHashOf } from "../storage/objectstore";
 import type { DocumentRow } from "./content-store";
 
 export type UploadError =
+  | { code: "capacity_exceeded" | "capacity_unconfigured" | "capacity_unavailable" }
   | { code: "not_found" }
   | { code: "folder_not_in_kb" }
   | { code: "empty_file" }
@@ -110,5 +111,6 @@ export async function downloadDocument(
 
 function mapContentError(code: string): UploadError {
   if (code === "duplicate_document") return { code: "duplicate_document" };
+  if (code === "capacity_exceeded" || code === "capacity_unconfigured" || code === "capacity_unavailable") return { code };
   return { code: "not_found" };
 }

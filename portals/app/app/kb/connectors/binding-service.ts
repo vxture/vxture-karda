@@ -11,9 +11,11 @@
 // revoke here moves the binding to its terminal state and the cascade is wired in
 // that later batch.
 import type { BindingStore, BindingRow, BindingMode, BindingState, CreateBindingInput } from "./binding-store";
+import { CapacityError, type CapacityCode } from "../lib/capacity";
 import { isKnownConnector } from "./catalog";
 
 export type BindingError =
+  | { code: CapacityCode; metric: string }
   | { code: "unknown_connector" }
   | { code: "binding_exists" }
   | { code: "not_found" }
@@ -42,7 +44,11 @@ export class BindingService {
     if (!input.externalSourceId) return err({ code: "not_found" });
     const existing = await this.store.findBySource(input.kbId, input.connectorCode, input.externalSourceId);
     if (existing) return err({ code: "binding_exists" });
-    return ok(await this.store.create({ ...input, mode: input.mode ?? "backfill" }));
+    try { return ok(await this.store.create({ ...input, mode: input.mode ?? "backfill" })); }
+    catch (error) {
+      if (error instanceof CapacityError) return err({ code: error.code, metric: error.metric });
+      throw error;
+    }
   }
 
   async get(id: string): Promise<Result<BindingRow>> {

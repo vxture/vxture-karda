@@ -2,6 +2,7 @@
 // syncable external source (220-connector-framework section 3). The table already
 // exists (schema.prisma `binding`); this surfaces it. In-memory for the offline
 // path, Prisma over karda_kb when DATABASE_URL is set.
+import { capacityWorkspace, createWithinCapacity, type CapacityLimitSource } from "../lib/capacity";
 import { prismaEnabled, getPrismaClient } from "../../lib/db";
 
 export type BindingMode = "backfill" | "incremental";
@@ -124,10 +125,11 @@ function toRow(r: any): BindingRow {
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 export class PrismaBindingStore implements BindingStore {
+  constructor(private readonly capacityLimit?: CapacityLimitSource) {}
   async create(input: CreateBindingInput): Promise<BindingRow> {
-    const p = await getPrismaClient();
+    const workspaceId = await capacityWorkspace(input.kbId, "binding.max");
     return toRow(
-      await p.binding.create({
+      await createWithinCapacity(workspaceId, "binding.max", tx => tx.binding.create({
         data: {
           kbId: input.kbId,
           connectorCode: input.connectorCode,
@@ -135,7 +137,7 @@ export class PrismaBindingStore implements BindingStore {
           mode: input.mode ?? "backfill",
           createdBy: input.createdBy ?? null,
         },
-      }),
+      }), this.capacityLimit),
     );
   }
   async get(id: string): Promise<BindingRow | null> {
@@ -153,7 +155,17 @@ export class PrismaBindingStore implements BindingStore {
     return r ? toRow(r) : null;
   }
   async setState(id: string, state: BindingState): Promise<BindingRow | null> {
-    return this.patch(id, { state });
+    const p = await getPrismaClient();
+    // Revocation is terminal even when resume races a revoke after the service
+    // read. Paused bindings retain capacity, so resume cannot add a slot.
+    const result = await p.binding.updateMany({
+      where: { id, state: { not: "revoked" } }, data: { state, updatedAt: new Date() },
+    });
+    if (!result.count) {
+      const current = await this.get(id);
+      return current?.state === state ? current : null;
+    }
+    return this.get(id);
   }
   async setMode(id: string, mode: BindingMode): Promise<BindingRow | null> {
     return this.patch(id, { mode });

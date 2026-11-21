@@ -40,7 +40,9 @@ export async function POST(req: Request): Promise<Response> {
   });
   if (!result.ok) {
     const status =
-      result.error.code === "binding_not_found" || result.error.code === "kb_not_found"
+      result.error.code === "capacity_exceeded" ? 403
+      : result.error.code === "capacity_unconfigured" || result.error.code === "capacity_unavailable" ? 503
+      : result.error.code === "binding_not_found" || result.error.code === "kb_not_found"
         ? 404
         : result.error.code === "binding_inactive"
           ? 409

@@ -77,6 +77,10 @@ export async function createEntry(
     tpl.preset,
   );
   if (!res.ok) {
+    if (res.error.code === "capacity_exceeded") return { status: 403, body: { error: res.error.code } };
+    if (res.error.code === "capacity_unconfigured" || res.error.code === "capacity_unavailable") {
+      return { status: 503, body: { error: res.error.code } };
+    }
     const e = res.error;
     if (e.code === "missing_required_field") return bad(`missing required field: ${e.field}`);
     if (e.code === "unknown_field") return bad(`unknown field: ${e.field}`);

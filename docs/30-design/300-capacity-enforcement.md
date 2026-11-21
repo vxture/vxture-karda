@@ -10,7 +10,7 @@ AI credits remain centrally judged; this work adds no local AI balance gate.
 | Increment | Mutation scope | State |
 | --- | --- | --- |
 | P8.3a | Knowledge library creation, browser and Agent | Merged PR221 / f8b3788; all gates passed; not deployed |
-| P8.3b | Documents/entries and connector bindings, including reactivation | Pending |
+| P8.3b | Documents/entries and connector bindings, including reactivation | Implemented; local869 tests passed; CI pending; not deployed |
 | P8.3c | Stored bytes, upload reservation, failure recovery and deletion lifecycle | Pending |
 
 ## P8.3a: library count
@@ -74,3 +74,49 @@ filesystem interim deployment and extending readiness before real upload
 acceptance. KD-019 migration is still HELD; no cloud migration was started.
 A persistent object volume does not itself enforce storage.bytes. Reservations,
 retained bytes, orphan recovery and deletion remain P8.3c, not completed here.
+
+
+## P8.3b: content and connector counts
+
+The shared Prisma content store now gates all document and entry creation with
+one workspace document.max lock/count. Documents and structured entries each
+count as one content item. Draft, processing, indexed, failed and archived items
+retain slots; deleted content and content under a soft-deleted library are
+excluded. Browser, Agent and connector ingest all use this store; successful
+insert and the existing karda.ingest outbox remain in the same transaction.
+Rejected creates do not create usage receipts or enqueue processing.
+
+A connector update is a net-zero replacement. The internal store input can
+reference the previous document; the transaction validates the same library,
+connector, stable source_doc_id and binding_id, tombstones that live row before
+counting, then inserts the replacement and usage atomically. Failure rolls the
+old tombstone back. A stale or mismatched supersede refuses; it cannot reclaim
+another document's slot. The field is never copied from browser/Agent bodies.
+No unchanged-hash connector event creates a new row or consumes a new slot.
+
+Binding creation similarly uses workspace binding.max under a transaction lock.
+Active AND paused nonrevoked bindings count; resume therefore retains its
+already-owned slot. Revocation releases the slot and is terminal at the database
+update predicate, so a late resume cannot resurrect a revoked binding after the
+service read. Existing bindings/content are never removed to satisfy a downgrade.
+
+Capacity HTTP responses are403 exhausted and503 missing/unavailable; browser,
+Agent and connector responses retain actionable codes rather than bad_content
+or invalid_request. UI wording now applies to the item limit across these paths.
+The scoped C2 envelope remains authoritative and prior cache/version semantics
+still apply. No default production quantities, new billing writes or DDL are added.
+
+Real PostgreSQL verification mixes ten document/entry creates for three slots,
+checks usage-row count, archive retention/deletion reuse and workspace isolation.
+Seven competing binding creates for two slots yield two successes; pause/resume
+retains slots, revoke/resume race stays revoked and released capacity is reused.
+Connector replacement works at the limit, failed insertion restores the original,
+and mismatched source identity cannot reclaim capacity. Service tests verify
+capacity failures propagate through content/upload/binding without enqueue.
+Local full suite:869 pass, zero skips; TypeScript passes. Formal CI follows PR.
+
+Remaining P8.3c boundary: upload and direct connector bytes are currently stored
+BEFORE document insertion; capacity rejection may leave an unreferenced object.
+This increment enforces row counts only. Byte reservations and reference-aware
+cleanup must be completed before release/real upload acceptance; never blindly
+delete a content-addressed object on rejection, since a live record may share it.
