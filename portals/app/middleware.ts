@@ -59,5 +59,5 @@ export const config = {
    *                    to an HTML page would surface as a JSON parse error
    *   /_next, favicon  build output and assets
    */
-  matcher: ["/((?!gate|auth|api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!gate|auth|api|entry/|brand/|_next/static|_next/image|favicon.ico).*)"],
 };
