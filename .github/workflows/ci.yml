@@ -244,6 +244,16 @@ jobs:
     runs-on: ubuntu-latest
     needs: [changes]
     timeout-minutes: 10
+    services:
+      session-redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     env:
       CODE: ${{ needs.changes.outputs.code }}
     steps:
@@ -284,3 +294,6 @@ jobs:
       - name: Run tests
         if: env.CODE == 'true'
         run: pnpm --filter @karda/app test
+        env:
+          REDIS_URL: redis://127.0.0.1:6379/15
+          KARDA_SESSION_TEST_REDIS_URL: redis://127.0.0.1:6379/15

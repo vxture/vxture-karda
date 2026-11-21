@@ -47,14 +47,16 @@ export async function GET(req: Request): Promise<Response> {
   } catch {
     return reject("access_token invalid");
   }
-  if (accessClaims.sub !== idClaims.sub) return reject("sub mismatch");
+  if (typeof idClaims.sub !== "string" || !idClaims.sub || accessClaims.sub !== idClaims.sub) return reject("sub mismatch");
+  if (!Number.isSafeInteger(accessClaims.exp) || accessClaims.exp! <= Math.floor(Date.now() / 1000)) return reject("invalid access expiry");
+  if (accessClaims.sid !== undefined && accessClaims.sid !== idClaims.sid) return reject("sid mismatch");
 
   const rpsid = randomToken();
   const session: RpSession = {
     idToken: tokens.id_token,
     accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token,
-    accessExpiresAt: Math.floor(Date.now() / 1000) + (tokens.expires_in ?? 300),
+    accessExpiresAt: accessClaims.exp!,
     sid: typeof idClaims.sid === "string" ? idClaims.sid : undefined,
     sub: String(idClaims.sub),
   };

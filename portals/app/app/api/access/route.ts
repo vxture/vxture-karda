@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getOidcConfig } from "../../auth/lib/config";
-import { getAuthUser } from "../../auth/lib/session";
+import { resolveSessionUser } from "../../auth/lib/session";
 import { devLoginEnabled, decodeDevSession, DEV_LOGIN_COOKIE } from "../../auth/lib/dev-login";
 import type { AuthUser } from "../../auth/lib/claims";
 import { getEntitlementResolver } from "../../entitlement/resolver";
@@ -25,6 +25,12 @@ import type { AccessState } from "../../access/types";
 export const dynamic = "force-dynamic";
 
 export async function GET(): Promise<Response> {
+  const response = await accessResponse();
+  response.headers.set("Cache-Control", "no-store");
+  return response;
+}
+
+async function accessResponse(): Promise<Response> {
   const cfg = getOidcConfig();
 
   const jar = await cookies();
@@ -46,7 +52,10 @@ export async function GET(): Promise<Response> {
     return NextResponse.json(state);
   } else {
     const rpsid = jar.get(cfg.cookieName)?.value;
-    user = rpsid ? await getAuthUser(cfg, rpsid).catch(() => null) : null;
+    const result = await resolveSessionUser(cfg, rpsid);
+    if (!result.available) return NextResponse.json({ error: "session_unavailable" },
+      { status: 503, headers: { "Cache-Control": "no-store" } });
+    user = result.user;
   }
 
   if (!user) return NextResponse.json({ status: "anonymous" } satisfies AccessState);

@@ -2,6 +2,11 @@
 
 ## Current remediation - 2026-11-22
 
+Ordered batches and live status: [20-rectification-batches-20261122](20-rectification-batches-20261122.md).
+P0 merged without deployment; P1 implementation and CI passed in PR208, with
+production/live Accounts acceptance pending and no deployment. Later
+batch numbers, dependencies and acceptance stay in that single tracker.
+
 See [10-platform-alignment-20261122](10-platform-alignment-20261122.md) for the
 verified v0.10.3 baseline, initial contract gaps, first logout corrections and
 ordered implementation batches. The historical tracker below retains the state
