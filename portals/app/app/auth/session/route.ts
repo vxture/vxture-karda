@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getOidcConfig } from "../lib/config";
-import { getAuthUser } from "../lib/session";
+import { resolveSessionUser } from "../lib/session";
 import { devLoginEnabled, decodeDevSession, DEV_LOGIN_COOKIE } from "../lib/dev-login";
 
 // GET /auth/session (080-rp section 2.2): read the cookie, resolve the RP session
@@ -10,6 +10,12 @@ import { devLoginEnabled, decodeDevSession, DEV_LOGIN_COOKIE } from "../lib/dev-
 export const dynamic = "force-dynamic";
 
 export async function GET(): Promise<Response> {
+  const response = await sessionResponse();
+  response.headers.set("Cache-Control", "no-store");
+  return response;
+}
+
+async function sessionResponse(): Promise<Response> {
   const cfg = getOidcConfig();
   const jar = await cookies();
 
@@ -22,7 +28,10 @@ export async function GET(): Promise<Response> {
   const rpsid = jar.get(cfg.cookieName)?.value;
   if (!rpsid) return NextResponse.json({ authenticated: false });
 
-  const user = await getAuthUser(cfg, rpsid).catch(() => null);
+  const result = await resolveSessionUser(cfg, rpsid);
+  if (!result.available) return NextResponse.json({ error: "session_unavailable" },
+    { status: 503, headers: { "Cache-Control": "no-store" } });
+  const user = result.user;
   if (!user) return NextResponse.json({ authenticated: false });
 
   // account_status gate (080-rp section 2.6): non-active is treated as no session.

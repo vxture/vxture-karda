@@ -1,7 +1,7 @@
 import { getOidcConfig } from "../lib/config";
 import { verifyToken } from "../lib/oidc";
-import { sessionsForSid, deleteSession } from "../lib/session-store";
-import { logoutSid, revokeLogoutSessions } from "../lib/logout";
+import { deleteSessionsBySid } from "../lib/session-store";
+import { logoutSid } from "../lib/logout";
 
 // POST /auth/backchannel-logout (080-rp section 2.7): IdP -> RP server call (no
 // browser cookie). Verify logout_token (RS256/iss/aud/exp), require the
@@ -23,7 +23,7 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   try {
-    await revokeLogoutSessions(cfg.clientId, sid, { sessionsForSid, deleteSession });
+    await deleteSessionsBySid(cfg.clientId, sid);
   } catch {
     return new Response("logout unavailable", { status: 503 });
   }

@@ -96,11 +96,12 @@ async function postToken(cfg: OidcConfig, body: URLSearchParams): Promise<TokenS
       accept: "application/json",
     },
     body,
+    redirect: "error",
+    signal: AbortSignal.timeout(8_000),
     cache: "no-store",
   });
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`token endpoint ${res.status}: ${text.slice(0, 200)}`);
+    throw new Error(`token endpoint ${res.status}`);
   }
   return (await res.json()) as TokenSet;
 }

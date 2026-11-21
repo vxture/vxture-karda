@@ -24,7 +24,11 @@ export async function POST(): Promise<Response> {
   }
 
   const rpsid = jar.get(cfg.cookieName)?.value;
-  if (rpsid) await deleteSession(cfg.clientId, rpsid).catch(() => {});
+  if (rpsid) {
+    try { await deleteSession(cfg.clientId, rpsid); }
+    catch { return NextResponse.json({ error: "session_unavailable" },
+      { status: 503, headers: { "Cache-Control": "no-store" } }); }
+  }
 
   const res = NextResponse.redirect(endSessionUrl(cfg, randomToken(16)));
   res.cookies.set(cfg.cookieName, "", clearCookieOptions(cfg));

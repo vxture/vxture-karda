@@ -5,7 +5,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getOidcConfig } from "../../auth/lib/config";
-import { getAuthUser } from "../../auth/lib/session";
+import { resolveSessionUser } from "../../auth/lib/session";
 import { devLoginEnabled, decodeDevSession, DEV_LOGIN_COOKIE } from "../../auth/lib/dev-login";
 import type { AuthUser } from "../../auth/lib/claims";
 
@@ -35,7 +35,10 @@ export async function requireAuth(): Promise<Authed> {
   }
 
   const rpsid = jar.get(cfg.cookieName)?.value;
-  const user = rpsid ? await getAuthUser(cfg, rpsid).catch(() => null) : null;
+  const result = await resolveSessionUser(cfg, rpsid);
+  if (!result.available) return { ok: false, response: NextResponse.json({ error: "session_unavailable" },
+    { status: 503, headers: { "Cache-Control": "no-store" } }) };
+  const user = result.user;
   if (!user || !user.activeWorkspace) {
     return { ok: false, response: NextResponse.json({ error: "unauthenticated" }, { status: 401 }) };
   }

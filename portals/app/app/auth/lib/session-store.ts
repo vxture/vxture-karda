@@ -1,4 +1,6 @@
 import Redis from "ioredis";
+import { randomUUID } from "node:crypto";
+import { setTimeout as delay } from "node:timers/promises";
 
 // RP session store on Redis (080-rp section 2.4). Key families are namespaced by
 // client_id so multiple RPs can share one Redis:
@@ -7,10 +9,15 @@ import Redis from "ioredis";
 //   vx:rp:{cid}:sididx:{sid}       SET of rpsids for a given IdP sid (back-channel logout)
 //   vx:rp:{cid}:bclogout:{jti}     logout_token replay guard
 //
-// Fail-closed: if Redis is unreachable, session reads throw and the request is
-// treated as unauthenticated (ADR-001 refresh fail-closed).
+// Store failures throw: callers must distinguish unavailable from anonymous.
 
 let client: Redis | null = null;
+
+/** Graceful shutdown, including disposable-store integration tests. */
+export async function closeSessionStore(): Promise<void> {
+  const active = client; client = null;
+  if (active) await active.quit();
+}
 
 function redis(): Redis {
   if (!client) {
@@ -36,6 +43,7 @@ export interface AuthState {
 }
 
 export interface RpSession {
+  centralNextCheckAt?: number;
   idToken: string;
   accessToken: string;
   refreshToken?: string;
@@ -81,15 +89,52 @@ export async function getSession(cid: string, rpsid: string): Promise<RpSession 
 }
 
 export async function deleteSession(cid: string, rpsid: string): Promise<void> {
-  const r = redis();
-  const raw = await r.get(k.sess(cid, rpsid));
-  // Delete authority before removing the retry index. Failure leaves either a
-  // live indexed session or a harmless indexed tombstone for a later retry.
-  await r.del(k.sess(cid, rpsid));
-  if (raw) {
-    const sess = JSON.parse(raw) as RpSession;
-    if (sess.sid) await r.srem(k.sididx(cid, sess.sid), rpsid);
+  await redis().eval(
+    "local raw=redis.call('get',KEYS[1]); redis.call('del',KEYS[1]); "
+    + "if raw then local ok,s=pcall(cjson.decode,raw); "
+    + "if ok and s.sid then redis.call('srem',ARGV[1]..s.sid,ARGV[2]) end end; return 1",
+    1, k.sess(cid, rpsid), `vx:rp:${cid}:sididx:`, rpsid);
+}
+
+/** Bounded cross-replica refresh serialization, fenced by a unique lease owner. */
+export async function withSessionLock<T>(cid: string, rpsid: string,
+  work: (owner: string) => Promise<T>): Promise<T> {
+  const lock = `vx:rp:${cid}:lock:${rpsid}`;
+  const owner = randomUUID();
+  const deadline = Date.now() + 12_000;
+  while (!(await redis().set(lock, owner, "PX", 30_000, "NX"))) {
+    if (Date.now() >= deadline) throw new Error("session_resolution_busy");
+    await delay(40);
   }
+  try { return await work(owner); }
+  finally {
+    await redis().eval("if redis.call('get',KEYS[1])==ARGV[1] then return redis.call('del',KEYS[1]) end; return 0",
+      1, lock, owner);
+  }
+}
+
+/** Update only a still-live session under this lease; never extend its TTL. */
+export async function rotateSession(cid: string, rpsid: string, expectedToken: string,
+  next: RpSession, owner: string): Promise<boolean> {
+  const result = await redis().eval(
+    "if redis.call('get',KEYS[2])~=ARGV[3] then return -1 end; "
+    + "local raw=redis.call('get',KEYS[1]); if not raw then return 0 end; "
+    + "local old=cjson.decode(raw); local n=cjson.decode(ARGV[2]); "
+    + "if old.accessToken~=ARGV[1] or old.sub~=n.sub or old.sid~=n.sid then return -1 end; "
+    + "redis.call('set',KEYS[1],ARGV[2],'KEEPTTL','XX'); return 1",
+    2, k.sess(cid, rpsid), `vx:rp:${cid}:lock:${rpsid}`,
+    expectedToken, JSON.stringify(next), owner);
+  if (result === -1) throw new Error("session_rotation_conflict");
+  return result === 1;
+}
+
+/** Atomic central-session revocation, ordered against the refresh CAS. */
+export async function deleteSessionsBySid(cid: string, sid: string): Promise<void> {
+  await redis().eval(
+    "local ids=redis.call('smembers',KEYS[1]); "
+    + "for _,id in ipairs(ids) do redis.call('del',ARGV[1]..id) end; "
+    + "redis.call('del',KEYS[1]); return #ids",
+    1, k.sididx(cid, sid), `vx:rp:${cid}:sess:`);
 }
 
 export async function sessionsForSid(cid: string, sid: string): Promise<string[]> {

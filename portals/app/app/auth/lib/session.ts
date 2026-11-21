@@ -1,53 +1,93 @@
+import type { JWTPayload } from "jose";
 import type { OidcConfig } from "./config";
-import { verifyToken, refreshTokens } from "./oidc";
-import { getSession, putSession, type RpSession } from "./session-store";
+import { verifyToken, refreshTokens, type TokenSet } from "./oidc";
+import { getSession, rotateSession, withSessionLock, deleteSessionsBySid, type RpSession } from "./session-store";
 import { toAuthUser, type AccessClaims, type AuthUser } from "./claims";
+import { checkCentralSession } from "./central-session";
 
-// Per-request auth (080-rp section 2.6 / 2.9): rpsid -> session -> silent refresh
-// if the access token is near expiry (token rotation: new refresh stored, old
-// invalidated) -> verify access token -> AuthUser. Returns null when there is no
-// valid session (caller 401s XHR / 302s a page to /auth/login).
+export interface SessionDeps {
+  read: typeof getSession;
+  rotate: typeof rotateSession;
+  lock: typeof withSessionLock;
+  central: typeof checkCentralSession;
+  revoke: typeof deleteSessionsBySid;
+  verify(token: string, cfg: OidcConfig): Promise<JWTPayload>;
+  refresh(cfg: OidcConfig, token: string): Promise<TokenSet>;
+  now(): number;
+}
+const defaults: SessionDeps = { read: getSession, rotate: rotateSession, lock: withSessionLock,
+  central: checkCentralSession, revoke: deleteSessionsBySid,
+  verify: verifyToken, refresh: refreshTokens, now: () => Math.floor(Date.now() / 1000) };
 
-const REFRESH_SKEW_SECONDS = 60;
-
-export async function getAuthUser(cfg: OidcConfig, rpsid: string): Promise<AuthUser | null> {
-  let session = await getSession(cfg.clientId, rpsid);
-  if (!session) return null;
-
-  const now = Math.floor(Date.now() / 1000);
-  if (session.accessExpiresAt - now <= REFRESH_SKEW_SECONDS && session.refreshToken) {
-    session = await tryRefresh(cfg, rpsid, session);
-    if (!session) return null; // refresh failed -> session invalid
+function validate(claims: JWTPayload, session: RpSession, now: number): AccessClaims & { exp: number } {
+  if (claims.sub !== session.sub || !claims.sub
+    || !Number.isSafeInteger(claims.exp) || claims.exp! <= now
+    || (claims.sid !== undefined && claims.sid !== session.sid)
+    || (claims.roles !== undefined && (!Array.isArray(claims.roles)
+      || !claims.roles.every(role => typeof role === "string")))
+    || [claims.active_org, claims.active_workspace, claims.active_org_type, claims.account_status]
+      .some(value => value !== undefined && typeof value !== "string")) {
+    throw new Error("session_claims_invalid");
   }
-
-  let claims: AccessClaims;
-  try {
-    claims = (await verifyToken(session.accessToken, cfg)) as AccessClaims;
-  } catch {
-    return null;
-  }
-  return toAuthUser(claims);
+  return claims as unknown as AccessClaims & { exp: number };
 }
 
-async function tryRefresh(
-  cfg: OidcConfig,
-  rpsid: string,
-  session: RpSession,
-): Promise<RpSession | null> {
-  try {
-    const tokens = await refreshTokens(cfg, session.refreshToken!);
-    const next: RpSession = {
-      ...session,
-      accessToken: tokens.access_token,
-      idToken: tokens.id_token ?? session.idToken,
-      // rotation: the IdP returns a fresh refresh token; store it, drop the old
-      refreshToken: tokens.refresh_token ?? session.refreshToken,
-      accessExpiresAt: Math.floor(Date.now() / 1000) + (tokens.expires_in ?? 300),
-    };
-    await putSession(cfg.clientId, rpsid, next, cfg.sessionTtlSeconds);
-    return next;
-  } catch {
-    // invalid_grant (expired/revoked/replayed) -> session is dead
-    return null;
+/** Null means absent/revoked authority. Transport, refresh or validation errors throw. */
+export async function getAuthUser(cfg: OidcConfig, rpsid: string,
+  deps: SessionDeps = defaults): Promise<AuthUser | null> {
+  const initial = await deps.read(cfg.clientId, rpsid);
+  if (!initial) return null;
+  if (initial.accessExpiresAt - deps.now() > 60 && (initial.centralNextCheckAt ?? 0) > deps.now()) {
+    const claims = validate(await deps.verify(initial.accessToken, cfg), initial, deps.now());
+    const current = await deps.read(cfg.clientId, rpsid);
+    if (!current) return null;
+    if (current.accessToken === initial.accessToken) return toAuthUser(claims);
   }
+  return deps.lock(cfg.clientId, rpsid, async (owner) => {
+    // Waiting replicas re-read the winner's result, never reuse a rotating token.
+    let session = await deps.read(cfg.clientId, rpsid);
+    if (!session) return null;
+    const original = session;
+    if ((session.centralNextCheckAt ?? 0) <= deps.now()) {
+      if (!session.sid) throw new Error("central_sid_required");
+      const status = await deps.central(cfg, session.sid);
+      if (!status.valid) { await deps.revoke(cfg.clientId, session.sid); return null; }
+      session = { ...session, centralNextCheckAt: status.next_check_at };
+    }
+    if (session.accessExpiresAt - deps.now() <= 60) {
+      if (!session.refreshToken) throw new Error("session_refresh_required");
+      const tokens = await deps.refresh(cfg, session.refreshToken);
+      if (!tokens.access_token || typeof tokens.access_token !== "string"
+        || tokens.token_type?.toLowerCase() !== "bearer") throw new Error("session_refresh_invalid");
+      const access = validate(await deps.verify(tokens.access_token, cfg), session, deps.now());
+      if (tokens.id_token) {
+        const id = await deps.verify(tokens.id_token, cfg);
+        if (id.sub !== session.sub || (id.sid !== undefined && id.sid !== session.sid)
+          || !Number.isSafeInteger(id.exp) || id.exp! <= deps.now()) throw new Error("session_identity_changed");
+      }
+      if (tokens.refresh_token !== undefined && (typeof tokens.refresh_token !== "string"
+        || !tokens.refresh_token)) throw new Error("session_refresh_invalid");
+      const next: RpSession = { ...session, accessToken: tokens.access_token,
+        idToken: tokens.id_token ?? session.idToken,
+        refreshToken: tokens.refresh_token ?? session.refreshToken,
+        accessExpiresAt: access.exp };
+      session = next;
+    }
+    const claims = validate(await deps.verify(session.accessToken, cfg), session, deps.now());
+    if (session !== original
+      && !(await deps.rotate(cfg.clientId, rpsid, original.accessToken, session, owner))) return null;
+    const current = await deps.read(cfg.clientId, rpsid);
+    if (!current) return null;
+    if (current.accessToken !== session.accessToken) throw new Error("session_changed_during_read");
+    return toAuthUser(claims);
+  });
+}
+
+/** Fail closed without converting an outage into an anonymous verdict. */
+export async function resolveSessionUser(cfg: OidcConfig, rpsid: string | undefined,
+  resolve: typeof getAuthUser = getAuthUser): Promise<
+    { available: true; user: AuthUser | null } | { available: false; user: null }> {
+  if (!rpsid) return { available: true, user: null };
+  try { return { available: true, user: await resolve(cfg, rpsid) }; }
+  catch { return { available: false, user: null }; }
 }
