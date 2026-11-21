@@ -1,43 +1,30 @@
 import type { EntitlementResolver } from "./resolver";
-import { makeEntitlement } from "./resolver";
 import { fetchEntitlement, type PlatformClientConfig } from "./platform-client";
 import type { Entitlement } from "./types";
+import type { PlatformContext } from "../platform/ticket";
 
-// Real C2 resolver: short-TTL cache + C3 invalidate (product_200 section 3).
-// entitlement is derived live, cached ~45s, and evicted on a subscription_changed
-// webhook. Never persisted, never in the token. Stale-on-error keeps the UI up
-// if the platform blips.
-
+// On-demand service cache only. User admission always reads fresh OBO facts.
+// An unavailable authority is an error, never a cached commercial verdict.
 const TTL_MS = 45_000;
-
-interface Entry {
-  value: Entitlement;
-  expiresAt: number;
-}
-
 export class PlatformEntitlementResolver implements EntitlementResolver {
-  private cache = new Map<string, Entry>();
-
-  constructor(private readonly cfg: PlatformClientConfig) {}
-
-  async resolve(workspaceId: string): Promise<Entitlement> {
-    const now = Date.now();
+  private cache = new Map<string, { value: Entitlement; expiresAt: number }>();
+  private generation = 0;
+  constructor(private readonly cfg: PlatformClientConfig,
+    private readonly load = fetchEntitlement, private readonly now = Date.now) {}
+  async resolve(workspaceId: string, context?: PlatformContext): Promise<Entitlement> {
+    if (context) return this.load(this.cfg, workspaceId, context);
     const hit = this.cache.get(workspaceId);
-    if (hit && hit.expiresAt > now) return hit.value;
-
-    try {
-      const value = await fetchEntitlement(this.cfg, workspaceId);
-      this.cache.set(workspaceId, { value, expiresAt: now + TTL_MS });
-      return value;
-    } catch {
-      // Stale-on-error: last good value, else a no-coverage default (fail-closed
-      // to no access, not fail-open).
-      if (hit) return hit.value;
-      return makeEntitlement(workspaceId, this.cfg.product);
+    if (hit && hit.expiresAt > this.now()) return hit.value;
+    const generation = this.generation;
+    const value = await this.load(this.cfg, workspaceId);
+    if ((this.generation) === generation) {
+      if (this.cache.size >= 1000) this.cache.delete(this.cache.keys().next().value!);
+      this.cache.set(workspaceId, { value, expiresAt: this.now() + TTL_MS });
     }
+    return value;
   }
-
   invalidate(workspaceId: string): void {
     this.cache.delete(workspaceId);
+    this.generation++;
   }
 }

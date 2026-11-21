@@ -134,7 +134,10 @@ const claims = (over: Partial<S2sClaims> = {}): S2sClaims => ({
   act: { sub: "runa" },
   org_id: "org_1",
   workspace_id: "ws_1",
-  exp: 9999999999,
+  iat: Math.floor(Date.now() / 1000),
+  exp: Math.floor(Date.now() / 1000) + 300,
+  scope: "tool:karda",
+  mode: "service",
   ...over,
 });
 
@@ -143,8 +146,8 @@ test("a token with no act.sub is a misused user token and is rejected", () => {
   assert.ok(!r.ok && r.status === 401 && /act\.sub/.test(r.error));
 });
 
-test("OBO mode is derived from a user sub; service mode from its absence", () => {
-  const obo = callerFromClaims(claims({ sub: "usr_9" }));
+test("OBO and service modes require consistent explicit claims", () => {
+  const obo = callerFromClaims(claims({ sub: "usr_9", mode: "obo" }));
   assert.ok(obo.ok && obo.caller.mode === "obo" && obo.caller.user === "usr_9");
 
   const service = callerFromClaims(claims({ sub: undefined }));
@@ -164,4 +167,12 @@ test("an x-vxture-internal-auth header is refused on the tool surface", () => {
   assert.ok(rejectsInternalAuthHeader(withHeader), "the shared platform secret is not a P2P credential");
   const without = new Headers();
   assert.ok(!rejectsInternalAuthHeader(without));
+});
+
+test("S2S refuses wrong scope, inconsistent mode, delegated and overlong tickets", () => {
+  for (const change of [{ scope: "mgmt:karda" }, { sub: "usr" }, { mode: undefined },
+    { delegated: true }, { delegated: false }, { workspace_id: undefined }, { aud: "atlas" },
+    { iat: 1, exp: 9999999999 }]) {
+    assert.equal(callerFromClaims(claims(change)).ok, false);
+  }
 });

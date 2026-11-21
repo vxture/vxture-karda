@@ -41,6 +41,7 @@ test("anonymous, inactive, missing-workspace and unconfigured are all held", () 
   const held: AccessState[] = [
     { status: "anonymous" },
     { status: "inactive-account" },
+    { status: "product-unassigned" },
     { status: "no-workspace", user: USER },
     { status: "unconfigured" },
   ];
@@ -63,6 +64,7 @@ test("every state is either through or held - no state falls off the end", () =>
     "anonymous",
     "authenticated",
     "inactive-account",
+    "product-unassigned",
     "no-workspace",
     "unconfigured",
     "open",
