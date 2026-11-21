@@ -40,7 +40,8 @@ stack/instance - migrated from `vxturebiz_karda_*` 2026-08-10) with service role
 `karda_svc`;
 workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 `KARDA_PROVISION_WEBHOOK_SECRET`, `KARDA_WEBHOOK_BASE_URL`; public host
-`karda.vxture.com`.
+`karda.ruyin.work` (owner-directed cutover 2026-11-22; legacy origin was
+`karda.vxture.com`).
 
 ## Build status
 

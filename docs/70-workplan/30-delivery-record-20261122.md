@@ -7,8 +7,9 @@ CoSpace v1.3.1 presentation. No platform sources, worktrees, server variables or
 edge configuration were modified. Platform gaps are issues, not local patches.
 
 Baseline live production: v0.10.3 / 2f7b142a. Source merges do not deploy. No new
-production deployment, live DDL, paid inference, customer-data mutation or plan
-publication has occurred in this remediation session. All Redis/PostgreSQL test
+application deployment, paid inference, customer-data mutation or plan publication
+has occurred. Owner-approved production db-init44941098583 applied the additive
+0010/0011/0012 increments successfully; baseline assertion found all37 tables. All Redis/PostgreSQL test
 writes target explicitly isolated local containers.
 
 Actual release route is production only. TD-001 explicitly reserves beta until
@@ -135,3 +136,35 @@ implemented capabilities, current seat key and non-successful 409 receipts.
 PR216 merged at 5c4a97f with all required gates green. Preflight found readiness still treated Redis as browser-only and degraded, despite shared service admission now requiring Redis versions. P7.1 makes Redis failure and missing deployed DB/Redis fail readiness (503), preserving offline omission and zero-dependency liveness. No deployment or live DDL has occurred yet.
 
 Deployment verification also now requires both /api/health and /api/ready, each with a bounded request timeout. Liveness alone cannot pass the rollout gate.
+
+
+## Owner-directed domain cutover and deployment configuration
+
+Owner confirmed `karda.ruyin.work` on 2026-11-22. The prior retained origin was
+not the desired final configuration. Arda delivery80 and alignment30 were
+re-read: platform registration is configuration-owned; product runtime origin
+updates ship through the normal product deployment, preserving operator secrets.
+
+PR217 merged at b31ebf9, main CI44941088456 passed. Approved db-init44941098583
+succeeded (0010/0011/0012, all37 declared tables present). Tag v0.11.0 was pushed,
+but deploy44941363441 was cancelled during build before deployment to incorporate
+the domain configuration correction. Production remains v0.10.3/2f7b142a; the
+cancelled tag will not be moved or represented as a successful release.
+
+The new reviewed non-secret production profile supplies the Karda public origin,
+client ID, real /auth/callback and post-logout URL. Compose loads it AFTER the
+persistent operator secret file, with the deployed absolute path selected by
+deploy.sh. Persistent credentials/internal transport are not copied from Arda or
+rewritten. No beta server/profile is invented. Historical edge installation
+instructions are retired; Opera owns domain routing and certificate coverage.
+
+Opera save of edge/home/callback/logout/webhook/logo targets returned500; reload
+and a separate public root request also returned500. Actual save/partial-save
+state remains unknown until read-back. Platform issue727 includes exact desired
+configuration, timestamp, impact and acceptance. No platform source, server
+variable or manual edge edits were made. DNS returns Cloudflare proxies, while
+ordinary new-domain health returned403; this is not route/TLS acceptance. Legacy
+health still identifies Karda v0.10.3. Target is the new domain only, with no
+legacy redirect. Current source plans are distinct from completed live changes.
+
+Domain-profile validation: all858 tests passed, zero skips; TypeScript passed. Actual docker compose config verified repository and delivered layouts both override old origins while retaining dummy operator secret/DB values. Bash syntax passed; platform config save remains unverified due issue727.

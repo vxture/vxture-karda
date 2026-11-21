@@ -18,24 +18,25 @@ Product code `karda`; names below are the concrete derived values.
       double client is canonical (back-channel logout is a single-URI hard
       constraint). Realm = customer.
 - [ ] Set each client's `redirect_uri`, `post_logout_redirect_uri`, and
-      `back_channel_logout_uri` (prod host `karda.vxture.com`).
+      `back_channel_logout_uri` (prod host `karda.ruyin.work`).
 - [ ] Set allowed scopes to `openid profile email phone` (retired product-code and
       commercial scopes are not registered).
 
 ## Edge
 
-- [ ] Request the edge vhost `karda.vxture.com` -> `vx-worker-02:3240`
+- [ ] Configure the product edge domain in Opera: `karda.ruyin.work` -> `vx-worker-02:3240`
       (reallocated 2026-07-24, was 3233; letters `80-liaison/40-2607230909` +
       the port-change note). Production only for now; the beta vhost (port 3241)
       belongs with the future beta server (TD-001).
 
 ## Provisioning webhook (C3)
 
-- [ ] Register karda in `product_webhooks` with its tailnet delivery address
-      `KARDA_WEBHOOK_BASE_URL` = `http://vx-worker-02:3240` (tailnet-direct, not
-      via the public edge).
-- [ ] Add `KARDA_PROVISION_WEBHOOK_SECRET` to the platform env; the owner
-      hand-transports the secret value to this repo's GitHub secrets.
+- [ ] Configure the signed lifecycle webhook in Opera:
+      `https://karda.ruyin.work/api/webhooks/vxture`. Verify actual delivery and ACK;
+      a saved URL does not prove reachability.
+- [ ] Configure the webhook signing secret through Opera key management; the
+      product runtime receives its own secret through normal secure deployment.
+      Do not modify platform server variables.
 
 ## Secrets transport
 
@@ -62,3 +63,12 @@ Karda inherits the platform-integration layer already built, so these rows are
 what stands between the inherited code and a live production stack. Nothing here blocks the
 GitHub bootstrap checklist (`20-github-bootstrap-checklist.md`), which can and
 should run first - the repo needs to exist before any secret can be placed in it.
+
+## 2026-11-22 cutover state
+
+Owner target: karda.ruyin.work only. Production profile overrides persistent old
+public origins after loading secrets. Opera must save home/edge domain, callback
+/auth/callback, post-logout /, backchannel /auth/backchannel-logout, standard
+webhook /api/webhooks/vxture and the /entry/karda-mark.svg logo. No legacy redirect
+is requested. Saving currently returned500 and subsequent Opera page returned500;
+read-back and actual signed delivery remain pending.
