@@ -128,3 +128,10 @@ Deployment verification also now requires both /api/health and /api/ready, each 
 P9：PR217/main CI 已通过，受审 db-init44941098583 成功应用0010/11/12并断言37表；v0.11.0 发布44941363441已在应用部署前取消，不移动该标签。现网仍 v0.10.3。下一个候选须包含本次域名 profile 并通过 CI/人工生产门禁。
 
 Domain-profile validation: all858 tests passed, zero skips; TypeScript passed. Actual docker compose config verified repository and delivered layouts both override old origins while retaining dummy operator secret/DB values. Bash syntax passed; platform config save remains unverified due issue727.
+
+
+### P8.2 保存确认 / P9 候选
+
+用户完成二次验证后回读：04:16:52 CST，七项正式域名配置全部保存为karda.ruyin.work；仅web开启，机密客户端/PKCE/全域退出不变。此前500故障已恢复，不能据此关闭剩余路由问题；04:17:37新域名仍Cloudflare520，已补平台issue727。
+
+PR218 / cba6e16及main CI44942740610通过（858项测试），v0.11.1候选run44945579438执行正常构建，生产推广仍需人工门禁。v0.11.0已取消，不移动标签。数据库增量已通过run44941098583应用；应用尚未声称部署成功。

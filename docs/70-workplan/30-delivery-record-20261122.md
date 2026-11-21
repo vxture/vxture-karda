@@ -3,8 +3,9 @@
 ## Scope and actual release state
 
 Karda-only implementation, following the Arda integration lessons and frozen
-CoSpace v1.3.1 presentation. No platform sources, worktrees, server variables or
-edge configuration were modified. Platform gaps are issues, not local patches.
+CoSpace v1.3.1 presentation. No platform sources, worktrees, server variables or manually installed edge
+files were modified. Product registration changes use Opera configuration.
+Platform gaps are issues, not local patches.
 
 Baseline live production: v0.10.3 / 2f7b142a. Source merges do not deploy. No new
 application deployment, paid inference, customer-data mutation or plan publication
@@ -168,3 +169,26 @@ health still identifies Karda v0.10.3. Target is the new domain only, with no
 legacy redirect. Current source plans are distinct from completed live changes.
 
 Domain-profile validation: all858 tests passed, zero skips; TypeScript passed. Actual docker compose config verified repository and delivered layouts both override old origins while retaining dummy operator secret/DB values. Bash syntax passed; platform config save remains unverified due issue727.
+
+
+## Verified domain registration and candidate - 2026-11-22
+
+Owner completed Opera second-factor verification. Read-back shows updated time
+04:16:52 CST and all seven target values saved: edge domain, home, real
+/auth/callback, post-logout /, /auth/backchannel-logout, /api/webhooks/vxture and
+/entry/karda-mark.svg use karda.ruyin.work. Client karda remains confidential,
+PKCE and backend logout enabled; only web terminal enabled. Upstream unchanged
+100.76.219.48:3240. This supersedes the earlier pending-save state, without
+rewriting the prior500 evidence.
+
+Browser health04:17:37 CST still shows Cloudflare520 (Ray a5e260fedf0b8a6c).
+Issue727 was updated with saved registration and remaining route failure. No
+manual platform variables/nginx edits or certificate bypass were performed.
+Legacy route retirement and signed delivery are not accepted merely from the
+saved fields.
+
+PR218 merged cba6e16; main CI44942740610 passed all gates. Production candidate
+v0.11.1 / cba6e16 includes reviewed origin profile and858 passing tests. Deploy
+run44945579438 builds through the normal pipeline and requires production human
+approval. No application rollout success is yet claimed. Cancelled v0.11.0 is
+retained as cancelled and its tag is not moved.

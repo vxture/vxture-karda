@@ -72,3 +72,9 @@ public origins after loading secrets. Opera must save home/edge domain, callback
 webhook /api/webhooks/vxture and the /entry/karda-mark.svg logo. No legacy redirect
 is requested. Saving currently returned500 and subsequent Opera page returned500;
 read-back and actual signed delivery remain pending.
+
+
+Follow-up read-back: owner completed second-factor verification. At04:16:52 CST
+Opera records all seven new-domain fields above. Save is confirmed; routing is
+not: browser health04:17:37 still returns Cloudflare520 (issue727). Use candidate
+v0.11.1/cba6e16, deploy44945579438, after required production approval.
