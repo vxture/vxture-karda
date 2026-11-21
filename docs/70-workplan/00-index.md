@@ -3,7 +3,8 @@
 ## Current remediation - 2026-11-22
 
 Ordered batches and live status: [20-rectification-batches-20261122](20-rectification-batches-20261122.md).
-P0-P7 and P4.1 merged with all required gates, not deployed. P8 management
+P0-P7 and P4.1 deployed in v0.11.1 / cba6e16a (approved run44945579438).
+Health/readiness pass; target-domain520 and real business acceptance remain open. P8 management
 registration was inspected and corrected; capacity/commercial work remains open.
 Delivery evidence: [30-delivery-record-20261122](30-delivery-record-20261122.md).
 

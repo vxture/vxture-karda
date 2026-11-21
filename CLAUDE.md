@@ -45,9 +45,9 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current baseline (2026-11-22): production /api/health identifies v0.10.3 at
-2f7b142a; /api/ready reports DB and Redis healthy. Main2503652 adds its release
-ledger. The inherited paragraphs below describe the original bootstrap, not
+Current production (2026-11-22): v0.11.1 / cba6e16a, approved deploy
+44945579438; /api/health and /api/ready pass through the legacy host. Target
+karda.ruyin.work still returns520 (platform issue727); business acceptance is open. The inherited paragraphs below describe the original bootstrap, not
 current delivery. See docs/70-workplan/10-platform-alignment-20261122.md for
 the new evidence-based remediation matrix and pending acceptance.
 
