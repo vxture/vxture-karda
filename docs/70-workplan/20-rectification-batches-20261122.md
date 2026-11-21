@@ -61,7 +61,7 @@ P3.2：独立 provisioning:read 票据、启动及每 5 分钟后台全量分页
 
 本地 837 项测试通过、无跳过，含真实 Redis 与 PostgreSQL 服务角色：并发投递只执行一次、事务回滚、版本乱序、通知不动水位、载荷冲突、旧快照不复活已停用空间、不可改写租户引用。TypeScript、DDL/Prisma/权限和工作流守卫通过。CI 增加隔离 PostgreSQL，以受控 DDL 初始化后运行相同测试。
 
-平台 ACK 的在途旧版本竞态继续归 [issue720](https://github.com/vxture-platform/vxture-platform/issues/720)，本仓发送 detail.seq 不能替代平台原子版本校验。多实例缓存失效仍属 P7。未执行现网 DDL、平台写配置或部署，不能把本地通过当成线上验收。
+平台 ACK 的在途旧版本竞态继续归 [issue720](https://github.com/vxture-platform/vxture-platform/issues/720)，本仓发送 detail.seq 不能替代平台原子版本校验。环境隔离已发送 [平台 issue724](https://github.com/vxture-platform/vxture-platform/issues/724)，不修改平台仓。多实例缓存失效仍属 P7。未执行现网 DDL、平台写配置或部署，不能把本地通过当成线上验收。
 
 ## 跟踪规则
 
