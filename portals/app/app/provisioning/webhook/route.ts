@@ -1,56 +1,33 @@
-import { BRAND } from "@karda/shared/brand";
+import { acknowledgeProvisioning } from "../lib/ack";
 import { verifySignature, webhookSecrets } from "../lib/verify";
-import { handleProvisioning, type ProvisioningEvent } from "../lib/handler";
+import { handleProvisioning } from "../lib/handler";
 import { getProvisioningStore } from "../lib/store";
+import { parseProvisioningPayload, readWebhookBody } from "../lib/payload";
 import { getEntitlementResolver } from "../../entitlement/resolver";
-
-// POST /provisioning/webhook (product_200 section 4, 080-rp section 4). Verify
-// over RAW bytes first (401 on failure / stale timestamp), then hand to the
-// idempotent + ordered handler. A processing error returns 500 so the platform
-// retries; a valid-but-duplicate/stale event still acks 2xx.
 export const dynamic = "force-dynamic";
-
-function productCode(): string {
-  return process.env.OIDC_CLIENT_ID ?? BRAND.productCode;
-}
-
+export const runtime = "nodejs";
 export async function POST(req: Request): Promise<Response> {
-  const raw = await req.text(); // raw body - required for HMAC, do not re-serialize
-  const sig = req.headers.get("x-vxture-signature");
-  if (!verifySignature(raw, sig, webhookSecrets())) {
+  if (!webhookSecrets().length) return new Response("webhook unavailable", { status: 503 });
+  let raw: string;
+  try { raw = await readWebhookBody(req); }
+  catch { return new Response("invalid body", { status: 400 }); }
+  if (!verifySignature(raw, req.headers.get("x-vxture-signature"), webhookSecrets())) {
     return new Response("invalid signature", { status: 401 });
   }
-
-  let payload: Record<string, unknown>;
-  try {
-    payload = JSON.parse(raw) as Record<string, unknown>;
-  } catch {
-    return new Response("bad json", { status: 400 });
+  let event;
+  try { event = parseProvisioningPayload(JSON.parse(raw), req.headers); }
+  catch { return new Response("invalid payload or headers", { status: 400 }); }
+  // The upstream read/webhook contract has no environment scope. Beta must not
+  // apply or acknowledge product-wide production lifecycle state.
+  if (process.env.DEPLOY_STAGE === "beta" && event.type.startsWith("tenant.")) {
+    return new Response("unscoped lifecycle unavailable on beta", { status: 503 });
   }
-
-  const deliveryId = req.headers.get("x-vxture-delivery") ?? String(payload.id ?? "");
-  if (!deliveryId) return new Response("missing delivery id", { status: 400 });
-
-  const event: ProvisioningEvent = {
-    id: deliveryId,
-    type: String(payload.type ?? ""),
-    occurred_at: typeof payload.occurred_at === "number" ? payload.occurred_at : undefined,
-    seq: typeof payload.seq === "number" ? payload.seq : 0,
-    workspace_id: String(payload.workspace_id ?? ""),
-    tenant_id: typeof payload.tenant_id === "string" ? payload.tenant_id : undefined,
-    application: String(payload.application ?? ""),
-    plan: typeof payload.plan === "string" ? payload.plan : null,
-    data: payload.data,
-  };
-
   try {
-    await handleProvisioning(event, {
-      store: getProvisioningStore(),
-      product: productCode(),
-      onSubscriptionChanged: (ws) => getEntitlementResolver().invalidate(ws),
-    });
+    const result = await handleProvisioning(event, { store: getProvisioningStore(), product: "karda",
+      onSubscriptionChanged: ws => getEntitlementResolver().invalidate(ws) });
+    if (event.type === "tenant.provisioned") await acknowledgeProvisioning(event.workspace_id, event.seq!, event.id);
+    return Response.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch {
-    return new Response("processing error", { status: 500 }); // platform will retry
+    return new Response("processing unavailable", { status: 503 });
   }
-  return new Response("", { status: 200 });
 }

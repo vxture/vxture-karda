@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS vx_provision.app_instance (
 -- Inbound webhook idempotency ledger (append-only; delivery_id = payload.id).
 CREATE TABLE IF NOT EXISTS vx_provision.webhook_delivery (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  payload_hash VARCHAR(64),                         -- legacy receipts remain NULL
   delivery_id  VARCHAR(128) NOT NULL,                 -- [ref] = payload.id / X-Vxture-Delivery
   type         VARCHAR(64) NOT NULL,
   occurred_at  TIMESTAMPTZ,
@@ -47,6 +48,16 @@ CREATE TABLE IF NOT EXISTS vx_provision.webhook_delivery (
                  CHECK (result IN ('processed', 'duplicate', 'stale', 'ignored')),
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT uidx_webhook_delivery_delivery_id UNIQUE (delivery_id)
+);
+
+-- Immutable scope recovered only from signed events / verified read reconciliation.
+CREATE TABLE IF NOT EXISTS vx_provision.provision_anchor (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id UUID NOT NULL,
+  product_code VARCHAR(32) NOT NULL,
+  tenant_id UUID NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT uidx_provision_anchor_ws_product UNIQUE (workspace_id, product_code)
 );
 
 -- Per (workspace_id, product_code) processed-seq watermark (drop stale/reordered).

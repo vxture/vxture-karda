@@ -245,6 +245,18 @@ jobs:
     needs: [changes]
     timeout-minutes: 10
     services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: karda_p3_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d karda_p3_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
       session-redis:
         image: redis:7-alpine
         ports:
@@ -291,9 +303,18 @@ jobs:
           # "all" - every org repo's Actions can read it).
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
 
+      - name: Prepare isolated provisioning database
+        if: env.CODE == 'true'
+        run: |
+          bash deploy/database/apply.sh
+          pnpm --filter @karda/app exec prisma generate
+        env:
+          DATABASE_URL: postgresql://postgres@127.0.0.1:5432/karda_p3_test
+
       - name: Run tests
         if: env.CODE == 'true'
         run: pnpm --filter @karda/app test
         env:
           REDIS_URL: redis://127.0.0.1:6379/15
           KARDA_SESSION_TEST_REDIS_URL: redis://127.0.0.1:6379/15
+          KARDA_PROVISION_TEST_DATABASE_URL: postgresql://postgres@127.0.0.1:5432/karda_p3_test
