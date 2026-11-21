@@ -59,7 +59,7 @@ export function toAtlasError(status: number, body: unknown): AtlasApiError {
         status,
         o.retryable === true,
         typeof o.message === "string" ? o.message : o.code,
-        typeof o.retryAfterMs === "number" ? o.retryAfterMs : null,
+        typeof o.retryAfterMs === "number" && Number.isFinite(o.retryAfterMs) && o.retryAfterMs >= 0 ? o.retryAfterMs : null,
       );
     }
   }
@@ -82,6 +82,8 @@ export async function atlasPost(
   ctx: AtlasContext,
   body: Record<string, unknown>,
 ): Promise<unknown> {
+  if (!path.startsWith("/v1/") || path.includes("..") || path.includes("?") || path.includes("#")) throw new Error("atlas_path_invalid");
+  if (!ctx.org || !ctx.ws) throw new Error("atlas_context_required");
   const token = await core.tokenSource.tokenFor({ org: ctx.org, ws: ctx.ws });
   const url = assertInternalTarget(`${core.baseUrl.replace(/\/$/, "")}${path}`);
   const fetchImpl = core.fetchImpl ?? fetch;
@@ -90,6 +92,8 @@ export async function atlasPost(
     headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
     cache: "no-store",
+    redirect: "error",
+    signal: AbortSignal.timeout(120000),
   });
   const parsed: unknown = await res.json().catch(() => null);
   if (!res.ok) throw toAtlasError(res.status, parsed);

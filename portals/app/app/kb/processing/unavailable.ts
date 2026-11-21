@@ -32,7 +32,8 @@ export type UnavailableCause =
    *  没上线的模型。修复人是**知识库的属主**(改模型锁)或 Atlas(上这个模型)。
    *  分出来是因为把它显示成「未授权」会让人去平台反复确认一个已经授过的端点。
    *  参数是 modelCode。 */
-  | "model_not_routable";
+  | "model_not_routable"
+  | "upstream_account_refused";
 
 /** 带参数的原因:端点码 / 模型码。没有参数的两档 `arg` 为 null。 */
 export interface Unavailable {
@@ -77,6 +78,7 @@ const CAUSES: ReadonlySet<string> = new Set<UnavailableCause>([
   "workspace_not_provisioned",
   "endpoint_not_granted",
   "model_not_routable",
+  "upstream_account_refused",
 ]);
 
 /**

@@ -70,6 +70,10 @@ export const states = {
     "zh-CN": "端点未授权给产品 karda。请在平台管理面为产品 karda 授予该端点",
     "en-US": "This endpoint is not granted to product karda. Grant it to product karda in the platform console",
   },
+  blockerUpstreamAccountRefused: {
+    "zh-CN": "\u6a21\u578b\u670d\u52a1\u6682\u4e0d\u53ef\u7528\uff0c\u8bf7\u8054\u7cfb\u7ba1\u7406\u5458\u68c0\u67e5\u4e0a\u6e38\u670d\u52a1\u8d26\u6237\u3002\u6062\u590d\u540e\u53ef\u7ee7\u7eed\u5904\u7406\u3002",
+    "en-US": "Model service is unavailable. Ask an administrator to check the upstream service account; processing can resume after recovery.",
+  },
   blockerModelNotRoutable: {
     // 目录里**不能写 markdown**:界面按纯文本渲染,`**`
     // 会原样出现在屏幕上——这一条是真库截图抓到的,type-check 和测试都看不见它。

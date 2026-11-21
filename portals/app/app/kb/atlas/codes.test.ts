@@ -1,0 +1,22 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { causeForAtlasCode, shouldSuspend, ATLAS_CODES, SNAPSHOT_FINGERPRINT } from "./codes";
+import { mapEmbedError } from "./embed";
+import { mapExtractError } from "./extract";
+import { AtlasApiError } from "./client";
+import { UnavailableError, decodeUnavailable, encodeUnavailable } from "../processing/unavailable";
+test("current Atlas account refusal parks instead of consuming transient retries", () => {
+  assert.ok(ATLAS_CODES.has("UPSTREAM_ACCOUNT_REFUSED"));
+  assert.equal(SNAPSHOT_FINGERPRINT, "c1-ccd1b2cb48f8");
+  assert.equal(shouldSuspend("UPSTREAM_ACCOUNT_REFUSED", false), true);
+  assert.equal(shouldSuspend("RATE_LIMITED", true), false);
+  const cause = causeForAtlasCode("UPSTREAM_ACCOUNT_REFUSED", { endpointCode: "embedding/default" });
+  assert.deepEqual(cause, { cause: "upstream_account_refused", arg: null });
+  assert.deepEqual(decodeUnavailable(encodeUnavailable(cause)), cause);
+  const mapped = mapEmbedError(new AtlasApiError("UPSTREAM_ACCOUNT_REFUSED", 503, false, "private provider response"), { endpointCode: "embedding/default" });
+  assert.ok(mapped instanceof UnavailableError);
+  assert.equal(mapped.unavailable.cause, "upstream_account_refused");
+  const extract = mapExtractError(new AtlasApiError("UPSTREAM_ACCOUNT_REFUSED", 503, false, "private provider response"), { endpointCode: "chat/extract" });
+  assert.ok(extract instanceof UnavailableError);
+  assert.equal(extract.unavailable.cause, "upstream_account_refused");
+});

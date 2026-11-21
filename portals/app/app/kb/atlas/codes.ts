@@ -79,6 +79,7 @@ export const SUSPEND_CODES: ReadonlySet<string> = new Set([
   "MODEL_NOT_IMPLEMENTED",
   "MODEL_NOT_ROUTABLE",
   "ENDPOINT_NOT_ROUTABLE",
+  "UPSTREAM_ACCOUNT_REFUSED",
 ]);
 
 /**
@@ -111,6 +112,7 @@ export function shouldSuspend(code: string, retryable: boolean): boolean {
  * 任何人去修,所以它压根不该有「去哪修」)。
  */
 export function causeForAtlasCode(code: string, selection: ModelSelection): Unavailable {
+  if (code === "UPSTREAM_ACCOUNT_REFUSED") return { cause: "upstream_account_refused", arg: null };
   if (code === "MODEL_NOT_IMPLEMENTED" || code === "MODEL_NOT_ROUTABLE") {
     return { cause: "model_not_routable", arg: selection.modelCode ?? null };
   }

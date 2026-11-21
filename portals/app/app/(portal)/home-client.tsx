@@ -71,6 +71,7 @@ const BLOCKER_KEY = {
   workspace_not_provisioned: "blockerWorkspaceNotProvisioned",
   endpoint_not_granted: "blockerEndpointNotGranted",
   model_not_routable: "blockerModelNotRoutable",
+  upstream_account_refused: "blockerUpstreamAccountRefused",
 } as const satisfies Record<UnavailableCause, keyof typeof states>;
 
 /** 四个域,从导航目录里取——首页不另写一份。首页自己那一项要去掉,否则这一页会给出

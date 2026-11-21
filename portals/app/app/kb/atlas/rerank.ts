@@ -45,12 +45,13 @@ export function extractScores(body: unknown, count: number): { index: number; sc
       const index = typeof row.index === "number" ? row.index : null;
       const score =
         typeof row.score === "number" ? row.score : typeof row.relevanceScore === "number" ? row.relevanceScore : null;
-      if (index === null || score === null || index < 0 || index >= count) return null;
+      if (index === null || score === null || !Number.isInteger(index) || !Number.isFinite(score) || index < 0 || index >= count
+        || out.some(item => item.index === index)) return null;
       out.push({ index, score });
     }
     return out;
   }
-  if (Array.isArray(o.scores) && o.scores.every((s) => typeof s === "number") && o.scores.length === count) {
+  if (Array.isArray(o.scores) && o.scores.every((s) => typeof s === "number" && Number.isFinite(s)) && o.scores.length === count) {
     return (o.scores as number[]).map((score, index) => ({ index, score }));
   }
   return null;
