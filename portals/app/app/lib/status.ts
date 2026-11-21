@@ -43,9 +43,9 @@ export interface IntegrationStatus {
     clientSecretConfigured: boolean;
   };
   c2: {
-    resolver: "platform" | "mock";
+    resolver: "platform" | "mock" | "unconfigured";
     platformApiConfigured: boolean;
-    authTokenConfigured: boolean;
+    serviceIdentityConfigured: boolean;
     consoleUrl: string | null;
     cacheTtlMs: number;
   };
@@ -102,9 +102,10 @@ export function buildStatus(env: Env, now: string): IntegrationStatus {
       clientSecretConfigured: Boolean(env.OIDC_CLIENT_SECRET),
     },
     c2: {
-      resolver: env.PLATFORM_API_URL && env.PLATFORM_INTERNAL_AUTH_TOKEN ? "platform" : "mock",
+      resolver: env.PLATFORM_API_URL && env.OIDC_CLIENT_SECRET ? "platform"
+        : env.DEPLOY_STAGE === "production" || env.DEPLOY_STAGE === "beta" ? "unconfigured" : "mock",
       platformApiConfigured: Boolean(env.PLATFORM_API_URL),
-      authTokenConfigured: Boolean(env.PLATFORM_INTERNAL_AUTH_TOKEN),
+      serviceIdentityConfigured: Boolean(env.OIDC_CLIENT_SECRET),
       consoleUrl: env.NEXT_PUBLIC_CONSOLE_URL ?? null,
       cacheTtlMs: 45_000,
     },

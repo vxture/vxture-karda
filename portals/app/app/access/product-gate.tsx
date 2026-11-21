@@ -209,6 +209,12 @@ function describe(phase: Phase, destination: string): View {
       };
     }
 
+    case "product-unassigned":
+      return {
+        message: "\u5c1a\u672a\u83b7\u5f97\u4f7f\u7528\u6743\u9650",
+        hint: "\u8bf7\u8054\u7cfb\u7ba1\u7406\u5458\u5f00\u901a\u4ea7\u54c1\u4f7f\u7528\u6743\u9650",
+        idleLabel: "\u8054\u7cfb\u7ba1\u7406\u5458",
+      };
     case "inactive-account":
       return {
         message: "该账号当前不可用",

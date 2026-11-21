@@ -6,7 +6,6 @@ import { buildStatus, parseDbUrl, statusMode } from "./status";
 const SECRETS = {
   OIDC_CLIENT_SECRET: "SENTINEL_oidc_secret_zzz",
   POSTGRES_PASSWORD: "SENTINEL_pg_pw_zzz",
-  PLATFORM_INTERNAL_AUTH_TOKEN: "SENTINEL_platform_tok_zzz",
   PROVISION_WEBHOOK_SECRET: "SENTINEL_wh_secret_zzz",
   PROVISION_WEBHOOK_SECRET_NEXT: "SENTINEL_wh_next_zzz",
   INTERNAL_JOB_TOKEN: "SENTINEL_job_tok_zzz",
@@ -38,7 +37,7 @@ test("NO SECRET VALUE ever appears in the status output", () => {
 test("secrets are reported as presence booleans only", () => {
   const s = buildStatus(FULL_ENV, "t");
   assert.equal(s.c1.clientSecretConfigured, true);
-  assert.equal(s.c2.authTokenConfigured, true);
+  assert.equal(s.c2.serviceIdentityConfigured, true);
   assert.equal(s.c3.webhookSecretConfigured, true);
   assert.equal(s.c3.webhookRotationConfigured, true);
   assert.equal(s.c3.internalJobTokenConfigured, true);

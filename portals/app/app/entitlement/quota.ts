@@ -41,6 +41,6 @@ export function poolFor(e: Entitlement, metric: string): QuotaPool | undefined {
 
 /** Consumable remaining for a metric pool (0 if no pool). Gate: remaining > 0. */
 export function poolRemaining(e: Entitlement, metric: string): number {
-  const pool = poolFor(e, metric);
-  return pool ? pool.remaining : 0;
+  return e.quota_pools.filter(p => p.metric === metric)
+    .reduce((total, pool) => total + pool.remaining, 0);
 }

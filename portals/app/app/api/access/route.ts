@@ -1,3 +1,4 @@
+import { userAdmission } from "../../platform/admission";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getOidcConfig } from "../../auth/lib/config";
@@ -25,7 +26,9 @@ import type { AccessState } from "../../access/types";
 export const dynamic = "force-dynamic";
 
 export async function GET(): Promise<Response> {
-  const response = await accessResponse();
+  let response: Response;
+  try { response = await accessResponse(); }
+  catch { response = NextResponse.json({ error: "platform_unavailable" }, { status: 503 }); }
   response.headers.set("Cache-Control", "no-store");
   return response;
 }
@@ -72,7 +75,11 @@ async function accessResponse(): Promise<Response> {
     return NextResponse.json({ status: "no-workspace", user } satisfies AccessState);
   }
 
-  const entitlement = await getEntitlementResolver().resolve(user.activeWorkspace);
+  const admission = devLoginEnabled(cfg.enabled) ? null : await userAdmission(user);
+  if (admission && !admission.entitlement) {
+    return NextResponse.json({ status: "product-unassigned" } satisfies AccessState);
+  }
+  const entitlement = admission?.entitlement ?? await getEntitlementResolver().resolve(user.activeWorkspace);
   return NextResponse.json({
     status: "authenticated",
     user,

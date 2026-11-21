@@ -1,7 +1,7 @@
 import { getUsageStore, type UsageRow, type UsageStore } from "./store";
 import { getPlatformClientConfig } from "../../entitlement/platform-client";
 import { getEntitlementResolver } from "../../entitlement/resolver";
-import { assertInternalTarget } from "../../lib/internal-target";
+import { platformRequest, workspacePlatformContext } from "../../platform/client";
 
 // Async flush job (product_200 section 4.1): drain buffered counter usage and
 // report to the platform consume service (the single writer). 200 -> flushed;
@@ -69,12 +69,11 @@ function defaultConsume(): ConsumeFn | null {
   const cfg = getPlatformClientConfig();
   if (!cfg) return null;
   return async (row) => {
-    const url = assertInternalTarget(`${cfg.baseUrl.replace(/\/$/, "")}/usage/consume`);
-    const res = await fetch(url, {
+    const context = await workspacePlatformContext(row.workspaceId);
+    const res = await platformRequest("/usage/consume", context, {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-vxture-internal-auth": cfg.authToken,
       },
       body: JSON.stringify({
         workspace_id: row.workspaceId,
@@ -83,8 +82,7 @@ function defaultConsume(): ConsumeFn | null {
         amount: row.amount,
         idempotency_key: row.idempotencyKey,
       }),
-      cache: "no-store",
-    });
+    }, cfg.baseUrl);
     return { status: res.status };
   };
 }

@@ -30,3 +30,13 @@ test("limitOf and poolRemaining", () => {
   assert.equal(poolRemaining(e, "ai.credit"), 40);
   assert.equal(poolRemaining(e, "nope"), 0);
 });
+
+test("consumable pools add across package and top-up regardless of order", () => {
+  const pools = [{ metric: "ai.credit", limit: 10, remaining: 0, priority: 1 },
+    { metric: "ai.credit", limit: 30, remaining: 25, priority: 2 },
+    { metric: "other", limit: 100, remaining: 100, priority: 1 },
+    { metric: "ai.credit", limit: 10, remaining: -2, priority: 3 }];
+  for (const quota_pools of [pools, [...pools].reverse()]) {
+    assert.equal(poolRemaining(ent({ quota_pools }), "ai.credit"), 23);
+  }
+});

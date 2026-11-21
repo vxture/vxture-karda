@@ -30,6 +30,7 @@ export type AccessState =
    * hand back the same dead account.
    */
   | { status: "inactive-account" }
+  | { status: "product-unassigned" }
   /**
    * Signed in with no active workspace. Re-authenticating cannot add one, so
    * the way out is the console, not the login page.

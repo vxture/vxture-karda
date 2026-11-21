@@ -1,3 +1,5 @@
+import type { PlatformContext } from "../platform/ticket";
+import { isDeployedStage } from "../lib/deploy-stage";
 import { EMPTY_ENTITLEMENT, type Entitlement, type SubscriptionStatus, type Tier } from "./types";
 import { getPlatformClientConfig } from "./platform-client";
 import { PlatformEntitlementResolver } from "./platform-resolver";
@@ -6,7 +8,7 @@ import { PlatformEntitlementResolver } from "./platform-resolver";
 // interface; the factory picks the real platform client or the offline Mock.
 
 export interface EntitlementResolver {
-  resolve(workspaceId: string): Promise<Entitlement>;
+  resolve(workspaceId: string, context?: PlatformContext): Promise<Entitlement>;
   invalidate(workspaceId: string): void;
 }
 
@@ -41,13 +43,14 @@ let singleton: EntitlementResolver | null = null;
 export function getEntitlementResolver(): EntitlementResolver {
   if (singleton) return singleton;
   const cfg = getPlatformClientConfig();
+  if (!cfg && isDeployedStage()) throw new Error("platform_entitlement_unconfigured");
   singleton = cfg ? new PlatformEntitlementResolver(cfg) : new MockEntitlementResolver(productCode());
   return singleton;
 }
 
 function productCode(): string {
   // Mirrors platform-client's product; kept here so the Mock needs no platform cfg.
-  return process.env.OIDC_CLIENT_ID ?? "karda";
+  return "karda";
 }
 
 // For tests: reset the memoized resolver.

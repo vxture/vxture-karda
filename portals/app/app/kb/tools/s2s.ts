@@ -22,6 +22,10 @@ export interface S2sClaims {
   org_id?: string;
   workspace_id?: string;
   exp: number;
+  iat?: number;
+  scope?: string;
+  mode?: CallMode;
+  delegated?: unknown;
 }
 
 export interface CallerContext {
@@ -41,17 +45,27 @@ export type ResolveResult =
  * The signature/aud/exp/RS256 checks are the verifier's job (done before this);
  * this is the S2S-shape validation the tool surface layers on top.
  */
-export function callerFromClaims(claims: S2sClaims): ResolveResult {
+export function callerFromClaims(claims: S2sClaims, now = Date.now() / 1000): ResolveResult {
   // #6: act.sub must exist. A token with no actor is a user-level access token
   // being misused as a service credential - reject rather than treat the user as
   // the caller product.
   const callerProduct = claims.act?.sub;
-  if (!callerProduct) {
+  if (typeof callerProduct !== "string" || !callerProduct.trim()) {
     return { ok: false, status: 401, error: "invalid_token: S2S token missing act.sub" };
   }
 
-  // OBO iff a user sub is present; otherwise service mode.
-  const mode: CallMode = claims.sub ? "obo" : "service";
+  if (claims.aud !== "karda" || claims.scope !== "tool:karda"
+    || claims.delegated !== undefined
+    || typeof claims.org_id !== "string" || !claims.org_id
+    || typeof claims.workspace_id !== "string" || !claims.workspace_id
+    || !Number.isSafeInteger(claims.iat) || !Number.isSafeInteger(claims.exp)
+    || claims.iat! > now + 30 || claims.exp <= now || claims.exp <= claims.iat!
+    || claims.exp - claims.iat! > 300
+    || !(claims.mode === "service" && claims.sub === undefined
+      || claims.mode === "obo" && typeof claims.sub === "string" && claims.sub.length > 0)) {
+    return { ok: false, status: 401, error: "invalid_token: invalid S2S scope" };
+  }
+  const mode = claims.mode;
 
   return {
     ok: true,

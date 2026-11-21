@@ -1,3 +1,4 @@
+import { userAdmission } from "../../platform/admission";
 // Shared HTTP plumbing for the kb routes: resolve the session once, and map
 // service errors to status codes in one place so every route answers
 // consistently. A route that hand-rolls its own 401/403/404 is how a surface
@@ -41,6 +42,13 @@ export async function requireAuth(): Promise<Authed> {
   const user = result.user;
   if (!user || !user.activeWorkspace) {
     return { ok: false, response: NextResponse.json({ error: "unauthenticated" }, { status: 401 }) };
+  }
+  try {
+    const admission = await userAdmission(user);
+    if (!admission.allowed) return { ok: false, response: NextResponse.json({ error: admission.error }, { status: 403 }) };
+  } catch {
+    return { ok: false, response: NextResponse.json({ error: "platform_unavailable" },
+      { status: 503, headers: { "Cache-Control": "no-store" } }) };
   }
   return { ok: true, user: user as AuthUser & { activeWorkspace: string } };
 }

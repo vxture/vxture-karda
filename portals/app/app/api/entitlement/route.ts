@@ -1,3 +1,4 @@
+import { userAdmission } from "../../platform/admission";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getOidcConfig } from "../../auth/lib/config";
@@ -11,7 +12,9 @@ import { hasProductAccess, hasDataAccess, ctaFor } from "../../entitlement/types
 export const dynamic = "force-dynamic";
 
 export async function GET(): Promise<Response> {
-  const response = await entitlementResponse();
+  let response: Response;
+  try { response = await entitlementResponse(); }
+  catch { response = NextResponse.json({ error: "platform_unavailable" }, { status: 503 }); }
   response.headers.set("Cache-Control", "no-store");
   return response;
 }
@@ -28,7 +31,9 @@ async function entitlementResponse(): Promise<Response> {
     return NextResponse.json({ authenticated: false }, { status: 401 });
   }
 
-  const entitlement = await getEntitlementResolver().resolve(user.activeWorkspace);
+  const admission = await userAdmission(user);
+  if (!admission.entitlement) return NextResponse.json({ error: admission.error }, { status: 403 });
+  const entitlement = admission.entitlement;
   return NextResponse.json({
     entitlement,
     gates: {
