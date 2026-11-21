@@ -1,5 +1,12 @@
 # 70-workplan - Build plan and batch tracker
 
+## Current remediation - 2026-11-22
+
+See [10-platform-alignment-20261122](10-platform-alignment-20261122.md) for the
+verified v0.10.3 baseline, initial contract gaps, first logout corrections and
+ordered implementation batches. The historical tracker below retains the state
+at each earlier delivery; its old bootstrap/blocker rows are not current proof.
+
 Karda's build plan. Each batch is one PR with machine-checked acceptance.
 Authority for the inherited part of the plan: platform repo
 `docs/30-design/product_240_repo-template.md`; for the karda product part, this

@@ -44,13 +44,25 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
+Current baseline (2026-11-22): production /api/health identifies v0.10.3 at
+2f7b142a; /api/ready reports DB and Redis healthy. Main2503652 adds its release
+ledger. The inherited paragraphs below describe the original bootstrap, not
+current delivery. See docs/70-workplan/10-platform-alignment-20261122.md for
+the new evidence-based remediation matrix and pending acceptance.
+
+Owner scope: modify Karda only; report platform gaps as detailed issues. Do not
+edit platform sources, create platform worktrees, change platform server variables
+or manually install edge routing. Platform L2/L3 admission uses configuration;
+Karda runtime settings use its normal deployment pipeline. This owner constraint
+overrides historical instructions above to fix platform standards directly.
+
 Inherited from the template at instantiation (2026-07-22): the governance shell,
 the platform integration layer (C1 OIDC RP / C2 entitlement / C3 provisioning +
 usage), the business-face DB baseline, the offline verification pages, and the
 tag-to-env deploy pipeline. All of that is offline Mock-green in the template and
 carries over unchanged.
 
-Not yet done for karda: GitHub bootstrap (repo creation, secret scanning, first
+At instantiation, not yet done for karda: GitHub bootstrap (repo creation, secret scanning, first
 push, first CI run, ruleset apply - see `docs/50-deployment/20-github-bootstrap-
 checklist.md`), platform-side registration (OIDC clients, secrets, edge vhost -
 see `10-platform-registration-checklist.md`), and the entire karda product domain.
