@@ -13,9 +13,9 @@
 | P4 | C3 持久用量与自动排空 | **已合入，未部署** | [PR211](https://github.com/vxture/vxture-karda/pull/211) / bf948da；841 项测试和全部 CI 通过；需先 db-init 0011；真实 C3 待 P9 |
 | P5 | Atlas 现行契约与知识链路 | **已合入，未部署** | [PR212](https://github.com/vxture/vxture-karda/pull/212) / 35d33ae；845 项及全部 CI 通过；线上契约及真实知识链路待 P9 |
 | P6 | Karda 独立页面设计与入口实施 | **已合入，未部署** | [PR213](https://github.com/vxture/vxture-karda/pull/213) / 43004f1；847 项及全部 CI 通过；CoSpace v1.3.1，独立 Karda 图形/背景，保留 Ruyin/版权及 ShellViewport |
-| P7 | 浏览器消息同步 | **实现及本地验证完成；CI 待执行，未部署** | 参考 Arda ADR-014：可靠事件、共享缓存版本、SSE/断线恢复；正常 tab 切换零权限查询；不引入定时权限轮询 |
+| P7 | 浏览器消息同步 | **已合入，未部署** | [PR214](https://github.com/vxture/vxture-karda/pull/214) / d216861；851 项及全部 CI 通过；同事务 outbox、共享版本、SSE；需 db-init 0012；平台身份通知缺口 issue726 |
 | P8 | 成本、套餐与产品配置 | 待开始，可先盘点历史决策 | 整包成本和贡献率、公开关键指标、内部额度映射；用户确认后发布套餐/域名/终端配置，不复制 Arda 参数 |
-| P9 | beta → production 及业务验收交付 | 待开始，依赖候选范围前序完成 | 同镜像晋级、必要人工审批；登录退出隔离、授权真实知识链路、计量及测试清理；更新交付报告 |
+| P9 | 实际发布通道及业务验收交付 | 待开始，依赖候选范围前序完成 | 实际仅 production，TD-001 尚无 beta；候选须经完整 CI、db-init 与生产人工审批；登录退出隔离、知识链路/计量及清理；不声称 beta 验收 |
 
 顺序代表实施主线，不要求为做页面而等待所有商业决策；独立的只读核查可交错推进。若拆 PR，采用 Pn.1/Pn.2 子批次，保留主批次号，不悄悄缩小验收范围。生产推广应按验证过的候选和上线风险分阶段规划，不因表内编号自动发版。
 
@@ -92,3 +92,11 @@ P3.2：独立 provisioning:read 票据、启动及每 5 分钟后台全量分页
 PostgreSQL 同事务 access_revision outbox，Redis 单调版本和原子推送；投递完成前通知失败保留重试，后台仅重试未发布记录，Redis 丢失版本从数据库恢复。共享版本阻止其他实例使用已失效 C2 服务缓存。RP 删除与退出通知同一 Redis 操作。SSE 同源会话鉴权，仅推送对应上下文失效，不传令牌或身份标识；保活不查询权限、不续活动。
 
 本地 851 项通过、无跳过；含真实 Redis/PostgreSQL 的事务回滚、重复/乱序、断线补齐及旧回执不清除新版本。Playwright 验证首次核验一次、真实版本变化一次、相同版本重连及 focus 均零查询，撤销清理业务视图并回入口。类型及数据架构检查通过；需 db-init 0012，未部署。缺失的跨产品身份事件契约见 [平台 issue726](https://github.com/vxture-platform/vxture-platform/issues/726)，不假定平台已推送。细节见 295-access-events。
+
+## P4.1 查询计量补查
+
+补查发现 Agent 检索/问答仍吞掉用量存储错误。改为成功结果交付前持久记录，落库失败返回脱敏 503；无上下文问答仍不计业务调用，Atlas 继续负责模型/token 计量，检验台仍保持既定诊断口径。每次实际工具调用独立计数，outbox 重投复用已存幂等键。此补批不改套餐参数或增加重复 AI 扣费。
+
+P4.1 本地全量 854 项通过、无跳过，包含用量存储失败拒绝成功结果、无上下文不计量和共享 dispatcher 脱敏 503；TypeScript 通过。CI 继续跟踪，未部署。
+
+发布事实修正：`.github/workflows/deploy.yml` 当前仅接 v*.*.*，GitHub 也只有 production 环境。TD-001 明确 beta 等待独立服务器，不得复制 Arda 目标；因此 P9 不创建空 beta 标签或宣称已 beta 验证。早期计划中的 beta→prod 是目标流程，不是当前已具备能力。

@@ -21,3 +21,7 @@ Node 启动后 2 秒首次排空，每 30 秒处理最多 50 条；单进程避�
 部署前经 db-init 应用 0011_usage_retry；baseline、Prisma、增量与 UPDATE 白名单同步。生产缺 DB/平台配置拒绝内存替代。没有新增浏览器权限刷新、活动心跳或客户端定时查询。
 
 本地隔离真实 PostgreSQL 测试以 karda_svc 创建内容并校验 outbox；临时撤销隔离测试库 INSERT 权限验证两者一起回滚。所有数据库操作限定 loopback karda_p3_test，测试结束恢复权限并删除自建数据。真实生产 C3 证据待 P9，不以模拟回执代替上线验收。
+
+## Delivered query results
+
+Agent search/grounded ask await durable business-usage storage before returning success. A storage failure maps to sanitized usage_unavailable/503 through the shared direct/MCP dispatcher. No-context asks remain unmetered; the first-party diagnostic console keeps its existing business-counter exemption while Atlas still records all model use. Each actual tool invocation is a per-call event; delivery retries reuse the stored key. Model/token charging remains exclusively Atlas-owned.

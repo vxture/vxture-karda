@@ -1,3 +1,4 @@
+import { UsagePersistenceError } from "../../usage/lib/buffer";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { dispatchTool, type ToolBackends } from "./dispatch";
@@ -82,4 +83,14 @@ test("an OBO-only tool with no user (malformed OBO) is denied", async () => {
   // OBO mode should carry a user; if it does not, refuse rather than proceed.
   const r = await dispatchTool("karda.create_kb", {}, oboCaller({ user: null }), backends());
   assert.equal(r.status, 403);
+});
+
+
+test("durable query usage failure returns a sanitized unavailable result on both tools", async () => {
+  const fail = async () => { throw new UsagePersistenceError(); };
+  for (const name of ["karda.search", "karda.ask"]) {
+    const result = await dispatchTool(name, { query: "q", question: "q" }, oboCaller(), backends({ search: fail, ask: fail }));
+    assert.equal(result.status, 503);
+    assert.deepEqual(result.body, { error: "usage_unavailable" });
+  }
 });

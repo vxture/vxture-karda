@@ -25,3 +25,14 @@ export async function recordUsage(
     idempotencyKey: event.idempotencyKey,
   });
 }
+
+
+export class UsagePersistenceError extends Error {
+  constructor() { super("usage_persistence_unavailable"); this.name = "UsagePersistenceError"; }
+}
+
+/** A successful delivered query must have a durable business-usage receipt. */
+export async function recordDeliveredUsage(event: UsageEvent): Promise<void> {
+  try { await recordUsage(event); }
+  catch { throw new UsagePersistenceError(); }
+}

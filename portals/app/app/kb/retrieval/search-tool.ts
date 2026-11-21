@@ -12,7 +12,7 @@ import { Bm25Recaller } from "./bm25-recaller";
 import type { RecallCorpus, RecallTextResolver } from "./corpus";
 import type { VisibleSetResolver } from "./visible-set";
 import type { AttachmentStore } from "../attachments/store";
-import { recordUsage } from "../../usage/lib/buffer";
+import { recordDeliveredUsage } from "../../usage/lib/buffer";
 import type { CallerContext } from "../tools/s2s";
 import { retrievalAtlas, type RetrievalAtlas } from "../atlas/wiring";
 import { taskIdOr } from "../atlas/client";
@@ -75,14 +75,10 @@ export async function searchTool(caller: CallerContext, args: Record<string, unk
     params: { ...DEFAULT_SEARCH_PARAMS, topK: topKOf(args.top_k), verificationFilter: verificationFilterOf(args.verification_filter) },
   });
 
-  // Per-call metering (catalog: karda.search -> per_call). A random key per call
-  // (no request jti is threaded here) means a retry is not deduped - acceptable
-  // for a per-call metric; best-effort so a buffer hiccup never fails the search.
-  try {
-    await recordUsage({ workspaceId: ws, metric: "karda.search", amount: 1, idempotencyKey: `karda.search:${randomUUID()}` });
-  } catch {
-    // swallow - metering is off the query's critical path.
-  }
+  // Per-call business usage is persisted before any successful result leaves
+  // this boundary. Atlas owns model/token consumption independently.
+  await recordDeliveredUsage({ workspaceId: ws, metric: "karda.search", amount: 1,
+    idempotencyKey: `karda.search:${randomUUID()}` });
 
   return { items: result.items, degraded: result.degraded, partial: result.partial, ignored_kb_ids: result.ignoredKbIds };
 }
