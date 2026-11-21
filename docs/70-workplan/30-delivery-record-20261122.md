@@ -300,3 +300,7 @@ slots, revoke/resume race, net-zero replace and foreign replacement rejection.
 No platform sources/config changes, prices, quantities, DDL or release were added.
 P8.3c byte reservations/orphan recovery remain required before release, because
 bytes are still put before row creation; rejection may leave a stored orphan.
+
+P8.3b final merge: PR223 / b57426a, all required CI gates passed in44951664609
+and secret scan44951664551. No deployment/tag/production data changes occurred.
+P8.3c remains next; current target-domain health still520 (issue727).
