@@ -45,14 +45,17 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-22): v0.11.2 / 1a59f0e2, owner-approved deploy
-44997013773 succeeded. Legacy-host /api/health and /api/ready return200;
-db, redis and storageConfig pass. Persistent karda_objects volume was created.
-Target karda.ruyin.work now passes browser readiness, Accounts callback and C2.
-Owner has opened Business; browser C2 returns the approved caps/AI pool.
-Private library creation and synthetic upload pass; processing-dispatch and
-live task-detail remediation is in progress (P9.7). Legacy-host retirement (platform issue727), logout,
-C3 business acceptance and actual object persistence remain open. See
+Current production (2026-11-23): v0.11.3 / 5b37bd83, owner-approved deploy
+45003892024 succeeded at 01:15 CST. Target-domain browser /api/ready confirms
+this version; db, redis and storageConfig pass. Persistent karda_objects volume
+was created in v0.11.2. Accounts callback and subscribed Business C2 previously
+passed; private library creation and synthetic upload also passed.
+Automatic processing dispatch and real workspace-scoped task detail are deployed
+(P9.7), with 877 tests and all required CI gates passed. Actual indexing, grounded
+answers, AI/C3 receipts and cross-release object persistence are not yet verified.
+Customer login expired at the next acceptance session; owner login requested.
+Legacy-host retirement (platform issue727), logout and permission-message
+acceptance remain open. See
  docs/70-workplan/20-rectification-batches-20261122.md for current evidence.
 
 Owner scope: modify Karda only; report platform gaps as detailed issues. Do not

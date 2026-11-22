@@ -680,3 +680,18 @@ v0.11.3 is pinned to that exact checked commit; production run45003892024.
 Application release awaits image build and owner production approval; do not
 claim queued fixture has indexed. No newDDL, environment variable or platform
 source/edge edit. Synthetic fixture remains private for post-release acceptance.
+
+### P9.7 production confirmation (2026-11-23)
+
+Approved production run45003892024 succeeded at2026-11-23 01:15:49 CST,
+fixed5b37bd8371de877c9a1d1e52b5e2f25ef80cd3fa. New-domain browser
+/api/ready reports v0.11.3 /5b37bd83, production, db/redis/storageConfig ok.
+Automatic processing and real workspace-scoped task detail are now deployed.
+No newDDL or platform/server configuration change was performed by this task.
+
+The next customer acceptance session has expired and Accounts requires login;
+owner login requested. Existing private fixture is retained without duplicate
+upload. Real indexing, original-byte persistence across release, grounded answer,
+AI/C3 receipts, logout isolation and permission messages remain unverified.
+The ordered next checks are recorded under P9.7 in the batch tracker. Deployment
+success does not close those business acceptance items.

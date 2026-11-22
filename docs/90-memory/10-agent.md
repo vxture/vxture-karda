@@ -3,9 +3,13 @@
 Start here if you are an AI agent working in this repo.
 
 Current work (2026-11-22): see [platform alignment kickoff](../70-workplan/10-platform-alignment-20261122.md).
-Production is v0.11.2 / 1a59f0e2 (approved run44997013773 succeeded);
-new-domain browser readiness, Accounts callback and C2 pass. Owner opened Business. Private library creation and synthetic upload pass.
-P9.7 addresses missing automatic processing and fabricated task detail.
+Production is v0.11.3 / 5b37bd83 (approved run45003892024 succeeded on November23
+at01:15 CST); new-domain browser readiness confirms db/redis/storageConfig ok.
+Accounts callback and subscribed Business C2 previously passed. Private library
+creation and synthetic upload pass. P9.7 automatic processing and real task detail
+are deployed, with877 tests/zero skips and all CI gates passed; real indexing,
+grounded answers, AI/C3 receipts and cross-release persistence remain unverified.
+Customer session expired at the next acceptance session; owner login requested.
 Legacy retirement, logout and real business acceptance remain open. original bootstrap statements are historical. Owner scope
 is Karda-only fixes, platform issues instead of platform source/variable/edge
 changes. Do not copy Arda credentials, commercial quotas or its unimplemented SSE
