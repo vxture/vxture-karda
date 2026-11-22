@@ -416,3 +416,14 @@ Next release gates: reviewed commercial quantities and actual C2 grants; platfor
 origin repair and old-host retirement; then required human application deployment
 approval and real C1/knowledge/Atlas/C3 acceptance. Additional DB approval for0014
 is no longer pending. Pricing/cost proposal remains explicitly unapproved.
+
+
+## P8.4 public storage cost calibration
+
+Readonly official Aliyun OSS price page now verified: mainland standard LRS/ZRS
+list0.12/0.15 CNY perGiB-month, long-term public discount0.09/0.12; busy/idle
+Internet egress0.50/0.25 perGiB; same-region ECS internal egress free. Units are
+explicitly2^30 bytes. These are public prices, not this account's purchased rate.
+The3.50 all-in budget remains an explicit assumption for backup/index/traffic.
+Proposal now exposes2x/5x download scenarios and does not promise unlimited
+traffic or actual net margin. Cloud migration remainsHELD; no purchase occurred.
