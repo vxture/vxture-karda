@@ -3,9 +3,12 @@
 ## Current remediation - 2026-11-22
 
 Ordered batches and live status: [20-rectification-batches-20261122](20-rectification-batches-20261122.md).
-P0-P7 and P4.1 deployed in v0.11.1 / cba6e16a (approved run44945579438).
-Health/readiness pass; target-domain520 and real business acceptance remain open. P8 management
-registration was inspected and corrected; capacity/commercial work remains open.
+Current production: v0.11.3 / 5b37bd83, approved run45003892024 succeeded.
+Target-domain readiness passes; Accounts callback and Business C2 previously
+passed. Four public plans are published and Free retired. P9.7 processing/task
+detail fixes are deployed; indexing, cited answers, AI/C3, persistence, logout
+and permission-message acceptance remain open. Old-host retirement is platform
+issue727. The next business acceptance requires renewed customer login.
 Delivery evidence: [30-delivery-record-20261122](30-delivery-record-20261122.md).
 
 See [10-platform-alignment-20261122](10-platform-alignment-20261122.md) for the
