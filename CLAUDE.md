@@ -48,8 +48,10 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 Current production (2026-11-22): v0.11.2 / 1a59f0e2, owner-approved deploy
 44997013773 succeeded. Legacy-host /api/health and /api/ready return200;
 db, redis and storageConfig pass. Persistent karda_objects volume was created.
-Target karda.ruyin.work still returns520 (platform issue727); C1/C3 business
-acceptance and actual object persistence remain open. See
+Target karda.ruyin.work now passes browser readiness, Accounts callback and C2.
+Current workspace has bundled data access but no Karda UI subscription; Admin
+shows no Karda subscriptions. Legacy-host retirement (platform issue727), logout,
+C3 business acceptance and actual object persistence remain open. See
  docs/70-workplan/20-rectification-batches-20261122.md for current evidence.
 
 Owner scope: modify Karda only; report platform gaps as detailed issues. Do not

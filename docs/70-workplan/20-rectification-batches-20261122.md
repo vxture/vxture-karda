@@ -24,8 +24,8 @@
 | P8.7 / W1 | AI工作量与积分测算 | 离线分析完成；未发布、未实施优化 | 20-specs/70：Arda任务目录仍空；Karda当前/优化成本分别计算；W2–W5检索评测、任务预算、Arda任务与商业校准待完成 |
 | P8.6 | Arda/Karda联合定价复核 | 已完成设计定稿，见P8.8；未改线上草稿 | 20-specs/60：统一成本输入、三种情景、双订/混档/扩展整单；真实成本与平台能力待校准 |
 | P9 | 生产发布与业务验收交付 | v0.11.2已部署，验收未完成 | 1a59f0e；run44997013773；旧域名health/ready通过，新域名仍520 |
-| P9.1 | 新域名生效、旧域名退役 | 平台阻塞 | karda.ruyin.work health仍520；issue727；未改平台源码/变量/边缘文件 |
-| P9.2 | Accounts登录退出、权限同步 | 待新域名可用 | 当前callback已正确指向新域名，但未跑通实际回调及退出隔离 |
+| P9.1 | 新域名生效、旧域名退役 | 新域名可达；旧域名退役待平台 | 浏览器新域名ready通过，回调通过；issue727；未改服务器变量 |
+| P9.2 | Accounts登录退出、权限同步 | 新域名登录回调及C2通过；退出和消息待验收 | 当前空间无Karda UI档位，Admin无Karda订阅；不伪造授权 |
 | P9.3 | 知识加工、检索、问答、C3及清理 | 待真实登录及授权、P9.4修正上线 | 不以测试或健康检查代替真实业务回执 |
 | P9.4 | 上传持久化与存储就绪检查 | v0.11.2已部署，真实上传与重启验收待完成 | karda_objects持久卷已创建，storageConfig就绪通过；不启动被暂停的云迁移 |
 
@@ -310,3 +310,30 @@ display gap (issue717). Four public tiers, final annual prices and retired Free
 remain verified. Screenshot: output/acceptance-20261122/metric-names-configured.jpg;
 public readback: output/acceptance-20261122/pricing-after-metric-naming.jpg.
 PR239 merged asfc7f1c3 after all required checks passed. Release tag stays on1a59f0e.
+
+
+## P9.1/P9.2 configuration-path acceptance update (16:04 CST)
+
+New normal-browser visit to https://karda.ruyin.work/ now reaches /gate instead
+of Cloudflare520. Clicking Continue Login reused the Accounts customer session,
+completed the registered new-domain callback and returned to the product.
+Authenticated GET /api/access then successfully resolves C2. GET /api/ready on
+the new domain returns ready, v0.11.2 /1a59f0e2, db/redis/storageConfig all ok.
+No server variables, platform source, workflows or manual edge files changed by
+this product task. The platform-side cause/timing of recovery is not established.
+CLI requests still receive403 while browser requests work; this is not an app outage.
+
+Current signed workspace suffix0210 returns status=null, tier=null, bundled=true,
+seat.max=1; gates.productAccess=false, dataAccess=true, cta=subscribe. Login works;
+the resulting 尚未开通 gate is not a failed callback or C2 transport failure.
+Admin actual subscription list has16 rows/7active and no Karda subscriptions
+(search Karda returns0). No subscription, grant, order or payment was created.
+Asked owner to open the intended test workspace through normal subscription or
+voucher, or identify an existing subscribed workspace. Business/C3 acceptance
+requires that legitimate authorization; do not fabricate UI entitlement from bundled.
+
+P9.1 target-domain reachability verified; old-domain retirement remains open.
+P9.2 login/callback verified, global logout/isolation and message acceptance pending.
+P9.3 business processing/C3 and P9.4 real upload/restart acceptance remain pending.
+Proof: output/acceptance-20261122/new-domain-accounts-gate.jpg and
+output/acceptance-20261122/no-karda-subscription.jpg.
