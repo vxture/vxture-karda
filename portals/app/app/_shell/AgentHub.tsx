@@ -136,7 +136,7 @@ export function AgentHub({ shell, onClose }: { shell: ShellData | null; onClose:
             </span>
           ) : null}
         </span>
-        <span className="size-2xs rounded-full bg-success" aria-label={m.hubOnDuty} />
+        {s?.demo === true && <span className="size-2xs rounded-full bg-success" aria-label={m.hubOnDuty} />}
         {/* Ghost icon button, the DS shell idiom - no boxed background. */}
         <ShellIconButton icon="chevron-right" label={m.hubCollapse} onClick={onClose} />
       </div>
@@ -185,6 +185,9 @@ export function AgentHub({ shell, onClose }: { shell: ShellData | null; onClose:
                   </div>
                 );
               })}
+              {s.pending === 0 && s.proposals.length === 0 && (
+                <p className="text-body-md text-muted-foreground">{m.hubNoPending}</p>
+              )}
               {s.pending > s.proposals.length && (
                 <Link href="/pipeline" className="text-center text-body-md text-primary">
                   {m.hubRest(s.pending - s.proposals.length)}
@@ -229,17 +232,18 @@ export function AgentHub({ shell, onClose }: { shell: ShellData | null; onClose:
                     </span>
                   </span>
                 ))}
+                {s.activity.length === 0 && <p>{m.hubNoActivity}</p>}
               </div>
             </HubSection>
           </div>
 
           {/* Fixed foot: the one bulk action must always be reachable. */}
-          <div className="shrink-0 border-t border-primary/[0.08] px-md py-sm dark:border-primary/10">
+          {s.demo === true && <div className="shrink-0 border-t border-primary/[0.08] px-md py-sm dark:border-primary/10">
             <button className="flex w-full items-center justify-center gap-sm rounded-lg border border-ai-border/40 bg-ai-muted/30 px-md py-sm text-label-md text-ai-text transition-colors duration-fast ease-standard hover:bg-ai-muted/50">
               <Icon name="sparkles" size="sm" />
               {m.hubDelegate}
             </button>
-          </div>
+          </div>}
         </>
       )}
     </ShellDock>

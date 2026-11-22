@@ -744,3 +744,29 @@ v0.11.4 tag pins this exact commit; production run45054602507 includes P9.8/P9.9
 Human production review still required; not yet deployed. No newDDL or variables.
 Platform issue728 updated with actual ingest observation and contradictory C2
 credential label: https://github.com/vxture-platform/vxture-platform/issues/728#issuecomment-7083477995.
+
+
+### v0.11.4生产验收 / P9.10（2026-11-23）
+
+生产run45054602507已成功，deploy完成2026-11-22T19:01:02Z（北京时间03:01:02），
+固定23602404c7c213aff9ffeb0aca964cb165a37c9e。新域名/api/ready回读
+v0.11.4、gitSha23602404、production；db/redis/storageConfig均ok。
+
+原有私有原件未重复上传，任务bd5f01ff-3b67-4a51-8119-215f8c6f870b在新版本
+自动运行：started_at=2026-11-22T19:00:59.225Z，finished_at=19:01:00.234Z。
+真实API及页面显示fetch0.001s、parse0.002s、chunk0s完成；embed0.778s后
+upstream_account_refused并暂停，commit未到达。P9.8回执验收通过，不代表索引成功。
+Atlas issue147仍OPEN且未收到恢复证据；不反复触发失败模型调用。
+
+用户恢复运维登录后重新读取Opera总览及Karda受保护任务API，两边均已登录。
+点击Karda账户菜单“退出登录”，Karda回到gate并显示继续登录；重新加载任务API返回
+{"error":"unauthenticated"}；同时重新加载Opera仍显示superadmin及运维导航。
+P9.9客户退出与运维会话隔离通过。未抓取网络重定向链，不把最终页面当作303抓包证据；
+跨产品全局通知/后端退出及权限消息仍需独立验收。客户会话按验收预期退出。
+截图：output/acceptance-20261122/v0114-customer-logged-out.jpg及v0114-workforce-retained.jpg。
+
+发现本仓展示缺陷并进入P9.10：任务详情将已暂停embed标为todo，且Agent侧栏仍混入
+演示冲突、预验、活动和无实现委托按钮。补丁区分暂停/失败/未执行，不从任务完成状态
+虚构缺失阶段回执；生产Agent只保留实际待裁决计数，未接通的数据源显示空态，离线
+演示保留。隐藏没有真实状态来源的在岗灯和生产委托按钮。尚未发布，不冒充已修线上。
+本轮未新增DDL/变量、修改平台仓/边缘/路由/供应商凭据，也未删除或公开验收原件。

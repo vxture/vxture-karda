@@ -269,6 +269,8 @@ export const pipeline = {
     "en-US": "Could not load the task. Please retry shortly.",
   },
   loadingTask: { "zh-CN": "正在加载任务详情…", "en-US": "Loading the task…" },
+  stageFailed: { "zh-CN": "\u9636\u6bb5\u5931\u8d25", "en-US": "Stage failed" },
+  stageSuspended: { "zh-CN": "\u9636\u6bb5\u5df2\u6682\u505c", "en-US": "Stage paused" },
   cancelTask: { "zh-CN": "取消任务", "en-US": "Cancel the task" },
   rerunFromChunk: { "zh-CN": "从分块重跑", "en-US": "Re-run from chunking" },
   agentPresent: { "zh-CN": "Karda Super Agent · 全程在场", "en-US": "Karda Super Agent · present throughout" },

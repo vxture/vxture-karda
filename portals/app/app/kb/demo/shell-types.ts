@@ -98,6 +98,8 @@ export interface ShellData {
    * 混在改界面的批次里。
    */
   agent: {
+    /** Authored interaction examples are allowed only in offline demo mode. */
+    demo?: boolean;
     pending: number;
     proposals: AgentProposal[];
     /** One-line alert with the agent's judgment, null when quiet. */

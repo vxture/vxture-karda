@@ -124,7 +124,7 @@ export interface TasksData {
 export interface TaskStage {
   kicker: string;
   label: string;
-  state: "done" | "active" | "todo";
+  state: "done" | "active" | "todo" | "failed" | "suspended";
   /** e.g. "1.2s · 10:41:03" for done, "已运行 21.4s" for active. */
   timing?: string;
   progressPct?: number;

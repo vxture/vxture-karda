@@ -13,6 +13,7 @@ test("live detail keeps full identity and actual failure without demo facts or t
   assert.equal(detail.live, true);
   assert.equal(detail.badge, "suspended");
   assert.equal(detail.stages[3].desc, "grant_missing");
+  assert.equal(detail.stages[3].state, "suspended");
   assert.ok(detail.stages.every(s => s.progressPct === undefined && s.timing === undefined && s.state !== "active"));
   assert.deepEqual(detail.cost, []);
   assert.equal(tallyTasks([row], 2000).tasks[0].id, row.id);
@@ -20,4 +21,11 @@ test("live detail keeps full identity and actual failure without demo facts or t
   assert.equal(taskDetail(row).stages[0].timing, "0.2s");
   row.startedAt = new Date(2000);
   assert.equal(taskDetail(row).stages[0].timing, undefined);
+  row.stages.push({ stage: "embed", outcome: "failed", startedAt: new Date(2100), endedAt: new Date(2300) });
+  assert.equal(taskDetail(row).stages[3].state, "suspended", "parked work must not appear queued or active");
+  row.state = "failed";
+  assert.equal(taskDetail(row).stages[3].state, "failed");
+  assert.equal(taskDetail(row).stages[4].state, "todo", "unreached commit must remain pending");
+  row.state = "done";
+  assert.equal(taskDetail(row).stages[4].state, "todo", "task completion must not invent missing stage receipts");
 });
