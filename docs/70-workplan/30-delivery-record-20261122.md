@@ -427,3 +427,24 @@ explicitly2^30 bytes. These are public prices, not this account's purchased rate
 The3.50 all-in budget remains an explicit assumption for backup/index/traffic.
 Proposal now exposes2x/5x download scenarios and does not promise unlimited
 traffic or actual net margin. Cloud migration remainsHELD; no purchase occurred.
+
+
+## P8.4 owner approval for draft preparation only
+
+On2026-11-22 owner explicitly confirmed preparing package drafts without
+publication. Approved monthly base packages: Starter129/Pro399/Business1499,
+Free invitation draft and Enterprise private/contact-sales; exact agreed quantities
+and byte/minor-currency conversions are in deploy/config/commercial-package-draft.json.
+The file is a review checklist, NOT a platform API body or runtime config.
+Expansion SKUs/annual pricing/publication/existing grant migration remain excluded.
+
+Browser control could inventory existing Opera tab21 but subsequent page reads
+and rebinds timed out (service_info). No package form was opened or saved; do not
+claim platform drafts exist. Local input manifest, draft runbook and authorization
+status are prepared. Resume the existing authorized save after browser recovery.
+Keep platform_saved=false until actual saved-version readback and screenshots.
+
+Publication contract gap: existing karda.ingest/search/ask are hard-cost pools
+with observed0 quotas, while approved package intent adds no monthly call cap.
+Do not invent unlimited sentinel or large quotas. Platform issue728 receives
+this explicit configuration question; drafts do not resolve actual C2 grants.
