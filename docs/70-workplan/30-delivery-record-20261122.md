@@ -533,3 +533,14 @@ storage and AI directly from the catalog, with source hashes. Existing saved
 draft JSON is explicitly historical, not rewritten as if saved on platform.
 No platform edits, publication, subscription migration or deployment. Code
 alignment, workload/cost and platform configuration acceptance remain pending.
+
+
+## 商业发布与年付补充
+
+用户已授权Starter/Pro/Business/Enterprise四档公开，Free不发布。年付按10个月月价：1990/4990/14990元。
+Arda Starter/Pro/Business v3已在Admin发布、冻结并逐项回读；Enterprise保留已公开未定价v2，官网实际显示联系销售。
+原Arda订阅留在各自旧版本，本轮没有迁移、改额或续订。Karda三档v1新草稿已保存最终配额与年价，Enterprise未定价，尚未发布。
+Karda新套餐内容上限兼容修正及年度12个月成本模型见PR238；18项针对测试、TypeScript和必需CI已通过。
+可消耗份额α未显式填写，沿用平台默认0.5，影响升级折抵/折算退款，不影响套餐价或AI配额。
+本轮重新检查Opera，karda.ask/ingest/search仍为有成本硬池；已补充平台issue728，等待受支持的纯计量配置契约，不修改平台源代码/变量。
+年付叠双订与全年20%券的Business压力贡献率仅3.15%，未扣税及获客，已向用户说明。
