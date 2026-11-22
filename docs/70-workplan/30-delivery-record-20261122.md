@@ -720,3 +720,18 @@ timestamps; isolate observation failures from processing; retain immutable stage
 openings and hide durations spanning resumed runs. No newDDL/grants.26 targeted
 tests, TypeScript and data architecture pass; added isolated PostgreSQL service-role
 receipt/upsert test for CI. Not yet deployed.
+
+### P9.8 merged / P9.9 logout entry correction
+
+PR245/c882fa5 merged after CI45053612576 and secret scan passed;881 tests,
+zero skips, including isolated PostgreSQL service-role stage upsert coverage.
+Release still pending.
+
+Actual logout acceptance established authenticated customer API + workforce page
+baseline. Karda logout then failed to load; customer API still authenticated.
+This is not successful logout isolation. Browser error-page URL policy was not
+bypassed. Source confirms both menu actions navigate GET to POST-only auth/logout;
+its default307 would also replay POST to Accounts. P9.9 uses native same-origin
+POST form and303 after confirmed local deletion. Failure keeps503/no-store with
+no cookie clearing/redirect; success expires host cookie and disables caching.
+Five targeted logout tests pass; production revalidation remains pending release.
