@@ -8,6 +8,7 @@
 // upload/list/get/delete of the raw document work end-to-end today, independent
 // of whether indexing has run - which is exactly the document-management surface
 // the user asked for.
+import { CapacityError } from "./capacity";
 import type { ContentService } from "./content-service";
 import type { ObjectStore } from "../storage/objectstore";
 import { contentHashOf } from "../storage/objectstore";
@@ -67,9 +68,14 @@ export async function uploadDocument(
 
   const hash = contentHashOf(input.bytes);
 
-  // Create the record first via the content service, which owns the dedup rule.
-  // If it rejects as duplicate, we never write the bytes.
-  const stored = await objects.put(input.workspaceId, input.kbId, input.bytes);
+  // Production storage reserves bytes before PUT. A rejected metadata write
+  // leaves an unreferenced tracked object for reference-aware recovery.
+  let stored;
+  try { stored = await objects.put(input.workspaceId, input.kbId, input.bytes); }
+  catch (error) {
+    if (error instanceof CapacityError) return err({ code: error.code });
+    throw error;
+  }
   const created = await content.createDocument({
     kbId: input.kbId,
     folderId: input.folderId ?? null,
@@ -84,9 +90,7 @@ export async function uploadDocument(
   });
 
   if (!created.ok) {
-    // The record was rejected (duplicate). The object is content-addressed, so
-    // the existing identical bytes are already there and re-writing them was a
-    // harmless overwrite - nothing to clean up.
+    // Do not delete here: other retained documents may share the same object.
     return err(mapContentError(created.error.code));
   }
   if (enqueue) await enqueue(created.value);

@@ -9,5 +9,7 @@ export async function register(): Promise<void> {
     startUsageWorker();
     const { startAccessOutbox } = await import("./app/events/outbox");
     startAccessOutbox();
+    const { startStorageRecovery } = await import("./app/kb/storage/worker");
+    startStorageRecovery();
   }
 }

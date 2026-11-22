@@ -7,6 +7,7 @@
 // document is a SUPERSEDE, not an in-place edit: tombstone the prior live row and
 // insert a new one (the writable content_state moves the old to `deleted`). That
 // keeps the dedup index honest and preserves lineage rather than rewriting it.
+import { CapacityError } from "../lib/capacity";
 import type { ContentService } from "../lib/content-service";
 import type { KbStore } from "../lib/store";
 import type { ObjectStore } from "../storage/objectstore";
@@ -82,7 +83,12 @@ export async function ingestEnvelope(env: IngestEnvelope, deps: IngestDeps): Pro
   let sizeBytes: number | null = env.content?.size ?? null;
   if (env.content?.bytes) {
     const bytes = Buffer.from(env.content.bytes, "base64");
-    const stored = await deps.objects.put(kb.workspaceId, kb.id, bytes);
+    let stored;
+    try { stored = await deps.objects.put(kb.workspaceId, kb.id, bytes); }
+    catch (error) {
+      if (error instanceof CapacityError) return err({ code: error.code });
+      throw error;
+    }
     storageRef = stored.key;
     sizeBytes = stored.sizeBytes;
   }

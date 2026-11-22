@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { storageConfiguration, probeStorageConfiguration } from "./config";
-import { getObjectStore, InMemoryObjectStore, FilesystemObjectStore } from "./objectstore";
+import { getRawObjectStore, InMemoryObjectStore, FilesystemObjectStore } from "./objectstore";
 import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -37,17 +37,17 @@ test("runtime storage factory never grants production an ephemeral backend", () 
     for (const key of keys) delete process.env[key];
     for (const stage of ["production", "beta"]) {
       process.env.DEPLOY_STAGE = stage;
-      assert.throws(() => getObjectStore(), /durable_object_storage_unconfigured/);
+      assert.throws(() => getRawObjectStore(), /durable_object_storage_unconfigured/);
       process.env.KARDA_OBJECT_ROOT = "/tmp/objects";
-      assert.ok(getObjectStore() instanceof FilesystemObjectStore);
+      assert.ok(getRawObjectStore() instanceof FilesystemObjectStore);
       delete process.env.KARDA_OBJECT_ROOT;
     }
     process.env.DEPLOY_STAGE = "dev";
-    assert.ok(getObjectStore() instanceof InMemoryObjectStore);
+    assert.ok(getRawObjectStore() instanceof InMemoryObjectStore);
     process.env.KARDA_OBJECT_ROOT = "/tmp/objects";
-    assert.ok(getObjectStore() instanceof FilesystemObjectStore);
+    assert.ok(getRawObjectStore() instanceof FilesystemObjectStore);
     process.env.ALIYUN_OSS_BUCKET = "partial";
-    assert.throws(() => getObjectStore(), /durable_object_storage_unconfigured/);
+    assert.throws(() => getRawObjectStore(), /durable_object_storage_unconfigured/);
   } finally {
     for (const key of keys) {
       if (previous[key] === undefined) delete process.env[key]; else process.env[key] = previous[key];

@@ -249,3 +249,7 @@ END $$;
 REVOKE UPDATE, DELETE ON vx_provision.access_revision FROM karda_svc;
 GRANT SELECT, INSERT ON vx_provision.access_revision TO karda_svc;
 GRANT UPDATE (generation, published_generation, updated_at) ON vx_provision.access_revision TO karda_svc;
+
+REVOKE UPDATE, DELETE ON karda_kb.stored_object FROM karda_svc;
+GRANT SELECT, INSERT ON karda_kb.stored_object TO karda_svc;
+GRANT UPDATE (state, retain_until, attempts, retry_at, updated_at) ON karda_kb.stored_object TO karda_svc;
