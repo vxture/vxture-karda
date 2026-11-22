@@ -56,7 +56,9 @@ P9.9 browser logout now succeeds: protected task API becomes unauthenticated,
 Karda returns to login gate, refreshed Opera retains workforce authentication.
 Cross-product/back-channel logout and permission-message delivery still need real
 acceptance. P9.10 corrects parked/failed detail states and removes authored Agent
-activity/proposals from the production hub; implementation verification pending.
+activity/proposals from the production hub; PR248 merged as43fffd91. PR CI passes
+883 tests/zero skips; main CI45059533565 and secret scan also pass. v0.11.5
+pins43fffd91; run45059723049 is building/awaiting human production review.
 Legacy-host retirement remains platform issue727. See the batch tracker.
 
 Owner scope: modify Karda only; report platform gaps as detailed issues. Do not

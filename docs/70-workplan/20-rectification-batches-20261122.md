@@ -25,13 +25,13 @@
 | P8.6 | Arda/Karda联合定价复核 | 已完成设计定稿，见P8.8；未改线上草稿 | 20-specs/60：统一成本输入、三种情景、双订/混档/扩展整单；真实成本与平台能力待校准 |
 | P9 | 生产发布与业务验收交付 | v0.11.4已部署，验收未完成 | 23602404；run45054602507成功；新域名ready通过；旧域名待退役 |
 | P9.1 | 新域名生效、旧域名退役 | 新域名可达；旧域名退役待平台 | 浏览器新域名ready通过，回调通过；issue727；未改服务器变量 |
-| P9.2 | Accounts登录退出、权限同步 | 新域名登录回调及C2通过；退出和消息待验收 | 已开通Business，C2容量及AI配额通过 |
-| P9.3 | 知识加工、检索、问答、C3及清理 | 私有库及上传通过，空库检索/问答边界通过；P9.7修复已部署，待登录验收 | 不以测试或健康检查代替真实业务回执 |
-| P9.4 | 上传持久化与存储就绪检查 | v0.11.2已部署，真实上传与重启验收待完成 | karda_objects持久卷已创建，storageConfig就绪通过；不启动被暂停的云迁移 |
-| P9.7 | 自动加工调度、真实任务详情 | v0.11.3已部署，真实加工待验收 | PR242 / 5b37bd83；877项测试、零跳过；run45003892024成功 |
+| P9.2 | Accounts登录退出、权限同步 | 登录回调、客户退出及运维隔离通过；跨产品退出和权限消息待验收 | 已开通Business，C2容量及AI配额通过；v0.11.4真实退出回读 |
+| P9.3 | 知识加工、检索、问答、C3及清理 | 私有库、上传、跨发布读取及ingest观察通过；embed阻塞Atlas147 | 检索、引用问答、search/ask及AI计量未完成 |
+| P9.4 | 上传持久化与存储就绪检查 | 真实上传和跨发布对象读取通过；下载hash仍待验收 | karda_objects持久卷与storageConfig通过；不启动被暂停的云迁移 |
+| P9.7 | 自动加工调度、真实任务详情 | 自动调度及真实详情通过，embed上游阻塞 | PR242 / 5b37bd83；真实原件无重传；不声明索引通过 |
 | P9.8 | 加工阶段真实回执 | v0.11.4已部署，真实回执通过至embed暂停 | PR245/c882fa5；881项测试零跳过，全部CI通过；不新增DDL、不改列权限 |
 | P9.9 | 页面退出POST与303跳转 | v0.11.4已部署，客户退出与运维隔离通过 | PR246/2360240；883项测试零跳过；跨产品及后端退出另行验收 |
-| P9.10 | 生产Agent面板去演示、暂停/失败阶段区分 | 实现及本地验证中，未部署 | 真实API回执触发；不改变加工、授权、DDL或平台配置 |
+| P9.10 | 生产Agent面板去演示、暂停/失败阶段区分 | PR248及主干全部CI通过，883项测试零跳过；待发布 | v0.11.5固定43fffd91；run45059723049；人工生产审批未完成 |
 
 顺序代表实施主线，不要求为做页面而等待所有商业决策；独立的只读核查可交错推进。若拆 PR，采用 Pn.1/Pn.2 子批次，保留主批次号，不悄悄缩小验收范围。生产推广应按验证过的候选和上线风险分阶段规划，不因表内编号自动发版。
 
@@ -493,3 +493,13 @@ P9.9客户退出与运维会话隔离通过。未抓取网络重定向链，不�
 虚构缺失阶段回执；生产Agent只保留实际待裁决计数，未接通的数据源显示空态，离线
 演示保留。隐藏没有真实状态来源的在岗灯和生产委托按钮。尚未发布，不冒充已修线上。
 本轮未新增DDL/变量、修改平台仓/边缘/路由/供应商凭据，也未删除或公开验收原件。
+
+### P9.10 checked release candidate
+
+PR248 merged43fffd91f4f798a4eb0ffe5e00b39bfdf8bd8f5a. PR CI45059290921,
+main CI45059533565 and secret scan45059533442 pass. Both CI test runs report
+883 tests,883 passed,0 failed,0 skipped. Local TypeScript/catalog/targeted checks
+also pass. v0.11.5 pins this exact code commit; production run45059723049.
+Image build/human required-reviewer approval and deployment remain pending.
+Current production stays v0.11.4; do not claim the hub patch has shipped.
+No newDDL, environment variables or platform configuration changes.
