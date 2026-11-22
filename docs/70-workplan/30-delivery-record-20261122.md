@@ -328,3 +328,22 @@ TypeScript passes. No production DDL/application release or paid call occurred.
 Next: required PR gates, owner-reviewed db-init, capacity grants and package plan,
 then approved application release/real business acceptance. New-domain issue727
 remains external platform routing scope; no platform source/server edits.
+
+
+## P8.3c merge and P8.4 whole-package proposal
+
+PR225 merged f4d239d; CI44979585820 and secret scan44979585821 passed all gates.
+No production DDL/application release yet. P8.4 draft50-commercial-package-proposal
+now includes seats, stored bytes, AI credits, libraries/content/bindings and
+separate expansion proposals. Starter129/Pro399/Business1499 are independent
+Karda proposals, not approved prices. Free remains invitation-only draft; existing
+subscriptions remain pinned; Enterprise private deployment requires a contract.
+
+Whole-package budget contribution is65-68% under explicit assumptions and54-58%
+with AI cost doubled. This is not realized/net profit. Platform ADR-014 supplies
+credit pricing policy; actual configured rates and costs remain unverified.
+Aliyun storage-fees documentation's0.12/GB-month is explicitly an example, not
+an obtained regional quote;3.50/GiB-month is an internal all-in cost allowance.
+No new plan, add-on, model fee, operator variable or platform source was changed.
+Capacity grants, actual cost calibration, owner pricing approval and domain/
+C1/C2/C3/Atlas acceptance remain prerequisites to publishing the draft offer.
