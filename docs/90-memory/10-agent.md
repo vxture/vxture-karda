@@ -4,8 +4,8 @@ Start here if you are an AI agent working in this repo.
 
 Current work (2026-11-22): see [platform alignment kickoff](../70-workplan/10-platform-alignment-20261122.md).
 Production is v0.11.2 / 1a59f0e2 (approved run44997013773 succeeded);
-new-domain browser readiness, Accounts callback and C2 pass. No Karda UI
-subscription exists in Admin; owner asked for legitimate test subscription/voucher.
+new-domain browser readiness, Accounts callback and C2 pass. Owner opened Business. Private library creation and synthetic upload pass.
+P9.7 addresses missing automatic processing and fabricated task detail.
 Legacy retirement, logout and real business acceptance remain open. original bootstrap statements are historical. Owner scope
 is Karda-only fixes, platform issues instead of platform source/variable/edge
 changes. Do not copy Arda credentials, commercial quotas or its unimplemented SSE

@@ -50,6 +50,7 @@ export interface TaskSettled {
   reason?: string | null;
   /** The stage the run reached; recorded so a failure names where it stopped. */
   stage?: Stage | null;
+  attempt?: number;
 }
 
 export interface TaskLedger {
@@ -114,9 +115,14 @@ class PrismaTaskLedger implements TaskLedger {
 
   async started(docId: string): Promise<void> {
     await this.safely(async (p) => {
-      await p.processingTask.updateMany({
-        where: { documentId: docId, state: "queued" },
-        data: { state: "running", startedAt: new Date(), updatedAt: new Date() },
+      const row = await p.processingTask.findFirst({
+        where: { documentId: docId, kind: "processing", state: { in: ["queued", "running", "suspended"] } },
+        orderBy: { queuedAt: "desc" }, select: { id: true },
+      });
+      if (!row) return;
+      await p.processingTask.update({
+        where: { id: row.id },
+        data: { state: "running", startedAt: new Date(), finishedAt: null, updatedAt: new Date() },
       });
     });
   }
@@ -124,7 +130,7 @@ class PrismaTaskLedger implements TaskLedger {
   async stage(e: { docId: string; stage: Stage; outcome: StageOutcome; note?: string | null }): Promise<void> {
     await this.safely(async (p) => {
       const task = await p.processingTask.findFirst({
-        where: { documentId: e.docId, state: { in: ["queued", "running"] } },
+        where: { documentId: e.docId, kind: "processing", state: { in: ["queued", "running"] } },
         select: { id: true },
       });
       if (!task) return;
@@ -143,7 +149,7 @@ class PrismaTaskLedger implements TaskLedger {
   async settled(e: TaskSettled): Promise<void> {
     await this.safely(async (p) => {
       await p.processingTask.updateMany({
-        where: { documentId: e.docId, state: { in: ["queued", "running"] } },
+        where: { documentId: e.docId, kind: "processing", state: { in: ["queued", "running"] } },
         data: {
           state: e.state,
           failureClass: e.failureClass ?? null,
@@ -151,6 +157,7 @@ class PrismaTaskLedger implements TaskLedger {
           ...(e.stage ? { currentStage: e.stage } : {}),
           finishedAt: leavesLiveSet(e.state) ? new Date() : null,
           updatedAt: new Date(),
+          ...(e.attempt === undefined ? {} : { attempt: e.attempt + 1 }),
         },
       });
     });

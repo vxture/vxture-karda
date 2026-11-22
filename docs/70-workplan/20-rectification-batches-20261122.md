@@ -15,18 +15,18 @@
 | P6 | Karda独立页面与统一入口布局 | 已部署，正式域名浏览验收待完成 | PR213 / 43004f1；本地1440/390/320px五状态通过 |
 | P7 | 权限消息、共享版本与SSE | 已部署，跨产品消息待验收 | PR214 / d216861；DDL0012已应用；平台身份契约issue726仍开 |
 | P8 | 容量执行、成本、套餐与产品配置 | 部分完成 | 域名七项登记已保存；仅Web；容量与价格仍在推进 |
-| P8.3a | 知识库数量原子限制 | 已合入，未部署 | PR221 / f8b3788；863项及全部CI通过；浏览器/Agent同事务限制；见300-capacity-enforcement |
-| P8.3b | 文档/条目、连接器数量限制 | PR223 / b57426a已合入，CI通过，未部署 | 统一内容数量；连接器暂停占位/撤销释放；替换同事务、撤销防复活 |
-| P8.3c | 存储容量预留与恢复 | PR225 / f4d239d已合入，CI通过，应用未部署 | DDL0013已由受审run44980689156应用，38表核验通过 |
-| P8.3d | 存储共享池准入及绝对水位 | PR227 / acc8de6合入，873项及全部CI通过，DDL0014已应用，应用未部署 | 持久水位快照和重试；新建字节按实际C2共享余量准入；不承诺跨产品全局原子预留 |
-| P8.4 | 成本和套餐方案 | 五档平台草稿已保存回读；未发布 | Free v2；Starter/Pro/Business/Enterprise v1；年价空值、联系销售行为及展示顺序仍待平台确认 |
-| P8.8 | 两产品套餐定稿v1 | 用户确认；文件和复算输入已固化，未发布 | 20-specs/80及final-package-spec.json；价格199/499/1499，连接与服务20/100/500；执行、成本与平台草稿验收仍待完成 |
+| P8.3a | 知识库数量原子限制 | v0.11.2已部署，真实边界待验收 | PR221 / f8b3788；863项及全部CI通过；浏览器/Agent同事务限制；见300-capacity-enforcement |
+| P8.3b | 文档/条目、连接器数量限制 | v0.11.2已部署，真实边界待验收 | 统一内容数量；连接器暂停占位/撤销释放；替换同事务、撤销防复活 |
+| P8.3c | 存储容量预留与恢复 | v0.11.2已部署，真实恢复待验收 | DDL0013已由受审run44980689156应用，38表核验通过 |
+| P8.3d | 存储共享池准入及绝对水位 | v0.11.2已部署；DDL0014已应用；真实水位待验收 | 持久水位快照和重试；新建字节按实际C2共享余量准入；不承诺跨产品全局原子预留 |
+| P8.4 | 成本和套餐方案 | 四档公开发布；Free退役 | P8.9回读确认四档、年价和联系销售；指标展示待平台issue717 |
+| P8.8 | 两产品套餐定稿v1 | 用户确认，四档已发布 | 20-specs/80及final-package-spec.json；价格199/499/1499，连接与服务20/100/500；执行、成本与平台草稿验收仍待完成 |
 | P8.7 / W1 | AI工作量与积分测算 | 离线分析完成；未发布、未实施优化 | 20-specs/70：Arda任务目录仍空；Karda当前/优化成本分别计算；W2–W5检索评测、任务预算、Arda任务与商业校准待完成 |
 | P8.6 | Arda/Karda联合定价复核 | 已完成设计定稿，见P8.8；未改线上草稿 | 20-specs/60：统一成本输入、三种情景、双订/混档/扩展整单；真实成本与平台能力待校准 |
-| P9 | 生产发布与业务验收交付 | v0.11.2已部署，验收未完成 | 1a59f0e；run44997013773；旧域名health/ready通过，新域名仍520 |
+| P9 | 生产发布与业务验收交付 | v0.11.2已部署，验收未完成 | 1a59f0e；run44997013773；新旧域名ready均通过；旧域名待退役 |
 | P9.1 | 新域名生效、旧域名退役 | 新域名可达；旧域名退役待平台 | 浏览器新域名ready通过，回调通过；issue727；未改服务器变量 |
-| P9.2 | Accounts登录退出、权限同步 | 新域名登录回调及C2通过；退出和消息待验收 | 当前空间无Karda UI档位，Admin无Karda订阅；不伪造授权 |
-| P9.3 | 知识加工、检索、问答、C3及清理 | 待真实登录及授权、P9.4修正上线 | 不以测试或健康检查代替真实业务回执 |
+| P9.2 | Accounts登录退出、权限同步 | 新域名登录回调及C2通过；退出和消息待验收 | 已开通Business，C2容量及AI配额通过 |
+| P9.3 | 知识加工、检索、问答、C3及清理 | 私有库及上传通过，空库检索/问答边界通过；P9.7加工修复中 | 不以测试或健康检查代替真实业务回执 |
 | P9.4 | 上传持久化与存储就绪检查 | v0.11.2已部署，真实上传与重启验收待完成 | karda_objects持久卷已创建，storageConfig就绪通过；不启动被暂停的云迁移 |
 
 顺序代表实施主线，不要求为做页面而等待所有商业决策；独立的只读核查可交错推进。若拆 PR，采用 Pn.1/Pn.2 子批次，保留主批次号，不悄悄缩小验收范围。生产推广应按验证过的候选和上线风险分阶段规划，不因表内编号自动发版。
@@ -337,3 +337,43 @@ P9.2 login/callback verified, global logout/isolation and message acceptance pen
 P9.3 business processing/C3 and P9.4 real upload/restart acceptance remain pending.
 Proof: output/acceptance-20261122/new-domain-accounts-gate.jpg and
 output/acceptance-20261122/no-karda-subscription.jpg.
+
+
+## P9.7 subscribed production acceptance / processing dispatch remediation
+
+Owner confirmed subscription. Browser C2 now returns active/business, productAccess
+and dataAccess true, seat.max5/kb.max5000/binding.max500. New ai.credit4000 pool
+is present; other same-workspace pools remain distinct, not silently reallocated.
+Created private Integration acceptance20261122 library
+117c7b9a-6c5d-4f2d-bddb-f7b77a8476f0. Uploaded355-byte synthetic-acceptance.md,
+SHA2561351aa4d950d5699e4ae2c65484788e241f91a31ae6148d3bf197ae897cda97f.
+File selection initially failed in the browser tool; supported concurrent chooser
+wait+AX click succeeded. This was not established as a product upload defect.
+Document accepted and queued. Retain isolated fixture pending acceptance; no public
+sharing, external credential or deletion performed.
+
+Scoped empty-library search returns complete/zero hits. Empty-library answer
+returns no evidence/no generated answer. These do not prove Atlas generation or
+embedding. First-party console search is intentionally not karda.search-metered;
+Opera missing C3 after this call is not evidence of a broken usage worker.
+
+Two actual Karda gaps: instrumentation never starts processing dispatch (only the
+protected internal tick could drain); task detail returns DEMO_TASK_DETAIL for
+arbitrary ids. Observed task list links to bd5f01ff, then detail falsely shows a
+14.2MB legal PDF while uploaded fixture is355B. No false processing acceptance.
+
+Remediation candidate: automatic bounded processing passes using existing DB
+configuration; advisory session lock shared with protected HTTP tick; 200-document
+keyset recovery per pass; at most20 tasks per pass;5s work cadence/5min parked
+resume. Recovered retries retain ledger attempts/backoff; already indexed/deleted
+work is skipped. No new variables, schema or manual server changes. Task links
+retain full UUID; production detail scopes query by workspace and returns real
+ledger/doc/stages only,404 for missing/malformed ids. Remove authored progress,
+repair claims, cost estimates and unwired action buttons from live detail.
+
+50 targeted tests and TypeScript/data-architecture checks pass. PostgreSQL lease
+exclusion/failure-release test added to existing isolated CI DB suite. Full CI,
+release and real upload/index/answer/C3/restart acceptance remain pending.
+Proofs: private-library-created.jpg, empty-library-search.jpg,
+empty-library-answer-guard.jpg, task-detail-demo-mismatch.jpg under
+output/acceptance-20261122. No platform source or server variable changes.

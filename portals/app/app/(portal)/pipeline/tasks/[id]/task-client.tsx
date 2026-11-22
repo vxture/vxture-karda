@@ -132,10 +132,10 @@ export function TaskClient({ id }: { id: string }) {
               <span className="rounded-md bg-primary/10 px-sm py-2xs text-primary">{data.badge}</span>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-sm">
+          {!data.live && <div className="flex shrink-0 items-center gap-sm">
             <Button variant="outline" size="sm">{m.cancelTask}</Button>
             <Button variant="outline" size="sm">{m.rerunFromChunk}</Button>
-          </div>
+          </div>}
         </div>
       </div>
 
@@ -143,10 +143,10 @@ export function TaskClient({ id }: { id: string }) {
         {/* stage timeline + agent strip */}
         <div className="flex min-w-0 flex-1 flex-col">
           {data.stages.map((s, i) => (
-            <StageNode key={s.kicker} stage={s} last={i === data.stages.length - 1} />
+            <StageNode key={s.kicker} stage={data.live ? { ...s, label: [m.procFetch, m.procParse, m.procChunk, m.procEmbed, m.procCommit][i] ?? s.label } : s} last={i === data.stages.length - 1} />
           ))}
 
-          <div className="mt-lg flex items-start gap-md rounded-lg border border-ai-border/40 bg-ai-muted/30 p-md">
+          {!data.live && <div className="mt-lg flex items-start gap-md rounded-lg border border-ai-border/40 bg-ai-muted/30 p-md">
             <span className="flex size-media-xs shrink-0 items-center justify-center rounded-lg border border-ai-border/40 bg-ai-muted/40">
               <Icon name="sparkles" size="sm" className="text-ai-text" />
             </span>
@@ -161,26 +161,26 @@ export function TaskClient({ id }: { id: string }) {
                 {m.taskAgentEnd}
               </span>
             </span>
-          </div>
+          </div>}
         </div>
 
         {/* 页内副栏 */}
         <div className="flex w-full shrink-0 flex-col gap-md xl:w-[23rem]">
-          <AsideCard title={m.asideConfig}>
+          {!data.live && <AsideCard title={m.asideConfig}>
             <KVRows rows={data.config} />
             <div className="border-t border-dashed border-primary/10 pt-sm text-body-sm text-muted-foreground dark:border-primary/20">
               {data.configNote}
             </div>
-          </AsideCard>
+          </AsideCard>}
           <AsideCard title={m.asideLineage}>
             <KVRows rows={data.lineage} />
             <div className="border-t border-dashed border-primary/10 pt-sm text-body-sm text-muted-foreground dark:border-primary/20">
               {data.lineageNote}
             </div>
           </AsideCard>
-          <AsideCard title={m.asideCost} aside={m.asideCostNote}>
+          {!data.live && <AsideCard title={m.asideCost} aside={m.asideCostNote}>
             <KVRows rows={data.cost} />
-          </AsideCard>
+          </AsideCard>}
         </div>
       </div>
     </>

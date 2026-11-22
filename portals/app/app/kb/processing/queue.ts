@@ -30,6 +30,7 @@ export interface EnqueueInput {
   tier: QueueTier;
   attempt?: number;
   runAfter?: number;
+  suspended?: boolean;
 }
 
 /**
@@ -57,7 +58,7 @@ export class TaskQueue {
       tier: input.tier,
       attempt: input.attempt ?? 0,
       runAfter: input.runAfter ?? 0,
-      suspended: false,
+      suspended: input.suspended ?? false,
     });
     return true;
   }
@@ -149,6 +150,10 @@ export class TaskQueue {
 
   get depth(): number {
     return this.tasks.size;
+  }
+
+  hasDocument(docId: string): boolean {
+    return [...this.tasks.values()].some((task) => task.docId === docId);
   }
 
   suspendedCount(): number {
