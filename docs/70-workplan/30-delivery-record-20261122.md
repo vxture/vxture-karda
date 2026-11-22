@@ -522,3 +522,14 @@ new prices. Decimal recomputation corrects two small prior chat percentage
 errors. Resource-pack prices remain candidates, coupons apply to designated
 base-subscription cycles, not permanent/addon discounts. No saved drafts,
 published plan versions, subscriptions or deployment settings changed.
+
+## Final commercial design v1 (P8.8)
+
+Owner confirmed the final scheme after connection and published-service caps
+were aligned to20/100/500. Added20-specs/80 and sole final-package-spec.json
+input covering199/499/1499 prices, seats/storage/AI, per-product quotas, addons,
+discounts and Enterprise/Free policy. Workload calculator reads final prices,
+storage and AI directly from the catalog, with source hashes. Existing saved
+draft JSON is explicitly historical, not rewritten as if saved on platform.
+No platform edits, publication, subscription migration or deployment. Code
+alignment, workload/cost and platform configuration acceptance remain pending.

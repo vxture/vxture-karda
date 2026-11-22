@@ -4,7 +4,13 @@
   "authorization": "prepare_drafts_only",
   "platform_saved": true,
   "platform_save_blocker": null,
-  "platform_saved_versions": {"free": 2, "starter": 1, "pro": 1, "business": 1, "enterprise": 1},
+  "platform_saved_versions": {
+    "free": 2,
+    "starter": 1,
+    "pro": 1,
+    "business": 1,
+    "enterprise": 1
+  },
   "platform_readback_notes": [
     "All five versions remain drafts; existing Free v1 remains current and invitation-only.",
     "Free v2 inherited annual price 0; clearing and saving restored 0. Monthly-only intent still requires platform resolution before publication.",
@@ -144,5 +150,8 @@
     ],
     "monthly_quota": null,
     "note": "No new call cap authorized. Resolve existing hard-pool contract before publication; do not guess quota=-1."
-  }
+  },
+  "superseded_design_reference": "docs/20-specs/80-final-commercial-packages-20261122.md",
+  "final_design_input": "scripts/commercial/final-package-spec.json",
+  "snapshot_warning": "Historical saved-draft evidence only. Numeric values are not the final design; do not reuse for the new offer."
 }

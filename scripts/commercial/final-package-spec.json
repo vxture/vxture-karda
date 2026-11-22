@@ -1,0 +1,110 @@
+{
+  "version": "arda-karda-20261122-final-v1",
+  "status": "owner_confirmed_design_not_published",
+  "currency": "CNY",
+  "billing_period": "month",
+  "publish_allowed": false,
+  "migrate_existing_subscriptions": false,
+  "tiers": [
+    {
+      "tier": "starter",
+      "price_cny": 199,
+      "seats_per_product": 1,
+      "storage_gib_per_product": 1,
+      "connections_per_product": 20,
+      "arda": {
+        "ai_credits_month": 150,
+        "datasets": 50,
+        "published_services": 20,
+        "service_calls_month": 20000,
+        "quality_checks_month": 1000
+      },
+      "karda": {
+        "ai_credits_month": 300,
+        "knowledge_libraries": 200,
+        "content_item_cap": null
+      }
+    },
+    {
+      "tier": "pro",
+      "price_cny": 499,
+      "seats_per_product": 1,
+      "storage_gib_per_product": 3,
+      "connections_per_product": 100,
+      "arda": {
+        "ai_credits_month": 600,
+        "datasets": 200,
+        "published_services": 100,
+        "service_calls_month": 100000,
+        "quality_checks_month": 5000
+      },
+      "karda": {
+        "ai_credits_month": 1200,
+        "knowledge_libraries": 1000,
+        "content_item_cap": null
+      }
+    },
+    {
+      "tier": "business",
+      "price_cny": 1499,
+      "seats_per_product": 5,
+      "storage_gib_per_product": 10,
+      "connections_per_product": 500,
+      "arda": {
+        "ai_credits_month": 2000,
+        "datasets": 1000,
+        "published_services": 500,
+        "service_calls_month": 500000,
+        "quality_checks_month": 20000
+      },
+      "karda": {
+        "ai_credits_month": 4000,
+        "knowledge_libraries": 5000,
+        "content_item_cap": null
+      }
+    }
+  ],
+  "enterprise": {
+    "delivery": "private_deployment",
+    "purchase_action": "contact_sales",
+    "price": null,
+    "quotas": "by_contract"
+  },
+  "free": {
+    "public_sales": false,
+    "design_only": true,
+    "change_existing_versions": false
+  },
+  "discounts": {
+    "joint_base_discount": "0.05",
+    "campaign_coupon_discount": "0.20",
+    "stacked_factor": "0.76",
+    "max_coupon_count": 1,
+    "coupon_cycles": "first_paid_or_explicit_campaign_cycles_not_permanent_renewal",
+    "addons_eligible": false,
+    "annual_discount": null
+  },
+  "addons": [
+    {
+      "metric": "storage.bytes",
+      "quantity": 10737418240,
+      "price_cny": 99,
+      "period": "month"
+    },
+    {
+      "metric": "ai.credit",
+      "quantity": 1000,
+      "price_cny": 200,
+      "period": "one_time",
+      "expiry": "platform_contract_requires_acceptance"
+    }
+  ],
+  "technical_notes": [
+    "Design approval does not assert implementation, metering acceptance or live commercial publication.",
+    "No customer-facing Karda content-item cap. Existing document.max requires migration design before new plans go live.",
+    "Storage follows workspace grants once; AI follows reserved/shared audience; seats are per-product.",
+    "No fixed task-count promise. Arda AI tasks remain unimplemented; Karda workload efficiency depends on unvalidated optimization.",
+    "Egress values in the workload inputs are internal cost scenarios, not published grants or overage fees.",
+    "Human and ticket support for all tiers; implemented individual capabilities open; organizational collaboration Business and Enterprise."
+  ]
+}

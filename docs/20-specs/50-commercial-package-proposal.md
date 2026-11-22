@@ -1,5 +1,7 @@
 # Karda 套餐与整包成本提案 - 2026-11-22
 
+> 最终商业设计见[80-final-commercial-packages-20261122.md](80-final-commercial-packages-20261122.md)。本文件保留历史证据；线上尚未发布新方案。
+
 联合复核补充：用户要求Arda/Karda一起重新测算，见[联合评审r1](60-joint-commercial-review-20261122.md)。
 新199/599/2199与通用资源、扩展及95折均为未确认建议；不覆盖本文件已获准保存的旧草稿，未修改平台版本。
 
