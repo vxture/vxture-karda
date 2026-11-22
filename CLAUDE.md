@@ -55,7 +55,9 @@ Automatic processing dispatch and real workspace-scoped task detail are deployed
 grounded answers are blocked at embed/upstream_account_refused (Atlas issue147).
 Cross-release object read and platform-observed ingest C3 pass; download hash,
 search/ask C3, AI receipts and deduplication remain open. Both logins restored.
-P9.8 adds missing real stage receipts; not yet deployed.
+P9.8 stage receipts and P9.9 POST/303 logout fixes are merged; 883 tests/zero
+skips, all PR/main CI passed. v0.11.4 candidate2360240, run45054602507;
+not yet deployed. Actual logout failed in v0.11.3 and isolation is unverified.
 Legacy-host retirement (platform issue727), logout and permission-message
 acceptance remain open. See
  docs/70-workplan/20-rectification-batches-20261122.md for current evidence.
