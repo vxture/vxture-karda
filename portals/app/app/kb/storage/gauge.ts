@@ -96,6 +96,7 @@ function platformGauge(): GaugeTransport {
 }
 
 export class StorageGauge {
+  private inventoryCursor: string | null = null;
   constructor(private readonly transport: GaugeTransport = platformGauge()) {}
 
   /** Caller holds the storage lock; snapshot must already be DURABLY queued. */
@@ -150,6 +151,23 @@ export class StorageGauge {
     for (const row of due) {
       try { await this.flush(row.workspaceId); }
       catch { console.error("[storage/gauge] snapshot retained for retry/operator recovery"); }
+    }
+  }
+
+  /** Bootstrap retained legacy inventories even without a subsequent upload. */
+  async seedMissing(batchSize = 20): Promise<void> {
+    const db = await getPrismaClient();
+    const rows = await db.$queryRaw<Array<{ workspace_id: string }>>`SELECT a.workspace_id
+      FROM vx_provision.provision_anchor a
+      LEFT JOIN karda_kb.storage_watermark w ON w.workspace_id = a.workspace_id
+      WHERE a.product_code = 'karda' AND w.workspace_id IS NULL
+        AND (${this.inventoryCursor}::uuid IS NULL OR a.workspace_id > ${this.inventoryCursor}::uuid)
+      ORDER BY a.workspace_id LIMIT ${batchSize}`;
+    if (!rows.length) { this.inventoryCursor = null; return; }
+    for (const row of rows) {
+      this.inventoryCursor = row.workspace_id;
+      try { await this.baseline(row.workspace_id); }
+      catch { console.error("[storage/gauge] legacy inventory requires recovery"); }
     }
   }
 }

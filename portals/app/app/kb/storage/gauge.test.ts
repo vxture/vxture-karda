@@ -15,6 +15,7 @@ test("storage gauge reads shared pool headroom, never a max limit or invented al
       { metric: "storage.bytes", limit: 50, remaining: 5, priority: 1 },
       { metric: "ai.credit", limit: 100, remaining: 100, priority: 0 }] };
   assert.equal(storageHeadroom(e), -5n);
+  assert.equal(storageHeadroom({ ...e, limits: {} }), -5n, "pool-only C2 needs no storage max key");
   assert.throws(() => storageHeadroom({ ...e, quota_pools: [] }), { code: "capacity_unconfigured" });
   assert.throws(() => storageHeadroom({ ...e, bundled: false }), { code: "capacity_unavailable" });
   assert.throws(() => storageHeadroom({ ...e, quota_pools: [{ ...e.quota_pools[0], remaining: 0.5 }] }), { code: "capacity_unavailable" });
@@ -81,9 +82,15 @@ test("isolated PostgreSQL: shared storage admission, durable failed reports, res
     await gauge.retry();
     assert.equal(remote.get(ws)?.value, 0n);
     assert.equal(remote.get(other)?.value, 3n, "other workspace's uncertain bytes remain charged");
+    await db.provisionAnchor.create({ data: { workspaceId: ws, productCode: "karda", tenantId: randomUUID() } });
+    await admin.query("DELETE FROM karda_kb.storage_watermark WHERE workspace_id=$1", [ws]);
+    await new StorageGauge(transport).seedMissing();
+    assert.equal((await db.storageWatermark.findUniqueOrThrow({ where: { workspaceId: ws } })).value, 0n,
+      "legacy inventory bootstraps even when no new upload occurs");
     await assert.rejects(db.storageWatermark.deleteMany({ where: { workspaceId: ws } }));
     await assert.rejects(db.storageWatermark.update({ where: { workspaceId: ws }, data: { workspaceId: randomUUID() } }));
   } finally {
+    await admin.query("DELETE FROM vx_provision.provision_anchor WHERE workspace_id=ANY($1::uuid[])", [[ws, other]]);
     await admin.query("DELETE FROM karda_kb.storage_watermark WHERE workspace_id=ANY($1::uuid[])", [[ws, other]]);
     await admin.query("DELETE FROM karda_kb.stored_object WHERE workspace_id=ANY($1::uuid[])", [[ws, other]]);
     await admin.query("DELETE FROM karda_kb.knowledge_base WHERE workspace_id=ANY($1::uuid[])", [[ws, other]]);

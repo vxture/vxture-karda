@@ -245,7 +245,9 @@ Dedup adds no bytes and can reuse ready data when shared headroom is exhausted.
 Physical cleanup queues the lower snapshot only after confirmed removal.
 
 The server recovery worker retries20 due snapshots per cycle, one-minute backoff,
-ten-attempt ceiling, including after restart without a later upload. Unknown
+ten-attempt ceiling, including after restart without a later upload. A bounded cursor scan also queues
+missing legacy workspace inventories; an unknown inventory is reported and does
+not starve later workspaces. Unknown
 inventory or newer/mismatched platform receipts fail closed and require recovery;
 retrying an exact snapshot is allowed. Anchors are resolved before transaction
 connections to avoid pool starvation under competing writers. Per-scope locks,
