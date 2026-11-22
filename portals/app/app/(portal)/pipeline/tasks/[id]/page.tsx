@@ -8,8 +8,7 @@ export async function generateMetadata() {
   return pageTitle(shell.taskDetail);
 }
 
-// 加工管道 · 任务详情 (design canvas V2 third row). Demo overlay via
-// GET /api/pipeline/tasks/:id until the 110-processing pipeline lands.
+// Task details resolve through the workspace-scoped production read model.
 export default async function PipelineTaskPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   return <TaskClient id={id} />;

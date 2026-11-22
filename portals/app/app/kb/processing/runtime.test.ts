@@ -98,6 +98,16 @@ test("makeResolver returns null when the document is gone (task is dropped)", as
   assert.equal(await resolve(task("nope")), null);
 });
 
+test("recovered stale queue does not embed an already indexed document", async () => {
+  const content = new ContentService(new InMemoryContentStore());
+  const d = await content.createDocument({ kbId: "kb1", title: "done", source: "upload" });
+  assert.ok(d.ok);
+  await content.transitionDocument(d.value.id, "indexed");
+  const resolve = makeResolver({ content, objects: new InMemoryObjectStore(),
+    kbEmbeddingModel: async () => { throw new Error("must not resolve a model"); } });
+  assert.equal(await resolve(task(d.value.id)), null);
+});
+
 // --- enqueue-on-upload ------------------------------------------------------
 
 test("uploadDocument runs the enqueue hook once, only on a successful create", async () => {

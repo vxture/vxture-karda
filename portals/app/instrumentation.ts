@@ -11,5 +11,7 @@ export async function register(): Promise<void> {
     startAccessOutbox();
     const { startStorageRecovery } = await import("./app/kb/storage/worker");
     startStorageRecovery();
+    const { startProcessingDispatch } = await import("./app/kb/processing/dispatch");
+    startProcessingDispatch();
   }
 }

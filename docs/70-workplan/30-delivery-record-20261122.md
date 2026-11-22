@@ -629,3 +629,43 @@ P9.2 login/callback verified, global logout/isolation and message acceptance pen
 P9.3 business processing/C3 and P9.4 real upload/restart acceptance remain pending.
 Proof: output/acceptance-20261122/new-domain-accounts-gate.jpg and
 output/acceptance-20261122/no-karda-subscription.jpg.
+
+
+## P9.7 subscribed production acceptance / processing dispatch remediation
+
+Owner confirmed subscription. Browser C2 now returns active/business, productAccess
+and dataAccess true, seat.max5/kb.max5000/binding.max500. New ai.credit4000 pool
+is present; other same-workspace pools remain distinct, not silently reallocated.
+Created private Integration acceptance20261122 library
+117c7b9a-6c5d-4f2d-bddb-f7b77a8476f0. Uploaded355-byte synthetic-acceptance.md,
+SHA2561351aa4d950d5699e4ae2c65484788e241f91a31ae6148d3bf197ae897cda97f.
+File selection initially failed in the browser tool; supported concurrent chooser
+wait+AX click succeeded. This was not established as a product upload defect.
+Document accepted and queued. Retain isolated fixture pending acceptance; no public
+sharing, external credential or deletion performed.
+
+Scoped empty-library search returns complete/zero hits. Empty-library answer
+returns no evidence/no generated answer. These do not prove Atlas generation or
+embedding. First-party console search is intentionally not karda.search-metered;
+Opera missing C3 after this call is not evidence of a broken usage worker.
+
+Two actual Karda gaps: instrumentation never starts processing dispatch (only the
+protected internal tick could drain); task detail returns DEMO_TASK_DETAIL for
+arbitrary ids. Observed task list links to bd5f01ff, then detail falsely shows a
+14.2MB legal PDF while uploaded fixture is355B. No false processing acceptance.
+
+Remediation candidate: automatic bounded processing passes using existing DB
+configuration; advisory session lock shared with protected HTTP tick; 200-document
+keyset recovery per pass; at most20 tasks per pass;5s work cadence/5min parked
+resume. Recovered retries retain ledger attempts/backoff; already indexed/deleted
+work is skipped. No new variables, schema or manual server changes. Task links
+retain full UUID; production detail scopes query by workspace and returns real
+ledger/doc/stages only,404 for missing/malformed ids. Remove authored progress,
+repair claims, cost estimates and unwired action buttons from live detail.
+
+50 targeted tests and TypeScript/data-architecture checks pass. PostgreSQL lease
+exclusion/failure-release test added to existing isolated CI DB suite. Full CI,
+release and real upload/index/answer/C3/restart acceptance remain pending.
+Proofs: private-library-created.jpg, empty-library-search.jpg,
+empty-library-answer-guard.jpg, task-detail-demo-mismatch.jpg under
+output/acceptance-20261122. No platform source or server variable changes.

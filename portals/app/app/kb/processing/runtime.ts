@@ -18,7 +18,7 @@ import { TaskQueue, type Task } from "./queue";
 import type { DocumentSink, WorkerDeps } from "./worker";
 import type { RawSource, EmbeddingClient, CommitTarget } from "./orchestrator";
 import { PrismaCommitTarget } from "./commit";
-import { taskKey, configFingerprint, tierForTrigger } from "./stages";
+import { taskKey, configFingerprint, tierForTrigger, backoffMs } from "./stages";
 import { processingEmbedder, type EmbedderTaskContext } from "./atlas-embedder";
 import { prismaEnabled, getPrismaClient } from "../../lib/db";
 import { getTaskLedger, type TaskLedger } from "./task-ledger";
@@ -158,6 +158,7 @@ export function makeResolver(deps: ResolverDeps): WorkerDeps["resolve"] {
     const got = await deps.content.getDocument(task.docId);
     if (!got.ok) return null;
     const doc = got.value;
+    if (doc.contentState !== "processing") return null;
 
     // The library's optional pin (KD-107). Null = grant-routed (KD-018): the
     // embed client sends karda.embed and the commit records whichever model
@@ -229,6 +230,7 @@ export function resetProcessingRuntime(): void {
  * no-op; combined with queue.resumeSuspended it is the "A1 is configured now,
  * turn the flywheel" lever the tick endpoint exposes.
  */
+let recoveryCursor: string | undefined;
 export async function reenqueueProcessing(queue: TaskQueue): Promise<number> {
   if (!prismaEnabled()) return 0;
   const p = await getPrismaClient();
@@ -238,19 +240,36 @@ export async function reenqueueProcessing(queue: TaskQueue): Promise<number> {
     contentHash: string | null;
     processingTemplateId: string | null;
     knowledgeBase: { workspaceId: string; processingTemplateId: string | null } | null;
+    processingTasks: { id: string; state: string; tier: string; attempt: number; failureClass: string | null; updatedAt: Date }[];
   }[] = await p.document.findMany({
-    where: { contentState: "processing" },
+    where: { contentState: "processing", knowledgeBase: { deletedAt: null }, ...(recoveryCursor ? { id: { gt: recoveryCursor } } : {}) },
+    orderBy: { id: "asc" },
+    take: 200,
     select: {
       id: true,
       kbId: true,
       contentHash: true,
       processingTemplateId: true,
       knowledgeBase: { select: { workspaceId: true, processingTemplateId: true } },
+      processingTasks: { where: { kind: "processing" }, orderBy: { queuedAt: "desc" }, take: 1,
+        select: { id: true, state: true, tier: true, attempt: true, failureClass: true, updatedAt: true } },
     },
   });
+  recoveryCursor = docs.length === 200 ? docs[docs.length - 1].id : undefined;
   let enqueued = 0;
   for (const d of docs) {
     if (!d.knowledgeBase) continue;
+    if (queue.hasDocument(d.id)) continue;
+    const prior = d.processingTasks[0];
+    if (prior && prior.state !== "failed" && prior.state !== "done") {
+      const attempt = Math.max(0, prior.attempt - 1);
+      if (queue.enqueue({ key: `recover:${prior.id}`, docId: d.id, kbId: d.kbId,
+        org: d.knowledgeBase.workspaceId,
+        tier: prior.tier === "interactive" || prior.tier === "sync" ? prior.tier : "bulk",
+        attempt, suspended: prior.state === "suspended",
+        runAfter: prior.failureClass === "transient" ? prior.updatedAt.getTime() + backoffMs(Math.max(0, attempt - 1)) : 0 })) enqueued++;
+      continue;
+    }
     const ok = enqueueForDocument(queue, {
       docId: d.id,
       kbId: d.kbId,

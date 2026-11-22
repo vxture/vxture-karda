@@ -213,7 +213,7 @@ export function tallyTasks(rows: TaskRow[], now: number): TaskTally {
     .sort((a, b) => b.queuedAt.getTime() - a.queuedAt.getTime())
     .slice(0, TASK_LIST_LIMIT)
     .map((r) => ({
-      id: r.id.slice(0, 8),
+      id: r.id,
       title: r.documentTitle,
       detail: [r.kbName, r.tier, r.attempt > 1 ? `#${r.attempt}` : null].filter(Boolean).join(" · "),
       dots: dotsFor(r),

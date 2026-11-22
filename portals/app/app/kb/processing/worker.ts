@@ -94,7 +94,7 @@ export async function tick(deps: WorkerDeps): Promise<TickResult> {
     case "retry":
       // Back to `queued`, not a fourth state: a retry is the same work waiting
       // again, and `attempt` is what distinguishes it (task-ledger.ts).
-      await ledger.settled({ docId: task.docId, state: stateForAction("retry"), ...settle });
+      await ledger.settled({ docId: task.docId, state: stateForAction("retry"), attempt: result.outcome.nextGeneration, ...settle });
       deps.queue.retry(task, result.outcome.nextGeneration, now + backoffMs(task.attempt));
       return { ran: true, action: "retry", docId: task.docId };
     case "suspend":

@@ -133,6 +133,7 @@ export interface TaskStage {
 }
 
 export interface TaskDetail {
+  live?: boolean;
   id: string;
   title: string;
   /** Mono meta parts: 库 / 大小 / 来源 / 队列. */
