@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Icon,
@@ -65,6 +65,7 @@ export function AppHeader({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const logoutForm = useRef<HTMLFormElement>(null);
   const { mode, setMode, density, setDensity, fontSize, setFontSize } = useTheme();
   const { locale, setLocale } = useLocale();
   const m = useMessages(shell);
@@ -170,6 +171,7 @@ export function AppHeader({
   // assistant into the icon group - it is its own block, one size larger.
   const trailing = (
     <div className="flex items-center gap-md">
+      <form ref={logoutForm} action="/auth/logout" method="post" hidden />
       {/* 助手:独立入口,比工具组图标大一号(md=20px vs sm=16px)。收起时
           红底角标标明待办数(owner 2026-08-24)。 */}
       <span className="relative">
@@ -260,7 +262,7 @@ export function AppHeader({
                     label: m.switchAccount,
                     icon: "user-switch" as const,
                     onClick: () => {
-                      window.location.href = "/auth/logout";
+                      logoutForm.current?.requestSubmit();
                     },
                   },
                   {
@@ -269,7 +271,7 @@ export function AppHeader({
                     icon: "sign-out" as const,
                     danger: true,
                     onClick: () => {
-                      window.location.href = "/auth/logout";
+                      logoutForm.current?.requestSubmit();
                     },
                   },
                 ]
