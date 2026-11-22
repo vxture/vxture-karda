@@ -470,3 +470,22 @@ description alone does not prove purchase-button semantics. Quota preview keys
 reorder after save, so display order needs separate client acceptance. See draft
 checklist and platformissue728 follow-up. Domainissue727 and hard-pool/max-grant
 issue728 remain open without platform replies at this check. P9 is not complete.
+
+## Joint commercial re-review requested by owner
+
+Owner requested a joint Arda/Karda review, allowing proposals to revise Arda.
+No new prices, package versions, addons, discounts or existing subscriptions were
+changed. Authoritative review:20-specs/60-joint-commercial-review-20261122.md.
+Offline Decimal model and auditable inputs:scripts/commercial/joint-pricing-*.
+The previous per-product budgets are not comparable: old Arda model predates its
+final price, uses different storage/fee/stress assumptions, and does not prove
+the cost of published calls/checks. Admin readback verified0.20 anchor/70% target
+and some calibrated rates, but also missing-cost fallback models and ambiguous
+rounded rerank rates. No cost configuration or provider balance was changed.
+
+Proposal only: same199/599/2199 tier prices and common grants, same resource-pack
+prices, separately bounded public egress, optional95% joint base-subscription
+price with no assumed infrastructure savings. Existing Karda drafts stay as saved.
+AI/storage/egress full-grant scenarios plus explicit non-AI budgets are NOT proof
+of maximum arbitrary workload cost. Both product benchmarks, bill calibration,
+egress/discount platform contracts and owner commercial approval remain required.
