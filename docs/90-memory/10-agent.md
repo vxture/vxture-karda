@@ -11,7 +11,9 @@ are deployed, with877 tests/zero skips and all CI gates passed. Both logins
 restored. Real processing reaches embed but is parked/upstream_account_refused;
 Atlas issue147 has Karda evidence. Cross-release object read and platform-observed
 ingest C3 pass; indexing, cited answers, AI, search/ask C3 and hash integrity remain
-open. P9.8 fixes missing stage receipts; not yet deployed.
+open. P9.8 stage receipts and P9.9 POST/303 logout fixes are merged;883 tests,
+zero skips, all PR/main CI passed. v0.11.4 candidate2360240/run45054602507,
+not yet deployed. v0.11.3 logout failed; isolation must be revalidated.
 Legacy retirement, logout and real business acceptance remain open. original bootstrap statements are historical. Owner scope
 is Karda-only fixes, platform issues instead of platform source/variable/edge
 changes. Do not copy Arda credentials, commercial quotas or its unimplemented SSE

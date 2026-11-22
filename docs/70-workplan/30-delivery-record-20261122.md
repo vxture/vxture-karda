@@ -735,3 +735,12 @@ its default307 would also replay POST to Accounts. P9.9 uses native same-origin
 POST form and303 after confirmed local deletion. Failure keeps503/no-store with
 no cookie clearing/redirect; success expires host cookie and disables caching.
 Five targeted logout tests pass; production revalidation remains pending release.
+
+### v0.11.4 checked release candidate
+
+PR246 merged23602404c7c213aff9ffeb0aca964cb165a37c9e. PR CI45054103432,
+main CI45054356916 and main secret scan45054356820 pass;883 tests/zero skips.
+v0.11.4 tag pins this exact commit; production run45054602507 includes P9.8/P9.9.
+Human production review still required; not yet deployed. No newDDL or variables.
+Platform issue728 updated with actual ingest observation and contradictory C2
+credential label: https://github.com/vxture-platform/vxture-platform/issues/728#issuecomment-7083477995.
