@@ -602,3 +602,30 @@ display gap (issue717). Four public tiers, final annual prices and retired Free
 remain verified. Screenshot: output/acceptance-20261122/metric-names-configured.jpg;
 public readback: output/acceptance-20261122/pricing-after-metric-naming.jpg.
 PR239 merged asfc7f1c3 after all required checks passed. Release tag stays on1a59f0e.
+
+
+## P9.1/P9.2 configuration-path acceptance update (16:04 CST)
+
+New normal-browser visit to https://karda.ruyin.work/ now reaches /gate instead
+of Cloudflare520. Clicking Continue Login reused the Accounts customer session,
+completed the registered new-domain callback and returned to the product.
+Authenticated GET /api/access then successfully resolves C2. GET /api/ready on
+the new domain returns ready, v0.11.2 /1a59f0e2, db/redis/storageConfig all ok.
+No server variables, platform source, workflows or manual edge files changed by
+this product task. The platform-side cause/timing of recovery is not established.
+CLI requests still receive403 while browser requests work; this is not an app outage.
+
+Current signed workspace suffix0210 returns status=null, tier=null, bundled=true,
+seat.max=1; gates.productAccess=false, dataAccess=true, cta=subscribe. Login works;
+the resulting 尚未开通 gate is not a failed callback or C2 transport failure.
+Admin actual subscription list has16 rows/7active and no Karda subscriptions
+(search Karda returns0). No subscription, grant, order or payment was created.
+Asked owner to open the intended test workspace through normal subscription or
+voucher, or identify an existing subscribed workspace. Business/C3 acceptance
+requires that legitimate authorization; do not fabricate UI entitlement from bundled.
+
+P9.1 target-domain reachability verified; old-domain retirement remains open.
+P9.2 login/callback verified, global logout/isolation and message acceptance pending.
+P9.3 business processing/C3 and P9.4 real upload/restart acceptance remain pending.
+Proof: output/acceptance-20261122/new-domain-accounts-gate.jpg and
+output/acceptance-20261122/no-karda-subscription.jpg.
