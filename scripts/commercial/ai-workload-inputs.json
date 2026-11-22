@@ -1,0 +1,75 @@
+{
+  "review": "arda-karda-workload-20261122-r2",
+  "status": "scenario_only_not_a_published_offer",
+  "anchor_cny_per_credit": "0.20",
+  "conversion_target_margin": "0.70",
+  "workload_reserve": "0.20",
+  "price_reference": "joint-pricing-inputs.json; r1 prices are evaluated, not confirmed",
+  "rates_cny_per_million_tokens": {
+    "flash": {"input": "2", "output": "8"},
+    "pro": {"input": "9", "output": "27"},
+    "embedding": {"input": "0.5", "output": "0"},
+    "rerank": {"input": "0.8", "output": "0"}
+  },
+  "operations": {
+    "arda_light": [{"model": "flash", "input": 2000, "output": 500}],
+    "arda_sql": [{"model": "flash", "input": 6000, "output": 1200}],
+    "arda_analysis": [{"model": "pro", "input": 20000, "output": 3000}],
+    "import_embed_10k": [{"model": "embedding", "input": 10000, "output": 0}],
+    "import_extract_10k": [
+      {"model": "embedding", "input": 10000, "output": 0},
+      {"model": "flash", "input": 11000, "output": 2000}
+    ],
+    "search_current": [
+      {"model": "embedding", "input": 200, "output": 0},
+      {"model": "rerank", "input": 61200, "output": 0}
+    ],
+    "search_optimized": [
+      {"model": "embedding", "input": 200, "output": 0},
+      {"model": "rerank", "input": 10000, "output": 0}
+    ],
+    "ask_current": [
+      {"model": "embedding", "input": 200, "output": 0},
+      {"model": "rerank", "input": 61200, "output": 0},
+      {"model": "flash", "input": 6000, "output": 800}
+    ],
+    "ask_optimized": [
+      {"model": "embedding", "input": 200, "output": 0},
+      {"model": "rerank", "input": 10000, "output": 0},
+      {"model": "flash", "input": 6000, "output": 800}
+    ],
+    "ask_deep": [
+      {"model": "embedding", "input": 200, "output": 0},
+      {"model": "rerank", "input": 61200, "output": 0},
+      {"model": "pro", "input": 20000, "output": 2000}
+    ]
+  },
+  "monthly_work": {
+    "arda": [
+      {"arda_light": 200, "arda_sql": 80, "arda_analysis": 10},
+      {"arda_light": 800, "arda_sql": 300, "arda_analysis": 50},
+      {"arda_light": 2500, "arda_sql": 1000, "arda_analysis": 150}
+    ],
+    "karda": [
+      {"import_extract_10k": 20, "ask_optimized": 400, "search_optimized": 100, "ask_deep": 0},
+      {"import_extract_10k": 60, "ask_optimized": 1200, "search_optimized": 300, "ask_deep": 50},
+      {"import_extract_10k": 200, "ask_optimized": 4000, "search_optimized": 1000, "ask_deep": 150}
+    ]
+  },
+  "candidate_credits": {"arda": [150, 600, 2000], "karda": [300, 1200, 4000]},
+  "candidate_storage_gib": [1, 3, 10],
+  "candidate_egress_gib": [5, 15, 50],
+  "notes": [
+    "Model prices were read from Admin on 2026-11-22, not supplier invoices or a guarantee of live endpoint routing.",
+    "Arda operations are prospective: its Curator task registry is empty; no completed AI business workflow is evidenced.",
+    "Each operation is a token-shape assumption, not a timed benchmark, transcript measurement or fixed per-action price.",
+    "Current retrieval scenario assumes 100 candidates of 512 tokens plus a 100-token query repeated per pair across two namespaces; actual billing unit and query repetition require verification.",
+    "Optimized retrieval proposes 20 candidates of 400 tokens plus repeated query. It has NOT been implemented or quality-validated.",
+    "Query embedding is counted twice for two namespaces. More namespaces add calls today; no unimplemented memoization saving is credited.",
+    "Extraction example assumes 10000 source tokens, two windows adding 500 prompt tokens each, 2000 total output tokens, one embedding pass, no OCR or overlap.",
+    "Code windows use characters and soft element boundaries, not true token caps. Real output and oversized paragraphs may cost more.",
+    "Credits are cost-derived scenarios at the unchanged platform anchor/target, not actual currently applied raw rates; rerank raw precision and unit remain unverified.",
+    "Reserve is allowance for variation, not permission to charge duplicate requests; failed provider attempts can cost money and need separate attribution.",
+    "No cache discount, result cache, batch discount, customer utilization discount or zero-cost degraded route is assumed."
+  ]
+}
