@@ -235,3 +235,17 @@ still pending browser-control recovery (service_info timeout), not falsely compl
 No current subscription, price publication, grant or existing Free status changed.
 Existing hard-call pools versus no-new-call-cap intent need a supported platform
 configuration contract before publication (issue728). No artificial quota invented.
+
+## P8.4 draft save completed after restart
+
+Browser recovered. Saved/read back Free v2 and Starter/Pro/Business/Enterprise v1
+in Admin product plans. Monthly prices0/129/399/1499/unpriced; Free and paid
+self-service drafts have the six approved quantities. Enterprise description
+records private deployment/contact sales, without fabricated contract quantities.
+All five remain drafts; existing invitation Free v1 stays current. No publication,
+grant/subscription migration, addon SKU or application release occurred.
+Free v2 inherited annual0 and clearing it did not persist; contact-sales purchase
+action and customer metric display order still require platform/UI acceptance.
+Precise evidence and outstanding semantics:50-deployment/40-commercial-draft-preparation.md.
+PR231/a19cdec merged after five required gates; this follow-up records actual saves.
+P8.4 draft preparation complete; commercial publication and P9 acceptance remain held.
