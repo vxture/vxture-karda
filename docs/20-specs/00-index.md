@@ -7,7 +7,8 @@ Karda's specification: what the product is, its surfaces, and its business rules
 | `10-product-definition.md` | positioning applied, structure, settled decisions, v1 scope, open product-level decisions; carries the design-document family index | Draft v0.5 |
 | `20-decisions.md` | decision register (`KD-NNN`): the rulings that were scattered across the design docs' section-11 tables, collected in one place. On conflict this table wins; the design docs keep the context | v1 |
 | `30-agent-knowledge-blueprint.md` | the POSITIONING AUTHORITY (owner blueprint, 2026-08-18, KD-017): karda as the Vxture Agent Knowledge Platform - five-platform relations, six capability domains, the knowledge-asset model, boundary table, phase-1 scope | v1.0 |
-| `50-commercial-package-proposal.md` | November22 Karda package quantities, whole-package cost assumptions and release prerequisites | Draft, not approved/published |
+| `50-commercial-package-proposal.md` | November22 Karda package quantities and saved draft versions | Draft preparation approved and saved; publication not approved |
+| `60-joint-commercial-review-20261122.md` | Joint Arda/Karda pricing, one reproducible budget, stress scenarios, mixed subscriptions and expansion orders | New proposal only; no live changes |
 | `40-tier-capability-matrix.md` | tier -> feature keys / limits / AI credits; the karda-side input the platform needs before it can publish the five plan tiers. Tiers are cut on CONSUMPTION, not features - agent access is full at every tier | Proposal v0.2, awaiting owner ruling |
 
 Two-digit `NN-slug.md` numbering with ten-step gaps (`docs/00-meta/10-docs-convention.md`
