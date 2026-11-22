@@ -1,6 +1,6 @@
 {
   "version": "arda-karda-20261122-final-v2",
-  "status": "owner_authorized_publication_in_progress",
+  "status": "base_packages_published_runtime_acceptance_pending",
   "currency": "CNY",
   "billing_period": "month",
   "publish_allowed": true,
@@ -114,8 +114,31 @@
   "annual_billing": {
     "paid_months": 10,
     "service_months": 12,
-    "usage_reset": "monthly_contract_acceptance_pending",
+    "usage_reset": "monthly_registry_anchored_to_subscription_start_live_annual_acceptance_pending",
     "enterprise": "by_contract",
     "addons": "unchanged"
+  },
+  "publication": {
+    "date": "2026-11-22",
+    "arda": {
+      "starter": 3,
+      "pro": 3,
+      "business": 3,
+      "enterprise": 2,
+      "free": "retired_not_published"
+    },
+    "karda": {
+      "starter": 1,
+      "pro": 1,
+      "business": 1,
+      "enterprise": 1,
+      "free": "retired_draft_v2_unpublished"
+    },
+    "mode": "public",
+    "enterprise_action": "contact_sales_observed_on_public_pricing",
+    "existing_subscriptions": "unchanged",
+    "addons": "not_published_this_batch",
+    "discounts": "design_only_not_configured_this_batch",
+    "alpha": "absent_platform_default_0.5"
   }
 }

@@ -252,3 +252,22 @@ action and customer metric display order still require platform/UI acceptance.
 Precise evidence and outstanding semantics:50-deployment/40-commercial-draft-preparation.md.
 PR231/a19cdec merged after five required gates; this follow-up records actual saves.
 P8.4 draft preparation complete; commercial publication and P9 acceptance remain held.
+
+
+## P8.9 四档商业发布完成 / P9.6 应用候选
+
+2026-11-22用户明确先发布套餐、再修正Karda。Arda三档v3已发布，Enterprise保留公开未定价v2；
+Karda Starter/Pro/Business/Enterprise v1全部已发布、公开，Free已退役（保留未发布v2草稿）。
+官网实际回读两产品均4档，年价1990/4990/14990；Karda为1/3/10GiB、300/1200/4000AI、
+200/1000/5000知识库、20/100/500连接，席位1/1/5，内容数量不再展示。Enterprise实际为联系销售。
+没有迁移旧订阅，没有购买测试单，没有发布扩展包、创建优惠活动或更改平台源代码/变量。
+可消耗份额α留空，平台默认0.5；源码核查升级折抵与退款的同一默认值，非扣点或套餐定价倍率。
+
+发布证据截图本地output/acceptance-20261122/four-public-plans.jpg；平台issue717仍处理Arda官网旧指标名、
+排序和能力限制，Karda官网仍显示binding.max/kb.max而非客户名称，需按配置修正。
+issue728原先的未发布说明已被本节后续事实取代；业务硬池问题继续单独跟踪，不回撤套餐发布。
+
+PR238已以1a59f0e合入，主干CI44996423309成功。本轮18项针对回归、TypeScript与全部PR门禁通过。
+v0.11.2固定1a59f0e，生产候选run44997013773构建中；包含P8.3容量执行、持久原件存储、
+共享存储水位与新套餐可选内容数量上限。数据库0013/0014已获人工批准应用，本次不重复运行DDL。
+Karda没有可用beta部署workflow，不创建无效beta标签；生产应用仍为v0.11.1，待所需人工生产审核。
