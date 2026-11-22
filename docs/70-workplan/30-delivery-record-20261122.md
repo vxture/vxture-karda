@@ -347,3 +347,33 @@ an obtained regional quote;3.50/GiB-month is an internal all-in cost allowance.
 No new plan, add-on, model fee, operator variable or platform source was changed.
 Capacity grants, actual cost calibration, owner pricing approval and domain/
 C1/C2/C3/Atlas acceptance remain prerequisites to publishing the draft offer.
+
+
+## P8.3d scoped C2 correction / approved0013 / status hardening
+
+PR226/a3345e0 and main CI passed; commercial quantities remain proposals.
+Readonly Opera confirms seven new-domain fields and web-only settings unchanged;
+Karda has10 model routes and879 capability grants. These are product-level
+upstream rights, not tenant capacity grants. Actual scoped service checks found
+two C2 HTTP200 envelopes with bundled=true/tier=null, only seat.max in limits,
+and storage.bytes in quota_pools; one historical anchor exchange returns400.
+No secrets/tickets/tenant IDs are disclosed or changed. Platform issue728 tracks
+managed max-cap registration/grants and authoritative historical recovery.
+
+Owner-approved db-init44980689156 applied0013 at pinned a3345e0, asserted38 tables
+and passed. Initial44980617256 was cancelled before execution after a malformed
+pin argument was noticed. No application release or commercial publication.
+
+P8.3d corrects the PRODUCT storage seam: shared pool headroom instead of a max
+limit, fresh scoped C2 after baseline reconciliation, absolute gauge snapshots
+with exact acknowledgements, committed watermark outbox and restart-safe retry.
+Same storage lock serializes local reservations, snapshot publication and cleanup.
+Unknown upload/report outcomes stay reserved; confirmed removal queues lower
+watermarks. DDL0014 adds storage_watermark with immutable workspace attribution;
+39-table/grant checks align. Status profile stages login-required/infra-hidden.
+Full873 tests pass,0 skipped; TypeScript passes. CI and reviewed0014 are pending.
+
+Remaining: confirmed commercial configuration with actual grants/cost calibration,
+issue727 routing/legacy-host retirement, issue728 reconciliation,0014/application
+approvals, then real Accounts/knowledge/Atlas/C3 acceptance. Cross-product atomic
+reservations are not implemented by a gauge-only contract; this bound is explicit.
