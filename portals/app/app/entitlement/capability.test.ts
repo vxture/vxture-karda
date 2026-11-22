@@ -122,7 +122,7 @@ test("missingLimitKeys names what the platform forgot", () => {
   assert.deepEqual(missingLimitKeys(complete), []);
 
   const partial = ent({ tier: "pro", limits: { "kb.max": 10 } });
-  assert.deepEqual(missingLimitKeys(partial), ["document.max", "binding.max", "seat.max"]);
+  assert.deepEqual(missingLimitKeys(partial), ["binding.max", "seat.max"]);
 });
 
 test("a zero or unlimited cap counts as DECLARED, not as missing", () => {

@@ -1,9 +1,9 @@
 {
-  "version": "arda-karda-20261122-final-v1",
-  "status": "owner_confirmed_design_not_published",
+  "version": "arda-karda-20261122-final-v2",
+  "status": "owner_authorized_publication_in_progress",
   "currency": "CNY",
   "billing_period": "month",
-  "publish_allowed": false,
+  "publish_allowed": true,
   "migrate_existing_subscriptions": false,
   "tiers": [
     {
@@ -23,7 +23,8 @@
         "ai_credits_month": 300,
         "knowledge_libraries": 200,
         "content_item_cap": null
-      }
+      },
+      "annual_price_cny": 1990
     },
     {
       "tier": "pro",
@@ -42,7 +43,8 @@
         "ai_credits_month": 1200,
         "knowledge_libraries": 1000,
         "content_item_cap": null
-      }
+      },
+      "annual_price_cny": 4990
     },
     {
       "tier": "business",
@@ -61,7 +63,8 @@
         "ai_credits_month": 4000,
         "knowledge_libraries": 5000,
         "content_item_cap": null
-      }
+      },
+      "annual_price_cny": 14990
     }
   ],
   "enterprise": {
@@ -82,7 +85,7 @@
     "max_coupon_count": 1,
     "coupon_cycles": "first_paid_or_explicit_campaign_cycles_not_permanent_renewal",
     "addons_eligible": false,
-    "annual_discount": null
+    "annual_discount": "2_months_off_12_month_service"
   },
   "addons": [
     {
@@ -100,11 +103,19 @@
     }
   ],
   "technical_notes": [
-    "Design approval does not assert implementation, metering acceptance or live commercial publication.",
-    "No customer-facing Karda content-item cap. Existing document.max requires migration design before new plans go live.",
+    "Publication is authorized; saved drafts and published versions require separate readback evidence.",
+    "No customer-facing Karda content-item cap. Explicit legacy document.max caps remain enforced; absent content-count caps are optional after data-access validation.",
     "Storage follows workspace grants once; AI follows reserved/shared audience; seats are per-product.",
     "No fixed task-count promise. Arda AI tasks remain unimplemented; Karda workload efficiency depends on unvalidated optimization.",
     "Egress values in the workload inputs are internal cost scenarios, not published grants or overage fees.",
     "Human and ticket support for all tiers; implemented individual capabilities open; organizational collaboration Business and Enterprise."
-  ]
+  ],
+  "subscription_mode": "public",
+  "annual_billing": {
+    "paid_months": 10,
+    "service_months": 12,
+    "usage_reset": "monthly_contract_acceptance_pending",
+    "enterprise": "by_contract",
+    "addons": "unchanged"
+  }
 }
