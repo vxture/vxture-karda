@@ -13,7 +13,7 @@ def number(x):
     return float(x.quantize(D("0.000001"), rounding=ROUND_HALF_UP))
 
 
-def calculate(work, pricing, estimator):
+def calculate(work, pricing, estimator, catalog):
     unit_cost = D(work["anchor_cny_per_credit"]) * (1 - D(work["conversion_target_margin"]))
     assert unit_cost == D(pricing["scenarios"]["base"]["ai_per_credit"]), "Align credit conversion and budget cost before comparing margins"
     ops = {}
@@ -30,12 +30,14 @@ def calculate(work, pricing, estimator):
         product_rows, candidate_tiers = [], []
         for i, mix in enumerate(rows):
             base = pricing["tiers"][i]
-            credits = D(work["candidate_credits"][product][i])
+            final_tier = catalog["tiers"][i]
+            assert final_tier["tier"] == base["tier"]
+            credits = D(final_tier[product]["ai_credits_month"])
             total = sum((ops[k][1] * count for k, count in mix.items()), D(0))
             current = sum((ops[k.replace("_optimized", "_current")][1] * count for k, count in mix.items()), D(0))
             reserved = total * (1 + D(work["workload_reserve"]))
             assert reserved <= credits, (product, base["tier"], reserved)
-            tier = {**base, "price": work["approved_prices_cny"][i], "credits": credits, "storage_gib": work["candidate_storage_gib"][i],
+            tier = {**base, "price": final_tier["price_cny"], "credits": credits, "storage_gib": final_tier["storage_gib_per_product"],
                     "egress_gib": work["candidate_egress_gib"][i]}
             candidate_tiers.append(tier)
             financials, floors = {}, {}
@@ -44,7 +46,7 @@ def calculate(work, pricing, estimator):
                 if name in ("base", "stress"):
                     denominator = 1 - D(pricing["payment_fee"]) - D(pricing[name + "_target_margin"])
                     floors[name] = number(nonfee / denominator)
-            product_rows.append({"tier": base["tier"], "candidate_credits": number(credits),
+            product_rows.append({"tier": base["tier"], "included_credits": number(credits),
                 "mix": mix, "workload_credits": number(total), "with_reserve": number(reserved),
                 "current_chain_with_reserve": number(current * (1 + D(work["workload_reserve"]))),
                 "workload_supplier_cny": number(total * unit_cost), "financials": financials, "price_floors": floors})
@@ -89,8 +91,9 @@ def main():
     spec = spec_from_file_location("joint_pricing", folder / "joint-pricing-model.py")
     estimator = module_from_spec(spec)
     spec.loader.exec_module(estimator)
-    results = calculate(json.loads(work_raw), json.loads(price_raw), estimator)
-    results["input_sha256"] = {"workload": hashlib.sha256(work_raw).hexdigest(), "pricing": hashlib.sha256(price_raw).hexdigest()}
+    catalog_raw = (folder / "final-package-spec.json").read_bytes()
+    results = calculate(json.loads(work_raw), json.loads(price_raw), estimator, json.loads(catalog_raw))
+    results["input_sha256"] = {"workload": hashlib.sha256(work_raw).hexdigest(), "pricing": hashlib.sha256(price_raw).hexdigest(), "catalog": hashlib.sha256(catalog_raw).hexdigest()}
     payload = json.dumps(results, indent=2) + "\n"
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
