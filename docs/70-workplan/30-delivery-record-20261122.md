@@ -498,3 +498,16 @@ Storage and AI remain consumption boundaries; no per-library resident compute
 is implied. Existing saved drafts and runtime document.max remain unchanged and
 need alignment before publication. Other r1 prices/resources await remeasurement
 after owner feedback on Arda AI, dataset counts and tier value.
+
+## Workload-driven AI review (W1)
+
+Owner authorized reevaluating work content and volumes before credit quantities.
+Added20-specs/70 and offline ai-workload inputs/model. Arda Curator registry is
+empty; its operation profiles are prospective. Karda token scenarios explicitly
+compare100-candidate reference and unimplemented20-candidate optimization,
+including import/extraction, query embedding, rerank and generation. Candidate
+grants150/600/2000 vs300/1200/4000 fit optimized mixed workloads plus20% reserve,
+not the current100-candidate workload scenario. Full-grant package costs and9
+mixed pairs are checked; lower-price and severe-stress failures are disclosed.
+No inference calls, raw-rate changes, platform edits, saved draft updates or
+deployments. W2-W5 remain pending; no business publication approval is implied.
