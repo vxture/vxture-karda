@@ -19,7 +19,7 @@
 | P8.3b | 文档/条目、连接器数量限制 | PR223 / b57426a已合入，CI通过，未部署 | 统一内容数量；连接器暂停占位/撤销释放；替换同事务、撤销防复活 |
 | P8.3c | 存储容量预留与恢复 | PR225 / f4d239d已合入，CI通过，应用未部署 | DDL0013已由受审run44980689156应用，38表核验通过 |
 | P8.3d | 存储共享池准入及绝对水位 | PR227 / acc8de6合入，873项及全部CI通过，DDL0014已应用，应用未部署 | 持久水位快照和重试；新建字节按实际C2共享余量准入；不承诺跨产品全局原子预留 |
-| P8.4 | 成本和套餐方案 | 整包测算提案已形成，未确认/发布 | 独立Karda整包成本及利润；提交确认后发布，不复制Arda参数 |
+| P8.4 | 成本和套餐方案 | 用户已确认准备草稿；本仓清单已备，平台保存待浏览器恢复；未发布 | 独立Karda整包成本及利润；提交确认后发布，不复制Arda参数 |
 | P9 | 生产发布与业务验收交付 | 发布成功，验收未完成 | v0.11.1 / cba6e16a；run44945579438；health/ready通过 |
 | P9.1 | 新域名生效、旧域名退役 | 平台阻塞 | karda.ruyin.work health仍520；issue727；未改平台源码/变量/边缘文件 |
 | P9.2 | Accounts登录退出、权限同步 | 待新域名可用 | 当前callback已正确指向新域名，但未跑通实际回调及退出隔离 |
@@ -223,3 +223,15 @@ bundled scopes; historical exchange400 persists. Definition is not a grant.
 Issue728 updated with this distinction and the resolved registration path.
 Target-domain health recheck still520, issue727 open. Guarded release remains
 held until actual capacities are configured and origin acceptance can proceed.
+
+
+## P8.4 draft authorization received
+
+User approved draft preparation only on2026-11-22. Prices/quantities now approved
+FOR DRAFTS; commercial publication is not approved. Exact values and conversions
+prepared in deploy/config/commercial-package-draft.json; operational readback
+checklist in50-deployment/40-commercial-draft-preparation.md. Platform save is
+still pending browser-control recovery (service_info timeout), not falsely complete.
+No current subscription, price publication, grant or existing Free status changed.
+Existing hard-call pools versus no-new-call-cap intent need a supported platform
+configuration contract before publication (issue728). No artificial quota invented.

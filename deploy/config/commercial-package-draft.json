@@ -1,0 +1,141 @@
+{
+  "product": "karda",
+  "approved_on": "2026-11-22",
+  "authorization": "prepare_drafts_only",
+  "platform_saved": false,
+  "platform_save_blocker": "browser_control_unavailable",
+  "purpose": "reviewed input checklist, NOT an API payload or deployment configuration",
+  "publish_allowed": false,
+  "migrate_existing_subscriptions": false,
+  "change_existing_grants": false,
+  "plans": [
+    {
+      "tier": "free",
+      "target_status": "draft",
+      "currency": "CNY",
+      "billing_period": "month",
+      "monthly_price_minor": 0,
+      "availability": "invitation",
+      "max_limits": {
+        "seat.max": 1,
+        "kb.max": 3,
+        "document.max": 100,
+        "binding.max": 1
+      },
+      "quota_components": [
+        {
+          "metric": "storage.bytes",
+          "quantity": 104857600,
+          "reset": "never"
+        },
+        {
+          "metric": "ai.credit",
+          "quantity": 0,
+          "reset": "month"
+        }
+      ]
+    },
+    {
+      "tier": "starter",
+      "target_status": "draft",
+      "currency": "CNY",
+      "billing_period": "month",
+      "monthly_price_minor": 12900,
+      "availability": "draft_only",
+      "max_limits": {
+        "seat.max": 1,
+        "kb.max": 20,
+        "document.max": 2000,
+        "binding.max": 3
+      },
+      "quota_components": [
+        {
+          "metric": "storage.bytes",
+          "quantity": 1073741824,
+          "reset": "never"
+        },
+        {
+          "metric": "ai.credit",
+          "quantity": 200,
+          "reset": "month"
+        }
+      ]
+    },
+    {
+      "tier": "pro",
+      "target_status": "draft",
+      "currency": "CNY",
+      "billing_period": "month",
+      "monthly_price_minor": 39900,
+      "availability": "draft_only",
+      "max_limits": {
+        "seat.max": 1,
+        "kb.max": 100,
+        "document.max": 20000,
+        "binding.max": 10
+      },
+      "quota_components": [
+        {
+          "metric": "storage.bytes",
+          "quantity": 5368709120,
+          "reset": "never"
+        },
+        {
+          "metric": "ai.credit",
+          "quantity": 800,
+          "reset": "month"
+        }
+      ]
+    },
+    {
+      "tier": "business",
+      "target_status": "draft",
+      "currency": "CNY",
+      "billing_period": "month",
+      "monthly_price_minor": 149900,
+      "availability": "draft_only",
+      "max_limits": {
+        "seat.max": 5,
+        "kb.max": 500,
+        "document.max": 100000,
+        "binding.max": 30
+      },
+      "quota_components": [
+        {
+          "metric": "storage.bytes",
+          "quantity": 21474836480,
+          "reset": "never"
+        },
+        {
+          "metric": "ai.credit",
+          "quantity": 3000,
+          "reset": "month"
+        }
+      ]
+    },
+    {
+      "tier": "enterprise",
+      "target_status": "draft",
+      "offer_type": "private_deployment",
+      "purchase_action": "contact_sales",
+      "price": null,
+      "limits": "by_contract",
+      "availability": "draft_only"
+    }
+  ],
+  "unapproved_items": [
+    "addon_skus",
+    "annual_pricing",
+    "publication",
+    "existing_subscription_migration"
+  ],
+  "business_metering": {
+    "metrics": [
+      "karda.ingest",
+      "karda.search",
+      "karda.ask"
+    ],
+    "monthly_quota": null,
+    "note": "No new call cap authorized. Resolve existing hard-pool contract before publication; do not guess quota=-1."
+  }
+}
