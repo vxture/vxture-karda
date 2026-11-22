@@ -12,7 +12,7 @@ AI credits remain centrally judged; this work adds no local AI balance gate.
 | P8.3a | Knowledge library creation, browser and Agent | Merged PR221 / f8b3788; all gates passed; not deployed |
 | P8.3b | Documents/entries and connector bindings, including reactivation | Merged PR223 / b57426a; all gates passed; not deployed |
 | P8.3c | Stored bytes, upload reservation, failure recovery and deletion lifecycle | PR225 merged; local870 tests and CI pass; DDL0013 applied; application blocked by P8.3d |
-| P8.3d | Correct shared storage gauge admission/reporting | Implemented; local873 tests pass; DDL0014 and application not deployed |
+| P8.3d | Correct shared storage gauge admission/reporting | PR227 / acc8de6 merged;873 tests and CI pass; DDL0014/application not deployed |
 
 ## P8.3a: library count
 

@@ -377,3 +377,14 @@ Remaining: confirmed commercial configuration with actual grants/cost calibratio
 issue727 routing/legacy-host retirement, issue728 reconciliation,0014/application
 approvals, then real Accounts/knowledge/Atlas/C3 acceptance. Cross-product atomic
 reservations are not implemented by a gauge-only contract; this bound is explicit.
+
+
+## P8.3d merge verification
+
+PR227 merged as acc8de65f0a8c38ae26ba250289e0b03478718da. Linux CI44981846064
+passed build/test-coverage/audit/quality-gate/static checks; secret scan44981846041
+passed. Final local873 tests passed,0 skipped, including legacy initialization
+without another upload. Source and CI are complete; production0014/application
+remain unshipped. Production is v0.11.1 with0013 applied. Target-domain health
+recheck still520; legacy health still200 at cba6e16a. Commercial plans unchanged.
+Detailed shared-allocation contract bound was appended to platform issue728.

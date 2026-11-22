@@ -18,7 +18,7 @@
 | P8.3a | 知识库数量原子限制 | 已合入，未部署 | PR221 / f8b3788；863项及全部CI通过；浏览器/Agent同事务限制；见300-capacity-enforcement |
 | P8.3b | 文档/条目、连接器数量限制 | PR223 / b57426a已合入，CI通过，未部署 | 统一内容数量；连接器暂停占位/撤销释放；替换同事务、撤销防复活 |
 | P8.3c | 存储容量预留与恢复 | PR225 / f4d239d已合入，CI通过，应用未部署 | DDL0013已由受审run44980689156应用，38表核验通过 |
-| P8.3d | 存储共享池准入及绝对水位 | 本地873项通过，待CI/DDL0014/部署 | 持久水位快照和重试；新建字节按实际C2共享余量准入；不承诺跨产品全局原子预留 |
+| P8.3d | 存储共享池准入及绝对水位 | PR227 / acc8de6合入，873项及全部CI通过，待DDL0014/部署 | 持久水位快照和重试；新建字节按实际C2共享余量准入；不承诺跨产品全局原子预留 |
 | P8.4 | 成本和套餐方案 | 整包测算提案已形成，未确认/发布 | 独立Karda整包成本及利润；提交确认后发布，不复制Arda参数 |
 | P9 | 生产发布与业务验收交付 | 发布成功，验收未完成 | v0.11.1 / cba6e16a；run44945579438；health/ready通过 |
 | P9.1 | 新域名生效、旧域名退役 | 平台阻塞 | karda.ruyin.work health仍520；issue727；未改平台源码/变量/边缘文件 |
@@ -204,3 +204,6 @@ alignment, fresh shared headroom, durable absolute snapshots and restart retry.
 Full873 tests pass, zero skips; TypeScript passes. Production0014 is pending.
 P9.5 production profile now stages STATUS_PAGE=authed/STATUS_SHOW_INFRA=off;
 it is not active until normal deployment. No platform source/variable changes.
+
+
+P8.3d退出记录：PR227/acc8de65f0a8c38ae26ba250289e0b03478718da已合入，CI44981846064和密钥扫描44981846041全部通过，873项0跳过。补充后的历史水位初始化和重启恢复用例也通过。交付状态为源码/CI完成，DDL0014及应用未发布；不得标记P9真实验收完成。P8.4提案PR226已合入，仍需商业确认。平台issue727/728保持跟踪。
