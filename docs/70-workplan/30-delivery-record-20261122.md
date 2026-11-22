@@ -304,3 +304,27 @@ bytes are still put before row creation; rejection may leave a stored orphan.
 P8.3b final merge: PR223 / b57426a, all required CI gates passed in44951664609
 and secret scan44951664551. No deployment/tag/production data changes occurred.
 P8.3c remains next; current target-domain health still520 (issue727).
+
+
+## P8.3c durable byte reservation (candidate, not deployed)
+
+Implemented durable stored_object reservations before raw PUT, scoped storage.bytes
+capacity counting and same-content reuse. Physical generations never reuse a key
+after cleanup. Content metadata/usage commits verify a ready correctly-scoped
+reservation under the same storage lock used by orphan cleanup. Retained legacy
+references consume capacity; unknown size refuses new bytes pending inventory.
+
+Recovery checks interrupted PUT hash/length, retains absent/uncertain reservations,
+and only releases confirmed-deleted unreferenced objects. Soft-deleted references
+retain originals; no unresolved retention/purge policy was silently decided.
+Bounded retry and immutable service grants protect attribution/amounts. Filesystem
+I/O errors now propagate; OSS has30-second timeout/no redirects. All actual upload
+paths use the DB wrapper; future remote-fetch implementation must do likewise.
+
+Local870 tests pass, zero skips, with real isolated Redis/PostgreSQL. Targeted
+concurrency, interrupted PUT, shared refs, unknown legacy, deletion/retry and
+immutable grants pass. DDL0013/baseline/Prisma/column locks align at38 tables;
+TypeScript passes. No production DDL/application release or paid call occurred.
+Next: required PR gates, owner-reviewed db-init, capacity grants and package plan,
+then approved application release/real business acceptance. New-domain issue727
+remains external platform routing scope; no platform source/server edits.

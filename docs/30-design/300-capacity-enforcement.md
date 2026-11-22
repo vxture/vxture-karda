@@ -11,7 +11,7 @@ AI credits remain centrally judged; this work adds no local AI balance gate.
 | --- | --- | --- |
 | P8.3a | Knowledge library creation, browser and Agent | Merged PR221 / f8b3788; all gates passed; not deployed |
 | P8.3b | Documents/entries and connector bindings, including reactivation | Merged PR223 / b57426a; all gates passed; not deployed |
-| P8.3c | Stored bytes, upload reservation, failure recovery and deletion lifecycle | Pending |
+| P8.3c | Stored bytes, upload reservation, failure recovery and deletion lifecycle | Implemented; local870 tests passed; CI pending; not deployed |
 
 ## P8.3a: library count
 
@@ -123,3 +123,62 @@ delete a content-addressed object on rejection, since a live record may share it
 
 P8.3b merge evidence: PR223 / b57426a; CI44951664609 and secret scan44951664551
 passed all required gates. Runtime release remains v0.11.1.
+
+
+## P8.3c: physical bytes and recovery
+
+The production ObjectStore factory wraps filesystem/OSS with ReservedObjectStore
+when a DB is configured. Browser upload, inline Agent write and direct connector
+bytes all use it. Scoped storage.bytes is checked against retained ledger bytes
+PLUS untracked legacy stored-reference metadata before any PUT. Actual Buffer
+length is authoritative; source-declared remote size does not authorize bytes.
+Legacy null/negative sizes refuse new storage pending inventory, even on an
+unlimited grant. The existing remote fetchRef path parks without fetching bytes;
+any future fetch implementation must use this same factory before raw storage.
+Entries without a raw object count toward content capacity, not physical bytes.
+
+A storage workspace transaction lock serializes sum+reservation. Pending, ready
+and deleting all retain byte capacity. Same-library/hash ready content reuses the
+same key and amount, with a one-hour metadata grace; pending same-content PUTs
+are refused for retry rather than launching competing writes. This in-progress
+refusal is503, not a claim that the subscription has no remaining capacity.
+New generations include the immutable reservation ID in their physical namespace.
+Existing stored keys remain readable; no bulk key rewrite or migration occurs.
+
+After raw PUT, the ledger becomes ready. Document insertion takes the storage
+lock and verifies ready state and exact scope/length inside the same metadata/
+usage transaction. Cleanup uses that same lock to recheck every document reference,
+including soft-deleted content/libraries. Refusal/crash after PUT leaves a tracked
+unreferenced object for recovery; callers never blindly delete shared objects.
+
+A bounded server worker scans expired pending/ready/deleting rows every five
+minutes, with a one-hour retry backoff and ten-attempt automatic ceiling. This is
+storage recovery work, not browser authorization polling. Pending data is read
+and hash/length checked: confirmed bytes recover to ready; absent/unknown bytes
+remain reserved for operator investigation. Elapsed time alone never permits an
+uncertain writer's reservation to be reused. The one-hour grace exceeds the
+bounded30-second OSS request; filesystem operations remain OS-bound. No lease
+takeover issues another PUT on an uncertain key. Old sender completion cannot
+commit document metadata after the generation entered deleting/deleted.
+
+Ready orphans transition to deleting under lock before physical deletion. New
+metadata cannot attach to a deleting key; new PUTs always use another generation.
+Only successful deletion or confirmed absence marks deleted and releases bytes.
+Failure retains state/amount and retries. Duplicate cleanup safely targets an
+unreused key. Filesystem permission/I/O errors now propagate; they cannot be
+misread as absence and release capacity. OSS requests have timeout/no redirects.
+
+Referenced originals, including archived/deleted versions, remain retained and
+charged. This batch deliberately does not invent the unresolved archived/purge
+retention policy (KD-203/204); reclaiming that space requires a separately reviewed
+reference purge, not a false zero at UI deletion. Operator recovery must preserve
+immutable attribution/amounts and must not insert guessed success receipts.
+This trades temporary conservative capacity for avoiding data loss/undercount.
+
+Validation: real isolated service-role PostgreSQL tests cover distinct-object
+concurrency before physical write, same-content dedup, shared/deleted references,
+cross-workspace and stale-generation refusal, lost PUT response and recovery,
+unknown PUT retention, delete failure/retry, unique later generation, immutable
+column grants, missing/unavailable C2 and unknown-size legacy data. Full local
+suite870 passes, zero skips; TypeScript and38-table DDL/Prisma/grant checks pass.
+Production remains v0.11.1;0013 requires reviewed db-init and application rollout.

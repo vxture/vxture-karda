@@ -801,3 +801,24 @@ model AccessRevision {
   @@map("access_revision")
   @@schema("vx_provision")
 }
+
+// Durable physical-byte accounting; pending and deleting objects retain capacity.
+model StoredObject {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  kbId        String   @map("kb_id") @db.Uuid
+  contentHash String   @map("content_hash") @db.VarChar(64)
+  objectKey   String   @unique @map("object_key")
+  sizeBytes   BigInt   @map("size_bytes")
+  state       String   @default("pending") @db.VarChar(16)
+  retainUntil DateTime @map("retain_until") @db.Timestamptz()
+  attempts    Int      @default(0)
+  retryAt     DateTime @default(now()) @map("retry_at") @db.Timestamptz()
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+
+  @@index([workspaceId, state], map: "idx_stored_object_workspace")
+  @@index([retryAt, retainUntil], map: "idx_stored_object_recovery")
+  @@map("stored_object")
+  @@schema("karda_kb")
+}

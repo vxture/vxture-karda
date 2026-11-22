@@ -135,6 +135,8 @@ export class OssObjectStore implements ObjectStore {
       },
       body: body as BodyInit | undefined,
       cache: "no-store",
+      redirect: "error",
+      signal: AbortSignal.timeout(30_000),
     });
   }
 

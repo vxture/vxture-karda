@@ -231,3 +231,22 @@ UNIQUE (`document_id`, **`version`**, `ordinal`)。
 - `deploy/database/ddl/97_service_role.sql`：需为 `karda_kb` 显式 GRANT（契约 schema 的 GRANT 不覆盖领域 schema）；
 - `deploy/database/ddl/98_column_locks.sql`：按 §4 落白名单；
 - `portals/app/prisma/schema.prisma`：须与 baseline lockstep，否则 `lint:data-design` 拦合并。
+
+
+## 8. November22 stored_object ledger (P8.3c)
+
+Additive increment0013 and matching baseline/Prisma add karda_kb.stored_object.
+Immutable identity: id, workspace_id, kb_id, content_hash, object_key, size_bytes,
+created_at. Mutable whitelist: state, retain_until, attempts, retry_at, updated_at.
+Service role cannot DELETE ledger rows or rewrite identity/byte amounts. No FK
+cascade deletes the ledger when a library is purged; retained bytes remain
+accounted until physical deletion is confirmed. State is pending/ready/deleting/
+deleted. object_key is unique; indexes cover workspace/state and retry/grace time.
+
+The row is created before raw storage PUT, and size_bytes uses Buffer length.
+Reservation IDs enter a generation-specific physical namespace, so a deleted
+key is never reused by a later upload generation. Metadata commits verify the
+ready ledger row, exact library/workspace/size and take the same storage lock as
+cleanup. Full state/recovery contract is 300-capacity-enforcement. Only reviewed
+db-init applies this structure; startup never creates/migrates tables. Production
+needs0013 before candidate application rollout. Local declared table count is38.

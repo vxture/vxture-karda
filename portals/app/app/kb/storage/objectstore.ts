@@ -58,8 +58,9 @@ export class FilesystemObjectStore implements ObjectStore {
     const path = this.pathFor(key); // throws on traversal - a bad key is a bug, not a miss
     try {
       return await readFile(path);
-    } catch {
-      return null;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+      throw error;
     }
   }
 
@@ -68,8 +69,9 @@ export class FilesystemObjectStore implements ObjectStore {
     try {
       await unlink(path);
       return true;
-    } catch {
-      return false;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+      throw error;
     }
   }
 
@@ -95,7 +97,7 @@ export class InMemoryObjectStore implements ObjectStore {
 
   async put(workspaceId: string, kbId: string, bytes: Buffer): Promise<StoredObject> {
     const hash = contentHashOf(bytes);
-    const key = `${workspaceId}/${kbId}/${hash}`;
+    const key = `${sanitize(workspaceId)}/${sanitize(kbId)}/${hash.slice(0, 2)}/${hash}`;
     this.map.set(key, bytes);
     return { key, contentHash: hash, sizeBytes: bytes.length };
   }
@@ -114,6 +116,8 @@ export class InMemoryObjectStore implements ObjectStore {
 
 import { getOssObjectStore } from "./oss";
 import { storageConfiguration } from "./config";
+import { ReservedObjectStore } from "./reservations";
+import { prismaEnabled } from "../../lib/db";
 import { isDeployedStage } from "../../lib/deploy-stage";
 
 /**
@@ -123,7 +127,7 @@ import { isDeployedStage } from "../../lib/deploy-stage";
  * SAME content-addressed key shape, so document.storage_ref values survive a
  * migration verbatim (copy the tree with ossutil, flip the env).
  */
-export function getObjectStore(): ObjectStore {
+export function getRawObjectStore(): ObjectStore {
   const deployed = isDeployedStage();
   const config = storageConfiguration(process.env);
   if (config === false || deployed && config !== true) {
@@ -133,4 +137,9 @@ export function getObjectStore(): ObjectStore {
   if (oss) return oss;
   const root = process.env.KARDA_OBJECT_ROOT;
   return root ? new FilesystemObjectStore(root) : new InMemoryObjectStore();
+}
+
+export function getObjectStore(): ObjectStore {
+  const raw = getRawObjectStore();
+  return prismaEnabled() ? new ReservedObjectStore(raw) : raw;
 }

@@ -11,6 +11,8 @@ import type {
 } from "./content-store";
 import type { ContentState, VerificationState } from "./state";
 import { getPrismaClient } from "../../lib/db";
+import { assertStoredReference } from "../storage/reservations";
+import { isDeployedStage } from "../../lib/deploy-stage";
 import { capacityWorkspace, createWithinCapacity, type CapacityLimitSource } from "./capacity";
 
 // Prisma-backed ContentStore over karda_kb. Only the columns the port exposes
@@ -104,6 +106,10 @@ export class PrismaContentStore implements ContentStore {
   async createDocument(input: CreateDocumentInput): Promise<DocumentRow> {
     const workspaceId = await capacityWorkspace(input.kbId, "document.max");
     return createWithinCapacity(workspaceId, "document.max", async tx => {
+      if (input.storageRef) {
+        const tracked = await tx.storedObject.findUnique({ where: { objectKey: input.storageRef } });
+        if (tracked || isDeployedStage()) await assertStoredReference(tx, workspaceId, input.kbId, input.storageRef, input.sizeBytes);
+      }
       const row = await tx.document.create({
         data: {
           kbId: input.kbId,

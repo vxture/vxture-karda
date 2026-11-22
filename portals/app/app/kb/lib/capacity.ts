@@ -12,7 +12,7 @@ export class CapacityError extends Error {
     super(code);
   }
 }
-export type CapacityMetric = "kb.max" | "document.max" | "binding.max";
+export type CapacityMetric = "kb.max" | "document.max" | "binding.max" | "storage.bytes";
 export type CapacityLimitSource = (workspaceId: string, metric: CapacityMetric) => Promise<number | undefined>;
 
 export function validateCapacityLimit(limit: number | undefined): number {
@@ -22,7 +22,7 @@ export function validateCapacityLimit(limit: number | undefined): number {
   return limit;
 }
 
-async function platformLimit(workspaceId: string, metric: CapacityMetric): Promise<number | undefined> {
+export async function platformLimit(workspaceId: string, metric: CapacityMetric): Promise<number | undefined> {
   // The existing offline database/dev path has no commercial envelope. Never
   // apply this exemption on a deployed stage, even with ALLOW_MOCK_ON_DEPLOY.
   if (!isDeployedStage() && !getPlatformClientConfig()) return -1;
