@@ -511,3 +511,14 @@ not the current100-candidate workload scenario. Full-grant package costs and9
 mixed pairs are checked; lower-price and severe-stress failures are disclosed.
 No inference calls, raw-rate changes, platform edits, saved draft updates or
 deployments. W2-W5 remain pending; no business publication approval is implied.
+
+## Owner-confirmed base-price revision (r3)
+
+Owner confirmed199/499/1499 monthly prices for both products. Updated the latest
+review and workload calculator to use explicit approved prices, retaining r1
+cost assumptions and candidate resources. Added20% coupon and95%-then80% joint
+scenarios. Old65%/50% targets are comparisons, not assertions guaranteed by the
+new prices. Decimal recomputation corrects two small prior chat percentage
+errors. Resource-pack prices remain candidates, coupons apply to designated
+base-subscription cycles, not permanent/addon discounts. No saved drafts,
+published plan versions, subscriptions or deployment settings changed.
