@@ -45,11 +45,12 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-22): v0.11.1 / cba6e16a, approved deploy
-44945579438; /api/health and /api/ready pass through the legacy host. Target
-karda.ruyin.work still returns520 (platform issue727); business acceptance is open. The inherited paragraphs below describe the original bootstrap, not
-current delivery. See docs/70-workplan/10-platform-alignment-20261122.md for
-the new evidence-based remediation matrix and pending acceptance.
+Current production (2026-11-22): v0.11.2 / 1a59f0e2, owner-approved deploy
+44997013773 succeeded. Legacy-host /api/health and /api/ready return200;
+db, redis and storageConfig pass. Persistent karda_objects volume was created.
+Target karda.ruyin.work still returns520 (platform issue727); C1/C3 business
+acceptance and actual object persistence remain open. See
+ docs/70-workplan/20-rectification-batches-20261122.md for current evidence.
 
 Owner scope: modify Karda only; report platform gaps as detailed issues. Do not
 edit platform sources, create platform worktrees, change platform server variables

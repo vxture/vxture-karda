@@ -3,7 +3,8 @@
 Start here if you are an AI agent working in this repo.
 
 Current work (2026-11-22): see [platform alignment kickoff](../70-workplan/10-platform-alignment-20261122.md).
-Production is v0.11.1 / cba6e16a (run44945579438); target-domain520 and
+Production is v0.11.2 / 1a59f0e2 (approved run44997013773 succeeded);
+legacy health/ready and storageConfig pass; target-domain520 and
 real business acceptance remain open. original bootstrap statements are historical. Owner scope
 is Karda-only fixes, platform issues instead of platform source/variable/edge
 changes. Do not copy Arda credentials, commercial quotas or its unimplemented SSE
