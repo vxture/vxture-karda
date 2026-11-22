@@ -1,10 +1,13 @@
 {
-  "review": "arda-karda-workload-20261122-r2",
-  "status": "scenario_only_not_a_published_offer",
+  "review": "arda-karda-workload-20261122-r3",
+  "status": "base_prices_owner_confirmed_not_published_resources_pending_validation",
   "anchor_cny_per_credit": "0.20",
   "conversion_target_margin": "0.70",
   "workload_reserve": "0.20",
-  "price_reference": "joint-pricing-inputs.json; r1 prices are evaluated, not confirmed",
+  "price_reference": "approved_prices_cny; owner confirmed 199/499/1499, r1 budgets retained as assumptions",
+  "approved_prices_cny": [199, 499, 1499],
+  "coupon_discount": "0.20",
+  "coupon_scope": "base subscription only; first paid or explicitly designated campaign cycle, not permanent renewal discount; no addon discount",
   "rates_cny_per_million_tokens": {
     "flash": {"input": "2", "output": "8"},
     "pro": {"input": "9", "output": "27"},

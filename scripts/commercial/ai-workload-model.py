@@ -24,7 +24,7 @@ def calculate(work, pricing, estimator):
     results = {"review": work["review"], "status": work["status"],
                "cost_per_derived_credit": number(unit_cost),
                "operations": {k: {"supplier_cny": number(v[0]), "derived_credits": number(v[1])} for k, v in ops.items()},
-               "products": {}, "joint": [], "alternative_prices": []}
+               "products": {}, "joint": [], "discounted_products": []}
     tiers_by_product = {}
     for product, rows in work["monthly_work"].items():
         product_rows, candidate_tiers = [], []
@@ -35,7 +35,7 @@ def calculate(work, pricing, estimator):
             current = sum((ops[k.replace("_optimized", "_current")][1] * count for k, count in mix.items()), D(0))
             reserved = total * (1 + D(work["workload_reserve"]))
             assert reserved <= credits, (product, base["tier"], reserved)
-            tier = {**base, "credits": credits, "storage_gib": work["candidate_storage_gib"][i],
+            tier = {**base, "price": work["approved_prices_cny"][i], "credits": credits, "storage_gib": work["candidate_storage_gib"][i],
                     "egress_gib": work["candidate_egress_gib"][i]}
             candidate_tiers.append(tier)
             financials, floors = {}, {}
@@ -44,7 +44,6 @@ def calculate(work, pricing, estimator):
                 if name in ("base", "stress"):
                     denominator = 1 - D(pricing["payment_fee"]) - D(pricing[name + "_target_margin"])
                     floors[name] = number(nonfee / denominator)
-                    assert nonfee <= D(tier["price"]) * denominator
             product_rows.append({"tier": base["tier"], "candidate_credits": number(credits),
                 "mix": mix, "workload_credits": number(total), "with_reserve": number(reserved),
                 "current_chain_with_reserve": number(current * (1 + D(work["workload_reserve"]))),
@@ -62,13 +61,19 @@ def calculate(work, pricing, estimator):
                 margin = (price - cost) / price
                 row[name] = {"cost": number(cost), "contribution": number(price - cost), "margin_pct": number(margin * 100)}
                 if name in ("base", "stress"):
-                    assert margin >= D(pricing[name + "_target_margin"])
+                    row[name]["meets_historical_target"] = margin >= D(pricing[name + "_target_margin"])
             results["joint"].append(row)
-    # Show the consequence of reducing the ladder instead of silently assuming
-    # the old service/support budgets vanish when the selling price goes down.
+            coupon_price = (price * (1 - D(work["coupon_discount"]))).quantize(D("0.01"), rounding=ROUND_HALF_UP)
+            row["with_coupon"] = {"revenue": number(coupon_price)}
+            for name, scenario in pricing["scenarios"].items():
+                nonfee = sum((estimator.estimate(t, scenario, fee)[1] for t in (a, k)), D(0))
+                cost = nonfee + coupon_price * fee
+                row["with_coupon"][name] = {"cost": number(cost), "contribution": number(coupon_price - cost),
+                    "margin_pct": number((coupon_price - cost) / coupon_price * 100)}
     for product, tiers in tiers_by_product.items():
-        for tier, price in zip(tiers, (199, 499, 1499), strict=True):
-            results["alternative_prices"].append({"product": product, "tier": tier["tier"],
+        for tier in tiers:
+            price = (D(tier["price"]) * (1 - D(work["coupon_discount"]))).quantize(D("0.01"), rounding=ROUND_HALF_UP)
+            results["discounted_products"].append({"product": product, "tier": tier["tier"],
                 **{name: estimator.estimate(tier, scenario, fee, revenue=price)[0]
                    for name, scenario in pricing["scenarios"].items()}})
     return results
