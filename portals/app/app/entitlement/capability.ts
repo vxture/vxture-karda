@@ -134,7 +134,8 @@ export function minTierFor(key: FeatureKey): Tier | null {
 //   these caps   PRODUCT judges, because only karda can count them: the platform
 //                cannot know how many libraries a workspace has.
 
-export const LIMIT_KEYS = ["kb.max", "document.max", "storage.bytes", "binding.max", "seat.max"] as const;
+// storage.bytes is a shared gauge pool, not a max-type sales number.
+export const LIMIT_KEYS = ["kb.max", "document.max", "binding.max", "seat.max"] as const;
 
 export type LimitKey = (typeof LIMIT_KEYS)[number];
 

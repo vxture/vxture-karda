@@ -11,7 +11,8 @@ AI credits remain centrally judged; this work adds no local AI balance gate.
 | --- | --- | --- |
 | P8.3a | Knowledge library creation, browser and Agent | Merged PR221 / f8b3788; all gates passed; not deployed |
 | P8.3b | Documents/entries and connector bindings, including reactivation | Merged PR223 / b57426a; all gates passed; not deployed |
-| P8.3c | Stored bytes, upload reservation, failure recovery and deletion lifecycle | Implemented; local870 tests passed; CI pending; not deployed |
+| P8.3c | Stored bytes, upload reservation, failure recovery and deletion lifecycle | PR225 merged; local870 tests and CI pass; DDL0013 applied; application blocked by P8.3d |
+| P8.3d | Correct shared storage gauge admission/reporting | Implemented; local873 tests pass; DDL0014 and application not deployed |
 
 ## P8.3a: library count
 
@@ -181,4 +182,82 @@ cross-workspace and stale-generation refusal, lost PUT response and recovery,
 unknown PUT retention, delete failure/retry, unique later generation, immutable
 column grants, missing/unavailable C2 and unknown-size legacy data. Full local
 suite870 passes, zero skips; TypeScript and38-table DDL/Prisma/grant checks pass.
-Production remains v0.11.1;0013 requires reviewed db-init and application rollout.
+Production remains v0.11.1. Reviewed db-init44980689156 applied0013 and verified
+38 tables. Application rollout is blocked by the contract correction below.
+
+## P8.3d: actual C2 contract correction and release hold
+
+Read-only production service-ticket checks on2026-11-22 found two scoped C2
+envelopes with bundled=true, tier=null and only seat.max in limits. Both expose
+storage.bytes in quota_pools. A third historical anchor receives exchange400.
+No guessed tenant or grant was inserted. Platform issue728 requests managed
+registration/grant and historical reconciliation guidance; issue727 still blocks
+the target origin. Product-owned max metrics remain kb.max/document.max/binding.max.
+
+P8.3c's default platformLimit(storage.bytes) is incorrect and MUST NOT ship:
+storage is a gauge pool, not a limits entry. The prior local tests inject a max
+allowance and prove ledger concurrency/recovery only; they do not prove this
+platform seam. LIMIT_KEYS now excludes storage.bytes. Neither a fabricated
+limits entry nor summing pool.limit into a product-local allowance fixes shared
+headroom: other products can consume the same workspace pool.
+
+The implementation preserves the durable object ledger and follows these requirements:
+
+1. Snapshot all retained Karda bytes (including pending/deleting and known-size
+   legacy references) under the same workspace storage lock. Unknown inventory
+   refuses growth; a missing grant is not zero or unlimited by default.
+2. Report ABSOLUTE storage.bytes via PUT /usage/gauge with a durable monotonically
+   ordered observation, scoped Karda identity and validated acknowledgement.
+   Never send storage through counter consume or an AI-credit conversion.
+3. Obtain fresh scoped C2 shared remaining after baseline reconciliation, compare
+   only additional bytes, and preserve local serialization for reservations.
+   Cross-product atomic allocation is not promised by a read-then-report gauge
+   contract; document this bound and request platform support if a strict global
+   reservation guarantee is required.
+4. Persist failed/pending snapshot work and retry after restarts, including when
+   no subsequent upload occurs. A lost response cannot justify erasing a byte
+   reservation or reporting success. Physical deletion reduces the gauge only
+   after confirmed deletion; legacy retained references remain counted.
+5. Test pool-only C2 (no storage limit), applicable multi-pool and negative shared
+   headroom, concurrent local writers, report failure/lost response, delayed
+   snapshots and restart recovery, dedup, deletion and cross-workspace isolation.
+
+Until P8.3d passes and real max grants exist, no application release tag is cut.
+DDL preparation does not lift this release hold. Pricing approval, actual cost
+calibration and target-domain/business acceptance remain separate open gates.
+
+
+### P8.3d implementation and validation
+
+storage_watermark (increment0014) persists each workspace's latest absolute
+value, observation, pending flag and bounded retry state. Snapshot creation commits
+with reservations or confirmed deletions. Observations use database time and at
+least the last durable observation plus1ms; same observations are never reused
+for changed amounts. Failed/unknown reports remain pending across restarts.
+
+Before growth, baseline inventory is durably queued. Under the shared storage
+lock, pending baseline is acknowledged and fresh scoped C2 remaining is read
+without the resolver cache. Admission compares incremental bytes to shared
+remaining, never pool.limit or limits.storage.bytes. A successful reservation
+queues the higher snapshot in the same commit; its acknowledgement precedes raw
+PUT. Uncertain delivery therefore retains charged reservations and refuses PUT.
+Dedup adds no bytes and can reuse ready data when shared headroom is exhausted.
+Physical cleanup queues the lower snapshot only after confirmed removal.
+
+The server recovery worker retries20 due snapshots per cycle, one-minute backoff,
+ten-attempt ceiling, including after restart without a later upload. A bounded cursor scan also queues
+missing legacy workspace inventories; an unknown inventory is reported and does
+not starve later workspaces. Unknown
+inventory or newer/mismatched platform receipts fail closed and require recovery;
+retrying an exact snapshot is allowed. Anchors are resolved before transaction
+connections to avoid pool starvation under competing writers. Per-scope locks,
+network timeouts and transaction deadlines bound normal work. No browser polling
+or cloud migration was added. Cross-product concurrent admission remains bounded
+by the platform gauge contract, not a promised global atomic reservation.
+
+Local873 tests pass,0 skipped, TypeScript passes,39-table schema/grants check
+passes. Tests cover shared pool-only C2 semantics, negative/multiple pools,
+receipt scope/value/time mismatch and replay,8 concurrent puts sharing6 bytes,
+dedup at full capacity, lost response before physical PUT, restart retry of the
+same durable observation, confirmed deletion snapshots and tenant isolation.
+Production remains v0.11.1 with0013 applied;0014 and this application are pending.

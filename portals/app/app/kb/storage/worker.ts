@@ -1,15 +1,19 @@
 import { getRawObjectStore } from "./objectstore";
 import { ReservedObjectStore } from "./reservations";
+import { StorageGauge } from "./gauge";
 let started = false;
 export function startStorageRecovery(): void {
   if (started) return;
   started = true;
+  const gauge = new StorageGauge();
   let running = false;
   const tick = async () => {
     if (running) return;
     running = true;
     try {
       const result = await new ReservedObjectStore(getRawObjectStore()).recover();
+      await gauge.seedMissing();
+      await gauge.retry();
       if (result.recovered || result.deleted || result.retained) console.info("[storage/recovery]", result);
     } catch { console.error("[storage/recovery] unavailable; reservations retained"); }
     finally { running = false; }

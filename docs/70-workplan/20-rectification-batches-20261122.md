@@ -17,7 +17,8 @@
 | P8 | 容量执行、成本、套餐与产品配置 | 部分完成 | 域名七项登记已保存；仅Web；容量与价格仍在推进 |
 | P8.3a | 知识库数量原子限制 | 已合入，未部署 | PR221 / f8b3788；863项及全部CI通过；浏览器/Agent同事务限制；见300-capacity-enforcement |
 | P8.3b | 文档/条目、连接器数量限制 | PR223 / b57426a已合入，CI通过，未部署 | 统一内容数量；连接器暂停占位/撤销释放；替换同事务、撤销防复活 |
-| P8.3c | 存储容量预留与恢复 | PR225 / f4d239d已合入，CI通过，未部署 | 持久预留、共享引用、故障恢复及孤儿清理；需受审DDL0013 |
+| P8.3c | 存储容量预留与恢复 | PR225 / f4d239d已合入，CI通过，应用未部署 | DDL0013已由受审run44980689156应用，38表核验通过 |
+| P8.3d | 存储共享池准入及绝对水位 | 本地873项通过，待CI/DDL0014/部署 | 持久水位快照和重试；新建字节按实际C2共享余量准入；不承诺跨产品全局原子预留 |
 | P8.4 | 成本和套餐方案 | 整包测算提案已形成，未确认/发布 | 独立Karda整包成本及利润；提交确认后发布，不复制Arda参数 |
 | P9 | 生产发布与业务验收交付 | 发布成功，验收未完成 | v0.11.1 / cba6e16a；run44945579438；health/ready通过 |
 | P9.1 | 新域名生效、旧域名退役 | 平台阻塞 | karda.ruyin.work health仍520；issue727；未改平台源码/变量/边缘文件 |
@@ -186,3 +187,20 @@ DDL0013、baseline、Prisma和列权限同步，38表检查通过；未启动云
 ## P8.4 整包提案及P8.3c合入
 
 P8.3c以PR225/f4d239d合入，CI44979585820及密钥扫描44979585821全部通过，38表与权限守卫通过，未应用生产DDL。P8.4详见20-specs/50-commercial-package-proposal：个人129/399、团队1499及私有化联系销售，席位→存储→AI→内容容量顺序；Free仍邀请提案，不改旧订阅。满额整包预算贡献约65%–68%，AI成本翻倍压力约54%–58%；不是实际净利润承诺，现行费率与真实资源账单尚待核实。未经用户确认不发布价格或额度。
+
+
+## P8.3d / P9.5 scoped configuration verification
+
+PR226/a3345e0 and main CI passed; commercial proposals remain unpublished.
+Readonly scoped checks: two C2 HTTP200 envelopes are bundled=true/tier=null,
+limits contain only seat.max, storage.bytes is a quota pool. One historical
+anchor exchange returns400. Platform issue728 requests managed max-cap grant
+and authoritative historical-anchor reconciliation guidance. Issue727 remains.
+
+Owner-approved db-init44980689156 applied0013 and verified38 tables. Earlier
+44980617256 was cancelled before execution after a malformed pin was noticed.
+Application remains v0.11.1. P8.3d adds0014/storage_watermark,39-table/grant
+alignment, fresh shared headroom, durable absolute snapshots and restart retry.
+Full873 tests pass, zero skips; TypeScript passes. Production0014 is pending.
+P9.5 production profile now stages STATUS_PAGE=authed/STATUS_SHOW_INFRA=off;
+it is not active until normal deployment. No platform source/variable changes.

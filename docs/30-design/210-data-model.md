@@ -250,3 +250,16 @@ ready ledger row, exact library/workspace/size and take the same storage lock as
 cleanup. Full state/recovery contract is 300-capacity-enforcement. Only reviewed
 db-init applies this structure; startup never creates/migrates tables. Production
 needs0013 before candidate application rollout. Local declared table count is38.
+
+
+## 9. November22 storage watermark outbox (P8.3d)
+
+Increment0014, baseline and Prisma add karda_kb.storage_watermark (39 tables).
+Immutable workspace_id anchors one latest absolute Karda snapshot. Mutable
+whitelist is value/observed_at/pending/attempts/retry_at. Value is nonnegative;
+observations use database time and at least the previous durable observation
+plus1ms under the storage lock. Service DELETE/anchor rewrite are denied.
+Reservations and confirmed physical deletions queue snapshots in the same
+transaction. Failed reports retain pending work across process restarts.
+Acknowledgement binds exact workspace/product/metric/value/observation. Gauge
+never enters local_usage.raw counter consumption. Reviewed db-init only.

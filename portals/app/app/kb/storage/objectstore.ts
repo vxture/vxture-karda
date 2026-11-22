@@ -119,6 +119,7 @@ import { storageConfiguration } from "./config";
 import { ReservedObjectStore } from "./reservations";
 import { prismaEnabled } from "../../lib/db";
 import { isDeployedStage } from "../../lib/deploy-stage";
+import { getPlatformClientConfig } from "../../entitlement/platform-client";
 
 /**
  * Selection order (KD-019): Aliyun OSS when its four env keys are configured
@@ -141,5 +142,6 @@ export function getRawObjectStore(): ObjectStore {
 
 export function getObjectStore(): ObjectStore {
   const raw = getRawObjectStore();
-  return prismaEnabled() ? new ReservedObjectStore(raw) : raw;
+  const offline = !isDeployedStage() && !getPlatformClientConfig();
+  return prismaEnabled() ? new ReservedObjectStore(raw, offline ? async () => -1 : undefined) : raw;
 }

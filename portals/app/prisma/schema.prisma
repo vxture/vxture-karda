@@ -14,6 +14,17 @@ datasource db {
 
 // ===== vx_provision =====
 
+model StorageWatermark {
+  workspaceId String @id @map("workspace_id") @db.Uuid
+  value BigInt
+  observedAt DateTime @map("observed_at") @db.Timestamptz()
+  pending Boolean @default(true)
+  attempts Int @default(0)
+  retryAt DateTime @default(now()) @map("retry_at") @db.Timestamptz()
+  @@map("storage_watermark")
+  @@schema("karda_kb")
+}
+
 model AppInstance {
   id            String    @id @default(uuid()) @db.Uuid
   workspaceId   String    @map("workspace_id") @db.Uuid
