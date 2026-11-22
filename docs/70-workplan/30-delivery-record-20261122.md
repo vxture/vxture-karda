@@ -448,3 +448,25 @@ Publication contract gap: existing karda.ingest/search/ask are hard-cost pools
 with observed0 quotas, while approved package intent adds no monthly call cap.
 Do not invent unlimited sentinel or large quotas. Platform issue728 receives
 this explicit configuration question; drafts do not resolve actual C2 grants.
+
+## P8.4 crash recovery and platform draft delivery
+
+App restart recovered the logged-in Admin session; no repeated owner login was
+needed. PR231 merged as a19cdec after all five required gates passed.
+Saved existing Starter v1 (129/month) and Pro v1 (399/month), created Business v1
+(1499/month), Enterprise v1 (unpriced) and Free v2 (0/month, copied from currentv1).
+Readback confirms approved seat/storage/AI/library/content/connection quantities
+for Free/Starter/Pro/Business. Enterprise description records private deployment,
+contact sales and contract capacities with human/ticket support.
+
+All five versions are drafts. Current Free v1 remains unchanged/invitation-only;
+there are no new grants, migrations, addon SKUs, commercial or application releases.
+Screenshot output/acceptance-20261122/karda-package-drafts.jpg shows draft rows
+and monthly prices; excluded from Git as operational evidence.
+
+Observed platform limits: clearing inherited Free annual0 restored0 after save;
+do not interpret this as annual-price authorization. Enterprise contact-sales
+description alone does not prove purchase-button semantics. Quota preview keys
+reorder after save, so display order needs separate client acceptance. See draft
+checklist and platformissue728 follow-up. Domainissue727 and hard-pool/max-grant
+issue728 remain open without platform replies at this check. P9 is not complete.

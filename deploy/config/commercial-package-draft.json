@@ -2,8 +2,15 @@
   "product": "karda",
   "approved_on": "2026-11-22",
   "authorization": "prepare_drafts_only",
-  "platform_saved": false,
-  "platform_save_blocker": "browser_control_unavailable",
+  "platform_saved": true,
+  "platform_save_blocker": null,
+  "platform_saved_versions": {"free": 2, "starter": 1, "pro": 1, "business": 1, "enterprise": 1},
+  "platform_readback_notes": [
+    "All five versions remain drafts; existing Free v1 remains current and invitation-only.",
+    "Free v2 inherited annual price 0; clearing and saving restored 0. Monthly-only intent still requires platform resolution before publication.",
+    "Enterprise remains unpriced with private-deployment/contact-sales description; purchase-action semantics require confirmation before publication.",
+    "Saved quota preview reorders keys; customer display order remains a publication acceptance item."
+  ],
   "purpose": "reviewed input checklist, NOT an API payload or deployment configuration",
   "publish_allowed": false,
   "migrate_existing_subscriptions": false,
