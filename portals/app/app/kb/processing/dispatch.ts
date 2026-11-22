@@ -11,7 +11,10 @@ export async function withProcessingLease<T>(work: () => Promise<T>): Promise<T 
   busy = true;
   let locked = false;
   let broken = false;
-  pool ??= new Pool({ connectionString: process.env.DATABASE_URL, max: 1, connectionTimeoutMillis: 5000, allowExitOnIdle: true });
+  if (!pool) {
+    pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 1, connectionTimeoutMillis: 5000, allowExitOnIdle: true });
+    pool.on("error", () => { console.error("[processing/dispatch] database connection unavailable"); });
+  }
   let client;
   try {
     client = await pool.connect();
