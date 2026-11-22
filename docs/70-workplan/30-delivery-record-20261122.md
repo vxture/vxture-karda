@@ -695,3 +695,28 @@ upload. Real indexing, original-byte persistence across release, grounded answer
 AI/C3 receipts, logout isolation and permission messages remain unverified.
 The ordered next checks are recorded under P9.7 in the batch tracker. Deployment
 success does not close those business acceptance items.
+
+### P9.7 live processing / P9.8 stage receipts (2026-11-23)
+
+Both logins restored. Existing355-byte private fixture is automatically processed
+after release without re-upload; real task title matches and embed parks with
+upstream_account_refused. Reaching embed requires reading stored bytes, proving
+cross-release readability; download hash and indexing remain unverified.
+
+Opera verifies10 active Karda product endpoint grants; embedding/default resolves
+to Zhipu embedding-3/no fallback. Atlas metering shows11 Karda requests/11 errors,
+0 tokens this month. Route serving status contradicts model service health's
+embedding/rerank-unavailable summary, which also flags request_log. Evidence added:
+https://github.com/vxture-foundation/vxture-atlas/issues/147#issuecomment-7083310298.
+No provider credentials, shared routes, server variables or platform sources changed.
+
+Opera onboarding details confirm C3 karda.ingest at2026-11-22 16:22:42 after upload.
+This proves ingest observation only, not search/ask, exact receipts/dedup or AI
+billing. Its C2 shared-credential label/history remains inconsistent with this
+client implementation and stays under platform issue728.
+
+P9.8 finds worker never calls the stage ledger. Connect real stage outcomes and
+timestamps; isolate observation failures from processing; retain immutable stage
+openings and hide durations spanning resumed runs. No newDDL/grants.26 targeted
+tests, TypeScript and data architecture pass; added isolated PostgreSQL service-role
+receipt/upsert test for CI. Not yet deployed.

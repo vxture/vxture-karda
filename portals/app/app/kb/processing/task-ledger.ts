@@ -56,8 +56,17 @@ export interface TaskSettled {
 export interface TaskLedger {
   enqueued(e: TaskEnqueued): Promise<void>;
   started(docId: string): Promise<void>;
-  stage(e: { docId: string; stage: Stage; outcome: StageOutcome; note?: string | null }): Promise<void>;
+  stage(e: StageReceipt): Promise<void>;
   settled(e: TaskSettled): Promise<void>;
+}
+
+export interface StageReceipt {
+  docId: string;
+  stage: Stage;
+  outcome: StageOutcome;
+  note?: string | null;
+  startedAt?: Date;
+  endedAt?: Date;
 }
 
 /** The worker's outcome vocabulary mapped onto the table's state vocabulary.
@@ -127,7 +136,7 @@ class PrismaTaskLedger implements TaskLedger {
     });
   }
 
-  async stage(e: { docId: string; stage: Stage; outcome: StageOutcome; note?: string | null }): Promise<void> {
+  async stage(e: StageReceipt): Promise<void> {
     await this.safely(async (p) => {
       const task = await p.processingTask.findFirst({
         where: { documentId: e.docId, kind: "processing", state: { in: ["queued", "running"] } },
@@ -139,8 +148,10 @@ class PrismaTaskLedger implements TaskLedger {
       // which would double-count that stage in the P95.
       await p.processingTaskStage.upsert({
         where: { taskId_stage: { taskId: task.id, stage: e.stage } },
-        create: { taskId: task.id, stage: e.stage, outcome: e.outcome, endedAt: new Date(), note: e.note ?? null },
-        update: { outcome: e.outcome, endedAt: new Date(), note: e.note ?? null },
+        create: { taskId: task.id, stage: e.stage, outcome: e.outcome,
+          ...(e.startedAt ? { startedAt: e.startedAt } : {}), endedAt: e.endedAt ?? new Date(), note: e.note ?? null },
+        // started_at is immutable under the service-role column locks.
+        update: { outcome: e.outcome, endedAt: e.endedAt ?? new Date(), note: e.note ?? null },
       });
       await p.processingTask.update({ where: { id: task.id }, data: { currentStage: e.stage, updatedAt: new Date() } });
     });

@@ -7,9 +7,11 @@ Production is v0.11.3 / 5b37bd83 (approved run45003892024 succeeded on November2
 at01:15 CST); new-domain browser readiness confirms db/redis/storageConfig ok.
 Accounts callback and subscribed Business C2 previously passed. Private library
 creation and synthetic upload pass. P9.7 automatic processing and real task detail
-are deployed, with877 tests/zero skips and all CI gates passed; real indexing,
-grounded answers, AI/C3 receipts and cross-release persistence remain unverified.
-Customer session expired at the next acceptance session; owner login requested.
+are deployed, with877 tests/zero skips and all CI gates passed. Both logins
+restored. Real processing reaches embed but is parked/upstream_account_refused;
+Atlas issue147 has Karda evidence. Cross-release object read and platform-observed
+ingest C3 pass; indexing, cited answers, AI, search/ask C3 and hash integrity remain
+open. P9.8 fixes missing stage receipts; not yet deployed.
 Legacy retirement, logout and real business acceptance remain open. original bootstrap statements are historical. Owner scope
 is Karda-only fixes, platform issues instead of platform source/variable/edge
 changes. Do not copy Arda credentials, commercial quotas or its unimplemented SSE

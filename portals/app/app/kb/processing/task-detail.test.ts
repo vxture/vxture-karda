@@ -16,4 +16,8 @@ test("live detail keeps full identity and actual failure without demo facts or t
   assert.ok(detail.stages.every(s => s.progressPct === undefined && s.timing === undefined && s.state !== "active"));
   assert.deepEqual(detail.cost, []);
   assert.equal(tallyTasks([row], 2000).tasks[0].id, row.id);
+  row.stages = [{ stage: "fetch", outcome: "ok", startedAt: new Date(1100), endedAt: new Date(1300) }];
+  assert.equal(taskDetail(row).stages[0].timing, "0.2s");
+  row.startedAt = new Date(2000);
+  assert.equal(taskDetail(row).stages[0].timing, undefined);
 });

@@ -13,7 +13,11 @@ export function taskDetail(row: TaskRow): TaskDetail {
         label: stage,
         state: row.state === "done" || recorded?.outcome === "ok" || recorded?.outcome === "skipped" ? "done"
           : row.state === "running" && row.currentStage === stage ? "active" : "todo",
-        timing: recorded?.endedAt ? `${Math.max(0, recorded.endedAt.getTime() - recorded.startedAt.getTime()) / 1000}s` : undefined,
+        // A resumed task reuses immutable stage openings. Such intervals span
+        // retries/parking and must not be presented as model execution time.
+        timing: recorded?.endedAt && row.startedAt && recorded.startedAt >= row.startedAt
+          && recorded.endedAt >= recorded.startedAt
+          ? `${(recorded.endedAt.getTime() - recorded.startedAt.getTime()) / 1000}s` : undefined,
         desc: row.currentStage === stage ? row.failureReason ?? "" : "",
       };
     }),

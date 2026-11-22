@@ -63,6 +63,8 @@ export interface RunInput {
   embeddingModel: string | null;
   /** transient attempts already made (for the failure decision). */
   attempt?: number;
+  /** Observability only: receipt failures must never change processing outcomes. */
+  onStage?: (event: { stage: Stage; outcome: "ok" | "failed"; startedAt: Date; endedAt: Date }) => Promise<void>;
 }
 
 /**
@@ -73,11 +75,24 @@ export interface RunInput {
 export async function runPipeline(input: RunInput): Promise<StageResult> {
   const attempt = input.attempt ?? 0;
   const params = input.chunkParams ?? DEFAULT_CHUNK_PARAMS;
+  async function observed<T>(stage: Stage, work: () => T | Promise<T>): Promise<T> {
+    const startedAt = new Date();
+    let outcome: "ok" | "failed" = "failed";
+    try {
+      const value = await work();
+      outcome = "ok";
+      return value;
+    } finally {
+      const endedAt = new Date();
+      try { await input.onStage?.({ stage, outcome, startedAt, endedAt }); }
+      catch { /* telemetry must not fail or replay actual processing */ }
+    }
+  }
 
   // fetch
   let text: string;
   try {
-    text = await input.source.fetchText();
+    text = await observed("fetch", () => input.source.fetchText());
   } catch (e) {
     return failure("fetch", classifyFetchError(e), errMessage(e), attempt);
   }
@@ -85,13 +100,13 @@ export async function runPipeline(input: RunInput): Promise<StageResult> {
   // parse - fast path only in 5a; deep path is a permanent failure until A2.
   let ir: DocumentIR;
   try {
-    if (parsePathFor(input.source.mime) === "deep") {
-      // A2 (vision parse models) unbuilt: a scanned/complex-layout doc cannot be
-      // parsed yet. Permanent-for-now so it rests in `failed` visibly rather than
-      // retrying against a capability that does not exist.
-      return failure("parse", "permanent", "deep-path parsing requires Atlas vision models (unavailable)", attempt);
-    }
-    ir = parseFastPath(text);
+    ir = await observed("parse", () => {
+      if (parsePathFor(input.source.mime) === "deep") {
+        // Deep parsing is unavailable: park a permanent failure visibly.
+        throw new Error("deep-path parsing requires Atlas vision models (unavailable)");
+      }
+      return parseFastPath(text);
+    });
   } catch (e) {
     return failure("parse", "permanent", errMessage(e), attempt);
   }
@@ -99,7 +114,7 @@ export async function runPipeline(input: RunInput): Promise<StageResult> {
   // chunk
   let chunks: Chunk[];
   try {
-    chunks = chunkGeneral(ir, params);
+    chunks = await observed("chunk", () => chunkGeneral(ir, params));
   } catch (e) {
     return failure("chunk", "permanent", errMessage(e), attempt);
   }
@@ -108,10 +123,10 @@ export async function runPipeline(input: RunInput): Promise<StageResult> {
   // the client routes by grant (KD-018) and reports the resolved model.
   let embedded: EmbedResult;
   try {
-    embedded = await input.embedder.embed(
+    embedded = await observed("embed", () => input.embedder.embed(
       chunks.map((c) => c.text),
       input.embeddingModel,
-    );
+    ));
   } catch (e) {
     // 驻留的那一档写**码**,不写 message:界面要说清是哪一种「用不了」、去哪修,
     // 而 `e.message` 是给日志看的诊断串。其余档次仍写 message——它们没有「去哪修」
@@ -123,7 +138,7 @@ export async function runPipeline(input: RunInput): Promise<StageResult> {
   // vectors (chunk_embedding.model_code is what recall later matches against).
   try {
     const committed: CommittedChunk[] = chunks.map((c, i) => ({ ...c, vector: embedded.vectors[i] ?? null }));
-    await input.target.commit(committed, embedded.modelCode);
+    await observed("commit", () => input.target.commit(committed, embedded.modelCode));
     return { done: true, committed: committed.length };
   } catch (e) {
     return failure("commit", classifyFetchError(e), errMessage(e), attempt);
