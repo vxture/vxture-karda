@@ -22,12 +22,17 @@ const CHIP_CLASS: Record<NonNullable<TaskStage["chips"]>[number]["tone"], string
 };
 
 function StageNode({ stage, last }: { stage: TaskStage; last: boolean }) {
+  const m = useMessages(pipelineMessages);
   return (
     <div className="flex gap-md">
       <div className="flex w-[24px] shrink-0 flex-col items-center">
         {stage.state === "done" ? (
           <span className="flex size-icon-lg items-center justify-center rounded-full border border-success-border bg-success-muted/40">
             <Icon name="check" size="xs" className="text-success-text" />
+          </span>
+        ) : stage.state === "failed" || stage.state === "suspended" ? (
+          <span className={`flex size-icon-lg items-center justify-center rounded-full border ${stage.state === "failed" ? "border-destructive-border text-destructive-text" : "border-warning-border text-warning-text"}`}>
+            <Icon name="warning" size="xs" />
           </span>
         ) : stage.state === "active" ? (
           <span className="flex size-icon-lg items-center justify-center rounded-full border border-primary bg-primary-muted/40">
@@ -56,6 +61,8 @@ function StageNode({ stage, last }: { stage: TaskStage; last: boolean }) {
             {stage.label}
           </span>
           {stage.progressPct !== undefined && <span className="text-body-sm text-primary">{stage.progressPct}%</span>}
+          {stage.state === "failed" && <span className="text-body-sm text-destructive-text">{m.stageFailed}</span>}
+          {stage.state === "suspended" && <span className="text-body-sm text-warning-text">{m.stageSuspended}</span>}
           {stage.timing && <span className="ml-auto font-mono text-code-sm text-muted-foreground">{stage.timing}</span>}
         </div>
         {stage.progressPct !== undefined && (

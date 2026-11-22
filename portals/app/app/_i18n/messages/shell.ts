@@ -166,6 +166,8 @@ export const shell = {
   // --- 智枢 ------------------------------------------------------------------
   hubOnDuty: { "zh-CN": "在岗", "en-US": "On duty" },
   hubConnecting: { "zh-CN": "正在接入…", "en-US": "Connecting…" },
+  hubNoPending: { "zh-CN": "\u6682\u65e0\u5f85\u88c1\u51b3\u4e8b\u9879", "en-US": "No decisions awaiting review" },
+  hubNoActivity: { "zh-CN": "\u6682\u65e0\u53ef\u5c55\u793a\u7684\u6d3b\u52a8\u8bb0\u5f55", "en-US": "No activity records to display" },
   hubPending: { "zh-CN": "待你裁决", "en-US": "Awaiting your call" },
   hubRest: {
     "zh-CN": (n: number) => `其余 ${n} 项 →`,

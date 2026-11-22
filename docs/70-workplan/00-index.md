@@ -3,15 +3,14 @@
 ## Current remediation - 2026-11-22
 
 Ordered batches and live status: [20-rectification-batches-20261122](20-rectification-batches-20261122.md).
-Current production: v0.11.3 / 5b37bd83, approved run45003892024 succeeded.
-Target-domain readiness passes; Accounts callback and Business C2 previously
-passed. Four public plans are published and Free retired. P9.7 processing/task
-detail fixes are deployed; indexing, cited answers, AI/C3, persistence, logout
-and permission-message acceptance remain open. Old-host retirement is platform
-issue727. Both logins restored; processing parks at upstream_account_refused
-(Atlas issue147), cross-release object read and ingest C3 observation pass.
-P9.8 stage receipts and P9.9 POST/303 logout fixes are merged;883 tests/zero
-skips. v0.11.4 candidate2360240/run45054602507 is not yet deployed.
+Current production: v0.11.4 / 23602404, approved run45054602507 succeeded.
+Target-domain readiness passes; four public plans published and Free retired.
+Real fetch/parse/chunk receipts pass; embed parks at upstream_account_refused
+(Atlas issue147). Customer logout and workforce isolation pass. Cross-product
+logout, permission messages, indexing, grounded answers, AI/search/ask C3 and
+download hash remain open. Cross-release object read and ingest C3 observed.
+P9.10 production hub demo removal and parked/failed stage states are being
+verified, not deployed. Old-host retirement remains platform issue727.
 Delivery evidence: [30-delivery-record-20261122](30-delivery-record-20261122.md).
 
 See [10-platform-alignment-20261122](10-platform-alignment-20261122.md) for the

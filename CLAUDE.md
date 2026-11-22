@@ -45,22 +45,19 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-23): v0.11.3 / 5b37bd83, owner-approved deploy
-45003892024 succeeded at 01:15 CST. Target-domain browser /api/ready confirms
-this version; db, redis and storageConfig pass. Persistent karda_objects volume
-was created in v0.11.2. Accounts callback and subscribed Business C2 previously
-passed; private library creation and synthetic upload also passed.
-Automatic processing dispatch and real workspace-scoped task detail are deployed
-(P9.7), with 877 tests and all required CI gates passed. Actual indexing and
-grounded answers are blocked at embed/upstream_account_refused (Atlas issue147).
+Current production (2026-11-23): v0.11.4 / 23602404, owner-approved run
+45054602507 succeeded at 03:01 CST. Target-domain /api/ready confirms production
+version, db/redis/storageConfig ok. 883 tests/zero skips and all PR/main CI passed.
+P9.8 real receipts pass: fetch/parse/chunk completed, embed parks with
+upstream_account_refused; commit not reached. Atlas issue147 remains open.
 Cross-release object read and platform-observed ingest C3 pass; download hash,
-search/ask C3, AI receipts and deduplication remain open. Both logins restored.
-P9.8 stage receipts and P9.9 POST/303 logout fixes are merged; 883 tests/zero
-skips, all PR/main CI passed. v0.11.4 candidate2360240, run45054602507;
-not yet deployed. Actual logout failed in v0.11.3 and isolation is unverified.
-Legacy-host retirement (platform issue727), logout and permission-message
-acceptance remain open. See
- docs/70-workplan/20-rectification-batches-20261122.md for current evidence.
+indexing, grounded answers, search/ask C3 and AI receipts remain open.
+P9.9 browser logout now succeeds: protected task API becomes unauthenticated,
+Karda returns to login gate, refreshed Opera retains workforce authentication.
+Cross-product/back-channel logout and permission-message delivery still need real
+acceptance. P9.10 corrects parked/failed detail states and removes authored Agent
+activity/proposals from the production hub; implementation verification pending.
+Legacy-host retirement remains platform issue727. See the batch tracker.
 
 Owner scope: modify Karda only; report platform gaps as detailed issues. Do not
 edit platform sources, create platform worktrees, change platform server variables

@@ -159,7 +159,15 @@ export async function GET(): Promise<Response> {
       coveragePct: V.coveragePct,
       gaps: evalGaps,
     },
-    agent: {
+    // No authored proposals, model judgments or activity may appear as live work.
+    agent: prismaEnabled() ? {
+      pending: karda.pending,
+      proposals: [],
+      alert: null,
+      activity: [],
+      demo: false,
+    } : {
+      demo: true,
       pending: karda.pending,
       proposals: DEMO_PIPELINE.proposals.slice(0, 2),
       alert: DEMO_TASKS.alert
@@ -178,5 +186,5 @@ export async function GET(): Promise<Response> {
     // demoOps 指供给叙事(首页脚注说的就是它);账本有过真流量即撤。
     demoOps: !supplyLive,
   };
-  return NextResponse.json(data);
+  return NextResponse.json(data, { headers: { "Cache-Control": "no-store" } });
 }

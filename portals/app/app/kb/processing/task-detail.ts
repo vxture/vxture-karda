@@ -11,7 +11,9 @@ export function taskDetail(row: TaskRow): TaskDetail {
       return {
         kicker: `${String(i + 1).padStart(2, "0")} ${stage.toUpperCase()}`,
         label: stage,
-        state: row.state === "done" || recorded?.outcome === "ok" || recorded?.outcome === "skipped" ? "done"
+        state: row.state === "suspended" && row.currentStage === stage ? "suspended"
+          : recorded?.outcome === "failed" || row.state === "failed" && row.currentStage === stage ? "failed"
+          : recorded?.outcome === "ok" || recorded?.outcome === "skipped" ? "done"
           : row.state === "running" && row.currentStage === stage ? "active" : "todo",
         // A resumed task reuses immutable stage openings. Such intervals span
         // retries/parking and must not be presented as model execution time.

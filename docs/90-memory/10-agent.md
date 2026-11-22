@@ -3,17 +3,16 @@
 Start here if you are an AI agent working in this repo.
 
 Current work (2026-11-22): see [platform alignment kickoff](../70-workplan/10-platform-alignment-20261122.md).
-Production is v0.11.3 / 5b37bd83 (approved run45003892024 succeeded on November23
-at01:15 CST); new-domain browser readiness confirms db/redis/storageConfig ok.
-Accounts callback and subscribed Business C2 previously passed. Private library
-creation and synthetic upload pass. P9.7 automatic processing and real task detail
-are deployed, with877 tests/zero skips and all CI gates passed. Both logins
-restored. Real processing reaches embed but is parked/upstream_account_refused;
-Atlas issue147 has Karda evidence. Cross-release object read and platform-observed
-ingest C3 pass; indexing, cited answers, AI, search/ask C3 and hash integrity remain
-open. P9.8 stage receipts and P9.9 POST/303 logout fixes are merged;883 tests,
-zero skips, all PR/main CI passed. v0.11.4 candidate2360240/run45054602507,
-not yet deployed. v0.11.3 logout failed; isolation must be revalidated.
+Production is v0.11.4 / 23602404 (approved run45054602507 succeeded November23
+at03:01 CST). Target-domain readiness confirms db/redis/storageConfig ok.
+Real fetch/parse/chunk receipts pass; embed parks at upstream_account_refused
+(Atlas issue147), commit not reached. Existing private fixture retained.
+Customer logout now returns task API unauthenticated and Karda login gate;
+refreshed Opera remains workforce-authenticated. Cross-product/back-channel and
+permission-message acceptance remain open. Cross-release object read and ingest
+C3 observation pass; indexing, grounded answers, AI, search/ask C3 and hash remain
+open. P9.10 removes authored hub activity and corrects parked/failed stage states;
+not yet deployed. No platform source, variables, routes or credentials changed.
 Legacy retirement, logout and real business acceptance remain open. original bootstrap statements are historical. Owner scope
 is Karda-only fixes, platform issues instead of platform source/variable/edge
 changes. Do not copy Arda credentials, commercial quotas or its unimplemented SSE
