@@ -3,7 +3,7 @@ import { getPrismaClient } from "../../lib/db";
 import { isDeployedStage } from "../../lib/deploy-stage";
 import { getPlatformClientConfig } from "../../entitlement/platform-client";
 import { getEntitlementResolver } from "../../entitlement/resolver";
-import { hasDataAccess } from "../../entitlement/types";
+import { hasDataAccess, type Entitlement } from "../../entitlement/types";
 import { workspacePlatformContext } from "../../platform/client";
 
 export type CapacityCode = "capacity_exceeded" | "capacity_unconfigured" | "capacity_unavailable";
@@ -22,14 +22,21 @@ export function validateCapacityLimit(limit: number | undefined): number {
   return limit;
 }
 
+/** New offers omit the retired content-count axis. Explicit legacy caps still
+ * apply; absence of any other cap remains a configuration failure. */
+export function entitlementCapacityLimit(entitlement: Entitlement, metric: CapacityMetric): number | undefined {
+  if (!hasDataAccess(entitlement)) throw new CapacityError("capacity_unavailable", metric);
+  if (metric === "document.max" && !Object.prototype.hasOwnProperty.call(entitlement.limits, metric)) return -1;
+  return entitlement.limits[metric];
+}
+
 export async function platformLimit(workspaceId: string, metric: CapacityMetric): Promise<number | undefined> {
   // The existing offline database/dev path has no commercial envelope. Never
   // apply this exemption on a deployed stage, even with ALLOW_MOCK_ON_DEPLOY.
   if (!isDeployedStage() && !getPlatformClientConfig()) return -1;
   const context = await workspacePlatformContext(workspaceId);
   const entitlement = await getEntitlementResolver().resolve(workspaceId, context);
-  if (!hasDataAccess(entitlement)) throw new CapacityError("capacity_unavailable");
-  return entitlement.limits[metric];
+  return entitlementCapacityLimit(entitlement, metric);
 }
 
 /** Serialize count + insertion across replicas, not only within one process. */

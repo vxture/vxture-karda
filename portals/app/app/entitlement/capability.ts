@@ -135,7 +135,8 @@ export function minTierFor(key: FeatureKey): Tier | null {
 //                cannot know how many libraries a workspace has.
 
 // storage.bytes is a shared gauge pool, not a max-type sales number.
-export const LIMIT_KEYS = ["kb.max", "document.max", "binding.max", "seat.max"] as const;
+// document.max is optional legacy policy, not a required commercial axis.
+export const LIMIT_KEYS = ["kb.max", "binding.max", "seat.max"] as const;
 
 export type LimitKey = (typeof LIMIT_KEYS)[number];
 

@@ -78,6 +78,29 @@ def calculate(work, pricing, estimator, catalog):
             results["discounted_products"].append({"product": product, "tier": tier["tier"],
                 **{name: estimator.estimate(tier, scenario, fee, revenue=price)[0]
                    for name, scenario in pricing["scenarios"].items()}})
+    # Annual billing collects ten monthly list prices but serves twelve months.
+    # Include single-product, joint and full-cycle coupon stress cases. This is
+    # a budget scenario, not proof that the billing platform supports stacking.
+    annual = catalog["annual_billing"]
+    paid, served = D(annual["paid_months"]), D(annual["service_months"])
+    results["annual"] = []
+    combinations = [(product, [tier]) for product, tiers in tiers_by_product.items() for tier in tiers]
+    combinations += [("joint", [a, k]) for a in tiers_by_product["arda"] for k in tiers_by_product["karda"]]
+    for product, tiers in combinations:
+        gross = sum((D(t["price"]) * paid for t in tiers), D(0))
+        for coupon in (False, True):
+            factor = (1 - D(pricing["joint_discount"])) if product == "joint" else D(1)
+            if coupon:
+                factor *= 1 - D(work["coupon_discount"])
+            revenue = (gross * factor).quantize(D("0.01"), rounding=ROUND_HALF_UP)
+            row = {"product": product, "tiers": [t["tier"] for t in tiers], "coupon": coupon,
+                   "paid_months": number(paid), "service_months": number(served), "revenue": number(revenue)}
+            for name, scenario in pricing["scenarios"].items():
+                nonfee = sum((estimator.estimate(t, scenario, fee)[1] for t in tiers), D(0)) * served
+                cost = nonfee + revenue * fee
+                row[name] = {"cost": number(cost), "contribution": number(revenue - cost),
+                             "margin_pct": number((revenue - cost) / revenue * 100)}
+            results["annual"].append(row)
     return results
 
 
