@@ -23,11 +23,11 @@
 | P8.8 | 两产品套餐定稿v1 | 用户确认；文件和复算输入已固化，未发布 | 20-specs/80及final-package-spec.json；价格199/499/1499，连接与服务20/100/500；执行、成本与平台草稿验收仍待完成 |
 | P8.7 / W1 | AI工作量与积分测算 | 离线分析完成；未发布、未实施优化 | 20-specs/70：Arda任务目录仍空；Karda当前/优化成本分别计算；W2–W5检索评测、任务预算、Arda任务与商业校准待完成 |
 | P8.6 | Arda/Karda联合定价复核 | 已完成设计定稿，见P8.8；未改线上草稿 | 20-specs/60：统一成本输入、三种情景、双订/混档/扩展整单；真实成本与平台能力待校准 |
-| P9 | 生产发布与业务验收交付 | 发布成功，验收未完成 | v0.11.1 / cba6e16a；run44945579438；health/ready通过 |
+| P9 | 生产发布与业务验收交付 | v0.11.2已部署，验收未完成 | 1a59f0e；run44997013773；旧域名health/ready通过，新域名仍520 |
 | P9.1 | 新域名生效、旧域名退役 | 平台阻塞 | karda.ruyin.work health仍520；issue727；未改平台源码/变量/边缘文件 |
 | P9.2 | Accounts登录退出、权限同步 | 待新域名可用 | 当前callback已正确指向新域名，但未跑通实际回调及退出隔离 |
 | P9.3 | 知识加工、检索、问答、C3及清理 | 待真实登录及授权、P9.4修正上线 | 不以测试或健康检查代替真实业务回执 |
-| P9.4 | 上传持久化与存储就绪检查 | PR222 / db2c9c8已合入，CI通过，未部署 | 现网OSS四项和KARDA_OBJECT_ROOT均缺失；补持久卷、拒绝内存回退；不启动被暂停的云迁移 |
+| P9.4 | 上传持久化与存储就绪检查 | v0.11.2已部署，真实上传与重启验收待完成 | karda_objects持久卷已创建，storageConfig就绪通过；不启动被暂停的云迁移 |
 
 顺序代表实施主线，不要求为做页面而等待所有商业决策；独立的只读核查可交错推进。若拆 PR，采用 Pn.1/Pn.2 子批次，保留主批次号，不悄悄缩小验收范围。生产推广应按验证过的候选和上线风险分阶段规划，不因表内编号自动发版。
 
@@ -285,3 +285,28 @@ issue728已附代码路径更正；仍须实测C3落账、AI不重复收费、�
 15:15:39浏览器实际访问karda.ruyin.work仍Cloudflare520（Ray a5e624e6eaa2ec0b），旧域名health/ready仍200。
 独立HTTP探测新域名为403，仅记录不同入口观测，不冒充应用返回；issue727已更新正常浏览器证据。
 v0.11.2镜像已构建，run44997013773停production人工审核，已请求用户审批。
+
+
+## P9.6 production v0.11.2 deployed / P9.1 still blocked
+
+2026-11-22 15:23 CST: owner approved production run44997013773; deployment
+completed successfully at fixed1a59f0e23bc4c0aaa779bee874a23da4faf16711.
+Deploy log confirms persistent volume karda_objects created and both readiness
+checks passed. Independent legacy-host probes return200/versionv0.11.2/gitSha1a59f0e2;
+ready reports db=ok, redis=ok, storageConfig=ok. This proves deployment/configuration,
+not uploaded-object persistence across restart or real business acceptance.
+No new DDL, subscription migration or platform server changes occurred.
+
+P9.1 remains open: normal browser at15:22:11 shows Cloudflare520 for
+https://karda.ruyin.work/ (Ray a5e62e783d8aec0b, Tokyo). Independent new-host
+health/ready probes return403, recorded separately without attributing them to
+the application. New callback remains configured; do not regress to the legacy
+host to claim C1 acceptance. P9.2/P9.3 remain pending usable target-domain login.
+
+Opera naming configuration saved/read back kb.max=知识库数量 and
+binding.max=数据连接数量. Public pricing fresh load still exposes both raw keys,
+so managed definitions are correct but website consumption remains a platform
+display gap (issue717). Four public tiers, final annual prices and retired Free
+remain verified. Screenshot: output/acceptance-20261122/metric-names-configured.jpg;
+public readback: output/acceptance-20261122/pricing-after-metric-naming.jpg.
+PR239 merged asfc7f1c3 after all required checks passed. Release tag stays on1a59f0e.
