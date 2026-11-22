@@ -489,3 +489,12 @@ price with no assumed infrastructure savings. Existing Karda drafts stay as save
 AI/storage/egress full-grant scenarios plus explicit non-AI budgets are NOT proof
 of maximum arbitrary workload cost. Both product benchmarks, bill calibration,
 egress/discount platform contracts and owner commercial approval remain required.
+
+## Knowledge library quota review follow-up
+
+Owner directed removal of the customer-facing content-item count and increased
+library counts to200/1000/5000. Updated joint proposal and model metadata only.
+Storage and AI remain consumption boundaries; no per-library resident compute
+is implied. Existing saved drafts and runtime document.max remain unchanged and
+need alignment before publication. Other r1 prices/resources await remeasurement
+after owner feedback on Arda AI, dataset counts and tier value.

@@ -8,23 +8,136 @@
   "stress_target_margin": "0.50",
   "joint_discount": "0.05",
   "scenarios": {
-    "base": {"ai_per_credit": "0.06", "hosted_per_gib": "2.50", "egress_per_gib": "0.50", "fixed_multiplier": "1", "workload_multiplier": "1"},
-    "stress": {"ai_per_credit": "0.12", "hosted_per_gib": "5.00", "egress_per_gib": "1.00", "fixed_multiplier": "1", "workload_multiplier": "2"},
-    "severe": {"ai_per_credit": "0.12", "hosted_per_gib": "5.00", "egress_per_gib": "1.00", "fixed_multiplier": "1.5", "workload_multiplier": "2"}
+    "base": {
+      "ai_per_credit": "0.06",
+      "hosted_per_gib": "2.50",
+      "egress_per_gib": "0.50",
+      "fixed_multiplier": "1",
+      "workload_multiplier": "1"
+    },
+    "stress": {
+      "ai_per_credit": "0.12",
+      "hosted_per_gib": "5.00",
+      "egress_per_gib": "1.00",
+      "fixed_multiplier": "1",
+      "workload_multiplier": "2"
+    },
+    "severe": {
+      "ai_per_credit": "0.12",
+      "hosted_per_gib": "5.00",
+      "egress_per_gib": "1.00",
+      "fixed_multiplier": "1.5",
+      "workload_multiplier": "2"
+    }
   },
   "tiers": [
-    {"tier": "starter", "price": 199, "seats_per_product": 1, "storage_gib": 1, "credits": 200, "egress_gib": 5, "connections": 5, "fixed_budget": 25, "workload_budget": 10, "arda": {"datasets": 500, "services": 1, "service_calls": 20000, "quality_checks": 1000}, "karda": {"libraries": 20, "content_items": 2000}},
-    {"tier": "pro", "price": 599, "seats_per_product": 1, "storage_gib": 5, "credits": 800, "egress_gib": 25, "connections": 20, "fixed_budget": 65, "workload_budget": 25, "arda": {"datasets": 5000, "services": 10, "service_calls": 200000, "quality_checks": 10000}, "karda": {"libraries": 100, "content_items": 20000}},
-    {"tier": "business", "price": 2199, "seats_per_product": 5, "storage_gib": 20, "credits": 3000, "egress_gib": 100, "connections": 100, "fixed_budget": 250, "workload_budget": 100, "arda": {"datasets": 20000, "services": 50, "service_calls": 2000000, "quality_checks": 100000}, "karda": {"libraries": 500, "content_items": 100000}}
+    {
+      "tier": "starter",
+      "price": 199,
+      "seats_per_product": 1,
+      "storage_gib": 1,
+      "credits": 200,
+      "egress_gib": 5,
+      "connections": 5,
+      "fixed_budget": 25,
+      "workload_budget": 10,
+      "arda": {
+        "datasets": 500,
+        "services": 1,
+        "service_calls": 20000,
+        "quality_checks": 1000
+      },
+      "karda": {
+        "libraries": 200
+      }
+    },
+    {
+      "tier": "pro",
+      "price": 599,
+      "seats_per_product": 1,
+      "storage_gib": 5,
+      "credits": 800,
+      "egress_gib": 25,
+      "connections": 20,
+      "fixed_budget": 65,
+      "workload_budget": 25,
+      "arda": {
+        "datasets": 5000,
+        "services": 10,
+        "service_calls": 200000,
+        "quality_checks": 10000
+      },
+      "karda": {
+        "libraries": 1000
+      }
+    },
+    {
+      "tier": "business",
+      "price": 2199,
+      "seats_per_product": 5,
+      "storage_gib": 20,
+      "credits": 3000,
+      "egress_gib": 100,
+      "connections": 100,
+      "fixed_budget": 250,
+      "workload_budget": 100,
+      "arda": {
+        "datasets": 20000,
+        "services": 50,
+        "service_calls": 2000000,
+        "quality_checks": 100000
+      },
+      "karda": {
+        "libraries": 5000
+      }
+    }
   ],
   "old_offers": {
-    "arda": [{"price": 99, "credits": 150}, {"price": 299, "credits": 500}, {"price": 999, "credits": 1500}],
-    "karda": [{"price": 129, "credits": 200}, {"price": 399, "credits": 800}, {"price": 1499, "credits": 3000}]
+    "arda": [
+      {
+        "price": 99,
+        "credits": 150
+      },
+      {
+        "price": 299,
+        "credits": 500
+      },
+      {
+        "price": 999,
+        "credits": 1500
+      }
+    ],
+    "karda": [
+      {
+        "price": 129,
+        "credits": 200
+      },
+      {
+        "price": 399,
+        "credits": 800
+      },
+      {
+        "price": 1499,
+        "credits": 3000
+      }
+    ]
   },
   "proposed_addons": [
-    {"name": "storage_10_gib_month", "price": 99, "storage_gib": 10},
-    {"name": "ai_1000_credits_once", "price": 200, "credits": 1000},
-    {"name": "egress_10_gib_period", "price": 19, "egress_gib": 10}
+    {
+      "name": "storage_10_gib_month",
+      "price": 99,
+      "storage_gib": 10
+    },
+    {
+      "name": "ai_1000_credits_once",
+      "price": 200,
+      "credits": 1000
+    },
+    {
+      "name": "egress_10_gib_period",
+      "price": 19,
+      "egress_gib": 10
+    }
   ],
   "scope_notes": [
     "Costs are per-product budgets; joint scenario retains BOTH fixed and workload budgets without assuming savings.",
@@ -32,6 +145,7 @@
     "AI and storage are evaluated at full granted quantities. Non-AI workload is a scenario budget, NOT proved full utilization of all business caps.",
     "Seats are product-specific and cannot be added into cross-product seats. AI accessibility follows reserved/shared policies; storage follows actual workspace grants.",
     "No-rate models, unlimited non-AI demand, unmetered egress and index amplification outside budget are unbounded risks, not covered guarantees.",
-    "New egress grants/addon and joint discount require platform contracts and owner approval; none is live or implemented by this model."
+    "New egress grants/addon and joint discount require platform contracts and owner approval; none is live or implemented by this model.",
+    "Owner confirmed removing customer-facing content-item caps and library counts 200/1000/5000. Other r1 prices/resources remain historical candidates pending remeasurement; existing drafts and runtime document.max are unchanged."
   ]
 }
