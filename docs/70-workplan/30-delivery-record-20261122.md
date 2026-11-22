@@ -388,3 +388,31 @@ without another upload. Source and CI are complete; production0014/application
 remain unshipped. Production is v0.11.1 with0013 applied. Target-domain health
 recheck still520; legacy health still200 at cba6e16a. Commercial plans unchanged.
 Detailed shared-allocation contract bound was appended to platform issue728.
+
+
+## Approved0014 and managed max-metric registration
+
+Owner confirmed approval. db-init44982274412 at90b715b completed successfully on
+2026-11-22; logs show0014 applied, column grants applied,39 declared tables all
+exist. Earlier0013 remains applied. No startup migration/manual SQL was used.
+Application staysv0.11.1; no release tag or price publication was performed.
+
+Via Opera's existing Register metric dialog, saved Karda-only definitions:
+kb.max/libraries, document.max/items, binding.max/connections. All use max and
+never reset. Readback shows seven total product-specific metrics including the
+four existing ones. Shared storage.bytes/ai.credit were not re-registered.
+Proof: output/acceptance-20261122/karda-capacity-metrics.jpg (local ignored
+acceptance artifact). No broader access, client/secret change or tenant quantity
+was introduced. Seven domain/auth fields, web-only settings remain unchanged.
+
+A new actual scoped service C2 read after registration still shows only seat.max
+in limits for two bundled scopes; the historical third anchor still returns400.
+No quantity is inferred from public plans. Managed definitions are now complete;
+actual grants/commercial approval and historical reconciliation remain open in
+platform issue728. The supported registration path is reported there. New-domain
+health remains520 and issue727 open. No platform source/variable/edge mutation.
+
+Next release gates: reviewed commercial quantities and actual C2 grants; platform
+origin repair and old-host retirement; then required human application deployment
+approval and real C1/knowledge/Atlas/C3 acceptance. Additional DB approval for0014
+is no longer pending. Pricing/cost proposal remains explicitly unapproved.
