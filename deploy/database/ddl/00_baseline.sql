@@ -1079,6 +1079,15 @@ CREATE TABLE IF NOT EXISTS vx_provision.access_revision (
 );
 
 -- Durable byte reservations. Structure changes run through reviewed db-init only.
+CREATE TABLE IF NOT EXISTS karda_kb.storage_watermark (
+  workspace_id UUID PRIMARY KEY,
+  value BIGINT NOT NULL CHECK (value >= 0),
+  observed_at TIMESTAMPTZ NOT NULL,
+  pending BOOLEAN NOT NULL DEFAULT true,
+  attempts INTEGER NOT NULL DEFAULT 0 CHECK (attempts >= 0),
+  retry_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS karda_kb.stored_object (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id UUID NOT NULL,

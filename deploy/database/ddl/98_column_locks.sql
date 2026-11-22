@@ -251,5 +251,8 @@ GRANT SELECT, INSERT ON vx_provision.access_revision TO karda_svc;
 GRANT UPDATE (generation, published_generation, updated_at) ON vx_provision.access_revision TO karda_svc;
 
 REVOKE UPDATE, DELETE ON karda_kb.stored_object FROM karda_svc;
+REVOKE UPDATE, DELETE ON karda_kb.storage_watermark FROM karda_svc;
+GRANT SELECT, INSERT ON karda_kb.storage_watermark TO karda_svc;
+GRANT UPDATE (value, observed_at, pending, attempts, retry_at) ON karda_kb.storage_watermark TO karda_svc;
 GRANT SELECT, INSERT ON karda_kb.stored_object TO karda_svc;
 GRANT UPDATE (state, retain_until, attempts, retry_at, updated_at) ON karda_kb.stored_object TO karda_svc;
