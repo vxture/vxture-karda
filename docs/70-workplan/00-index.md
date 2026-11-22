@@ -8,7 +8,9 @@ Target-domain readiness passes; Accounts callback and Business C2 previously
 passed. Four public plans are published and Free retired. P9.7 processing/task
 detail fixes are deployed; indexing, cited answers, AI/C3, persistence, logout
 and permission-message acceptance remain open. Old-host retirement is platform
-issue727. The next business acceptance requires renewed customer login.
+issue727. Both logins restored; processing parks at upstream_account_refused
+(Atlas issue147), cross-release object read and ingest C3 observation pass.
+P9.8 stage receipt correction is implemented, not yet deployed.
 Delivery evidence: [30-delivery-record-20261122](30-delivery-record-20261122.md).
 
 See [10-platform-alignment-20261122](10-platform-alignment-20261122.md) for the

@@ -79,6 +79,7 @@ export async function tick(deps: WorkerDeps): Promise<TickResult> {
     embeddingModel: resolved.embeddingModel,
     chunkParams: DEFAULT_CHUNK_PARAMS,
     attempt: task.attempt,
+    onStage: event => ledger.stage({ docId: task.docId, ...event }),
   });
 
   if ("done" in result) {

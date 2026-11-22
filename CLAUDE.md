@@ -51,9 +51,11 @@ this version; db, redis and storageConfig pass. Persistent karda_objects volume
 was created in v0.11.2. Accounts callback and subscribed Business C2 previously
 passed; private library creation and synthetic upload also passed.
 Automatic processing dispatch and real workspace-scoped task detail are deployed
-(P9.7), with 877 tests and all required CI gates passed. Actual indexing, grounded
-answers, AI/C3 receipts and cross-release object persistence are not yet verified.
-Customer login expired at the next acceptance session; owner login requested.
+(P9.7), with 877 tests and all required CI gates passed. Actual indexing and
+grounded answers are blocked at embed/upstream_account_refused (Atlas issue147).
+Cross-release object read and platform-observed ingest C3 pass; download hash,
+search/ask C3, AI receipts and deduplication remain open. Both logins restored.
+P9.8 adds missing real stage receipts; not yet deployed.
 Legacy-host retirement (platform issue727), logout and permission-message
 acceptance remain open. See
  docs/70-workplan/20-rectification-batches-20261122.md for current evidence.

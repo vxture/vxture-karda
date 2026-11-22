@@ -35,8 +35,11 @@ function recordingLedger() {
     async started() {
       calls.push("started");
     },
-    async stage() {
-      calls.push("stage");
+    async stage(e) {
+      assert.ok(e.startedAt instanceof Date);
+      assert.ok(e.endedAt instanceof Date);
+      assert.ok(e.endedAt.getTime() >= e.startedAt.getTime());
+      calls.push(`${e.stage}:${e.outcome}`);
     },
     async settled(e) {
       calls.push(`settled:${e.state}`);
@@ -66,7 +69,7 @@ test("a successful run records started then settled:done", async () => {
   const { ledger, calls } = recordingLedger();
   const r = await tick(deps({ ledger }));
   assert.equal(r.action, "indexed");
-  assert.deepEqual(calls, ["started", "settled:done"]);
+  assert.deepEqual(calls, ["started", "fetch:ok", "parse:ok", "chunk:ok", "embed:ok", "commit:ok", "settled:done"]);
 });
 
 test("a suspended run records settled:suspended, and the document is NOT failed", async () => {
@@ -90,7 +93,7 @@ test("a suspended run records settled:suspended, and the document is NOT failed"
   );
   assert.equal(r.action, "suspend");
   assert.equal(failed, false);
-  assert.deepEqual(calls, ["started", "settled:suspended"]);
+  assert.deepEqual(calls, ["started", "fetch:ok", "parse:ok", "chunk:ok", "embed:failed", "settled:suspended"]);
 });
 
 test("A LEDGER THAT THROWS MUST NOT CHANGE THE OUTCOME", async () => {
@@ -115,4 +118,46 @@ test("A LEDGER THAT THROWS MUST NOT CHANGE THE OUTCOME", async () => {
 test("the worker behaves identically with no ledger supplied at all", async () => {
   const r = await tick(deps());
   assert.equal(r.action, "indexed");
+});
+
+test("failed stage receipts do not change indexing or replay model/commit work", async () => {
+  let embedded = 0;
+  let committed = 0;
+  const base = deps();
+  const resolve = base.resolve;
+  const r = await tick({ ...base,
+    ledger: { ...NULL_TASK_LEDGER, async stage() { throw new Error("telemetry unavailable"); } },
+    resolve: async task => {
+      const resolved = (await resolve(task))!;
+      return { ...resolved,
+        embedder: { async embed(texts: string[]) { embedded++; return { vectors: texts.map(() => [1]), modelCode: "m" }; } },
+        target: { async commit() { committed++; } },
+      };
+    },
+  });
+  assert.equal(r.action, "indexed");
+  assert.equal(embedded, 1);
+  assert.equal(committed, 1);
+});
+
+test("fetch failure records only the failed fetch and retains retry classification", async () => {
+  const { ledger, calls } = recordingLedger();
+  const base = deps({ ledger });
+  const resolve = base.resolve;
+  const r = await tick({ ...base, resolve: async task => ({ ...(await resolve(task))!,
+    source: { mime: "text/plain", async fetchText(): Promise<string> { throw new Error("object unavailable"); } },
+  }) });
+  assert.equal(r.action, "retry");
+  assert.deepEqual(calls, ["started", "fetch:failed", "settled:queued"]);
+});
+
+test("unsupported parsing records failure without embedding or commit stages", async () => {
+  const { ledger, calls } = recordingLedger();
+  const base = deps({ ledger });
+  const resolve = base.resolve;
+  const r = await tick({ ...base, resolve: async task => ({ ...(await resolve(task))!,
+    source: { mime: "image/png", async fetchText() { return "opaque"; } },
+  }) });
+  assert.equal(r.action, "failed");
+  assert.deepEqual(calls, ["started", "fetch:ok", "parse:failed", "settled:failed"]);
 });
