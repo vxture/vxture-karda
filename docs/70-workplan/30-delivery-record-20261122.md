@@ -669,3 +669,14 @@ release and real upload/index/answer/C3/restart acceptance remain pending.
 Proofs: private-library-created.jpg, empty-library-search.jpg,
 empty-library-answer-guard.jpg, task-detail-demo-mismatch.jpg under
 output/acceptance-20261122. No platform source or server variable changes.
+
+
+### P9.7 release candidate
+
+PR242 merged as5b37bd8371de877c9a1d1e52b5e2f25ef80cd3fa. Required PR gates and
+main CI45003704897 succeeded;877 tests pass,0skipped, including real isolated
+PostgreSQL lease exclusion/failure release. Main secret scan45003704883 passes.
+v0.11.3 is pinned to that exact checked commit; production run45003892024.
+Application release awaits image build and owner production approval; do not
+claim queued fixture has indexed. No newDDL, environment variable or platform
+source/edge edit. Synthetic fixture remains private for post-release acceptance.
