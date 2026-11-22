@@ -770,3 +770,13 @@ P9.9客户退出与运维会话隔离通过。未抓取网络重定向链，不�
 虚构缺失阶段回执；生产Agent只保留实际待裁决计数，未接通的数据源显示空态，离线
 演示保留。隐藏没有真实状态来源的在岗灯和生产委托按钮。尚未发布，不冒充已修线上。
 本轮未新增DDL/变量、修改平台仓/边缘/路由/供应商凭据，也未删除或公开验收原件。
+
+### P9.10 checked release candidate
+
+PR248 merged43fffd91f4f798a4eb0ffe5e00b39bfdf8bd8f5a. PR CI45059290921,
+main CI45059533565 and secret scan45059533442 pass. Both CI test runs report
+883 tests,883 passed,0 failed,0 skipped. Local TypeScript/catalog/targeted checks
+also pass. v0.11.5 pins this exact code commit; production run45059723049.
+Image build/human required-reviewer approval and deployment remain pending.
+Current production stays v0.11.4; do not claim the hub patch has shipped.
+No newDDL, environment variables or platform configuration changes.

@@ -12,7 +12,9 @@ refreshed Opera remains workforce-authenticated. Cross-product/back-channel and
 permission-message acceptance remain open. Cross-release object read and ingest
 C3 observation pass; indexing, grounded answers, AI, search/ask C3 and hash remain
 open. P9.10 removes authored hub activity and corrects parked/failed stage states;
-not yet deployed. No platform source, variables, routes or credentials changed.
+PR248 merged43fffd91,883 tests/zero skips, PR CI45059290921 passes; main
+CI45059533565 and secret scan pass. v0.11.5 pins43fffd91; run45059723049
+is building/awaiting human production review. No platform configuration changed.
 Legacy retirement, logout and real business acceptance remain open. original bootstrap statements are historical. Owner scope
 is Karda-only fixes, platform issues instead of platform source/variable/edge
 changes. Do not copy Arda credentials, commercial quotas or its unimplemented SSE
