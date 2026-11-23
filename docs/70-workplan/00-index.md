@@ -1010,3 +1010,16 @@ Index/retrieval/grounded answers, AI/search/ask C3 receipts/dedup and identity
 context notifications remain open. Current details override historical pending
 logout/hash wording above; see the authoritative batch tracker P9.12/P9.13.
 No release, platform source/configuration, credentials or server variables changed.
+
+
+## Default member entry follow-up - 2026-11-23
+
+Owner requires baseline use for new members without manual product role setup.
+Karda already admits using live platform product assignment and subscription,
+without requiring governance roles. Preserve raw roles and the existing member
+shell fallback; do not manufacture workspace role claims or elevate management.
+Regression now covers roleless assigned-member admission, no management/ownership,
+denied assignment, expired subscription, inactive account and authority failure.
+Arda had a separate frontend usage-role blocker and is corrected in its own repo.
+Platform-owned product seats remain required; automatic seat allocation needs a
+platform configuration contract and must respect purchased seats and revocations.
