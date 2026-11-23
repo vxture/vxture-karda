@@ -14,7 +14,8 @@ C3 observation pass; indexing, grounded answers, AI, search/ask C3 and hash rema
 open. P9.10 removes authored hub activity and corrects parked/failed stage states;
 PR248 merged43fffd91,883 tests/zero skips, PR CI45059290921 passes; main
 CI45059533565 and secret scan pass. v0.11.5 pins43fffd91; run45059723049
-succeeded. Hub/stage UI acceptance awaits customer login after the logout test.
+succeeded. P9.10 authenticated hub/stage acceptance passes. P9.11 corrects
+shell/overview fake traffic fallback and unknown health/gap counts; not deployed.
 No platform configuration changed.
 Legacy retirement, cross-product logout and real business acceptance remain open.
 Original bootstrap statements are historical. Owner scope

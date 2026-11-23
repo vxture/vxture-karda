@@ -31,7 +31,8 @@
 | P9.7 | 自动加工调度、真实任务详情 | 自动调度及真实详情通过，embed上游阻塞 | PR242 / 5b37bd83；真实原件无重传；不声明索引通过 |
 | P9.8 | 加工阶段真实回执 | v0.11.4已部署，真实回执通过至embed暂停 | PR245/c882fa5；881项测试零跳过，全部CI通过；不新增DDL、不改列权限 |
 | P9.9 | 页面退出POST与303跳转 | v0.11.4已部署，客户退出与运维隔离通过 | PR246/2360240；883项测试零跳过；跨产品及后端退出另行验收 |
-| P9.10 | 生产Agent面板去演示、暂停/失败阶段区分 | v0.11.5已部署，登录后页面验收待完成 | 固定43fffd91；run45059723049成功；883项测试零跳过 |
+| P9.10 | 生产Agent面板去演示、暂停/失败阶段区分 | v0.11.5已部署，已登录页面及API验收通过 | 固定43fffd91；run45059723049成功；883项测试零跳过 |
+| P9.11 | 外壳/总览真实零流量与未知指标 | 实现及验证中，未部署 | 空账本不启用演示；未测量指标null；不从零流量推导健康状态 |
 
 顺序代表实施主线，不要求为做页面而等待所有商业决策；独立的只读核查可交错推进。若拆 PR，采用 Pn.1/Pn.2 子批次，保留主批次号，不悄悄缩小验收范围。生产推广应按验证过的候选和上线风险分阶段规划，不因表内编号自动发版。
 
@@ -516,3 +517,25 @@ requested; do not bypass it or manufacture live shell/task acceptance.
 Atlas issue147 remains OPEN with no new recovery evidence at this check.
 Existing private fixture retained; no duplicate upload or manual AI replay.
 No DDL, server variables, platform source or routing changes in this delivery.
+
+### P9.10 authenticated acceptance / P9.11 - 2026-11-23
+
+Customer login restored. Production task page and API agree: fetch/parse/chunk
+are done, embed is suspended/upstream_account_refused, commit remains todo.
+Latest observed run starts2026-11-23T01:20:12.133Z and ends01:20:13.203Z.
+Resumed stage openings precede this run, so durations are correctly omitted.
+Agent API: pending0,proposals[],alert=null,activity[],demo=false. Page shows
+empty review/activity states; authored conflict/verification/activity/delegation
+and unverified duty indicator are absent. P9.10 accepted in production.
+Screenshot: output/acceptance-20261122/v0115-task-paused-clean-hub.jpg.
+Atlas recovery, indexing, grounded answers and AI/C3 success remain unproven.
+
+Shell API exposes an additional local defect: one real library but attention4,
+traffic1204 today/48392 total and evaluation gaps10, all authored fallback.
+P9.11 switches production shell/overview traffic unconditionally to existing
+workspace-scoped supply readers: empty rows are real zeros, read failures do
+not fall back to examples. Unmeasured shell health/degraded/evaluation-gap
+counts become null and their badges are omitted, not presented as healthy zero.
+Offline demos remain. Existing authored per-asset ops on overview retain demoOps
+provenance and are outside this focused summary fix. No AI/provider call, new
+DDL, auth change, platform configuration or server variable change.

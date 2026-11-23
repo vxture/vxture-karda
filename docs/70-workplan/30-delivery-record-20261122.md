@@ -793,3 +793,25 @@ requested; do not bypass it or manufacture live shell/task acceptance.
 Atlas issue147 remains OPEN with no new recovery evidence at this check.
 Existing private fixture retained; no duplicate upload or manual AI replay.
 No DDL, server variables, platform source or routing changes in this delivery.
+
+### P9.10 authenticated acceptance / P9.11 - 2026-11-23
+
+Customer login restored. Production task page and API agree: fetch/parse/chunk
+are done, embed is suspended/upstream_account_refused, commit remains todo.
+Latest observed run starts2026-11-23T01:20:12.133Z and ends01:20:13.203Z.
+Resumed stage openings precede this run, so durations are correctly omitted.
+Agent API: pending0,proposals[],alert=null,activity[],demo=false. Page shows
+empty review/activity states; authored conflict/verification/activity/delegation
+and unverified duty indicator are absent. P9.10 accepted in production.
+Screenshot: output/acceptance-20261122/v0115-task-paused-clean-hub.jpg.
+Atlas recovery, indexing, grounded answers and AI/C3 success remain unproven.
+
+Shell API exposes an additional local defect: one real library but attention4,
+traffic1204 today/48392 total and evaluation gaps10, all authored fallback.
+P9.11 switches production shell/overview traffic unconditionally to existing
+workspace-scoped supply readers: empty rows are real zeros, read failures do
+not fall back to examples. Unmeasured shell health/degraded/evaluation-gap
+counts become null and their badges are omitted, not presented as healthy zero.
+Offline demos remain. Existing authored per-asset ops on overview retain demoOps
+provenance and are outside this focused summary fix. No AI/provider call, new
+DDL, auth change, platform configuration or server variable change.

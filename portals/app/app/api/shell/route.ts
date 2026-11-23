@@ -7,15 +7,13 @@ import { DEMO_EVALUATION } from "../../kb/demo/evaluation-demo";
 import { readCorpus } from "../../kb/governance/corpus-read";
 import type { ShellData } from "../../kb/demo/shell-types";
 import { readWorkspaceKarda, emptyWorkspaceKarda } from "../../kb/assertions/workspace-read";
-import { readSupply, hasSupplyTraffic, readAllTimeSupply } from "../../kb/tools/supply-read";
+import { readSupply, readAllTimeSupply } from "../../kb/tools/supply-read";
 import { readTasks } from "../../kb/processing/task-read";
 
 // GET /api/shell - everything the portal chrome needs in one round trip: the
 // 导航栏 card summaries, the header badge count, the 智枢 payload.
-// Asset/entry counts and the 7-day intake are live when a DB is attached; ops
-// figures stay the demo overlay (demoOps: true) until the supply ledger and
-// pipeline land - derived from the same demo constants as /api/overview and
-// /api/pipeline so the chrome can never disagree with the pages it frames.
+// Production counts come from workspace-scoped read models, including zeros.
+// Unmeasured health and evaluation figures are null; demos require no database.
 export const dynamic = "force-dynamic";
 
 const S = DEMO_TOTALS_OPS.agent;
@@ -80,17 +78,13 @@ export async function GET(): Promise<Response> {
   const listed = topAssets.reduce((n, a) => n + a.entries, 0);
   const rest = Math.max(0, entryCount - listed);
   const restCount = Math.max(0, assetCount - topAssets.length);
-  // Problem figure for the asset domain: assets the overview page paints as
-  // 需关注 / 有缺口 (health is the demo ops overlay, so this one stays there
-  // even when the counts above go live).
-  const needsAttention = DEMO_ASSETS.filter(
+  // No measured health source: unknown is not zero and never a demo count.
+  const needsAttention = prismaEnabled() ? null : DEMO_ASSETS.filter(
     (a) => a.ops.health === "attention" || a.ops.health === "gap",
   ).length;
 
-  const evalGaps = DEMO_EVALUATION.sets.reduce((n, s) => n + s.gaps, 0);
-  // The 验证评测 card reads the SAME corpus function /api/evaluation reads, so
-  // the card and the page it frames cannot report different coverage. `gaps`
-  // stays demo - it comes from the evaluation sets, which have no runner yet.
+  const evalGaps = prismaEnabled() ? null : DEMO_EVALUATION.sets.reduce((n, s) => n + s.gaps, 0);
+  // Corpus coverage is measured; evaluation gaps have no runner yet.
   const V = prismaEnabled()
     ? await readCorpus(auth.user.activeWorkspace)
     : DEMO_EVALUATION.verification;
@@ -101,11 +95,9 @@ export async function GET(): Promise<Response> {
     ? await readWorkspaceKarda(auth.user.activeWorkspace ?? "")
     : { ...emptyWorkspaceKarda(), pending: S.pending };
 
-  // 供给与加工的卡片数字与各自域页同一读模型——chrome 不能和它框着的页面唱反调。
-  // 供给按「有过真流量才转真」的页级开关走(supply-read 里那条注释);任务账本
-  // 没有这个问题——它一直在写,直接读。
   const ws = auth.user.activeWorkspace ?? "";
-  const supplyLive = prismaEnabled() ? await hasSupplyTraffic(ws) : false;
+  // An empty production ledger is real zero traffic, never a demo-mode switch.
+  const supplyLive = prismaEnabled();
   const [supply, allTime] = supplyLive
     ? await Promise.all([readSupply(ws), readAllTimeSupply(ws)])
     : [null, null];
@@ -122,8 +114,8 @@ export async function GET(): Promise<Response> {
           directTotal: allTime.directTotal,
           runosTotal: allTime.runosTotal,
           deltaPct: supply.totals.deltaPct,
-          // 降级数是登记侧的判断(通道注册状态),不是账本事实——保持登记口径。
-          degraded: 1,
+          // Registration health is unmeasured; do not invent a degraded channel.
+          degraded: null,
         }
       : {
           directCalls: DEMO_TOTALS_OPS.directCalls,
@@ -183,7 +175,7 @@ export async function GET(): Promise<Response> {
         { time: "13:41", agent: "anlan", text: "查「华东区验收纪要」未命中 → 记为缺口" },
       ],
     },
-    // demoOps 指供给叙事(首页脚注说的就是它);账本有过真流量即撤。
+    // Authored shell figures are confined to offline mode.
     demoOps: !supplyLive,
   };
   return NextResponse.json(data, { headers: { "Cache-Control": "no-store" } });

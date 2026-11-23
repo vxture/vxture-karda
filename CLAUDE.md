@@ -58,8 +58,9 @@ Cross-product/back-channel logout and permission-message delivery still need rea
 acceptance. P9.10 corrects parked/failed detail states and removes authored Agent
 activity/proposals from the production hub; PR248 merged as43fffd91. PR CI passes
 883 tests/zero skips; main CI45059533565 and secret scan also pass. v0.11.5
-pins43fffd91; run45059723049 succeeded. Readiness passes; authenticated
-hub/stage UI acceptance awaits customer login after the prior logout test.
+pins43fffd91; run45059723049 succeeded. Readiness and authenticated P9.10 hub/stage acceptance pass: embed is paused,
+Agent proposals/activity empty and demo=false. P9.11 fixes shell/overview demo
+traffic fallback and unknown health/gap counts; not deployed.
 Legacy-host retirement remains platform issue727. See the batch tracker.
 
 Owner scope: modify Karda only; report platform gaps as detailed issues. Do not

@@ -452,8 +452,8 @@ interface Signal {
  * danger 压过 warning——前者是坏了,后者是等人判断,先修坏的。
  */
 function signalFor(itemKey: string, shell: ShellData, m: Msgs, ch: ChMsgs, ev: EvMsgs, f: Fmt): Signal | null {
-  const pick = (candidates: Signal[]): Signal | null => {
-    const live = candidates.filter((c) => c.count > 0);
+  const pick = (candidates: (Omit<Signal, "count"> & { count: number | null })[]): Signal | null => {
+    const live = candidates.filter((c): c is Signal => c.count !== null && c.count > 0);
     return live.find((c) => c.tone === "danger") ?? live[0] ?? null;
   };
   switch (itemKey) {
@@ -732,7 +732,7 @@ export function DomainCard({ item, shell }: { item: DomainNavItem; shell: ShellD
             unit="%"
             label={m.verifyCoverage}
             aside={
-              shell.evaluation.gaps > 0 ? (
+              shell.evaluation.gaps !== null && shell.evaluation.gaps > 0 ? (
                 <Pill text={`${ev.gapsLabel} ${shell.evaluation.gaps}`} tone="danger" />
               ) : undefined
             }

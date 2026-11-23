@@ -26,7 +26,7 @@ export interface ShellData {
     /** Growth: entries added over the last 7 days. */
     weeklyNew: number;
     /** Problem: assets whose health is not clean (需关注 / 有缺口). */
-    needsAttention: number;
+    needsAttention: number | null;
     /**
      * 知识**落在哪些资产上** —— 按条目数降序的前几个,外加一条把长尾并起来的
      * 「其余」。
@@ -58,7 +58,7 @@ export interface ShellData {
     directTotal: number;
     runosTotal: number;
     /** Problem: channels serving degraded (or not serving at all). */
-    degraded: number;
+    degraded: number | null;
     // 这里曾经有过一份 `topConsumers`(在服务谁)。撤掉了(owner 2026-08-29):它是我
     // 为了填卡片下半截的空白加的,而**为了填空加的东西,填完就该被质疑**——消费方榜
     // 在供给通道域页面上有完整的一份,卡片复述一遍只会把卡撑高。
@@ -82,7 +82,7 @@ export interface ShellData {
     unverified: number;
     coveragePct: number;
     /** Problem: coverage gaps the evaluation sets surfaced. */
-    gaps: number;
+    gaps: number | null;
   };
   /**
    * **Karda Super Agent(卡尔达)的那一份 payload** —— 智枢里显示的东西。
