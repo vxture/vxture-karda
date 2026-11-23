@@ -38,6 +38,10 @@ export function middleware(req: NextRequest): NextResponse {
   // misconfiguration instead, where an operator can see it.
   if (process.env.OIDC_RP_ENABLED !== "on") return NextResponse.next();
 
+  // These exact information pages enforce their own access, if any.
+  const path = req.nextUrl.pathname;
+  if (path === "/status" || path === "/entitlement-matrix") return NextResponse.next();
+
   if (req.cookies.has(sessionCookieName())) return NextResponse.next();
 
   const gate = new URL("/gate", req.url);

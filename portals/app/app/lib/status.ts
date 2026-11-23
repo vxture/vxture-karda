@@ -1,131 +1,36 @@
-import { BRAND } from "@karda/shared/brand";
-import { serviceIdentity } from "@vxture/shared";
-
-// Integration-status surface (the /status dashboard + /api/status). Summarizes
-// ALL platform-integration config for at-a-glance inspection.
-//
-// HARD RULE: never emit a secret VALUE. Secrets are reported as a presence
-// boolean only (`*Configured`); identifiers (issuer, client_id, urls, db
-// host/name/role) are non-secret. A DATABASE_URL is parsed for host/db/role and
-// the password is dropped. The no-leak invariant is covered by status.test.ts.
-
 export type StatusMode = "off" | "public" | "authed";
 
-type Env = Record<string, string | undefined>;
-
-export function statusMode(env: Env): StatusMode {
-  const m = (env.STATUS_PAGE ?? "public").toLowerCase();
-  return m === "off" || m === "authed" ? m : "public";
+export function statusMode(env: Record<string, string | undefined>): StatusMode {
+  const mode = (env.STATUS_PAGE ?? "public").toLowerCase();
+  return mode === "off" || mode === "authed" ? mode : "public";
 }
 
-export interface DbInfo {
-  configured: boolean;
-  host?: string;
-  db?: string;
-  role?: string;
-  reachable?: boolean | null;
-}
-export interface RedisInfo {
-  configured: boolean;
-  host?: string;
-  reachable?: boolean | null;
+export interface PublicStatus {
+  status: "operational" | "degraded" | "unavailable";
+  updatedAt: string;
 }
 
-export interface IntegrationStatus {
-  identity: { productCode: string; gitSha: string; appEnv: string; time: string };
-  c1: {
-    enabled: boolean;
-    issuer: string | null;
-    clientId: string | null;
-    redirectUri: string | null;
-    scopes: string | null;
-    cookieName: string | null;
-    clientSecretConfigured: boolean;
-  };
-  c2: {
-    resolver: "platform" | "mock" | "unconfigured";
-    platformApiConfigured: boolean;
-    serviceIdentityConfigured: boolean;
-    consoleUrl: string | null;
-    cacheTtlMs: number;
-  };
-  c3: {
-    webhookSecretConfigured: boolean;
-    webhookRotationConfigured: boolean;
-    internalJobTokenConfigured: boolean;
-  };
-  data: { database: DbInfo; redis: RedisInfo };
-  showInfra: boolean;
-}
+type PrepareStatus = () => Promise<{ database: boolean; redis: boolean; storage: boolean }>;
 
-/** Parse the NON-SECRET parts of a postgres URL. The password is never returned. */
-export function parseDbUrl(url: string | undefined): { host?: string; db?: string; role?: string } | null {
-  if (!url) return null;
-  try {
-    const u = new URL(url);
-    return {
-      host: u.hostname || undefined,
-      db: u.pathname.replace(/^\//, "") || undefined,
-      role: decodeURIComponent(u.username) || undefined,
-    };
-  } catch {
-    return null;
-  }
-}
+// One refresh per interval per app process, shared by the HTML page and API.
+// No timer runs in the background, and simultaneous requests share a refresh.
+export function createStatusReader(check: PrepareStatus, ttl = 30_000, now = Date.now) {
+  let cached: { value: PublicStatus; expiresAt: number } | undefined;
+  let pending: Promise<PublicStatus> | undefined;
 
-function redisHost(url: string | undefined): string | undefined {
-  if (!url) return undefined;
-  try {
-    return new URL(url).hostname || undefined;
-  } catch {
-    return undefined;
-  }
-}
+  return (): Promise<PublicStatus> => {
+    if (cached && now() < cached.expiresAt) return Promise.resolve(cached.value);
+    if (pending) return pending;
 
-export function buildStatus(env: Env, now: string): IntegrationStatus {
-  const showInfra = (env.STATUS_SHOW_INFRA ?? "on").toLowerCase() !== "off";
-  const db = parseDbUrl(env.DATABASE_URL);
-  return {
-    identity: {
-      productCode: BRAND.productCode,
-      gitSha: serviceIdentity({ service: `${BRAND.productCode}-app`, product: BRAND.productCode }).gitSha,
-      appEnv: env.NEXT_PUBLIC_APP_ENV ?? env.NODE_ENV ?? "unknown",
-      time: now,
-    },
-    c1: {
-      enabled: env.OIDC_RP_ENABLED === "on",
-      issuer: env.OIDC_ISSUER ?? null,
-      clientId: env.OIDC_CLIENT_ID ?? null,
-      redirectUri: env.OIDC_REDIRECT_URI ?? null,
-      scopes: env.OIDC_SCOPES ?? null,
-      cookieName: env.RP_SESSION_COOKIE_NAME ?? null,
-      clientSecretConfigured: Boolean(env.OIDC_CLIENT_SECRET),
-    },
-    c2: {
-      resolver: env.PLATFORM_API_URL && env.OIDC_CLIENT_SECRET ? "platform"
-        : env.DEPLOY_STAGE === "production" || env.DEPLOY_STAGE === "beta" ? "unconfigured" : "mock",
-      platformApiConfigured: Boolean(env.PLATFORM_API_URL),
-      serviceIdentityConfigured: Boolean(env.OIDC_CLIENT_SECRET),
-      consoleUrl: env.NEXT_PUBLIC_CONSOLE_URL ?? null,
-      cacheTtlMs: 45_000,
-    },
-    c3: {
-      webhookSecretConfigured: Boolean(env.PROVISION_WEBHOOK_SECRET),
-      webhookRotationConfigured: Boolean(env.PROVISION_WEBHOOK_SECRET_NEXT),
-      internalJobTokenConfigured: Boolean(env.INTERNAL_JOB_TOKEN),
-    },
-    data: {
-      database: {
-        configured: Boolean(env.DATABASE_URL),
-        ...(showInfra && db ? { host: db.host, db: db.db, role: db.role } : {}),
-        reachable: null,
-      },
-      redis: {
-        configured: Boolean(env.REDIS_URL),
-        ...(showInfra ? { host: redisHost(env.REDIS_URL) } : {}),
-        reachable: null,
-      },
-    },
-    showInfra,
+    pending = Promise.resolve().then(check).then(({ database, redis, storage }): PublicStatus["status"] =>
+      database && redis && storage ? "operational" : database || redis ? "degraded" : "unavailable",
+    ).catch((): PublicStatus["status"] => "unavailable").then((status) => {
+      const checkedAt = now();
+      const value = { status, updatedAt: new Date(checkedAt).toISOString() };
+      cached = { value, expiresAt: checkedAt + ttl };
+      return value;
+    }).finally(() => { pending = undefined; });
+
+    return pending;
   };
 }

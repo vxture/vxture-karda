@@ -1,5 +1,5 @@
 // Short-timeout dependency probes, shared by the two surfaces that may touch
-// dependencies: /api/status (config presence + reachability, gated) and
+// dependencies: /api/status (cached service summary) and
 // /api/ready (readiness, 025 §2). Extracted from the status route so the two
 // cannot drift into different timeout or failure semantics.
 //

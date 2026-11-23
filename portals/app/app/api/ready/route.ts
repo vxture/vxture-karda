@@ -14,7 +14,7 @@ import { probeStorageConfiguration } from "../../kb/storage/config";
 // 面不可能漂出两套超时语义。
 //
 // 不鉴权:身份块是可公开信息(025 §3),checks 只有 ok/fail/off 三个词——比一次
-// 失败的页面加载泄露的还少。/api/status 上锁是因为它报配置在位细节,不同一档。
+// 失败的页面加载泄露的还少。/api/status 只公开缓存的状态摘要。
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
