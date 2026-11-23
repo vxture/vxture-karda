@@ -3,6 +3,8 @@
 ## Current integration closure - 2026-11-23
 
 Current authority: [I0-I6 integration closure](70-integration-closure-20261123.md).
+Progress:I0 COMPLETE;I1/I2/I5 IN PROGRESS-PARTIAL;I3 PARTIAL/EXTERNAL BLOCK;
+I4 EXTERNAL BLOCK;I6 NOT COMPLETE. See the explicit completed/open checklist.
 Production:v0.11.8/01e7065a,approved run45119134160 succeeded after DDL0015.
 Canonical readiness passes; four public plans published,annual10months,Free
 retired. Owner admission/roster accepted; prior logout/workforce isolation,
