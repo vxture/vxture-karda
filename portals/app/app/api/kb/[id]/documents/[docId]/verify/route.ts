@@ -16,7 +16,7 @@ import { mayVerify } from "../../../../../../kb/api/may-verify";
 export const dynamic = "force-dynamic";
 
 export async function POST(_req: Request, ctx: { params: Promise<{ id: string; docId: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.write");
   if (!auth.ok) return auth.response;
   const { id, docId } = await ctx.params;
 

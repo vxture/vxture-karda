@@ -7,11 +7,8 @@
 // user whose sub matches the library's owner_sub, not anyone the token calls an
 // owner.
 //
-// So "owner" is resolved against the row, and only the admin roles come from the
-// token. Getting this backwards - treating a workspace:owner as the library's
-// owner - would let any workspace admin edit any user's private library as if
-// they wrote it, which is exactly the write-vs-visibility distinction KD-003
-// turns on.
+// Personal ownership is resolved against the row. Product administration comes
+// only from explicit local product roles, never platform governance claims.
 import type { AuthUser } from "../../auth/lib/claims";
 import { isWorkspaceOwner, canManageWorkspace } from "../../auth/lib/claims";
 import type { Actor, KbOwnership } from "../lib/ownership";
@@ -27,11 +24,10 @@ export function actorForKb(user: AuthUser, kb: KbOwnership): Actor {
   if (kb.ownerType === "user" && kb.ownerSub === user.sub) {
     return { role: "owner", sub: user.sub };
   }
-  // org_admin: a workspace owner is the org-wide administrator baseline
-  // (080-rp: workspace:owner is the super-admin for everything under it).
-  if (isWorkspaceOwner(user.roles)) return { role: "org_admin" };
+  // A locally assigned product owner has product-wide management scope.
+  if (user.productAccess?.roles.includes("owner")) return { role: "org_admin" };
   // ws_admin: manages members/roles/settings in the workspace.
-  if (canManageWorkspace(user.roles)) return { role: "ws_admin" };
+  if (user.productAccess?.roles.includes("administrator")) return { role: "ws_admin" };
   return { role: "member" };
 }
 

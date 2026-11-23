@@ -33,7 +33,7 @@ import { requireAuth } from "../../../../../../kb/api/http";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request, ctx: { params: Promise<{ id: string; docId: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.export");
   if (!auth.ok) return auth.response;
   const { id, docId } = await ctx.params;
 

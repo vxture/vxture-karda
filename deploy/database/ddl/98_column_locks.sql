@@ -256,3 +256,16 @@ GRANT SELECT, INSERT ON karda_kb.storage_watermark TO karda_svc;
 GRANT UPDATE (value, observed_at, pending, attempts, retry_at) ON karda_kb.storage_watermark TO karda_svc;
 GRANT SELECT, INSERT ON karda_kb.stored_object TO karda_svc;
 GRANT UPDATE (state, retain_until, attempts, retry_at, updated_at) ON karda_kb.stored_object TO karda_svc;
+
+-- Explicit product-role grant boundary.
+
+GRANT USAGE ON SCHEMA local_authz TO karda_svc;
+GRANT SELECT, INSERT ON local_authz.member TO karda_svc;
+GRANT SELECT, INSERT, DELETE ON local_authz.member_role, local_authz.owner_anchor TO karda_svc;
+REVOKE DELETE ON local_authz.member FROM karda_svc;
+GRANT SELECT, INSERT ON local_authz.role_audit TO karda_svc;
+GRANT SELECT ON local_authz.role, local_authz.permission, local_authz.role_permission TO karda_svc;
+REVOKE INSERT, UPDATE, DELETE ON local_authz.role, local_authz.permission, local_authz.role_permission FROM karda_svc;
+REVOKE UPDATE ON local_authz.member, local_authz.member_role, local_authz.owner_anchor FROM karda_svc;
+GRANT UPDATE (display_name, avatar_hash, status, updated_at) ON local_authz.member TO karda_svc;
+REVOKE UPDATE, DELETE ON local_authz.role_audit FROM karda_svc;

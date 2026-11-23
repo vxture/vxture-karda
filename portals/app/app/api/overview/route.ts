@@ -89,7 +89,7 @@ function totalsFor(assets: OverviewAsset[]): OverviewData["totals"] {
 }
 
 export async function GET(): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.read");
   if (!auth.ok) return auth.response;
 
   if (!prismaEnabled()) {

@@ -22,7 +22,7 @@ const S = DEMO_TOTALS_OPS.agent;
 const TOP_ASSETS = 4;
 
 export async function GET(): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.read");
   if (!auth.ok) return auth.response;
 
   // Offline baseline: the SAME reduction /api/overview does over DEMO_ASSETS,

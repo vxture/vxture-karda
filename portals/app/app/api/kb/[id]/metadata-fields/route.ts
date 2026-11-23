@@ -53,7 +53,7 @@ function budget(fields: MetadataFieldDecl[]) {
 }
 
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.read");
   if (!auth.ok) return auth.response;
   const { id } = await ctx.params;
   if (!(await scopedKbId(id, auth.user.activeWorkspace))) {
@@ -90,7 +90,7 @@ function parseFields(raw: unknown): MetadataFieldDecl[] | null {
 }
 
 export async function PUT(req: Request, ctx: { params: Promise<{ id: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.write");
   if (!auth.ok) return auth.response;
   const { id } = await ctx.params;
   if (!(await scopedKbId(id, auth.user.activeWorkspace))) {

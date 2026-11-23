@@ -68,6 +68,7 @@ export interface Doc {
 // they are kept out of the access token, so the token-derived session only knows
 // the opaque sub, the active workspace, and the scope-prefixed roles.
 export interface SessionUser {
+  productAccess?: import("../authz/policy").ProductAccess;
   sub: string;
   activeWorkspace?: string | null;
   activeOrg?: string | null;

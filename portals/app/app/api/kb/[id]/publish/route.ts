@@ -18,7 +18,7 @@ function service() {
 }
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("service.publish");
   if (!auth.ok) return auth.response;
   const { id } = await ctx.params;
 

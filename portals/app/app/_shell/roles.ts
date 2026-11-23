@@ -7,4 +7,7 @@ export const ROLE_LABEL_KEY = {
   owner: "roleOwner",
   admin: "roleAdmin",
   member: "roleMember",
+  readonly: "roleReadonly",
+  guest: "roleGuest",
+  none: "roleNone",
 } as const satisfies Record<SessionRole, keyof typeof shell>;

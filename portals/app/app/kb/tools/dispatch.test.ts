@@ -10,6 +10,7 @@ const oboCaller = (over: Partial<CallerContext> = {}): CallerContext => ({
   workspace: "ws_1",
   user: "usr_1",
   mode: "obo",
+  productAccess: {roles:["member"],permissions:["product.enter","data.read","data.write","ai.use"]},
   ...over,
 });
 const serviceCaller = (over: Partial<CallerContext> = {}): CallerContext =>
@@ -93,4 +94,15 @@ test("durable query usage failure returns a sanitized unavailable result on both
     assert.equal(result.status, 503);
     assert.deepEqual(result.body, { error: "usage_unavailable" });
   }
+});
+
+test("OBO readonly cannot write or ask and missing product roles cannot read",async()=>{
+ const fail=async()=>{assert.fail("denied tool must never execute backend");};
+ const readonly={roles:["readonly" as const],permissions:["product.enter" as const,"data.read" as const]};
+ const b=backends({ask:fail,createKb:fail,listKbs:fail});
+ for(const name of ["karda.ask","karda.search","karda.create_kb"]){
+  assert.equal((await dispatchTool(name,{},oboCaller({productAccess:readonly}),b)).status,403);
+ }
+ assert.equal((await dispatchTool("karda.list_kbs",{},oboCaller({productAccess:undefined}),b)).status,403);
+ assert.equal((await dispatchTool("karda.list_kbs",{},oboCaller({productAccess:{roles:["guest"],permissions:["product.enter","guest.read"]}}),b)).status,403);
 });

@@ -833,3 +833,23 @@ model StoredObject {
   @@map("stored_object")
   @@schema("karda_kb")
 }
+
+model OwnerAnchor {
+  workspace_id String @id @db.Uuid
+  member_id String @unique @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz()
+  @@map("owner_anchor")
+  @@schema("local_authz")
+}
+model RoleAudit {
+  id String @id @default(uuid()) @db.Uuid
+  workspace_id String @db.Uuid
+  actor_sub String @db.VarChar(128)
+  target_sub String @db.VarChar(128)
+  action String @db.VarChar(64)
+  roles_before Json
+  roles_after Json
+  created_at DateTime @default(now()) @db.Timestamptz()
+  @@map("role_audit")
+  @@schema("local_authz")
+}

@@ -1,4 +1,5 @@
 "use client";
+import { permits } from "../authz/policy";
 import { useEffect, useState } from "react";
 import { isThrough, type AccessState } from "../access/types";
 import { parseAccessEvent } from "./protocol";
@@ -9,6 +10,7 @@ export function useAccessEvents() {
   const [context, setContext] = useState("initial");
   const [recovering, setRecovering] = useState(false);
   const [blocked, setBlocked] = useState(false);
+  const [canRead,setCanRead]=useState(true);
   useEffect(() => {
     const lifetime = new AbortController();
     let connection: AbortController | null = null;
@@ -32,6 +34,8 @@ export function useAccessEvents() {
           const state = await response.json() as AccessState;
           if (lifetime.signal.aborted || terminal) return;
           if (!isThrough(state)) { leave(); return; }
+          setCanRead(state.status === "open" || state.status === "authenticated" && permits(state.user.productAccess,"data.read"));
+          setContext(JSON.stringify([scope,revision]));
           setRecovering(false);
         }
       } catch { if (!lifetime.signal.aborted) { setRecovering(true); dirty = true; connection?.abort(); } }
@@ -63,7 +67,6 @@ export function useAccessEvents() {
             if (event.type === "revoked") { leave(); return; }
             const changed = revision !== event.revision || scope !== event.context;
             revision = event.revision; scope = event.context;
-            setContext(event.context);
             if (changed || dirty) void check(); else setRecovering(false);
           }
         }
@@ -76,5 +79,5 @@ export function useAccessEvents() {
     void connect();
     return () => { lifetime.abort(); connection?.abort(); clearTimeout(retry); };
   }, []);
-  return { context, recovering, blocked };
+  return { context, recovering, blocked, canRead };
 }

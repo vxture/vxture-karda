@@ -1,3 +1,4 @@
+import { permits } from "../../authz/policy";
 import { UsagePersistenceError } from "../../usage/lib/buffer";
 // Tool dispatch: given an authenticated caller and a tool name + args, enforce
 // the mode gate, then route. The gate runs BEFORE any backend check, so a
@@ -86,6 +87,10 @@ async function dispatchUnchecked(
     return accessDenied("this tool requires a user identity");
   }
 
+  if(caller.mode === "obo") {
+    const permission=(name==="karda.ask"||name==="karda.search")?"ai.use":tool.mode==="obo_only"?"data.write":"data.read";
+    if(!permits(caller.productAccess,permission)) return accessDenied("product permission required");
+  }
   const ws = caller.workspace;
   if (!ws) return { status: 400, body: { error: "no_workspace", detail: "token carries no workspace" } };
 

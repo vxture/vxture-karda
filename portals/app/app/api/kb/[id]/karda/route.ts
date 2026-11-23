@@ -15,7 +15,7 @@ import { readLibraryKarda } from "../../../../kb/assertions/library-read";
 export const dynamic = "force-dynamic";
 
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.read");
   if (!auth.ok) return auth.response;
   const { id } = await ctx.params;
   const kb = await new KbService(getKbStore()).get(id);

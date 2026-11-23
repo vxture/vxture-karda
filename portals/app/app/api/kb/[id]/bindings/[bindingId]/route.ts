@@ -40,7 +40,7 @@ async function scoped(id: string, bindingId: string, user: AuthUser & { activeWo
 }
 
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string; bindingId: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.read");
   if (!auth.ok) return auth.response;
   const { id, bindingId } = await ctx.params;
   const s = await scoped(id, bindingId, auth.user);
@@ -49,7 +49,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string; bi
 }
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string; bindingId: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.write");
   if (!auth.ok) return auth.response;
   const { id, bindingId } = await ctx.params;
   const s = await scoped(id, bindingId, auth.user);

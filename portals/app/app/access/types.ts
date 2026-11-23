@@ -31,6 +31,7 @@ export type AccessState =
    */
   | { status: "inactive-account" }
   | { status: "product-unassigned" }
+  | { status: "role-required" }
   /**
    * Signed in with no active workspace. Re-authenticating cannot add one, so
    * the way out is the console, not the login page.

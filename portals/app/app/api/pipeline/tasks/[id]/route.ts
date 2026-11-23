@@ -12,7 +12,7 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.read");
   if (!auth.ok) return auth.response;
   const { id } = await params;
   if (!prismaEnabled()) return NextResponse.json({ ...DEMO_TASK_DETAIL, id });

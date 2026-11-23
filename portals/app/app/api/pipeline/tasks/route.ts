@@ -28,7 +28,7 @@ function depthPct(queued: number, max: number): number {
 }
 
 export async function GET(): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.read");
   if (!auth.ok) return auth.response;
 
   if (!prismaEnabled()) {

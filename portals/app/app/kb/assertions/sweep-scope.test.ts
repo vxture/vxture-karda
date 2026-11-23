@@ -29,7 +29,7 @@ test("the governance sweep passes the workspace's OWN scope, never `all`", () =>
   // ungrounded sweep rides the same endpoint and has to inherit it, or one
   // tenant pressing a button tombstones every other tenant's assertions.
   const route = readFileSync("app/api/kb/governance/sweep/route.ts", "utf8");
-  const userHalf = route.slice(route.indexOf("const auth = await requireAuth()"));
+  const userHalf = route.slice(route.indexOf("const auth = await requireAuth(\"product.manage\")"));
   assert.match(userHalf, /sweepUngrounded\(scope\)/);
   assert.doesNotMatch(userHalf, /sweepUngrounded\("all"\)/);
 });

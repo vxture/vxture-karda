@@ -29,7 +29,7 @@ async function scoped(
 }
 
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.read");
   if (!auth.ok) return auth.response;
   const { id } = await ctx.params;
   const kb = await scoped(id, auth.user);
@@ -38,7 +38,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
 }
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.write");
   if (!auth.ok) return auth.response;
   const { id } = await ctx.params;
   const kb = await scoped(id, auth.user);
@@ -87,7 +87,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 }
 
 export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.write");
   if (!auth.ok) return auth.response;
   const { id } = await ctx.params;
   const kb = await scoped(id, auth.user);

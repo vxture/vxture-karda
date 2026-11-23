@@ -19,7 +19,7 @@ import { requireAuth } from "../../../../kb/api/http";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("product.manage");
   if (!auth.ok) return auth.response;
 
   if (!prismaEnabled()) {

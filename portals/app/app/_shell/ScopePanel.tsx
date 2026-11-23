@@ -57,6 +57,7 @@ export function ScopePanel({ user }: { user: SessionUser | null }) {
           <ShellPanelRow label={m.accountId} value={user?.sub ?? m.signedOut} />
         </ShellPanelSection>
         <ShellPanelSection>
+          {user?.canManage && <ShellPanelRow label={m.productMembers} href="/members" />}
           <ShellPanelRow label={m.newAsset} href="/assets/new" />
           <ShellPanelRow label={m.subBench} href="/bench" />
         </ShellPanelSection>

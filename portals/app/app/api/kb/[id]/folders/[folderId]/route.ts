@@ -24,7 +24,7 @@ async function scoped(id: string, folderId: string, workspaceId: string): Promis
 }
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string; folderId: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.write");
   if (!auth.ok) return auth.response;
   const { id, folderId } = await ctx.params;
   if (!(await scoped(id, folderId, auth.user.activeWorkspace))) {
@@ -43,7 +43,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string; f
 }
 
 export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string; folderId: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.write");
   if (!auth.ok) return auth.response;
   const { id, folderId } = await ctx.params;
 

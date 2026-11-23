@@ -1,3 +1,4 @@
+import { delegatedAccess } from "../../authz/obo";
 // The S2S gateway for the tool surface: verify the token, reject the forbidden
 // credential, and produce a CallerContext - shared by the well-known manifest
 // route and the tool dispatch route so verification lives in exactly one place.
@@ -38,5 +39,12 @@ export async function authenticateS2S(req: Request): Promise<GatewayResult> {
 
   const resolved = callerFromClaims(claims);
   if (!resolved.ok) return { ok: false, status: resolved.status, error: resolved.error };
+  if(resolved.caller.mode === "obo") {
+    try {
+      const access=await delegatedAccess({orgId:resolved.caller.org!,workspaceId:resolved.caller.workspace!,subject:resolved.caller.user!,subjectToken:m[1]},"product.enter");
+      if(!access) return {ok:false,status:403,error:"permission_denied"};
+      resolved.caller.productAccess=access;
+    } catch {return {ok:false,status:503,error:"authority_unavailable"};}
+  }
   return { ok: true, caller: resolved.caller };
 }

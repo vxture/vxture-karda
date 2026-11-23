@@ -1,3 +1,4 @@
+import { permits, type ProductPermission } from "../../authz/policy";
 import { userAdmission } from "../../platform/admission";
 // Shared HTTP plumbing for the kb routes: resolve the session once, and map
 // service errors to status codes in one place so every route answers
@@ -20,7 +21,7 @@ export type Authed =
  * (not 403) is right, because the fix is to authenticate/select a workspace, not
  * to gain permission.
  */
-export async function requireAuth(): Promise<Authed> {
+export async function requireAuth(permission: ProductPermission = "data.read"): Promise<Authed> {
   const cfg = getOidcConfig();
   const jar = await cookies();
 
@@ -45,7 +46,10 @@ export async function requireAuth(): Promise<Authed> {
   }
   try {
     const admission = await userAdmission(user);
-    if (!admission.allowed) return { ok: false, response: NextResponse.json({ error: admission.error }, { status: 403 }) };
+    if (!admission.allowed || !permits(admission.productAccess,permission)) return { ok: false, response: NextResponse.json({ error: admission.allowed ? "permission_denied" : admission.error }, { status: 403 }) };
+    user.productAccess = admission.productAccess;
+    user.canManage = permits(admission.productAccess,"product.manage");
+    user.isWorkspaceOwner = admission.productAccess?.roles.includes("owner") ?? false;
   } catch {
     return { ok: false, response: NextResponse.json({ error: "platform_unavailable" },
       { status: 503, headers: { "Cache-Control": "no-store" } }) };
