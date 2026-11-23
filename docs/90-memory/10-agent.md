@@ -3,8 +3,8 @@
 Start here if you are an AI agent working in this repo.
 
 Current work (2026-11-22): see [platform alignment kickoff](../70-workplan/10-platform-alignment-20261122.md).
-Production is v0.11.4 / 23602404 (approved run45054602507 succeeded November23
-at03:01 CST). Target-domain readiness confirms db/redis/storageConfig ok.
+Production is v0.11.5 / 43fffd91 (approved run45059723049 succeeded November23
+at09:15:12 CST). Target-domain readiness confirms db/redis/storageConfig ok.
 Real fetch/parse/chunk receipts pass; embed parks at upstream_account_refused
 (Atlas issue147), commit not reached. Existing private fixture retained.
 Customer logout now returns task API unauthenticated and Karda login gate;
@@ -14,8 +14,10 @@ C3 observation pass; indexing, grounded answers, AI, search/ask C3 and hash rema
 open. P9.10 removes authored hub activity and corrects parked/failed stage states;
 PR248 merged43fffd91,883 tests/zero skips, PR CI45059290921 passes; main
 CI45059533565 and secret scan pass. v0.11.5 pins43fffd91; run45059723049
-is building/awaiting human production review. No platform configuration changed.
-Legacy retirement, logout and real business acceptance remain open. original bootstrap statements are historical. Owner scope
+succeeded. Hub/stage UI acceptance awaits customer login after the logout test.
+No platform configuration changed.
+Legacy retirement, cross-product logout and real business acceptance remain open.
+Original bootstrap statements are historical. Owner scope
 is Karda-only fixes, platform issues instead of platform source/variable/edge
 changes. Do not copy Arda credentials, commercial quotas or its unimplemented SSE
 design as working code. No new release is implied by the kickoff.
