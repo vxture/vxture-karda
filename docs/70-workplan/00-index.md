@@ -1,26 +1,23 @@
 # 70-workplan - Build plan and batch tracker
 
-## Current remediation - 2026-11-22
+## Current integration closure - 2026-11-23
 
-Ordered batches and live status: [20-rectification-batches-20261122](20-rectification-batches-20261122.md).
-Current production: v0.11.6 / 3ffb891c, approved run45094898500 succeeded.
-Target-domain readiness passes; four public plans published and Free retired.
-Real fetch/parse/chunk receipts pass; embed parks at upstream_account_refused
-(Atlas issue147). Customer logout and workforce isolation pass. Cross-product
-logout, permission messages, indexing, grounded answers, AI/search/ask C3 and
-download hash remain open. Cross-release object read and ingest C3 observed.
-P9.10 production hub demo removal and parked/failed stage states are being
-verified: PR248 merged43fffd91,883 tests/zero skips, PR gates pass. Main CI
-45059533565 and secret scan pass. v0.11.5 deployed; authenticated P9.10 hub/stage UI
-acceptance passes. P9.11 shell/overview summary correction PR251
-merged3ffb891c; PR CI45094482028 passes883 tests/zero skips; deployed and accepted. Old-host retirement remains platform issue727.
-P9.11 main CI45094710951 and secret scan45094710966 pass;883 tests/zero skips.
-v0.11.6 pins3ffb891c; run45094898500 succeeded. Authenticated shell/overview
-and home pass: real zero traffic, unknown metrics null, no fabricated warnings.
-Overview per-asset authored ops retain demoOps provenance; wider demo cleanup
-and remaining business acceptance are not covered by P9.11.
+Current authority: [I0-I6 integration closure](70-integration-closure-20261123.md).
+Production:v0.11.8/01e7065a,approved run45119134160 succeeded after DDL0015.
+Canonical readiness passes; four public plans published,annual10months,Free
+retired. Owner admission/roster accepted; prior logout/workforce isolation,
+Arda-to-Karda idle logout and original-download hash evidence retained.
+Synthetic member/role revocation,full visibility trace,live message recovery,
+OBO and remaining C2/C3/gauge/lifecycle checks remain open.
+
+Owner excludes old ingestion/index/retrieval/answer work for reconstruction.
+Mark old unfinished functions reconstruction-replaced,not accepted. Atlas147
+remains external history,not a current integration closure blocker. Generic
+AI attribution/credit contracts stay in I5. Both legacy hosts still serve200;
+managed retirement remains platform721/727. Do not edit platform source/variables.
 
 Delivery evidence: [30-delivery-record-20261122](30-delivery-record-20261122.md).
+Historical P0-P9 details: [20-rectification-batches-20261122](20-rectification-batches-20261122.md).
 
 See [10-platform-alignment-20261122](10-platform-alignment-20261122.md) for the
 verified v0.10.3 baseline, initial contract gaps, first logout corrections and

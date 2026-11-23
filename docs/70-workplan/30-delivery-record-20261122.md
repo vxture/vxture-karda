@@ -1,3 +1,12 @@
+# Current scope notice - 2026-11-23
+
+This file is a cumulative historical ledger. Current version,scope and ordered
+batches are in [I0-I6 integration closure](70-integration-closure-20261123.md).
+Production is v0.11.8/01e7065a. Four public plans are published; Free is retired;
+annual prices use10months. Legacy product functions will be rebuilt and unfinished
+feature acceptance is reconstruction-replaced. Do not treat old pending embed/
+index/retrieval/answer records as current integration blockers or completed work.
+
 # Karda remediation delivery record - 2026-11-22
 
 ## Scope and actual release state
