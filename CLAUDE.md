@@ -60,7 +60,10 @@ activity/proposals from the production hub; PR248 merged as43fffd91. PR CI passe
 883 tests/zero skips; main CI45059533565 and secret scan also pass. v0.11.5
 pins43fffd91; run45059723049 succeeded. Readiness and authenticated P9.10 hub/stage acceptance pass: embed is paused,
 Agent proposals/activity empty and demo=false. P9.11 fixes shell/overview demo
-traffic fallback and unknown health/gap counts; not deployed.
+traffic fallback and unknown health/gap counts; PR251 merged3ffb891c, not deployed.
+P9.11 main CI45094710951 and secret scan45094710966 pass;883 tests/zero skips.
+v0.11.6 pins3ffb891c; run45094898500 building/awaiting owner approval, not deployed.
+
 Legacy-host retirement remains platform issue727. See the batch tracker.
 
 Owner scope: modify Karda only; report platform gaps as detailed issues. Do not

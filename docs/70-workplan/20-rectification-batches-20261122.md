@@ -32,7 +32,7 @@
 | P9.8 | 加工阶段真实回执 | v0.11.4已部署，真实回执通过至embed暂停 | PR245/c882fa5；881项测试零跳过，全部CI通过；不新增DDL、不改列权限 |
 | P9.9 | 页面退出POST与303跳转 | v0.11.4已部署，客户退出与运维隔离通过 | PR246/2360240；883项测试零跳过；跨产品及后端退出另行验收 |
 | P9.10 | 生产Agent面板去演示、暂停/失败阶段区分 | v0.11.5已部署，已登录页面及API验收通过 | 固定43fffd91；run45059723049成功；883项测试零跳过 |
-| P9.11 | 外壳/总览真实零流量与未知指标 | 实现及验证中，未部署 | 空账本不启用演示；未测量指标null；不从零流量推导健康状态 |
+| P9.11 | 外壳/总览真实零流量与未知指标 | PR251已合入，883项测试零跳过；未部署 | 固定3ffb891c；PR CI45094482028通过；空账本真实零、未知指标null |
 
 顺序代表实施主线，不要求为做页面而等待所有商业决策；独立的只读核查可交错推进。若拆 PR，采用 Pn.1/Pn.2 子批次，保留主批次号，不悄悄缩小验收范围。生产推广应按验证过的候选和上线风险分阶段规划，不因表内编号自动发版。
 
@@ -539,3 +539,13 @@ counts become null and their badges are omitted, not presented as healthy zero.
 Offline demos remain. Existing authored per-asset ops on overview retain demoOps
 provenance and are outside this focused summary fix. No AI/provider call, new
 DDL, auth change, platform configuration or server variable change.
+
+### P9.11 checked release candidate
+
+PR251 merged3ffb891cdd28043dbc726928f127a232c1cb266a. PR CI45094482028,
+main CI45094710951 and secret scan45094710966 all pass;883 tests/zero skips.
+Local TypeScript and22 targeted existing checks also pass. v0.11.6 pins this
+exact checked commit; production run45094898500 is building/awaiting required
+human review. Current production remains accepted v0.11.5; P9.11 online
+shell/overview API and UI validation must wait for deployment. No newDDL,
+variables, auth or platform configuration change. P9.10 screenshot retained.

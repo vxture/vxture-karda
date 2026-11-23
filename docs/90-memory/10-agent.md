@@ -15,8 +15,11 @@ open. P9.10 removes authored hub activity and corrects parked/failed stage state
 PR248 merged43fffd91,883 tests/zero skips, PR CI45059290921 passes; main
 CI45059533565 and secret scan pass. v0.11.5 pins43fffd91; run45059723049
 succeeded. P9.10 authenticated hub/stage acceptance passes. P9.11 corrects
-shell/overview fake traffic fallback and unknown health/gap counts; not deployed.
+shell/overview fake traffic fallback and unknown health/gap counts; PR251 merged3ffb891c, not deployed.
 No platform configuration changed.
+P9.11 main CI45094710951 and secret scan45094710966 pass;883 tests/zero skips.
+v0.11.6 pins3ffb891c; run45094898500 building/awaiting owner approval, not deployed.
+
 Legacy retirement, cross-product logout and real business acceptance remain open.
 Original bootstrap statements are historical. Owner scope
 is Karda-only fixes, platform issues instead of platform source/variable/edge
