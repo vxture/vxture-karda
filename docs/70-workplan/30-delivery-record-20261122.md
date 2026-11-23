@@ -815,3 +815,13 @@ counts become null and their badges are omitted, not presented as healthy zero.
 Offline demos remain. Existing authored per-asset ops on overview retain demoOps
 provenance and are outside this focused summary fix. No AI/provider call, new
 DDL, auth change, platform configuration or server variable change.
+
+### P9.11 checked release candidate
+
+PR251 merged3ffb891cdd28043dbc726928f127a232c1cb266a. PR CI45094482028,
+main CI45094710951 and secret scan45094710966 all pass;883 tests/zero skips.
+Local TypeScript and22 targeted existing checks also pass. v0.11.6 pins this
+exact checked commit; production run45094898500 is building/awaiting required
+human review. Current production remains accepted v0.11.5; P9.11 online
+shell/overview API and UI validation must wait for deployment. No newDDL,
+variables, auth or platform configuration change. P9.10 screenshot retained.
