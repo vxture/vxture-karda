@@ -103,6 +103,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
         className="bg-transparent"
         header={
           <AppHeader
+            key={accessEvents.context}
             pending={shell?.agent.pending ?? 0}
             hubOpen={hubOpen}
             onToggleHub={toggleHub}

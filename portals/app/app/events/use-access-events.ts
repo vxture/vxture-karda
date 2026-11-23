@@ -32,6 +32,7 @@ export function useAccessEvents() {
           const state = await response.json() as AccessState;
           if (lifetime.signal.aborted || terminal) return;
           if (!isThrough(state)) { leave(); return; }
+          setContext(JSON.stringify([scope,revision]));
           setRecovering(false);
         }
       } catch { if (!lifetime.signal.aborted) { setRecovering(true); dirty = true; connection?.abort(); } }
@@ -63,7 +64,6 @@ export function useAccessEvents() {
             if (event.type === "revoked") { leave(); return; }
             const changed = revision !== event.revision || scope !== event.context;
             revision = event.revision; scope = event.context;
-            setContext(event.context);
             if (changed || dirty) void check(); else setRecovering(false);
           }
         }
