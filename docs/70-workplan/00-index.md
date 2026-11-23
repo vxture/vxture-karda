@@ -1059,3 +1059,15 @@ pins25ac496; production release45107365314 is preparing its image/reviewer gate.
 No DDL or runtime-variable changes. Actual production roster and revocation
 acceptance remain pending. Platform issue731 now explicitly excludes automatic
 seat grants and requests reliable authorization-change notification semantics.
+
+
+## Owner correction: explicit roles required - 2026-11-23
+
+The earlier implicit member baseline is rejected: no role means no permission.
+Cancelled the pending production application candidate before deployment.
+New authorized members need a real readonly assignment, not a fallback when roles
+are empty. Administrator/member/readonly/guest define the initial product role
+catalog. Existing roleless members must remain denied, including after repeated
+login. No role or seat should be silently restored. Product role storage and
+full operation enforcement are NOT delivered by the previously merged roster
+reader. R1-R5 are tracked in ADR-003-explicit-product-roles.md; R2-R5 remain pending.
