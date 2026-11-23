@@ -1048,3 +1048,14 @@ do not claim the currently missing seat event contract has been accepted.
 Five roster regression cases cover pagination, revision race recovery, removed
 members, OBO reader denial, invalid scope/eligibility, cursor loops and authority
 outage. Production authorization mutation was not performed on real members.
+
+### Authorized roster release checkpoint
+
+PR255 default-member admission regression merged a3d95f6; required PR and main
+CI45106438828 passed. PR256 authorized roster merged
+25ac496642104a63a4f3cc2d081ea18df0613b5f. PR CI45106944133 and main
+CI45107128212 passed:892 tests,892 pass,zero failures/skips. Candidate v0.11.7
+pins25ac496; production release45107365314 is preparing its image/reviewer gate.
+No DDL or runtime-variable changes. Actual production roster and revocation
+acceptance remain pending. Platform issue731 now explicitly excludes automatic
+seat grants and requests reliable authorization-change notification semantics.
