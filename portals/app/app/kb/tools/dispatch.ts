@@ -88,7 +88,7 @@ async function dispatchUnchecked(
   }
 
   if(caller.mode === "obo") {
-    const permission=name==="karda.ask"?"ai.use":tool.mode==="obo_only"?"data.write":"data.read";
+    const permission=(name==="karda.ask"||name==="karda.search")?"ai.use":tool.mode==="obo_only"?"data.write":"data.read";
     if(!permits(caller.productAccess,permission)) return accessDenied("product permission required");
   }
   const ws = caller.workspace;

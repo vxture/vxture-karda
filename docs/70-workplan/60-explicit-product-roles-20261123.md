@@ -111,3 +111,7 @@ Arda reloads server-rendered business content only after the authoritative produ
 role/permission fingerprint actually changes. Karda remounts data/header state
 after a successfully checked context/revision change. Same-version transport
 heartbeats and browser tab switches do not request business authorization.
+
+Semantic retrieval uses embedding/reranking and requires ai.use, including the
+read-like search POST and OBO search tool. Lightweight listing/filtering remains
+data.read. Readonly never obtains AI consumption by choosing a read endpoint.

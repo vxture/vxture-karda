@@ -120,7 +120,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
             封顶 wide-2xl),不再手搓。 */}
         <ShellPageContainer className="@container gap-md">
           {accessEvents.recovering && <p role="status" className="text-sm text-muted-foreground">{locale === "en-US" ? "Connection interrupted. Reconnecting..." : "\u8fde\u63a5\u6682\u65f6\u4e2d\u65ad\uff0c\u6b63\u5728\u6062\u590d\u2026"}</p>}
-          <div key={accessEvents.context} className="contents">{children}</div>
+          <div key={accessEvents.context} className="contents">{accessEvents.canRead?children:<p role="status">{locale==="en-US"?"Your guest role has no access to workspace business data.":"\u5f53\u524d\u8bbf\u5ba2\u89d2\u8272\u65e0\u6743\u67e5\u770b\u5de5\u4f5c\u7a7a\u95f4\u4e1a\u52a1\u6570\u636e\u3002"}</p>}</div>
         </ShellPageContainer>
       </ShellViewport>
     </div>

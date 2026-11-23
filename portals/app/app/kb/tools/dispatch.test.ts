@@ -100,7 +100,7 @@ test("OBO readonly cannot write or ask and missing product roles cannot read",as
  const fail=async()=>{assert.fail("denied tool must never execute backend");};
  const readonly={roles:["readonly" as const],permissions:["product.enter" as const,"data.read" as const]};
  const b=backends({ask:fail,createKb:fail,listKbs:fail});
- for(const name of ["karda.ask","karda.create_kb"]){
+ for(const name of ["karda.ask","karda.search","karda.create_kb"]){
   assert.equal((await dispatchTool(name,{},oboCaller({productAccess:readonly}),b)).status,403);
  }
  assert.equal((await dispatchTool("karda.list_kbs",{},oboCaller({productAccess:undefined}),b)).status,403);
