@@ -1,5 +1,15 @@
 # vxture-karda Repository Standards
 
+## Current owner scope - 2026-11-23
+
+Only integration closure I0-I6 is active:
+docs/70-workplan/70-integration-closure-20261123.md.
+Old product functions will be rebuilt; stop ingestion/index/retrieval/answer
+feature work and acceptance. Atlas147 is external history,not a closure blocker.
+Keep Accounts,authorization/roles/messages,managed configuration/domains,
+subscriptions/C2/C3/gauge/lifecycle/OBO and handoff. No platform code/server
+variables/manual routing or real customer privilege changes are allowed.
+
 Authoritative working agreement for this repo. The goal is a clean, predictable
 branch and deploy flow with no direct human writes to protected branches, on top
 of the org governance base inherited unchanged from `vxture-template`.

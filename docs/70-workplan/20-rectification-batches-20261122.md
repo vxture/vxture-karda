@@ -1,5 +1,12 @@
 # Karda 整改批次跟踪
 
+Current authority is [I0-I6 integration closure](70-integration-closure-20261123.md).
+The P0-P9 table below is a historical phase snapshot. Current production is
+v0.11.8/01e7065a; roles and DDL0015 are deployed. Old unfinished product functions
+are reconstruction-replaced by owner decision2026-11-23,not integration blockers.
+Do not resume old AI/index/retrieval or capacity workload optimization from this
+historical table. Keep generic integration acceptance and preserved evidence.
+
 建立日期：2026-11-22。每个批次分别记录实现、CI、部署和真实验收，不能以合并代替上线。本文是本轮有序批次的唯一跟踪表，历史阶段记录见 10-platform-alignment-20261122。
 
 ## 总表
