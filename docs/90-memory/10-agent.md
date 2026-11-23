@@ -69,3 +69,16 @@ first, then mirror it here - do not invent a standard inside a product repo.
 - Keep source, config, and root meta files ASCII-only.
 - See `CLAUDE.md` (repo root) for the full working agreement, and
   `docs/70-workplan/00-index.md` for the batch tracker.
+
+## P9.12/P9.13 acceptance update - 2026-11-23
+
+Arda logout revoked idle Karda: it moved to the login gate without a reload;
+its protected task API then returned unauthenticated. This is observed
+Arda-to-Karda propagation, not independent backchannel HTTP capture or proof
+of role/workspace/account-change events. Prior P9.9 workforce isolation is
+separate. Original download passes:355 bytes and SHA256 matches upload.
+Owner restored both logins; Atlas embedding remains upstream_account_refused.
+Index/retrieval/grounded answers, AI/search/ask C3 receipts/dedup and identity
+context notifications remain open. Current details override historical pending
+logout/hash wording above; see the authoritative batch tracker P9.12/P9.13.
+No release, platform source/configuration, credentials or server variables changed.
