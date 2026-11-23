@@ -825,3 +825,29 @@ exact checked commit; production run45094898500 is building/awaiting required
 human review. Current production remains accepted v0.11.5; P9.11 online
 shell/overview API and UI validation must wait for deployment. No newDDL,
 variables, auth or platform configuration change. P9.10 screenshot retained.
+
+### P9.11 production acceptance - 2026-11-23
+
+Owner-approved run45094898500 succeeded; deploy completed2026-11-23T01:36:42Z
+(09:36:42 Asia/Shanghai), exact3ffb891cdd28043dbc726928f127a232c1cb266a.
+Browser target-domain /api/ready reports v0.11.6/3ffb891c/production, with
+db,redis,storageConfig all ok. Existing customer session remains usable.
+
+Authenticated /api/shell: assetCount1, entryCount0, needsAttention=null;
+channels direct/runos/today/total/directTotal/runosTotal/delta all0,
+degraded=null; evaluation unverified1,coverage0,gaps=null; Agent pending0,
+proposals[],alert=null,activity[],demo=false; shell demoOps=false.
+/api/overview totals today/direct/runos/delta all0,topAgents[],assetCount1,
+entryCount1 (document-inclusive governed count, not shell entry-table count).
+Its existing per-asset authored operations retain demoOps=true, explicitly
+outside this focused summary acceptance. Do not declare all demo cleanup done.
+Home renders today0/total0 and unverified1, with no authored attention/degraded/
+gap warning. Agent remains empty. Actual unavailable banner still reports the
+upstream account refusal and one parked task; no indexed document claimed.
+Screenshot: output/acceptance-20261122/v0116-home-real-zero.jpg.
+
+P9.11 accepted. Still open: Atlas147 recovery and indexing/grounded answer,
+AI and search/ask C3 receipts/dedup, cross-product/back-channel logout and
+permission messages, original download hash, platform old-host retirement727
+and contract/display issues717/726/728. Private fixture retained; no new keys,
+public exposure, DDL, server variables or platform configuration changes.

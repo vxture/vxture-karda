@@ -3,7 +3,7 @@
 ## Current remediation - 2026-11-22
 
 Ordered batches and live status: [20-rectification-batches-20261122](20-rectification-batches-20261122.md).
-Current production: v0.11.5 / 43fffd91, approved run45059723049 succeeded.
+Current production: v0.11.6 / 3ffb891c, approved run45094898500 succeeded.
 Target-domain readiness passes; four public plans published and Free retired.
 Real fetch/parse/chunk receipts pass; embed parks at upstream_account_refused
 (Atlas issue147). Customer logout and workforce isolation pass. Cross-product
@@ -13,9 +13,12 @@ P9.10 production hub demo removal and parked/failed stage states are being
 verified: PR248 merged43fffd91,883 tests/zero skips, PR gates pass. Main CI
 45059533565 and secret scan pass. v0.11.5 deployed; authenticated P9.10 hub/stage UI
 acceptance passes. P9.11 shell/overview summary correction PR251
-merged3ffb891c; PR CI45094482028 passes883 tests/zero skips; not deployed. Old-host retirement remains platform issue727.
+merged3ffb891c; PR CI45094482028 passes883 tests/zero skips; deployed and accepted. Old-host retirement remains platform issue727.
 P9.11 main CI45094710951 and secret scan45094710966 pass;883 tests/zero skips.
-v0.11.6 pins3ffb891c; run45094898500 building/awaiting owner approval, not deployed.
+v0.11.6 pins3ffb891c; run45094898500 succeeded. Authenticated shell/overview
+and home pass: real zero traffic, unknown metrics null, no fabricated warnings.
+Overview per-asset authored ops retain demoOps provenance; wider demo cleanup
+and remaining business acceptance are not covered by P9.11.
 
 Delivery evidence: [30-delivery-record-20261122](30-delivery-record-20261122.md).
 
