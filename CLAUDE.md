@@ -45,7 +45,14 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-23): v0.11.6 / 3ffb891c, owner-approved run
+Current production (2026-11-23): v0.11.8 / 01e7065a, owner-approved run
+45119134160 succeeded at05:46:09Z. DDL0015/run45115340531 succeeded first;
+41 tables. Canonical readiness confirms db/redis/storageConfig ok. Explicit
+product roles are live; authenticated members page shows the authorized owner
+and prevents ordinary owner-role edits. Synthetic-member/revocation/OBO
+acceptance remains open. See60-explicit-product-roles-20261123.md.
+
+Historical production checkpoint: v0.11.6 / 3ffb891c, owner-approved run
 45094898500 succeeded at 09:36:42 CST. Target-domain /api/ready confirms production
 version, db/redis/storageConfig ok. 883 tests/zero skips and all PR/main CI passed.
 P9.8 real receipts pass: fetch/parse/chunk completed, embed parks with
