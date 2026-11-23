@@ -25,14 +25,16 @@
 | P8.6 | Arda/Karda联合定价复核 | 已完成设计定稿，见P8.8；未改线上草稿 | 20-specs/60：统一成本输入、三种情景、双订/混档/扩展整单；真实成本与平台能力待校准 |
 | P9 | 生产发布与业务验收交付 | v0.11.6已部署，验收未完成 | 3ffb891c；run45094898500成功；新域名ready通过；旧域名待退役 |
 | P9.1 | 新域名生效、旧域名退役 | 新域名可达；旧域名退役待平台 | 浏览器新域名ready通过，回调通过；issue727；未改服务器变量 |
-| P9.2 | Accounts登录退出、权限同步 | 登录回调、客户退出及运维隔离通过；跨产品退出和权限消息待验收 | 已开通Business，C2容量及AI配额通过；v0.11.4真实退出回读 |
+| P9.2 | Accounts登录退出、权限同步 | 登录回调、客户退出、运维隔离及Arda到Karda退出通过；权限消息待验收 | 已开通Business，C2容量及AI配额通过；v0.11.4真实退出回读 |
 | P9.3 | 知识加工、检索、问答、C3及清理 | 私有库、上传、跨发布读取及ingest观察通过；embed阻塞Atlas147 | 检索、引用问答、search/ask及AI计量未完成 |
-| P9.4 | 上传持久化与存储就绪检查 | 真实上传和跨发布对象读取通过；下载hash仍待验收 | karda_objects持久卷与storageConfig通过；不启动被暂停的云迁移 |
+| P9.4 | 上传持久化与存储就绪检查 | 真实上传、跨发布读取及原件下载hash通过 | karda_objects持久卷与storageConfig通过；不启动被暂停的云迁移 |
 | P9.7 | 自动加工调度、真实任务详情 | 自动调度及真实详情通过，embed上游阻塞 | PR242 / 5b37bd83；真实原件无重传；不声明索引通过 |
 | P9.8 | 加工阶段真实回执 | v0.11.4已部署，真实回执通过至embed暂停 | PR245/c882fa5；881项测试零跳过，全部CI通过；不新增DDL、不改列权限 |
 | P9.9 | 页面退出POST与303跳转 | v0.11.4已部署，客户退出与运维隔离通过 | PR246/2360240；883项测试零跳过；跨产品及后端退出另行验收 |
 | P9.10 | 生产Agent面板去演示、暂停/失败阶段区分 | v0.11.5已部署，已登录页面及API验收通过 | 固定43fffd91；run45059723049成功；883项测试零跳过 |
 | P9.11 | 外壳/总览真实零流量与未知指标 | v0.11.6已部署，生产API与首页验收通过 | 固定3ffb891c；run45094898500成功；真实零调用、未知指标null、无虚构警告 |
+| P9.12 | 跨产品客户会话撤销 | Arda退出后空闲Karda自动回gate；受保护API拒绝访问 | 生产v0.11.6真实验收；身份上下文消息另行验收 |
+| P9.13 | 原件下载完整性 | 355字节原件SHA256与上传参考一致 | 生产v0.11.6下载；私有验收原件保留 |
 
 顺序代表实施主线，不要求为做页面而等待所有商业决策；独立的只读核查可交错推进。若拆 PR，采用 Pn.1/Pn.2 子批次，保留主批次号，不悄悄缩小验收范围。生产推广应按验证过的候选和上线风险分阶段规划，不因表内编号自动发版。
 
@@ -575,3 +577,59 @@ AI and search/ask C3 receipts/dedup, cross-product/back-channel logout and
 permission messages, original download hash, platform old-host retirement727
 and contract/display issues717/726/728. Private fixture retained; no new keys,
 public exposure, DDL, server variables or platform configuration changes.
+
+### P9.12 cross-product logout acceptance - 2026-11-23
+
+Production v0.11.6 / 3ffb891c. Established authenticated Arda dashboard and
+idle Karda home, plus authenticated Karda protected task API as the baseline.
+Clicked Arda account-menu logout. Arda showed logged out; without reloading or
+navigating Karda, its open home changed to /gate?from=%2F with the login entry.
+Reloading the protected task API then returned {"error":"unauthenticated"}.
+This passes the Arda-to-Karda customer-session revocation path observed in this
+run. It does not independently capture the signed backchannel HTTP delivery,
+prove reverse-direction propagation, or cover role/workspace/account changes.
+Opera was already unauthenticated before this run, so this run makes no new
+workforce-isolation claim; the earlier P9.9 isolation result remains separate.
+Screenshot: output/acceptance-20261122/v0116-cross-product-logout.jpg.
+
+Customer login was deliberately cleared by acceptance. Customer and workforce
+login requested for the next original-download and upstream-configuration checks.
+Atlas issue147 is still open with no recovery reply; the latest task observed
+before logout ran2026-11-23T01:51:54.230Z to01:51:55.286Z, fetch/parse/chunk
+done, embed suspended/upstream_account_refused, commit not run. No manual model
+replay was added. Existing automatic dispatcher resumes suspended work every
+five minutes; this is not evidence of upstream recovery or event-driven resume.
+
+Local original: synthetic-acceptance.md,355 bytes, SHA256
+1351aa4d950d5699e4ae2c65484788e241f91a31ae6148d3bf197ae897cda97f.
+This is the reference hash only; remote download comparison remains pending.
+No new keys, public exposure, fixture deletion, release, DDL, server variables,
+platform source or routing change. Remaining acceptance order: original bytes;
+Atlas recovery/index/retrieval/cited answer; supported scoped S2S calls and C3
+receipts/dedup; identity-context and lifecycle message delivery.
+
+
+### P9.13 original download acceptance - 2026-11-23
+
+Owner restored both customer and workforce sessions; entering the product and
+Opera roots confirmed authenticated access. Used the existing private asset's
+Preview -> Download original control. The authenticated download completed as
+synthetic-acceptance.md,355 bytes; SHA256 exactly matches the local uploaded
+reference:1351aa4d950d5699e4ae2c65484788e241f91a31ae6148d3bf197ae897cda97f.
+This completes original-byte integrity across the intervening releases. The
+fixture remains private and retained. Screenshot:v0116-original-download.jpg
+under output/acceptance-20261122; downloaded file is local acceptance evidence.
+
+The restored task API remains live/non-demo: fetch/parse/chunk done, embed
+suspended/upstream_account_refused, commit todo; latest run observed
+2026-11-23T02:02:04.487Z to02:02:05.481Z. Opera model/services still reports
+embedding/default,embedding/fast,embedding/quality and all three rerank routes
+unavailable, DeepSeek balance insufficient and Atlas request_log abnormal.
+These are separate observed signals, not proof of one provider root cause.
+Atlas147 remains the blocker for index/retrieval/grounded-answer acceptance.
+
+Platform identity issue726 updated with P9.12 evidence and remaining boundaries:
+https://github.com/vxture-platform/vxture-platform/issues/726#issuecomment-7089591223.
+No S2S caller ticket was created or copied from the browser. Positive search/ask
+C3 receipts and dedup still require an authorized service invocation through the
+supported scope, and cannot be replaced by console queries or unit tests.

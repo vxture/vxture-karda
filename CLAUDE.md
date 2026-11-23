@@ -297,3 +297,16 @@ in this zone - they are designed in this repo, not inherited.
 - Keep source, config, and root meta files (`.gitignore`, `.editorconfig`,
   `.gitattributes`, `.npmrc`, `.gitleaks.toml`, `CLAUDE.md`, `README.md`)
   ASCII-only - no em-dashes, smart quotes, or non-ASCII characters.
+
+## P9.12/P9.13 acceptance update - 2026-11-23
+
+Arda logout revoked idle Karda: it moved to the login gate without a reload;
+its protected task API then returned unauthenticated. This is observed
+Arda-to-Karda propagation, not independent backchannel HTTP capture or proof
+of role/workspace/account-change events. Prior P9.9 workforce isolation is
+separate. Original download passes:355 bytes and SHA256 matches upload.
+Owner restored both logins; Atlas embedding remains upstream_account_refused.
+Index/retrieval/grounded answers, AI/search/ask C3 receipts/dedup and identity
+context notifications remain open. Current details override historical pending
+logout/hash wording above; see the authoritative batch tracker P9.12/P9.13.
+No release, platform source/configuration, credentials or server variables changed.

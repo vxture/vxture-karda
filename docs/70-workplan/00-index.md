@@ -997,3 +997,16 @@ publishes - but nothing on the karda side is now waiting on itself.
 | KD-204 archived 保留策略 | open - now touches KD-206 (does 全域回收 reach archived snapshots?) |
 | KD-205 图谱实例归属 | open, v2 |
 | KD-206 客户删除请求波及已发布内容 | **ruled 2026-08-25 - 全域回收** (newly registered the same day); design landing still owed in `100-kb-model`'s content state machine |
+
+## P9.12/P9.13 acceptance update - 2026-11-23
+
+Arda logout revoked idle Karda: it moved to the login gate without a reload;
+its protected task API then returned unauthenticated. This is observed
+Arda-to-Karda propagation, not independent backchannel HTTP capture or proof
+of role/workspace/account-change events. Prior P9.9 workforce isolation is
+separate. Original download passes:355 bytes and SHA256 matches upload.
+Owner restored both logins; Atlas embedding remains upstream_account_refused.
+Index/retrieval/grounded answers, AI/search/ask C3 receipts/dedup and identity
+context notifications remain open. Current details override historical pending
+logout/hash wording above; see the authoritative batch tracker P9.12/P9.13.
+No release, platform source/configuration, credentials or server variables changed.
