@@ -33,7 +33,7 @@ test("a different user is NOT the owner even with a workspace admin role", () =>
   // This is the crux of section 6.4: a workspace admin editing usr_a's private
   // library must act as ws_admin, never as its owner - otherwise write-vs-
   // visibility (KD-003) collapses.
-  const admin = user({ sub: "usr_b", roles: ["workspace:manager"], canManage: true });
+  const admin = user({ sub: "usr_b", roles: [], productAccess: {roles:["administrator"],permissions:["product.enter","data.read","data.write"]}, canManage: true });
   assert.deepEqual(actorForKb(admin, kb({ ownerSub: "usr_a" })), { role: "ws_admin" });
 });
 
@@ -41,15 +41,15 @@ test("personal ownership beats an admin role held by the same user", () => {
   // If the owner also happens to be a workspace owner, acting on THEIR OWN
   // library they are still the owner - ownership is the stronger, more specific
   // claim.
-  const ownerWhoIsAlsoAdmin = user({ sub: "usr_a", roles: ["workspace:owner"], isWorkspaceOwner: true });
+  const ownerWhoIsAlsoAdmin = user({ sub: "usr_a", roles: [], productAccess: {roles:["owner"],permissions:["product.enter","data.read","data.write"]}, isWorkspaceOwner: true });
   assert.deepEqual(actorForKb(ownerWhoIsAlsoAdmin, kb({ ownerSub: "usr_a" })), {
     role: "owner",
     sub: "usr_a",
   });
 });
 
-test("workspace:owner maps to org_admin on someone else's library", () => {
-  const wsOwner = user({ sub: "usr_b", roles: ["workspace:owner"], isWorkspaceOwner: true });
+test("explicit product owner maps to org_admin on someone else's library", () => {
+  const wsOwner = user({ sub: "usr_b", roles: [], productAccess: {roles:["owner"],permissions:["product.enter","data.read","data.write"]}, isWorkspaceOwner: true });
   assert.deepEqual(actorForKb(wsOwner, kb({ ownerSub: "usr_a" })), { role: "org_admin" });
 });
 
@@ -60,7 +60,7 @@ test("a plain member is a member", () => {
 
 test("nobody is the owner of an institutional (platform/tenant/product) library", () => {
   for (const ownerType of ["platform", "tenant", "product"] as const) {
-    const wsOwner = user({ sub: "usr_a", roles: ["workspace:owner"], isWorkspaceOwner: true });
+    const wsOwner = user({ sub: "usr_a", roles: [], productAccess: {roles:["owner"],permissions:["product.enter","data.read","data.write"]}, isWorkspaceOwner: true });
     const actor = actorForKb(wsOwner, kb({ ownerType, ownerSub: null }));
     assert.notEqual(actor.role, "owner", `${ownerType} library must not have a personal owner`);
   }
@@ -68,4 +68,8 @@ test("nobody is the owner of an institutional (platform/tenant/product) library"
 
 test("a creator acts as owner of what they create", () => {
   assert.deepEqual(creatorActor(user({ sub: "usr_x" })), { role: "owner", sub: "usr_x" });
+});
+
+test("platform owner claims do not grant product administration", () => {
+ assert.deepEqual(actorForKb(user({sub:"usr_b",roles:["workspace:owner"],isWorkspaceOwner:true}),kb()),{role:"member"});
 });

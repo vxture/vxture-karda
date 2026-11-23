@@ -31,7 +31,7 @@ export interface ProcessingTemplateOption {
 }
 
 export async function GET(): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.read");
   if (!auth.ok) return auth.response;
 
   const byCode = new Map(PROCESSING_PRESETS.map((t) => [t.templateCode, t]));

@@ -13,7 +13,7 @@ import { getGenerationClient, askModelSelection } from "../../../kb/retrieval/ge
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("ai.use");
   if (!auth.ok) return auth.response;
   const body = await readJson(req);
   if (typeof body.question !== "string" || !body.question.trim()) {

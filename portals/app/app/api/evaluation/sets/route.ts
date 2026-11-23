@@ -17,14 +17,14 @@ import { requireAuth, readJson } from "../../../kb/api/http";
 export const dynamic = "force-dynamic";
 
 export async function GET(): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.read");
   if (!auth.ok) return auth.response;
   if (!prismaEnabled()) return NextResponse.json({ sets: [], live: false });
   return NextResponse.json({ sets: await listSets(auth.user.activeWorkspace), live: true });
 }
 
 export async function POST(req: Request): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.write");
   if (!auth.ok) return auth.response;
   if (!prismaEnabled()) {
     return NextResponse.json({ error: "no_database" }, { status: 503 });

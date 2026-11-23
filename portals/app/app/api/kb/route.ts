@@ -16,7 +16,7 @@ function service() {
 }
 
 export async function GET(): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.read");
   if (!auth.ok) return auth.response;
   const rows = await service()
     .list(auth.user.activeWorkspace)
@@ -26,7 +26,7 @@ export async function GET(): Promise<Response> {
 }
 
 export async function POST(req: Request): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.write");
   if (!auth.ok) return auth.response;
   const body = await readJson(req);
   const name = typeof body.name === "string" ? body.name.trim() : "";

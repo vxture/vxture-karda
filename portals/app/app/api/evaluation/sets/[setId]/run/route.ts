@@ -47,7 +47,7 @@ async function toDocumentIds(unitIds: readonly string[]): Promise<string[]> {
 }
 
 export async function POST(req: Request, ctx: { params: Promise<{ setId: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("ai.use");
   if (!auth.ok) return auth.response;
   const { setId } = await ctx.params;
 

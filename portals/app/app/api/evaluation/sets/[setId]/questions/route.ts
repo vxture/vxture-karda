@@ -17,7 +17,7 @@ async function scoped(setId: string, workspaceId: string) {
 }
 
 export async function GET(_req: Request, ctx: { params: Promise<{ setId: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.read");
   if (!auth.ok) return auth.response;
   const { setId } = await ctx.params;
   if (!(await scoped(setId, auth.user.activeWorkspace))) {
@@ -27,7 +27,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ setId: string 
 }
 
 export async function POST(req: Request, ctx: { params: Promise<{ setId: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.write");
   if (!auth.ok) return auth.response;
   const { setId } = await ctx.params;
   if (!(await scoped(setId, auth.user.activeWorkspace))) {
@@ -51,7 +51,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ setId: string 
 }
 
 export async function DELETE(req: Request, ctx: { params: Promise<{ setId: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.write");
   if (!auth.ok) return auth.response;
   const { setId } = await ctx.params;
   if (!(await scoped(setId, auth.user.activeWorkspace))) {

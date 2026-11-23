@@ -30,7 +30,7 @@ async function scopedKb(id: string, user: AuthUser & { activeWorkspace: string }
 }
 
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.read");
   if (!auth.ok) return auth.response;
   const { id } = await ctx.params;
   if (!(await scopedKb(id, auth.user))) return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -47,7 +47,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
 }
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.write");
   if (!auth.ok) return auth.response;
   const { id } = await ctx.params;
   const kb = await scopedKb(id, auth.user);

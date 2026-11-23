@@ -10,6 +10,7 @@ const oboCaller = (over: Partial<CallerContext> = {}): CallerContext => ({
   workspace: "ws_1",
   user: "usr_1",
   mode: "obo",
+  productAccess: {roles:["member"],permissions:["product.enter","data.read","data.write","ai.use"]},
   ...over,
 });
 const serviceCaller = (over: Partial<CallerContext> = {}): CallerContext =>

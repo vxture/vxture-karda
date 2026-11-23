@@ -29,9 +29,9 @@ export function actorForKb(user: AuthUser, kb: KbOwnership): Actor {
   }
   // org_admin: a workspace owner is the org-wide administrator baseline
   // (080-rp: workspace:owner is the super-admin for everything under it).
-  if (isWorkspaceOwner(user.roles)) return { role: "org_admin" };
+  if (user.productAccess?.roles.includes("owner")) return { role: "org_admin" };
   // ws_admin: manages members/roles/settings in the workspace.
-  if (canManageWorkspace(user.roles)) return { role: "ws_admin" };
+  if (user.productAccess?.roles.includes("administrator")) return { role: "ws_admin" };
   return { role: "member" };
 }
 

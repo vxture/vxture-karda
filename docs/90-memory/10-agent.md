@@ -82,3 +82,13 @@ Index/retrieval/grounded answers, AI/search/ask C3 receipts/dedup and identity
 context notifications remain open. Current details override historical pending
 logout/hash wording above; see the authoritative batch tracker P9.12/P9.13.
 No release, platform source/configuration, credentials or server variables changed.
+
+## Explicit roles implementation checkpoint - 2026-11-23
+
+Owner/administrator/member/readonly/guest implementation is under verification.
+New authorized members receive a persisted readonly assignment once; existing
+roleless/inactive members stay denied. Owner transfer/bootstrap is explicit and
+audited. Platform authorization revocation overrides all retained local roles.
+See [R1-R5 delivery tracker](../70-workplan/60-explicit-product-roles-20261123.md).
+Production migration and application deployment remain pending. Do not rerun the
+cancelled implicit-member candidates or modify platform sources/variables.

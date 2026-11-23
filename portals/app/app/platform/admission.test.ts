@@ -11,16 +11,18 @@ const user = toAuthUser({ sub: "usr_new", active_org: "org", active_workspace: "
 const subscription = makeEntitlement("ws", "karda", { tier: "pro", status: "active" });
 const deps = {
   context: async () => ({ orgId: "org", workspaceId: "ws", subject: "usr_new", subjectToken: "test-only" }),
+  access: async () => ({ roles: ["readonly" as const], permissions: ["product.enter" as const, "data.read" as const] }),
   assigned: async () => true,
   entitlement: async () => subscription,
 };
 
-test("new platform-admitted member can use Karda without a governance role", async () => {
+test("new platform-admitted member enters with an explicit default readonly role", async () => {
   assert.equal((await userAdmission(user, deps)).allowed, true);
   assert.deepEqual(user.roles, []);
   assert.equal(user.canManage, false);
   assert.equal(user.isWorkspaceOwner, false);
-  assert.equal(sessionRole({ canManage: false, isWorkspaceOwner: false } as SessionUser), "member");
+  assert.equal(sessionRole({ sub: user.sub, productAccess: await deps.access() } as SessionUser), "readonly");
+  assert.equal(sessionRole({ canManage: true, isWorkspaceOwner: true } as SessionUser), "none");
 });
 
 test("default member never bypasses assignment, subscription or platform failure", async () => {
@@ -49,4 +51,15 @@ test("a formerly admitted member is denied on the next request after platform re
   assert.equal((await userAdmission(user, authority)).allowed, true);
   assigned = false;
   assert.equal((await userAdmission(user, authority)).allowed, false);
+});
+
+test("existing roleless member is denied despite platform owner claim", async () => {
+  const result = await userAdmission({...user, roles:["workspace:owner"]}, {...deps, access:async()=>({roles:[],permissions:[]})});
+  assert.equal(result.allowed,false);
+  assert.equal(result.error,"role_required");
+});
+
+test("roleless platform owners remain denied", async () => {
+ const result=await userAdmission({...user,roles:["workspace:owner"]},{...deps,access:async()=>({roles:[],permissions:[]})});
+ assert.equal(result.allowed,false); assert.equal(result.error,"role_required");
 });

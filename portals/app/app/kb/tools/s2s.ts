@@ -29,6 +29,7 @@ export interface S2sClaims {
 }
 
 export interface CallerContext {
+  productAccess?: import("../../authz/policy").ProductAccess;
   callerProduct: string; // act.sub
   org: string | null;
   workspace: string | null;

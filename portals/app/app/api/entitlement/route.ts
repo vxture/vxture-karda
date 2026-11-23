@@ -33,6 +33,7 @@ async function entitlementResponse(): Promise<Response> {
 
   const admission = await userAdmission(user);
   if (!admission.entitlement) return NextResponse.json({ error: admission.error }, { status: 403 });
+  if (admission.error === "role_required" && !admission.allowed) return NextResponse.json({ error: "role_required" }, { status: 403 });
   const entitlement = admission.entitlement;
   return NextResponse.json({
     entitlement,

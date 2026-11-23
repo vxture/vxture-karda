@@ -79,6 +79,14 @@ async function accessResponse(): Promise<Response> {
   if (admission && !admission.entitlement) {
     return NextResponse.json({ status: "product-unassigned" } satisfies AccessState);
   }
+  if (admission?.error === "role_required" && !admission.allowed) {
+    return NextResponse.json({ status: "role-required" } satisfies AccessState);
+  }
+  if (admission?.productAccess) {
+    user.productAccess = admission.productAccess;
+    user.canManage = admission.productAccess.permissions.includes("product.manage");
+    user.isWorkspaceOwner = admission.productAccess.roles.includes("owner");
+  }
   const entitlement = admission?.entitlement ?? await getEntitlementResolver().resolve(user.activeWorkspace);
   return NextResponse.json({
     status: "authenticated",

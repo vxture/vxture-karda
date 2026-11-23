@@ -32,7 +32,7 @@ function content(): ContentService {
 }
 
 export async function POST(_req: Request, ctx: { params: Promise<{ id: string; docId: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.write");
   if (!auth.ok) return auth.response;
   const { id, docId } = await ctx.params;
 

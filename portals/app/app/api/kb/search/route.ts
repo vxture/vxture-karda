@@ -14,7 +14,7 @@ import { getRecallCorpus, getRecallTextResolver } from "../../../kb/retrieval/co
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.read");
   if (!auth.ok) return auth.response;
   const body = await readJson(req);
   if (typeof body.query !== "string" || !body.query.trim()) {

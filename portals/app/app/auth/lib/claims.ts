@@ -64,6 +64,7 @@ export interface AccessClaims {
 }
 
 export interface AuthUser {
+  productAccess?: import("../../authz/policy").ProductAccess;
   sub: string; // full "usr_<uuid>" - stored verbatim by the product DB
   activeOrg: string | null;
   activeOrgType: string | null; // "personal" | "organization"

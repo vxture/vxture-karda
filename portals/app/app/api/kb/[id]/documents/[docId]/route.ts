@@ -27,7 +27,7 @@ async function scopedDoc(kbId: string, docId: string, user: AuthUser & { activeW
 }
 
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string; docId: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.read");
   if (!auth.ok) return auth.response;
   const { id, docId } = await ctx.params;
   const doc = await scopedDoc(id, docId, auth.user);
@@ -36,7 +36,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string; do
 }
 
 export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string; docId: string }> }): Promise<Response> {
-  const auth = await requireAuth();
+  const auth = await requireAuth("data.write");
   if (!auth.ok) return auth.response;
   const { id, docId } = await ctx.params;
   const doc = await scopedDoc(id, docId, auth.user);

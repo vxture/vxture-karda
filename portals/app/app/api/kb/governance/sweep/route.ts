@@ -47,7 +47,7 @@ export async function POST(req: Request): Promise<Response> {
   // the session path - answer it as the machine path would.
   if (got !== null) return new NextResponse("forbidden", { status: 403 });
 
-  const auth = await requireAuth();
+  const auth = await requireAuth("product.manage");
   if (!auth.ok) return auth.response;
   if (!prismaEnabled()) {
     return NextResponse.json({

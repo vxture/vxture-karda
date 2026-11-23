@@ -1,3 +1,4 @@
+import { userAdmission } from "../../platform/admission";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getOidcConfig } from "../lib/config";
@@ -37,6 +38,14 @@ async function sessionResponse(): Promise<Response> {
   // account_status gate (080-rp section 2.6): non-active is treated as no session.
   if (user.accountStatus && user.accountStatus !== "active") {
     return NextResponse.json({ authenticated: false, reason: "account_inactive" });
+  }
+  try {
+    const admission = await userAdmission(user);
+    user.productAccess = admission.productAccess ?? { roles: [], permissions: [] };
+    user.canManage = user.productAccess.permissions.includes("product.manage");
+    user.isWorkspaceOwner = user.productAccess.roles.includes("owner");
+  } catch {
+    return NextResponse.json({ error: "authority_unavailable" }, { status: 503 });
   }
   return NextResponse.json({ authenticated: true, user });
 }
