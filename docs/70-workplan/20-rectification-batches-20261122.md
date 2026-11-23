@@ -23,7 +23,7 @@
 | P8.8 | 两产品套餐定稿v1 | 用户确认，四档已发布 | 20-specs/80及final-package-spec.json；价格199/499/1499，连接与服务20/100/500；执行、成本与平台草稿验收仍待完成 |
 | P8.7 / W1 | AI工作量与积分测算 | 离线分析完成；未发布、未实施优化 | 20-specs/70：Arda任务目录仍空；Karda当前/优化成本分别计算；W2–W5检索评测、任务预算、Arda任务与商业校准待完成 |
 | P8.6 | Arda/Karda联合定价复核 | 已完成设计定稿，见P8.8；未改线上草稿 | 20-specs/60：统一成本输入、三种情景、双订/混档/扩展整单；真实成本与平台能力待校准 |
-| P9 | 生产发布与业务验收交付 | v0.11.4已部署，验收未完成 | 23602404；run45054602507成功；新域名ready通过；旧域名待退役 |
+| P9 | 生产发布与业务验收交付 | v0.11.5已部署，验收未完成 | 43fffd91；run45059723049成功；新域名ready通过；旧域名待退役 |
 | P9.1 | 新域名生效、旧域名退役 | 新域名可达；旧域名退役待平台 | 浏览器新域名ready通过，回调通过；issue727；未改服务器变量 |
 | P9.2 | Accounts登录退出、权限同步 | 登录回调、客户退出及运维隔离通过；跨产品退出和权限消息待验收 | 已开通Business，C2容量及AI配额通过；v0.11.4真实退出回读 |
 | P9.3 | 知识加工、检索、问答、C3及清理 | 私有库、上传、跨发布读取及ingest观察通过；embed阻塞Atlas147 | 检索、引用问答、search/ask及AI计量未完成 |
@@ -31,7 +31,7 @@
 | P9.7 | 自动加工调度、真实任务详情 | 自动调度及真实详情通过，embed上游阻塞 | PR242 / 5b37bd83；真实原件无重传；不声明索引通过 |
 | P9.8 | 加工阶段真实回执 | v0.11.4已部署，真实回执通过至embed暂停 | PR245/c882fa5；881项测试零跳过，全部CI通过；不新增DDL、不改列权限 |
 | P9.9 | 页面退出POST与303跳转 | v0.11.4已部署，客户退出与运维隔离通过 | PR246/2360240；883项测试零跳过；跨产品及后端退出另行验收 |
-| P9.10 | 生产Agent面板去演示、暂停/失败阶段区分 | PR248及主干全部CI通过，883项测试零跳过；待发布 | v0.11.5固定43fffd91；run45059723049；人工生产审批未完成 |
+| P9.10 | 生产Agent面板去演示、暂停/失败阶段区分 | v0.11.5已部署，登录后页面验收待完成 | 固定43fffd91；run45059723049成功；883项测试零跳过 |
 
 顺序代表实施主线，不要求为做页面而等待所有商业决策；独立的只读核查可交错推进。若拆 PR，采用 Pn.1/Pn.2 子批次，保留主批次号，不悄悄缩小验收范围。生产推广应按验证过的候选和上线风险分阶段规划，不因表内编号自动发版。
 
@@ -503,3 +503,16 @@ also pass. v0.11.5 pins this exact code commit; production run45059723049.
 Image build/human required-reviewer approval and deployment remain pending.
 Current production stays v0.11.4; do not claim the hub patch has shipped.
 No newDDL, environment variables or platform configuration changes.
+
+### v0.11.5 production confirmation - 2026-11-23
+
+Owner-approved run45059723049 succeeded; deploy completed2026-11-23T01:15:12Z
+(09:15:12 Asia/Shanghai). Exact SHA43fffd91f4f798a4eb0ffe5e00b39bfdf8bd8f5a.
+Target-domain browser /api/ready reports v0.11.5,43fffd91,production;
+db/redis/storageConfig all ok. P9.10 is deployed, not yet visually accepted in
+the authenticated workspace. Prior logout acceptance cleared the customer
+session; existing task entry now opens Accounts customer login. Owner login
+requested; do not bypass it or manufacture live shell/task acceptance.
+Atlas issue147 remains OPEN with no new recovery evidence at this check.
+Existing private fixture retained; no duplicate upload or manual AI replay.
+No DDL, server variables, platform source or routing changes in this delivery.

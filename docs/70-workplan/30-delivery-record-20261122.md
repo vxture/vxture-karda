@@ -780,3 +780,16 @@ also pass. v0.11.5 pins this exact code commit; production run45059723049.
 Image build/human required-reviewer approval and deployment remain pending.
 Current production stays v0.11.4; do not claim the hub patch has shipped.
 No newDDL, environment variables or platform configuration changes.
+
+### v0.11.5 production confirmation - 2026-11-23
+
+Owner-approved run45059723049 succeeded; deploy completed2026-11-23T01:15:12Z
+(09:15:12 Asia/Shanghai). Exact SHA43fffd91f4f798a4eb0ffe5e00b39bfdf8bd8f5a.
+Target-domain browser /api/ready reports v0.11.5,43fffd91,production;
+db/redis/storageConfig all ok. P9.10 is deployed, not yet visually accepted in
+the authenticated workspace. Prior logout acceptance cleared the customer
+session; existing task entry now opens Accounts customer login. Owner login
+requested; do not bypass it or manufacture live shell/task acceptance.
+Atlas issue147 remains OPEN with no new recovery evidence at this check.
+Existing private fixture retained; no duplicate upload or manual AI replay.
+No DDL, server variables, platform source or routing changes in this delivery.

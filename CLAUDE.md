@@ -45,8 +45,8 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-23): v0.11.4 / 23602404, owner-approved run
-45054602507 succeeded at 03:01 CST. Target-domain /api/ready confirms production
+Current production (2026-11-23): v0.11.5 / 43fffd91, owner-approved run
+45059723049 succeeded at 09:15:12 CST. Target-domain /api/ready confirms production
 version, db/redis/storageConfig ok. 883 tests/zero skips and all PR/main CI passed.
 P9.8 real receipts pass: fetch/parse/chunk completed, embed parks with
 upstream_account_refused; commit not reached. Atlas issue147 remains open.
@@ -58,7 +58,8 @@ Cross-product/back-channel logout and permission-message delivery still need rea
 acceptance. P9.10 corrects parked/failed detail states and removes authored Agent
 activity/proposals from the production hub; PR248 merged as43fffd91. PR CI passes
 883 tests/zero skips; main CI45059533565 and secret scan also pass. v0.11.5
-pins43fffd91; run45059723049 is building/awaiting human production review.
+pins43fffd91; run45059723049 succeeded. Readiness passes; authenticated
+hub/stage UI acceptance awaits customer login after the prior logout test.
 Legacy-host retirement remains platform issue727. See the batch tracker.
 
 Owner scope: modify Karda only; report platform gaps as detailed issues. Do not
