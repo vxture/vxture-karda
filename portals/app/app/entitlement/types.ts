@@ -5,7 +5,7 @@
 // VALUE-DOMAIN AUTHORITY = @vxture/shared (product_220 section 3, catalog-domains
 // constants). Imported directly, not copied - TD-001 resolved 2026-07-21 (see
 // docs/60-operations). Re-exported here so existing local consumers
-// (capability.ts, entitlement-matrix/page.tsx) keep importing from "./types".
+// (such as capability.ts) keep importing from "./types".
 
 import type { Tier, SubscriptionStatus } from "@vxture/shared";
 

@@ -1,38 +1,13 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { buildStatus, statusMode } from "../../lib/status";
-import { getOidcConfig } from "../../auth/lib/config";
-import { resolveSessionUser } from "../../auth/lib/session";
-import { probeDb, probeRedis } from "../../lib/probes";
+import { readStatus, statusAccess } from "../../lib/status-server";
 
-// GET /api/status - the integration-status surface. Gated by STATUS_PAGE:
-// off -> 404, authed -> requires a valid session, public -> open. Reports only
-// non-secret config (presence booleans + identifiers) plus a short-timeout
-// DB/Redis reachability probe. Never returns a secret value (see status.test.ts).
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET(): Promise<Response> {
-  const mode = statusMode(process.env);
-  if (mode === "off") return new NextResponse("not found", { status: 404 });
-
-  if (mode === "authed") {
-    const cfg = getOidcConfig();
-    const jar = await cookies();
-    const rpsid = jar.get(cfg.cookieName)?.value;
-    const result = await resolveSessionUser(cfg, rpsid);
-    if (!result.available) return NextResponse.json({ error: "session_unavailable" },
-      { status: 503, headers: { "Cache-Control": "no-store" } });
-    const user = result.user;
-    if (!user) return new NextResponse("unauthorized", { status: 401 });
-  }
-
-  const status = buildStatus(process.env, new Date().toISOString());
-  const [dbReachable, redisReachable] = await Promise.all([
-    probeDb(process.env.DATABASE_URL),
-    probeRedis(process.env.REDIS_URL),
-  ]);
-  status.data.database.reachable = dbReachable;
-  status.data.redis.reachable = redisReachable;
-
-  return NextResponse.json(status);
+  const access = await statusAccess();
+  const headers = { "Cache-Control": "no-store" };
+  if (access === 503) return NextResponse.json({ error: "session_unavailable" }, { status: access, headers });
+  if (access !== 200) return new NextResponse(access === 404 ? "not found" : "unauthorized", { status: access, headers });
+  return NextResponse.json(await readStatus(), { headers });
 }
