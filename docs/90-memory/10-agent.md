@@ -1,5 +1,10 @@
 # Agent entry point
 
+当前对接范围和恢复条件以[平台对接交接与长期记忆](20-platform-integration-handoff.md)为准。
+先看平台交付，再按批次验收；I1 登录、退出和切换标签页已由用户暂缓。
+下文旧版本、旧业务模块和历史验收记录只作背景，不作为当前任务。
+
+
 Start here if you are an AI agent working in this repo.
 
 Current work (2026-11-22): see [platform alignment kickoff](../70-workplan/10-platform-alignment-20261122.md).
