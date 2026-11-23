@@ -178,23 +178,12 @@ export async function readSupply(workspaceId: string, now: number = Date.now()):
   return tallySupply(capped ? rows.slice(0, ROW_CAP) : rows, now, capped);
 }
 
-// --- 全期计数与「有没有真流量」 -----------------------------------------------------
-//
-// 总览与外壳的接线开关(2026-08-30):账本里**只要有过一条**真调用,供给数字就全面
-// 转真——包括真实的零;一条都没有过,则整套演示叙事(卡片亮点 + 总数)一起保留。
-// 半真半假是最糟的一档:真实的 0 顶在四张编了故事的卡片上,页面自己打自己。
-// 这与 per-asset 的既有规则(「账本一旦有话说,账本赢」)是同一条,只是抬到页级。
+// All-time counts supplement the rolling traffic window.
 
 export interface AllTimeSupply {
   totalCalls: number;
   directTotal: number;
   runosTotal: number;
-}
-
-export async function hasSupplyTraffic(workspaceId: string): Promise<boolean> {
-  const p = await getPrismaClient();
-  const one = await p.supplyCall.findFirst({ where: { workspaceId }, select: { id: true } });
-  return one !== null;
 }
 
 /** 三个全期总数。groupBy 一趟,走 (channel, created_at) 索引;未知通道计入总数但

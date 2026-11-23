@@ -11,8 +11,8 @@ logout, permission messages, indexing, grounded answers, AI/search/ask C3 and
 download hash remain open. Cross-release object read and ingest C3 observed.
 P9.10 production hub demo removal and parked/failed stage states are being
 verified: PR248 merged43fffd91,883 tests/zero skips, PR gates pass. Main CI
-45059533565 and secret scan pass. v0.11.5 deployed; authenticated hub/stage UI
-acceptance awaits customer login. Old-host retirement remains platform issue727.
+45059533565 and secret scan pass. v0.11.5 deployed; authenticated P9.10 hub/stage UI
+acceptance passes. P9.11 shell/overview summary correction in progress. Old-host retirement remains platform issue727.
 Delivery evidence: [30-delivery-record-20261122](30-delivery-record-20261122.md).
 
 See [10-platform-alignment-20261122](10-platform-alignment-20261122.md) for the
