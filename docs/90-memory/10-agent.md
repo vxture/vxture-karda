@@ -3,8 +3,8 @@
 Start here if you are an AI agent working in this repo.
 
 Current work (2026-11-22): see [platform alignment kickoff](../70-workplan/10-platform-alignment-20261122.md).
-Production is v0.11.5 / 43fffd91 (approved run45059723049 succeeded November23
-at09:15:12 CST). Target-domain readiness confirms db/redis/storageConfig ok.
+Production is v0.11.6 / 3ffb891c (approved run45094898500 succeeded November23
+at09:36:42 CST). Target-domain readiness confirms db/redis/storageConfig ok.
 Real fetch/parse/chunk receipts pass; embed parks at upstream_account_refused
 (Atlas issue147), commit not reached. Existing private fixture retained.
 Customer logout now returns task API unauthenticated and Karda login gate;
@@ -15,10 +15,13 @@ open. P9.10 removes authored hub activity and corrects parked/failed stage state
 PR248 merged43fffd91,883 tests/zero skips, PR CI45059290921 passes; main
 CI45059533565 and secret scan pass. v0.11.5 pins43fffd91; run45059723049
 succeeded. P9.10 authenticated hub/stage acceptance passes. P9.11 corrects
-shell/overview fake traffic fallback and unknown health/gap counts; PR251 merged3ffb891c, not deployed.
+shell/overview fake traffic fallback and unknown health/gap counts; PR251 merged3ffb891c, deployed and accepted.
 No platform configuration changed.
 P9.11 main CI45094710951 and secret scan45094710966 pass;883 tests/zero skips.
-v0.11.6 pins3ffb891c; run45094898500 building/awaiting owner approval, not deployed.
+v0.11.6 pins3ffb891c; run45094898500 succeeded. Authenticated shell/overview
+and home pass: real zero traffic, unknown metrics null, no fabricated warnings.
+Overview per-asset authored ops retain demoOps provenance; wider demo cleanup
+and remaining business acceptance are not covered by P9.11.
 
 Legacy retirement, cross-product logout and real business acceptance remain open.
 Original bootstrap statements are historical. Owner scope

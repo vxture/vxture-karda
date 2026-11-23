@@ -45,8 +45,8 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-23): v0.11.5 / 43fffd91, owner-approved run
-45059723049 succeeded at 09:15:12 CST. Target-domain /api/ready confirms production
+Current production (2026-11-23): v0.11.6 / 3ffb891c, owner-approved run
+45094898500 succeeded at 09:36:42 CST. Target-domain /api/ready confirms production
 version, db/redis/storageConfig ok. 883 tests/zero skips and all PR/main CI passed.
 P9.8 real receipts pass: fetch/parse/chunk completed, embed parks with
 upstream_account_refused; commit not reached. Atlas issue147 remains open.
@@ -60,9 +60,12 @@ activity/proposals from the production hub; PR248 merged as43fffd91. PR CI passe
 883 tests/zero skips; main CI45059533565 and secret scan also pass. v0.11.5
 pins43fffd91; run45059723049 succeeded. Readiness and authenticated P9.10 hub/stage acceptance pass: embed is paused,
 Agent proposals/activity empty and demo=false. P9.11 fixes shell/overview demo
-traffic fallback and unknown health/gap counts; PR251 merged3ffb891c, not deployed.
+traffic fallback and unknown health/gap counts; PR251 merged3ffb891c, deployed and accepted.
 P9.11 main CI45094710951 and secret scan45094710966 pass;883 tests/zero skips.
-v0.11.6 pins3ffb891c; run45094898500 building/awaiting owner approval, not deployed.
+v0.11.6 pins3ffb891c; run45094898500 succeeded. Authenticated shell/overview
+and home pass: real zero traffic, unknown metrics null, no fabricated warnings.
+Overview per-asset authored ops retain demoOps provenance; wider demo cleanup
+and remaining business acceptance are not covered by P9.11.
 
 Legacy-host retirement remains platform issue727. See the batch tracker.
 

@@ -23,7 +23,7 @@
 | P8.8 | 两产品套餐定稿v1 | 用户确认，四档已发布 | 20-specs/80及final-package-spec.json；价格199/499/1499，连接与服务20/100/500；执行、成本与平台草稿验收仍待完成 |
 | P8.7 / W1 | AI工作量与积分测算 | 离线分析完成；未发布、未实施优化 | 20-specs/70：Arda任务目录仍空；Karda当前/优化成本分别计算；W2–W5检索评测、任务预算、Arda任务与商业校准待完成 |
 | P8.6 | Arda/Karda联合定价复核 | 已完成设计定稿，见P8.8；未改线上草稿 | 20-specs/60：统一成本输入、三种情景、双订/混档/扩展整单；真实成本与平台能力待校准 |
-| P9 | 生产发布与业务验收交付 | v0.11.5已部署，验收未完成 | 43fffd91；run45059723049成功；新域名ready通过；旧域名待退役 |
+| P9 | 生产发布与业务验收交付 | v0.11.6已部署，验收未完成 | 3ffb891c；run45094898500成功；新域名ready通过；旧域名待退役 |
 | P9.1 | 新域名生效、旧域名退役 | 新域名可达；旧域名退役待平台 | 浏览器新域名ready通过，回调通过；issue727；未改服务器变量 |
 | P9.2 | Accounts登录退出、权限同步 | 登录回调、客户退出及运维隔离通过；跨产品退出和权限消息待验收 | 已开通Business，C2容量及AI配额通过；v0.11.4真实退出回读 |
 | P9.3 | 知识加工、检索、问答、C3及清理 | 私有库、上传、跨发布读取及ingest观察通过；embed阻塞Atlas147 | 检索、引用问答、search/ask及AI计量未完成 |
@@ -32,7 +32,7 @@
 | P9.8 | 加工阶段真实回执 | v0.11.4已部署，真实回执通过至embed暂停 | PR245/c882fa5；881项测试零跳过，全部CI通过；不新增DDL、不改列权限 |
 | P9.9 | 页面退出POST与303跳转 | v0.11.4已部署，客户退出与运维隔离通过 | PR246/2360240；883项测试零跳过；跨产品及后端退出另行验收 |
 | P9.10 | 生产Agent面板去演示、暂停/失败阶段区分 | v0.11.5已部署，已登录页面及API验收通过 | 固定43fffd91；run45059723049成功；883项测试零跳过 |
-| P9.11 | 外壳/总览真实零流量与未知指标 | PR251已合入，883项测试零跳过；未部署 | 固定3ffb891c；PR CI45094482028通过；空账本真实零、未知指标null |
+| P9.11 | 外壳/总览真实零流量与未知指标 | v0.11.6已部署，生产API与首页验收通过 | 固定3ffb891c；run45094898500成功；真实零调用、未知指标null、无虚构警告 |
 
 顺序代表实施主线，不要求为做页面而等待所有商业决策；独立的只读核查可交错推进。若拆 PR，采用 Pn.1/Pn.2 子批次，保留主批次号，不悄悄缩小验收范围。生产推广应按验证过的候选和上线风险分阶段规划，不因表内编号自动发版。
 
@@ -549,3 +549,29 @@ exact checked commit; production run45094898500 is building/awaiting required
 human review. Current production remains accepted v0.11.5; P9.11 online
 shell/overview API and UI validation must wait for deployment. No newDDL,
 variables, auth or platform configuration change. P9.10 screenshot retained.
+
+### P9.11 production acceptance - 2026-11-23
+
+Owner-approved run45094898500 succeeded; deploy completed2026-11-23T01:36:42Z
+(09:36:42 Asia/Shanghai), exact3ffb891cdd28043dbc726928f127a232c1cb266a.
+Browser target-domain /api/ready reports v0.11.6/3ffb891c/production, with
+db,redis,storageConfig all ok. Existing customer session remains usable.
+
+Authenticated /api/shell: assetCount1, entryCount0, needsAttention=null;
+channels direct/runos/today/total/directTotal/runosTotal/delta all0,
+degraded=null; evaluation unverified1,coverage0,gaps=null; Agent pending0,
+proposals[],alert=null,activity[],demo=false; shell demoOps=false.
+/api/overview totals today/direct/runos/delta all0,topAgents[],assetCount1,
+entryCount1 (document-inclusive governed count, not shell entry-table count).
+Its existing per-asset authored operations retain demoOps=true, explicitly
+outside this focused summary acceptance. Do not declare all demo cleanup done.
+Home renders today0/total0 and unverified1, with no authored attention/degraded/
+gap warning. Agent remains empty. Actual unavailable banner still reports the
+upstream account refusal and one parked task; no indexed document claimed.
+Screenshot: output/acceptance-20261122/v0116-home-real-zero.jpg.
+
+P9.11 accepted. Still open: Atlas147 recovery and indexing/grounded answer,
+AI and search/ask C3 receipts/dedup, cross-product/back-channel logout and
+permission messages, original download hash, platform old-host retirement727
+and contract/display issues717/726/728. Private fixture retained; no new keys,
+public exposure, DDL, server variables or platform configuration changes.
