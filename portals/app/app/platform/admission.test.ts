@@ -41,3 +41,12 @@ test("inactive members cannot obtain default access", async () => {
   assert.equal(result.allowed, false);
   assert.equal(result.error, "inactive_account");
 });
+
+
+test("a formerly admitted member is denied on the next request after platform revocation", async () => {
+  let assigned = true;
+  const authority = { ...deps, assigned: async () => assigned };
+  assert.equal((await userAdmission(user, authority)).allowed, true);
+  assigned = false;
+  assert.equal((await userAdmission(user, authority)).allowed, false);
+});
