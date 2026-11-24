@@ -10,7 +10,9 @@
 
 [Public-source evaluation preparation](110-public-evaluation-20261124.md): pinned historical regulation, 79 anchors, 60 draft cases, reserved split and reproducible retrieval diagnosis. Labels are not human-reviewed gold.
 
-[K1b-P1 isolated publication protocol](../30-design/170-semantic-persistence-adapter.md): bounded event fingerprints, transactional CAS/replay and locked authority revisions. Test-only PostgreSQL schema; no production DDL or API wiring. Local suite: 921 passed, 12 skipped (including the new database test); CI must execute the database contract before merge. K0b and full K1b acceptance remain pending.
+[K1b-P1 isolated publication protocol](../30-design/170-semantic-persistence-adapter.md): merged PR274/a678a37; main CI45375222183 and secret scan passed, 933 tests with zero skips including real PostgreSQL. Bounded event fingerprints, transactional CAS/replay and locked authority revisions, test-only schema; no production DDL or API wiring. K0b and full K1b acceptance remain pending.
+
+[K1b-P2 existing-table read adapter](../30-design/170-semantic-persistence-adapter.md): service-role, read-only consistent snapshot; current local roles and attached same-workspace user libraries; frozen source hashes and exact native-text anchors. Platform admission and published relation provider remain mandatory injected dependencies, without production OBO/API wiring. Independent PostgreSQL acceptance required; K0b and full K1b remain pending.
 
 ## Current integration closure - 2026-11-23
 

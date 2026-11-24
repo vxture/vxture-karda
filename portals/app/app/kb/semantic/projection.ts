@@ -46,7 +46,7 @@ function activeAt(a: GraphAssertion, now: number): boolean {
     from < until && from <= now && now < until && now < verificationExpiry;
 }
 
-function validateQuery(query: NeighborhoodQuery): void {
+export function validateNeighborhoodQuery(query: NeighborhoodQuery): void {
   const bounded = (n: number, min: number, max: number): boolean =>
     Number.isInteger(n) && n >= min && n <= max;
   if (!bounded(query.maxHops, 0, 4) || !bounded(query.maxNodes, 1, 500) ||
@@ -70,7 +70,7 @@ export function projectNeighborhood(
   query: NeighborhoodQuery,
 ): GraphProjection {
   validateOntology(schema);
-  validateQuery(query);
+  validateNeighborhoodQuery(query);
   const now = Date.parse(scope.now);
   if (!Number.isFinite(now)) throw new Error("invalid_read_clock");
   // Internal IDs are global stable IDs. Duplicate IDs are corrupt input, not a merge.

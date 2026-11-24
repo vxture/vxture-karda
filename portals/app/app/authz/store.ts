@@ -138,8 +138,8 @@ async function invalidate(tx:RoleSql,ws:string) {
     VALUES($1::uuid,1,0,now()) ON CONFLICT(workspace_id) DO UPDATE SET generation=access_revision.generation+1,updated_at=now()`,ws);
 }
 
-export async function readProductAccess(identity: MemberIdentity): Promise<ProductAccess> {
-  validate(identity); return read(await databaseClient(),identity);
+export async function readProductAccess(identity: MemberIdentity, tx?: RoleSql): Promise<ProductAccess> {
+  validate(identity); return read(tx ?? await databaseClient(),identity);
 }
 
 /** Explicit recovery for an unowned product workspace. Trusted platform owner
