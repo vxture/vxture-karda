@@ -1,0 +1,842 @@
+{
+  "formatVersion": 1,
+  "reviewStatus": "agent_draft",
+  "corpusSha256": "2da8cbb282bbe590e5e26de6973cd236229ed2369c71d1d76fe4b0d3bccefc90",
+  "cases": [
+    {
+      "id": "p01",
+      "split": "development",
+      "kind": "single",
+      "question": "在该发布快照中，财政性资金如何定义，混合资金无法分割采购时适用什么规则？",
+      "expectedAnswer": "财政性资金是纳入预算管理的资金；以此作为还款来源的借贷资金视同财政性资金；无法分割采购的统一适用政府采购法及本条例。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-2"
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "split": "development",
+      "kind": "single",
+      "question": "集中采购机构采购项目和部门集中采购项目按什么特点区分？",
+      "expectedAnswer": "前者标准统一、采购人普遍使用；后者基于本部门、本系统特殊业务需求且可统一采购。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-3"
+        }
+      ]
+    },
+    {
+      "id": "p03",
+      "split": "development",
+      "kind": "single",
+      "question": "列入目录的集中采购与目录外的分散采购分别如何组织？",
+      "expectedAnswer": "集中采购委托集中采购机构代理或部门集中采购；分散采购由采购人自行或委托采购代理机构采购限额以上目录外项目。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-4"
+        }
+      ]
+    },
+    {
+      "id": "p04",
+      "split": "development",
+      "kind": "single",
+      "question": "财政部门可通过哪些措施实现节能、环保和扶持中小企业的采购政策目标？",
+      "expectedAnswer": "采购需求标准、预留采购份额、价格评审优惠、优先采购等。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-6"
+        }
+      ]
+    },
+    {
+      "id": "p05",
+      "split": "development",
+      "kind": "single",
+      "question": "政府采购工程采用招标与其他方式时，分别适用哪些法律制度？",
+      "expectedAnswer": "招标适用招标投标法及其实施条例；其他方式适用政府采购法及本条例，均应执行政府采购政策。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-7"
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "split": "development",
+      "kind": "single",
+      "question": "政府采购项目信息应在哪一级财政部门指定的媒体发布？",
+      "expectedAnswer": "通常在省级以上财政部门指定媒体；达到国务院财政部门规定预算标准的在其指定媒体发布。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-8"
+        }
+      ]
+    },
+    {
+      "id": "p07",
+      "split": "development",
+      "kind": "single",
+      "question": "采购人员曾与供应商存在劳动关系时，回避审查的追溯年限是多少？",
+      "expectedAnswer": "参加采购活动前3年内存在劳动关系属于应当回避的情形。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-9"
+        }
+      ]
+    },
+    {
+      "id": "p08",
+      "split": "development",
+      "kind": "single",
+      "question": "采购人能否向供应商索要赠品、回扣或与采购无关的服务？",
+      "expectedAnswer": "不得索要或接受赠品、回扣或者与采购无关的其他商品、服务。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-11"
+        }
+      ]
+    },
+    {
+      "id": "p09",
+      "split": "development",
+      "kind": "single",
+      "question": "集中采购机构能否把已受托的集中采购项目再转委托？",
+      "expectedAnswer": "不得将集中采购项目转委托；应根据委托制定方案、明确采购规程并组织活动。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-12"
+        }
+      ]
+    },
+    {
+      "id": "p10",
+      "split": "development",
+      "kind": "single",
+      "question": "面向社会公众的公共服务项目确定采购需求时，应征求谁的意见？",
+      "expectedAnswer": "应征求社会公众意见；采购需求通常应完整明确，必要时还可征求相关供应商、专家意见。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-15"
+        }
+      ]
+    },
+    {
+      "id": "p11",
+      "split": "development",
+      "kind": "single",
+      "question": "委托代理协议需要明确哪些边界，代理机构可以超越吗？",
+      "expectedAnswer": "明确代理采购范围、权限和期限等；采购代理机构不得超越代理权限。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-16"
+        }
+      ]
+    },
+    {
+      "id": "p12",
+      "split": "development",
+      "kind": "single",
+      "question": "供应商参加采购活动一般需提交哪些资格证明材料？",
+      "expectedAnswer": "营业执照等证明或自然人身份证明、财务与税收社保材料、设备及专业能力证明、前3年无重大违法记录声明及其他法定条件证明；特殊要求另提供证明或情况说明。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-17"
+        }
+      ]
+    },
+    {
+      "id": "p13",
+      "split": "development",
+      "kind": "single",
+      "question": "单位负责人为同一人的不同供应商能否参加同一合同项下采购？",
+      "expectedAnswer": "不能；存在直接控股、管理关系的不同供应商也受该限制。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-18"
+        }
+      ]
+    },
+    {
+      "id": "p14",
+      "split": "development",
+      "kind": "single",
+      "question": "重大违法记录包括哪些处罚，禁止参加采购的期限届满后能否参加？",
+      "expectedAnswer": "包括刑事处罚及责令停产停业、吊销许可证或执照、较大数额罚款等行政处罚；被禁期限届满可以参加。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-19"
+        }
+      ]
+    },
+    {
+      "id": "p15",
+      "split": "development",
+      "kind": "single",
+      "question": "能否以特定地区的业绩奖项加分，或指定品牌作为采购条件？",
+      "expectedAnswer": "属于条文列举的不合理差别或歧视待遇，不能这样限制或排斥供应商。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-20"
+        }
+      ]
+    },
+    {
+      "id": "p16",
+      "split": "development",
+      "kind": "single",
+      "question": "资格预审申请文件的提交时间，从公告发布起至少多少个工作日？",
+      "expectedAnswer": "不得少于5个工作日；资格在评审阶段变化的应通知采购人和代理机构。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-21"
+        }
+      ]
+    },
+    {
+      "id": "p17",
+      "split": "development",
+      "kind": "single",
+      "question": "联合体同类资质成员承担相同工作时，按哪个成员确定等级？",
+      "expectedAnswer": "按资质等级较低的供应商确定；联合体各方不能另行单独或另组联合体参加同一合同采购。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-22"
+        }
+      ]
+    },
+    {
+      "id": "p18",
+      "split": "development",
+      "kind": "single",
+      "question": "适合批量集中采购的目录项目是否一律没有例外？",
+      "expectedAnswer": "原则应批量集中采购，但紧急的小额零星货物及有特殊要求的服务、工程项目除外。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-24"
+        }
+      ]
+    },
+    {
+      "id": "p19",
+      "split": "development",
+      "kind": "single",
+      "question": "哪些专利或公共服务特殊要求会导致只能从特定供应商采购？",
+      "expectedAnswer": "使用不可替代的专利、专有技术或公共服务项目具有特殊要求，导致只能从某一特定供应商采购。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-27"
+        }
+      ]
+    },
+    {
+      "id": "p20",
+      "split": "development",
+      "kind": "single",
+      "question": "同一财政年度反复以非公开招标方式采购同一预算项目，何时构成化整为零？",
+      "expectedAnswer": "同一品目或类别累计超过公开招标数额标准构成规避，但预算调整或经批准采用其他方式的除外。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-28"
+        }
+      ]
+    },
+    {
+      "id": "p21",
+      "split": "development",
+      "kind": "single",
+      "question": "政府采购实施计划依据什么编制，向谁备案？",
+      "expectedAnswer": "依据集中采购目录、采购限额标准和已批复部门预算编制，报本级财政部门备案。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-29"
+        }
+      ]
+    },
+    {
+      "id": "p22",
+      "split": "development",
+      "kind": "single",
+      "question": "采购项目预算金额是否应在招标、谈判或询价文件中公开？",
+      "expectedAnswer": "应当公开。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-30"
+        }
+      ]
+    },
+    {
+      "id": "p23",
+      "split": "development",
+      "kind": "single",
+      "question": "招标文件提供至少几天，影响投标编制的修改不足15日如何处理？",
+      "expectedAnswer": "文件提供期限至少5个工作日；影响编制的修改须在截止至少15日前书面通知，不足应顺延截止。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-31"
+        }
+      ]
+    },
+    {
+      "id": "p24",
+      "split": "development",
+      "kind": "single",
+      "question": "招标文件除需求和报价外，还应包括哪些资格和评审内容？",
+      "expectedAnswer": "应包括商务条件、投标人资格条件、评标方法、评标标准和拟签合同文本等。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-32"
+        }
+      ]
+    },
+    {
+      "id": "p25",
+      "split": "development",
+      "kind": "single",
+      "question": "投标保证金的上限、提交形式和退还时点是什么？",
+      "expectedAnswer": "不超过采购预算2%，以非现金形式；未中标者在中标通知发出5个工作日内退还，中标者在合同签订5个工作日内退还。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-33"
+        }
+      ]
+    },
+    {
+      "id": "p26",
+      "split": "development",
+      "kind": "single",
+      "question": "技术服务标准统一的货物服务项目应采用哪种评标法？",
+      "expectedAnswer": "最低评标价法；招标文件没有规定的标准不得作为评审依据。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-34"
+        }
+      ]
+    },
+    {
+      "id": "p27",
+      "split": "development",
+      "kind": "single",
+      "question": "询价过程中询价小组可以修改已确定的合同条款吗？",
+      "expectedAnswer": "不得改变询价通知书所确定的政府采购合同条款。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-36"
+        }
+      ]
+    },
+    {
+      "id": "p28",
+      "split": "development",
+      "kind": "single",
+      "question": "条例对质量和服务相等如何界定？",
+      "expectedAnswer": "供应商产品质量和服务均能满足采购文件规定的实质性要求。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-37"
+        }
+      ]
+    },
+    {
+      "id": "p29",
+      "split": "development",
+      "kind": "single",
+      "question": "达到公开招标标准且只能从唯一供应商采购时，公示至少多久？",
+      "expectedAnswer": "在省级以上财政部门指定媒体公示采购项目信息和唯一供应商名称，不少于5个工作日。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-38"
+        }
+      ]
+    },
+    {
+      "id": "p30",
+      "split": "development",
+      "kind": "single",
+      "question": "政府采购评审专家一般如何选取？",
+      "expectedAnswer": "除国务院财政部门规定情形外，应从政府采购评审专家库中随机抽取。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-39"
+        }
+      ]
+    },
+    {
+      "id": "p31",
+      "split": "development",
+      "kind": "single",
+      "question": "评审中发现行贿或受到非法干预时，应向哪些部门报告或举报？",
+      "expectedAnswer": "发现供应商行贿、虚假材料或串通及时向财政部门报告；受到非法干预及时向财政、监察等部门举报。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-40"
+        }
+      ]
+    },
+    {
+      "id": "p32",
+      "split": "reserved",
+      "kind": "single",
+      "question": "评审结束后送报告、确定供应商、发通知公告各有什么时限？",
+      "expectedAnswer": "代理机构2个工作日送报告，采购人收到后5个工作日确定供应商，确定后2个工作日发通知并公告结果。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-43"
+        }
+      ]
+    },
+    {
+      "id": "p33",
+      "split": "reserved",
+      "kind": "single",
+      "question": "公共服务项目验收需谁参与，验收结果是否公开？",
+      "expectedAnswer": "邀请服务对象参与并出具意见，验收结果向社会公告；验收书包括每项技术、服务、安全标准的履约情况。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-45"
+        }
+      ]
+    },
+    {
+      "id": "p34",
+      "split": "reserved",
+      "kind": "single",
+      "question": "履约保证金上限按哪个金额计算，能否要求现金？",
+      "expectedAnswer": "不超过合同金额10%，以支票、汇票、本票或金融担保机构保函等非现金形式提交。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-48"
+        }
+      ]
+    },
+    {
+      "id": "p35",
+      "split": "reserved",
+      "kind": "single",
+      "question": "合同签订后几天应公告，国家秘密和商业秘密内容如何处理？",
+      "expectedAnswer": "签订2个工作日内公告，涉及国家秘密、商业秘密的内容除外。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-50"
+        }
+      ]
+    },
+    {
+      "id": "p36",
+      "split": "development",
+      "kind": "multi_article",
+      "question": "采购需求有特殊业务条件时，怎样兼顾完整明确与不歧视供应商？",
+      "expectedAnswer": "按采购政策、预算和需求编制，原则完整明确；资格技术商务条件要与项目特点、实际需要和履约相关，不能指定品牌或非法地域限制。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-15"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-20"
+        }
+      ]
+    },
+    {
+      "id": "p37",
+      "split": "development",
+      "kind": "multi_article",
+      "question": "供应商无重大违法记录的证明要求，应结合什么处罚范围和年限理解？",
+      "expectedAnswer": "第17条要求前3年内无重大违法记录书面声明；第19条说明重大违法处罚范围及禁入期届满可参加。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-17"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-19"
+        }
+      ]
+    },
+    {
+      "id": "p38",
+      "split": "development",
+      "kind": "multi_article",
+      "question": "联合体准备资格资料并核算同类资质时，要分别查看哪些要求？",
+      "expectedAnswer": "第17条列资格证明材料；第22条要求同类资质成员按分工承担相同工作时按较低等级确定，且不得重复参投同一合同。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-17"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-22"
+        }
+      ]
+    },
+    {
+      "id": "p39",
+      "split": "development",
+      "kind": "multi_article",
+      "question": "有关联控制关系的供应商与联合体各方，参加同一合同采购分别受什么限制？",
+      "expectedAnswer": "第18条限制同一负责人或直接控股管理关系不同供应商参加同一合同；第22条禁止联合体各方另行单独或另组联合体参加。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-18"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-22"
+        }
+      ]
+    },
+    {
+      "id": "p40",
+      "split": "development",
+      "kind": "multi_article",
+      "question": "资格预审申请和招标文件提供都出现5个工作日，起算方式有何区别？",
+      "expectedAnswer": "前者申请提交时间自预审公告发布起至少5个工作日；后者文件提供期限自开始发出起至少5个工作日。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-21"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-31"
+        }
+      ]
+    },
+    {
+      "id": "p41",
+      "split": "development",
+      "kind": "multi_article",
+      "question": "计算投标保证金上限需定位哪项公开金额，上限比例是多少？",
+      "expectedAnswer": "第30条要求公开项目预算；第33条以采购项目预算为基数，投标保证金不超过2%。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-30"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-33"
+        }
+      ]
+    },
+    {
+      "id": "p42",
+      "split": "development",
+      "kind": "multi_article",
+      "question": "招标文件的内容构成与影响投标编制的修改程序分别如何核查？",
+      "expectedAnswer": "第32条列商务需求资格报价评标及合同等内容；第31条要求影响编制的修改至少提前15日书面通知，否则顺延。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-31"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-32"
+        }
+      ]
+    },
+    {
+      "id": "p43",
+      "split": "development",
+      "kind": "multi_article",
+      "question": "保证金缴纳是否能替代实质响应和评标条件？",
+      "expectedAnswer": "不能；第33条未按文件缴保证金投标无效，第34条要求实质响应并按规定评标标准评审。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-33"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-34"
+        }
+      ]
+    },
+    {
+      "id": "p44",
+      "split": "development",
+      "kind": "multi_article",
+      "question": "政府采购工程不用招标方式时，适用制度和可选方式如何衔接？",
+      "expectedAnswer": "第7条规定其他方式适用政府采购法和本条例；第25条对依法不招标工程规定竞争性谈判或单一来源方式。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-7"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-25"
+        }
+      ]
+    },
+    {
+      "id": "p45",
+      "split": "development",
+      "kind": "multi_article",
+      "question": "集中采购机构受托后，能否以代理协议为由超范围或转委托？",
+      "expectedAnswer": "第16条禁止超越代理权限；第12条禁止集中采购项目转委托。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-12"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-16"
+        }
+      ]
+    },
+    {
+      "id": "p46",
+      "split": "development",
+      "kind": "multi_article",
+      "question": "不可替代专利导致唯一供应商时，达到公开招标标准还需履行什么公示要求？",
+      "expectedAnswer": "第27条解释唯一供应商情形；符合第38条条件时在指定媒体公示项目信息和唯一供应商名称，至少5个工作日。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-27"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-38"
+        }
+      ]
+    },
+    {
+      "id": "p47",
+      "split": "reserved",
+      "kind": "multi_article",
+      "question": "采购人想向评审专家作倾向性解释，专家独立评审如何保障？",
+      "expectedAnswer": "第42条禁止倾向误导解释；第41条要求按文件独立评审，签字负责，异议应签署说明。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-41"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-42"
+        }
+      ]
+    },
+    {
+      "id": "p48",
+      "split": "reserved",
+      "kind": "multi_article",
+      "question": "按报告确定供应商后能否再以样品检测改变结果，报告流程又有何期限？",
+      "expectedAnswer": "第43条规定送报告、确定和公告期限；第44条禁止借样品检测、考察改变结果，重新评审限于规定情形并需报告。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-43"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-44"
+        }
+      ]
+    },
+    {
+      "id": "p49",
+      "split": "reserved",
+      "kind": "multi_article",
+      "question": "合同公告和公共服务验收公开是否为同一个时点和同一内容？",
+      "expectedAnswer": "不是；第50条规定签合同2个工作日内公告且秘密除外；第45条规定公共服务验收邀请对象参与并公告验收结果。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-45"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-50"
+        }
+      ]
+    },
+    {
+      "id": "p50",
+      "split": "reserved",
+      "kind": "multi_article",
+      "question": "中标供应商拒签合同与合同履约保证金，分别适用哪些处理或约束？",
+      "expectedAnswer": "第49条允许按候选顺序另选或重新采购；第48条规定文件要求的履约保证金非现金提交且不超过合同金额10%。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-48"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-49"
+        }
+      ]
+    },
+    {
+      "id": "p51",
+      "split": "reserved",
+      "kind": "multi_article",
+      "question": "供应商询问与质疑投诉的答复和材料要求怎样区分？",
+      "expectedAnswer": "第52条依法询问3个工作日内答复，超代理权限告知向采购人提出；第55条质疑投诉须明确请求和必要证明，投诉不能超已质疑范围。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-52"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-55"
+        }
+      ]
+    },
+    {
+      "id": "p52",
+      "split": "reserved",
+      "kind": "multi_article",
+      "question": "对采购文件、过程、结果质疑的应知时点与暂停合同有什么关系？",
+      "expectedAnswer": "第53条分别规定应知时点；第54条针对询问或质疑可能影响结果要求暂停签合同，已签则中止履行。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-53"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-54"
+        }
+      ]
+    },
+    {
+      "id": "p53",
+      "split": "reserved",
+      "kind": "multi_article",
+      "question": "供应商投诉能否增加未质疑事项，撤回或虚假投诉如何处理？",
+      "expectedAnswer": "第55条不能超已质疑范围；第57条虚假或非法证明投诉驳回，受理后书面撤回则终止处理。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-55"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-57"
+        }
+      ]
+    },
+    {
+      "id": "p54",
+      "split": "reserved",
+      "kind": "multi_article",
+      "question": "代理机构发现采购需求违法并导致无法验收时，纠正路径和法律责任怎样连接？",
+      "expectedAnswer": "第61条应建议采购人改正，拒不改正报告财政部门；第68条列违反第15条导致无法验收或财产损失的责任情形。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-61"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-68"
+        }
+      ]
+    },
+    {
+      "id": "p55",
+      "split": "reserved",
+      "kind": "multi_article",
+      "question": "采购人员和评审专家有利害关系不回避的处罚，在本快照中有何差别？",
+      "expectedAnswer": "第70条对采购人员警告并罚2000至2万元；第75条专家罚2至5万元并禁止参加评审，有关违法评审意见无效等。",
+      "evidence": [
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-70"
+        },
+        {
+          "sourceId": "procurement-regulations-2015",
+          "sectionId": "reg-2015-art-75"
+        }
+      ]
+    },
+    {
+      "id": "p56",
+      "split": "development",
+      "kind": "unanswerable",
+      "question": "河湾信息化项目最终中标供应商的名称和统一社会信用代码是什么？",
+      "expectedAnswer": null,
+      "evidence": []
+    },
+    {
+      "id": "p57",
+      "split": "development",
+      "kind": "unanswerable",
+      "question": "仅凭这份2015年发布快照，能否证明2026年全部最新有效修订内容？",
+      "expectedAnswer": null,
+      "evidence": []
+    },
+    {
+      "id": "p58",
+      "split": "development",
+      "kind": "unanswerable",
+      "question": "上海市2026年集中采购目录的具体项目和最新限额是多少？",
+      "expectedAnswer": null,
+      "evidence": []
+    },
+    {
+      "id": "p59",
+      "split": "reserved",
+      "kind": "unanswerable",
+      "question": "客户甲与中标公司私下签订的合同总价是多少？",
+      "expectedAnswer": null,
+      "evidence": []
+    },
+    {
+      "id": "p60",
+      "split": "reserved",
+      "kind": "unanswerable",
+      "question": "未公开的供应商银行账号和内部评分记录是什么？",
+      "expectedAnswer": null,
+      "evidence": []
+    }
+  ]
+}

@@ -30,6 +30,7 @@ LLM Wiki 的原始来源/知识页/规则三层映射为：
 - 关系定义用 sourceTypes/targetTypes 约束两端；Schema 只定义类型，实例写在 Karda。本体约束失败应留在待审/失败态，不能偷偷创造类型以求通过。
 - 规则推导必须保留 ruleRef、前提关系 ID、规则引擎的确定性输出；模型「推理」文字不等同于规则证明。K1a 只启用 asserted，inferred/suggested 的正式服务入口待后续批次实现。
 - 核心资产保留有效时间 validFrom/validUntil，必要时另记 recordedAt。validUntil 采用半开区间；历史读取需独立的授权契约，不开放 caller 任意挑旧版本来绕过现行失效。
+- 人工验证到期 verificationExpiresAt 与业务有效期分开；即使后台还未把 verified 转 stale，到期断言也不得进入正式图。持久层映射见 [170](170-semantic-persistence-adapter.md)，as_of 不能冒充 validFrom。
 
 ## 3. 编译和变更
 
