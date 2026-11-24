@@ -18,6 +18,8 @@ Project materials now include two original TJU DOCX attachments (5 sources/18 an
 
 JUNO original-to-correction history: 6 sources/24 anchors, 32 development drafts including 20 structural cross-document cases; [actual baseline](160-history-lexical-draft-report-20261124.json). Owner volunteered to review; original 24-case pack stays intact and eight additions have their own pending pack. No human decisions yet; independent holdout and full tender documents remain open.
 
+[Offline source-evidence review canvas](170-evidence-review-prototype-20261124.md): actual public development sources, 25 nodes/32 drafts, exact excerpts and missed-Top5 highlighting, desktop/narrow layout and keyboard checks. A K0 interaction prototype; no production route, publication, review submission or K3 acceptance.
+
 K0b review tooling: regulation review pack (45 pending), plus three real project notice families/12 anchors (PR279, main CI45389646673 green). Proposed family partition excludes one reserved project before indexing/export; 12 new development draft cases remain pending human review. [Project lexical report](130-project-lexical-draft-report-20261124.json) measures retrieval only. Full documents, independent human acceptance and frozen holdout remain pending.
 
 [K1b-P1 isolated publication protocol](../30-design/170-semantic-persistence-adapter.md): merged PR274/a678a37; main CI45375222183 and secret scan passed, 933 tests with zero skips including real PostgreSQL. Bounded event fingerprints, transactional CAS/replay and locked authority revisions, test-only schema; no production DDL or API wiring. K0b and full K1b acceptance remain pending.
