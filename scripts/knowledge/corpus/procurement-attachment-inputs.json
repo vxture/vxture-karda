@@ -1,0 +1,36 @@
+[
+  {
+    "id": "tju-qa-20261124",
+    "title": "天津大学教职工团体惠民保服务项目—答疑文件",
+    "url": "https://download.ccgp.gov.cn/oss/download?uuid=16714C2586C4D2B5D35835829C419E",
+    "projectFamilyId": "tju-insurance-2026",
+    "projectNumber": "TDQT202600081",
+    "parentSourceId": "tju-correction-20261124",
+    "publishedOn": "2026-11-24",
+    "binarySha256": "8e81816fada0f4275d2bdae268ae109a5e7a53bc0a68e6bf8619f5db730262d3",
+    "documentXmlSha256": "fc34be7646816f5b9c84cf7d09f382b62c3909570ec9fbde6ee14f908d7a9cb6",
+    "sectionLabels": [
+      "天津大学教职工团体惠民保服务项目（项目编号：TDQT202600081）答疑文件",
+      "问题1：理赔款支付方式与时效",
+      "问题2：业绩证明材料",
+      "问题3：采购代理服务费",
+      "问题4：竞争性磋商参与人数"
+    ],
+    "file": "tju-qa-20261124.docx"
+  },
+  {
+    "id": "tju-confirmation-20261124",
+    "title": "更正公告确认函",
+    "url": "https://download.ccgp.gov.cn/oss/download?uuid=6F3C5B3AC5D5F38A69809FE4B30EC4",
+    "projectFamilyId": "tju-insurance-2026",
+    "projectNumber": "TDQT202600081",
+    "parentSourceId": "tju-correction-20261124",
+    "publishedOn": "2026-11-24",
+    "binarySha256": "9eb75984508c16022e64e2cf5f0ed73b0471b22a19862fefbccc02edab750dee",
+    "documentXmlSha256": "e7046c77195d5b86c8005f2f35a185e9cdbc15d847ff9f9c01dbe4cba937f898",
+    "sectionLabels": [
+      "更正公告确认函"
+    ],
+    "file": "tju-confirmation-20261124.docx"
+  }
+]

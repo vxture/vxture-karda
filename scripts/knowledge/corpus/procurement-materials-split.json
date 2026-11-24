@@ -1,0 +1,33 @@
+{
+  "families": [
+    {
+      "split": "development",
+      "projectNumber": "OITC-G260360399",
+      "sourceIds": [
+        "juno-correction-20261124"
+      ],
+      "familyId": "juno-storage-2026"
+    },
+    {
+      "split": "development",
+      "projectNumber": "TDQT202600081",
+      "sourceIds": [
+        "tju-correction-20261124",
+        "tju-qa-20261124",
+        "tju-confirmation-20261124"
+      ],
+      "familyId": "tju-insurance-2026"
+    },
+    {
+      "split": "reserved",
+      "projectNumber": "CEITCL-BJ03-2609026",
+      "sourceIds": [
+        "satellite-tender-20261124"
+      ],
+      "familyId": "satellite-software-2026"
+    }
+  ],
+  "status": "proposed_unreviewed",
+  "formatVersion": 1,
+  "familyCorpusSha256": "42a2a8d3fe97f605d98b4f821e36401304946a330afe3e3cad549ae895331430"
+}

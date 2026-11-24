@@ -12,6 +12,8 @@
 
 [Public-source evaluation preparation](110-public-evaluation-20261124.md): pinned historical regulation, 79 anchors, 60 draft cases, reserved split and reproducible retrieval diagnosis. Labels are not human-reviewed gold.
 
+Project materials now include two original TJU DOCX attachments (5 sources/18 anchors in the new version), 12 additional cross-document drafts and [their actual lexical report](140-materials-lexical-draft-report-20261124.json). All 24 material-review entries remain pending. The original binaries reproduce the extracted paragraphs offline; no new runtime dependency or production API.
+
 K0b review tooling: regulation review pack (45 pending), plus three real project notice families/12 anchors (PR279, main CI45389646673 green). Proposed family partition excludes one reserved project before indexing/export; 12 new development draft cases remain pending human review. [Project lexical report](130-project-lexical-draft-report-20261124.json) measures retrieval only. Full documents, independent human acceptance and frozen holdout remain pending.
 
 [K1b-P1 isolated publication protocol](../30-design/170-semantic-persistence-adapter.md): merged PR274/a678a37; main CI45375222183 and secret scan passed, 933 tests with zero skips including real PostgreSQL. Bounded event fingerprints, transactional CAS/replay and locked authority revisions, test-only schema; no production DDL or API wiring. K0b and full K1b acceptance remain pending.
