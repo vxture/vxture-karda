@@ -9,6 +9,7 @@ Deployment and bootstrap material for this repo.
 | `30-pg18-adr007-migration.md` | host-side migration window runbook: pg16 -> 18 + `vxturebiz_karda_prod` -> `vx_karda_db` (prod only; beta dormant per TD-001) |
 | `rebuild/` | rebuild artifacts; holds `main-ruleset.json` (the branch-protection ruleset) |
 | `40-commercial-draft-preparation.md` | approved Karda package draft input and readback checklist; publication excluded |
+| `50-knowledge-platform-release-20261125.md` | knowledge platform v0.12.0 migration, release evidence and remaining acceptance gates |
 
 The tag-to-env CD pipeline (deploy/build/rollback/db-init workflows and the
 `tailnet-ssh-connect` composite action) is inherited from the template and lives

@@ -76,7 +76,18 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-23): v0.11.8 / 01e7065a, owner-approved run
+Current production (2026-11-25): v0.12.0 / c6ab3320, owner-authorized run
+45483761795 succeeded at 2026-11-24T20:49:34Z through the existing production
+review gate. Main CI45483291937 and secret scan45483291372 passed. PR301 ran
+1019 tests, all passed, zero skips. Production db-init45474033618 applied
+0016/0017; db-init45482679667 applied0018 and verified all53 declared tables.
+Canonical health/ready confirm v0.12.0, db/redis/storageConfig ok; anonymous
+knowledge-package/export/maintenance/compile-task reads refuse401. This is an
+additive application release, not business cutover or external integration
+acceptance. Fixed K checklist remains6complete/11unfinished. See
+docs/50-deployment/50-knowledge-platform-release-20261125.md.
+
+Historical production (2026-11-23): v0.11.8 / 01e7065a, owner-approved run
 45119134160 succeeded at05:46:09Z. DDL0015/run45115340531 succeeded first;
 41 tables. Canonical readiness confirms db/redis/storageConfig ok. Explicit
 product roles are live; authenticated members page shows the authorized owner
