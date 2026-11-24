@@ -5,7 +5,7 @@ import { dirname } from "node:path";
  * Generators may create new artifacts or reproduce identical bytes. Revisions
  * need a new path; no force flag can overwrite a different/frozen/reviewed file.
  */
-export function writeReproducibleArtifact(path: string, content: string): "created" | "unchanged" {
+export function writeReproducibleArtifact(path: string, content: string | Uint8Array): "created" | "unchanged" {
   mkdirSync(dirname(path), { recursive: true });
   let fd: number;
   try {

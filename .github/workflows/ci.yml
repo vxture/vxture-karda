@@ -77,7 +77,7 @@ jobs:
           # dependencies, so the lockfile lists 0 packages; without this flag
           # osv-scanner exits 128 ("no package sources"). Once batch 2 adds real
           # dependencies the flag is a no-op and this becomes a real scan.
-          /tmp/osv-bin/osv-scanner scan -L pnpm-lock.yaml --config .osv-scanner.toml --allow-no-lockfiles
+          /tmp/osv-bin/osv-scanner scan -L pnpm-lock.yaml -L scripts/knowledge/requirements.txt --config .osv-scanner.toml --allow-no-lockfiles
 
   # -- Did any CODE change? ---------------------------------------------------
   # The required checks must ALWAYS report - a docs-only PR that never produces
@@ -310,6 +310,13 @@ jobs:
           pnpm --filter @karda/app exec prisma generate
         env:
           DATABASE_URL: postgresql://postgres@127.0.0.1:5432/karda_p3_test
+
+      - name: Install offline PDF tooling (hash pinned)
+        if: env.CODE == 'true'
+        run: |
+          python3 -m venv "$RUNNER_TEMP/karda-knowledge-python"
+          "$RUNNER_TEMP/karda-knowledge-python/bin/python" -m pip install --require-hashes --only-binary=:all: -r scripts/knowledge/requirements.txt
+          echo "KARDA_KNOWLEDGE_PYTHON=$RUNNER_TEMP/karda-knowledge-python/bin/python" >> "$GITHUB_ENV"
 
       - name: Run tests
         if: env.CODE == 'true'
