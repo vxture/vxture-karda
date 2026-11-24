@@ -1,0 +1,199 @@
+{
+  "reportVersion": 2,
+  "evidenceIdentity": "source_and_section",
+  "dataClass": "public_business_notice_snapshot",
+  "reviewStatus": "agent_draft",
+  "acceptedGold": false,
+  "corpusSha256": "ed5a1dc3b67904ac0d8c6014ad151b74cef787adf3ed4bf90c51019e3af7a485",
+  "topK": 5,
+  "evaluatedSplit": "development",
+  "reservedCasesNotScored": 0,
+  "metrics": {
+    "expectedEvidence": 12,
+    "hitEvidence": 12,
+    "evidenceRecall": 1,
+    "answerableCases": 10,
+    "completeEvidenceCases": 10,
+    "unanswerableCasesReturningCandidates": 2
+  },
+  "limitations": [
+    "Agent-authored development labels; no human-reviewed gold or business acceptance.",
+    "Proposed project-family partition; not a frozen, independently reviewed or blinded holdout.",
+    "Reserved project sources are excluded before indexing; no reserved labels or scores produced.",
+    "Notice excerpts only, not full tender documents/attachments or current procurement advice.",
+    "Multi-section cases do not establish cross-document or multi-hop reasoning; no answer generation or graph improvement measured."
+  ],
+  "cases": [
+    {
+      "id": "j1",
+      "kind": "single",
+      "retrieved": [
+        "[\"juno-correction-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"juno-correction-20261124\",\"section-2\"]"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "j2",
+      "kind": "single",
+      "retrieved": [
+        "[\"juno-correction-20261124\",\"section-2\"]",
+        "[\"juno-correction-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "j3",
+      "kind": "single",
+      "retrieved": [
+        "[\"juno-correction-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"juno-correction-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "j4",
+      "kind": "multi_article",
+      "retrieved": [
+        "[\"juno-correction-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]",
+        "[\"juno-correction-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "j5",
+      "kind": "unanswerable",
+      "retrieved": [
+        "[\"juno-correction-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]",
+        "[\"juno-correction-20261124\",\"section-2\"]"
+      ],
+      "expectedEvidence": 0,
+      "hitCount": 0,
+      "allEvidenceRetrieved": null
+    },
+    {
+      "id": "t1",
+      "kind": "single",
+      "retrieved": [
+        "[\"tju-correction-20261124\",\"section-1\"]",
+        "[\"juno-correction-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"juno-correction-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-3\"]"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "t2",
+      "kind": "single",
+      "retrieved": [
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"juno-correction-20261124\",\"section-2\"]",
+        "[\"juno-correction-20261124\",\"section-1\"]"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "t3",
+      "kind": "single",
+      "retrieved": [
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]",
+        "[\"juno-correction-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-3\"]"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "t4",
+      "kind": "single",
+      "retrieved": [
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]",
+        "[\"juno-correction-20261124\",\"section-2\"]",
+        "[\"juno-correction-20261124\",\"section-1\"]"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "t5",
+      "kind": "single",
+      "retrieved": [
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]",
+        "[\"juno-correction-20261124\",\"section-2\"]",
+        "[\"juno-correction-20261124\",\"section-1\"]"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "t6",
+      "kind": "multi_article",
+      "retrieved": [
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"juno-correction-20261124\",\"section-2\"]"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "t7",
+      "kind": "unanswerable",
+      "retrieved": [
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"juno-correction-20261124\",\"section-2\"]"
+      ],
+      "expectedEvidence": 0,
+      "hitCount": 0,
+      "allEvidenceRetrieved": null
+    }
+  ],
+  "fullCorpusSha256": "c2de42f689c737dc5bf4c0fd6321977e27bcb9fbee1d3f7c4910f46738c88435",
+  "familyCorpusSha256": "9cae7ad353b7cdce05308281db635d11a9ac26bee8ef0aca36385e76ded811b0",
+  "familyPlanSha256": "5d97ebe71fa454e86c9719147800aba38c3d0d0f137a65d1e3d97a848ffd7d35",
+  "reservedSourcesNotIndexed": 1,
+  "developmentProjectFamilies": 2,
+  "reservedProjectFamilies": 1
+}

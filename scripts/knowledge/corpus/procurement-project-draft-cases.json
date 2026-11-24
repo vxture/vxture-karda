@@ -1,0 +1,161 @@
+{
+  "cases": [
+    {
+      "kind": "single",
+      "expectedAnswer": "OITC-G260360399。",
+      "evidence": [
+        {
+          "sourceId": "juno-correction-20261124",
+          "sectionId": "section-1"
+        }
+      ],
+      "id": "j1",
+      "question": "JUNO存储设备更正公告对应的原采购项目编号是什么？",
+      "split": "development"
+    },
+    {
+      "kind": "single",
+      "expectedAnswer": "延长至2026年12月1日17:00，北京时间，法定节假日除外。",
+      "evidence": [
+        {
+          "sourceId": "juno-correction-20261124",
+          "sectionId": "section-2"
+        }
+      ],
+      "id": "j2",
+      "question": "JUNO存储设备项目获取招标文件的时间延长到哪一天几点？",
+      "split": "development"
+    },
+    {
+      "kind": "single",
+      "expectedAnswer": "2026年12月4日上午09点00分，北京时间；中国科学院高能物理研究所主楼A623会议室。",
+      "evidence": [
+        {
+          "sourceId": "juno-correction-20261124",
+          "sectionId": "section-2"
+        }
+      ],
+      "id": "j3",
+      "question": "按照JUNO更正公告，提交投标文件截止和开标时间、开标地点分别是什么？",
+      "split": "development"
+    },
+    {
+      "kind": "multi_article",
+      "expectedAnswer": "首次公告为2026年11月3日；更正后的开标时间为2026年12月4日上午09点00分，北京时间。",
+      "evidence": [
+        {
+          "sourceId": "juno-correction-20261124",
+          "sectionId": "section-1"
+        },
+        {
+          "sourceId": "juno-correction-20261124",
+          "sectionId": "section-2"
+        }
+      ],
+      "id": "j4",
+      "question": "JUNO项目首次公告日期和此次更正后的开标日期分别是什么？",
+      "split": "development"
+    },
+    {
+      "kind": "unanswerable",
+      "expectedAnswer": null,
+      "evidence": [],
+      "id": "j5",
+      "question": "JUNO项目最终中标供应商和中标金额分别是什么？",
+      "split": "development"
+    },
+    {
+      "kind": "single",
+      "expectedAnswer": "首次公告日期为2026年11月16日，项目编号为TDQT202600081。",
+      "evidence": [
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-1"
+        }
+      ],
+      "id": "t1",
+      "question": "天津大学教职工团体惠民保项目的首次公告日期和项目编号是什么？",
+      "split": "development"
+    },
+    {
+      "kind": "single",
+      "expectedAnswer": "更正为按照公开发布的2026年度天津惠民保理赔须知执行；理赔款通过银行卡转入教职工个人账户。不能将所引旧文每月结算一次继续作为此次更正后的要求。",
+      "evidence": [
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-2"
+        }
+      ],
+      "id": "t2",
+      "question": "天津大学惠民保更正公告是否仍要求每月结算一次，现行理赔依据是什么？",
+      "split": "development"
+    },
+    {
+      "kind": "single",
+      "expectedAnswer": "可提供合同复印件加对应保单复印件作为有效业绩证明组合之一；保单至少包含保险人名称、险种、保险期限，并加盖承保保险人公章。",
+      "evidence": [
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-2"
+        }
+      ],
+      "id": "t3",
+      "question": "按照天津大学惠民保更正后的业绩规则，合同对应的保单能否作为证明，需包含哪些信息？",
+      "split": "development"
+    },
+    {
+      "kind": "single",
+      "expectedAnswer": "确认函附在响应文件中，同时将加盖单位公章的确认函扫描件发至公告指定邮箱zb@tjbd666.com。",
+      "evidence": [
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-3"
+        }
+      ],
+      "id": "t4",
+      "question": "天津大学惠民保供应商收到更正公告后，确认函需要如何提交？",
+      "split": "development"
+    },
+    {
+      "kind": "single",
+      "expectedAnswer": "不一致处以本公告为准，公告未涉及内容仍以竞争性磋商文件为准。",
+      "evidence": [
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-3"
+        }
+      ],
+      "id": "t5",
+      "question": "天津大学惠民保竞争性磋商文件与更正公告不一致时，以何者为准？",
+      "split": "development"
+    },
+    {
+      "kind": "multi_article",
+      "expectedAnswer": "业绩须提供合同和对应保单复印件，保单至少包含保险人、险种、保险期限并盖承保保险人公章；另将更正确认函附响应文件，并将盖公章的扫描件发公告指定邮箱。",
+      "evidence": [
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-2"
+        },
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-3"
+        }
+      ],
+      "id": "t6",
+      "question": "天津大学惠民保供应商选择合同加保单业绩证明时，还需怎样确认本次更正？",
+      "split": "development"
+    },
+    {
+      "kind": "unanswerable",
+      "expectedAnswer": null,
+      "evidence": [],
+      "id": "t7",
+      "question": "天津大学惠民保附件答疑文件对全部保险保障责任给出的完整答复是什么？",
+      "split": "development"
+    }
+  ],
+  "corpusSha256": "c2de42f689c737dc5bf4c0fd6321977e27bcb9fbee1d3f7c4910f46738c88435",
+  "formatVersion": 1,
+  "reviewStatus": "agent_draft"
+}
