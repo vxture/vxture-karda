@@ -46,7 +46,7 @@
 
 ## 3. 入站:agent 工具面 `karda.*`
 
-十件工具,两条通道。同一套 `buildToolBackends()`,**一个知识服务,两扇门**。
+十三件工具,两条通道。同一套 `buildToolBackends()`,**一个知识服务,两扇门**。
 
 | 工具 | 模式 | 计量 | 直连 S2S | Runos MCP | 权威 |
 |---|---|---|---|---|---|
@@ -56,6 +56,7 @@
 | `karda.get_evidence` | OBO/service | **免计量** | 已交付 | **未实现** | `140` §8 |
 | `karda.find_entity` | OBO/service | per_call | 已交付 | **未实现** | `140` §8.1 |
 | `karda.get_context` | OBO/service | **免计量** | 已交付 | **未实现** | `140` §8.3 |
+| `karda.knowledge_package` | **仅 OBO** | 免计量，有界已发布知识核验 | 本仓实现，真实 OBO 待验 | 未开放，现有 service 通道不适用 | `170` §15 |
 | `karda.browse` | OBO/service | per_call | 已交付 | **未实现** | `140` §8.5 |
 | `karda.attach_kb` | **仅 OBO** | 免计量 | 已交付 | 不做 | `120` §6 |
 | `karda.detach_kb` | **仅 OBO** | 免计量 | 已交付 | 不做 | `120` §6 |

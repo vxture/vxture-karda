@@ -25,6 +25,14 @@ export const PROTOCOL_VERSION = "1.0.0";
 
 export const TOOLS: ToolDescriptor[] = [
   {
+    name:"karda.knowledge_package",
+    summary:"Read reviewed and published typed relations, statements and exact source passages for an entity neighborhood.",
+    mode:"obo_only",
+    metering:{kind:"none"},
+    input:["kb_id","entity_ids","relation_types","max_hops","max_nodes","max_edges"],
+    authz:{asset_types:["knowledge_base"]},
+  },
+  {
     name: "karda.search",
     summary: "Hybrid retrieval across visible, attached libraries.",
     mode: "obo_or_service",

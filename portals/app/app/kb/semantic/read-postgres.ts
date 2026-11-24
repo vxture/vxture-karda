@@ -19,6 +19,12 @@ export interface PublishedRelationInput {
   sources: { kbId: string; documentId: string; version: number; contentHash: string }[];
 }
 export type SemanticReadResult = GraphProjection & { sourceStatus: "complete" | "partial" };
+export type KnowledgePackage = SemanticReadResult & {
+  format:"karda.knowledge-package.v1";
+  statements:{id:string;statement:string}[];
+  passages:{evidenceId:string;excerpt:string}[];
+  gaps:string[];
+};
 interface AssertionRow {
   id: string; kb_id: string; content_state: string; verification_state: string;
   expires_at: Date | null; valid_until: Date | null; superseded_by: string | null;
@@ -50,6 +56,12 @@ export class PostgresSemanticReader {
   ) {}
 
   async read(identity: SemanticReadIdentity, kbIds: string[], query: NeighborhoodQuery): Promise<SemanticReadResult> {
+    const value=await this.readPackage(identity,kbIds,query);
+    return {schema:value.schema,nodes:value.nodes,edges:value.edges,assertions:value.assertions,evidence:value.evidence,
+      truncated:value.truncated,sourceStatus:value.sourceStatus};
+  }
+
+  async readPackage(identity: SemanticReadIdentity, kbIds: string[], query: NeighborhoodQuery, directory=false): Promise<KnowledgePackage> {
     // Capture caller-owned inputs before awaiting either authority or the pool.
     identity = { ...identity, roles: [...identity.roles] };
     kbIds = [...new Set(kbIds.map(id => id.toLowerCase()))];
@@ -151,9 +163,32 @@ export class PostgresSemanticReader {
         verificationExpiresAt: row.expires_at?.toISOString() ?? null, validUntil: row.valid_until?.toISOString() ?? null,
         validFrom: null, supersededById: row.superseded_by, evidenceIds: evidenceIds.get(row.id) ?? [] }));
       const clock = await db.query<{ now: Date }>("SELECT statement_timestamp() AS now");
-      const result = projectNeighborhood(snapshot, published.schema, { visibleKbIds: visibleSet, now: clock.rows[0].now.toISOString() }, query);
+      const scope={visibleKbIds:visibleSet,now:clock.rows[0].now.toISOString()};
+      // Directory seeds come only from eligible, authorized edges, never raw entity rows.
+      let directoryTruncated=false;
+      if(directory){
+        const eligibleIds=new Set<string>();
+        directoryTruncated=relations.length>200;
+        for(const edge of [...relations].sort((a,b)=>a.id.localeCompare(b.id)).slice(0,200)){
+          const checked=projectNeighborhood({...snapshot,relations:[edge]},published.schema,scope,
+            {seedIds:[edge.sourceId],maxHops:1,maxNodes:2,maxEdges:1});
+          if(checked.edges.length)for(const n of checked.nodes)eligibleIds.add(n.id);
+          if(eligibleIds.size>50){directoryTruncated=true;break;}
+        }
+        query={...query,seedIds:[...eligibleIds].sort().slice(0,50)};
+        if(!query.seedIds.length)query.seedIds=["empty"];
+      }
+      const result = projectNeighborhood(snapshot, published.schema, scope, query);
+      result.truncated ||= directoryTruncated;
+      // Enrich only the final eligible projection, in the same authorized snapshot.
+      const ids=result.assertions.map(a=>a.id);
+      const statements=ids.length?(await db.query<{id:string;statement:string}>(`SELECT id,statement FROM karda_kb.assertion
+        WHERE kb_id=ANY($1::uuid[]) AND id=ANY($2::uuid[]) ORDER BY id`,[visible,ids])).rows:[];
+      const passages=result.evidence.map(e=>({evidenceId:e.id,excerpt:grounds.find(g=>g.id===e.id)!.excerpt}));
       await db.query("COMMIT");
-      return { ...result, sourceStatus: incomplete ? "partial" : "complete" };
+      return { ...result, sourceStatus: incomplete ? "partial" : "complete",format:"karda.knowledge-package.v1",statements,passages,
+        gaps:[...(result.edges.length?[]:["no_published_support"]),...(incomplete?["source_support_unavailable"]:[]),
+          ...(result.truncated?["neighborhood_truncated"]:[])] };
     } catch (error) {
       await db.query("ROLLBACK"); throw error;
     } finally { db.release(); }

@@ -30,6 +30,7 @@ import { evidenceNotFound } from "../assertions/evidence-read";
 import { writeDocument } from "./write";
 import { createEntry } from "./entry";
 import { createKb, attachKb, detachKb } from "../attachments/tools";
+import {knowledgePackageTool} from "../semantic/package-tool";
 
 export function buildToolBackends(): ToolBackends {
   const kb = new KbService(getKbStore());
@@ -38,6 +39,7 @@ export function buildToolBackends(): ToolBackends {
   const runtime = getProcessingRuntime();
   const generation = getGenerationClient();
   return {
+    knowledgePackage:knowledgePackageTool,
     async listKbs(workspaceId) {
       return kb.list(workspaceId);
     },

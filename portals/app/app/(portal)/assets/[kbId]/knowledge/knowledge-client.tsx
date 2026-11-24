@@ -412,6 +412,9 @@ export function KnowledgeClient() {
         actions={
           <>
           <Button variant="outline" asChild>
+            <Link href={`/assets/${kbId}/published`}>{semanticMessages.knowledgeTitle}</Link>
+          </Button>
+          <Button variant="outline" asChild>
             <Link href={`/assets/${kbId}/semantic`}>{semanticMessages.title}</Link>
           </Button>
           <Button variant="outline" asChild>

@@ -293,6 +293,27 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
     await admin.query("INSERT INTO karda_kb.kb_attachment(workspace_id,user_sub,product_code,kb_id) VALUES($1,$2,'karda',$3)",[ws,sub,kb]);
     const selectedGraph=await selectedReader.read(identity,[kb],query);
     assert.deepEqual(selectedGraph.edges.map(e=>e.id),[chosen.id],"selected, reviewed and published relations reach the authorized reader");
+    const pack=await selectedReader.readPackage(identity,[kb],query);
+    assert.equal(pack.format,"karda.knowledge-package.v1");
+    assert.deepEqual(pack.edges,selectedGraph.edges);assert.deepEqual(pack.nodes,selectedGraph.nodes);
+    assert.equal(pack.statements.length,1);assert.equal(pack.statements[0].id,assertion);
+    assert.equal(pack.passages[0].excerpt,"\u4e2d\ud83d\ude00");assert.deepEqual(pack.gaps,[]);
+    const directory=await selectedReader.readPackage(identity,[kb],query,true);
+    assert.deepEqual(directory.nodes.map(n=>n.id),pack.nodes.map(n=>n.id));
+    const reverse=await selectedReader.readPackage(identity,[kb],{...query,seedIds:[right]});
+    assert.deepEqual(reverse.edges,pack.edges,"backlinks use the same formal edge and evidence");
+    await admin.query("UPDATE karda_kb.document SET content_state='archived' WHERE id=$1",[doc]);
+    const withdrawn=await selectedReader.readPackage(identity,[kb],query);
+    assert.deepEqual(withdrawn.statements,[]);assert.deepEqual(withdrawn.passages,[]);assert.deepEqual(withdrawn.edges,[]);
+    await admin.query("UPDATE karda_kb.document SET content_state='indexed' WHERE id=$1",[doc]);
+    const external={...identity,productCode:"runos"};
+    assert.deepEqual((await selectedReader.readPackage(external,[kb],query)).passages,[],"Karda attachment never authorizes another product");
+    assert.deepEqual((await selectedReader.readPackage(external,[kb],query,true)).nodes,[],"directory cannot disclose unbound entity names");
+    await admin.query("INSERT INTO karda_kb.kb_attachment(workspace_id,user_sub,product_code,kb_id) VALUES($1,$2,'runos',$3)",[ws,sub,kb]);
+    assert.deepEqual((await selectedReader.readPackage(external,[kb],query)).passages,pack.passages);
+    await admin.query("DELETE FROM karda_kb.kb_attachment WHERE kb_id=$1 AND product_code='runos'",[kb]);
+    assert.deepEqual((await selectedReader.readPackage(external,[kb],query)).passages,[]);
+    platform=false;await assert.rejects(selectedReader.readPackage(identity,[kb],query),/semantic_read_denied/);platform=true;
     const otherRun=await store.recordCompile(identity,other,{taskKey:"1".repeat(64),configHash,payload:{...payload,relations:[],sources:[]}});
     await assert.rejects(service.query("UPDATE karda_kb.semantic_compile_task SET run_id=$2 WHERE id=$1",[taskId,otherRun.runId]),{code:"23503"});
   } finally {
