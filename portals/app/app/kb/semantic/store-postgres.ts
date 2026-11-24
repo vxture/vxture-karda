@@ -9,6 +9,8 @@ import type { PublishedRelationInput, SemanticReadIdentity } from "./read-postgr
 import { matchesSourceSpan, verifiedSourceText, MAX_SEMANTIC_SOURCE_BYTES } from "./source-text";
 import { projectNeighborhood } from "./projection";
 import type { KnowledgeSnapshot } from "./contracts";
+import type { CompilerSnapshot } from "./compiler";
+import { freezeCompilerSnapshot } from "./compiler";
 
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 const HASH = /^[a-f0-9]{64}$/;
@@ -62,6 +64,46 @@ function acceptedReviews(input: PublishedRelationInput, reviews: ReviewRow[]): v
 export class PostgresSemanticStore {
   constructor(private readonly pool: Pool, private readonly objects: Pick<ObjectStore, "get">,
     private readonly admitPlatform: (identity: SemanticReadIdentity) => Promise<boolean>) {}
+
+  /** Load before model egress, requiring both source write and AI permission.
+   * The model runs after transaction release, never while holding source locks.
+   */
+  async loadCompilerSnapshot(identity: SemanticReadIdentity, kbId: string, specification: {
+    schema: CompilerSnapshot["schema"]; entityTypes: CompilerSnapshot["entityTypes"]; sources: CompilerSnapshot["sources"];
+  }): Promise<CompilerSnapshot> {
+    identity={...identity,roles:[...identity.roles]};
+    const spec=structuredClone(specification);
+    const input=decode(kbId,{format:"karda.semantic.release.v1",...spec,relations:[]});
+    return this.write(identity,kbId,"data.write",async db=>{
+      const access=await readProductAccess(identity,{
+        $queryRawUnsafe:async <R>(statement:string,...values:unknown[])=>(await db.query(statement,values)).rows as R,
+        $executeRawUnsafe:async()=>{throw new Error("semantic_role_read_only");},
+      });
+      if(!permits(access,"ai.use"))throw new Error("semantic_write_denied");
+      const texts=await this.sources(db,input);
+      const entities=(await db.query<{id:string;kb_id:string;kind:string;name:string;aliases:string[]}>(`SELECT id,kb_id,kind,name,aliases
+        FROM karda_kb.entity WHERE kb_id=$1 ORDER BY id LIMIT 1001`,[kbId])).rows;
+      const grounds=(await db.query<{id:string;statement:string;document_id:string;document_version:number;start_offset:number;end_offset:number;excerpt:string}>(`
+        SELECT a.id,a.statement,s.document_id,s.document_version,s.start_offset,s.end_offset,s.excerpt
+        FROM karda_kb.assertion a JOIN karda_kb.evidence e ON e.assertion_id=a.id
+        JOIN karda_kb.span s ON s.id=e.span_id JOIN karda_kb.document d ON d.id=s.document_id AND d.kb_id=a.kb_id
+        WHERE a.kb_id=$1 AND a.content_state='indexed' AND a.verification_state='verified' AND a.superseded_by IS NULL
+          AND (a.expires_at IS NULL OR a.expires_at>clock_timestamp()) AND (a.valid_until IS NULL OR a.valid_until>clock_timestamp())
+          AND e.stance='supports' AND e.supports_id IS NULL AND d.id=ANY($2::uuid[]) AND d.content_state='indexed'
+        ORDER BY a.id,e.id LIMIT 3201`,[kbId,spec.sources.map(s=>s.documentId)])).rows;
+      if(entities.length>1000||grounds.length>3200)throw new Error("semantic_snapshot_limit");
+      const assertions=new Map<string,CompilerSnapshot["assertions"][number]>();
+      for(const row of grounds){
+        const source=input.sources.find(s=>s.documentId===row.document_id&&s.version===row.document_version),text=texts.get(row.document_id);
+        if(!source||text===undefined||!matchesSourceSpan(text,row.start_offset,row.end_offset,row.excerpt))continue;
+        const assertion=assertions.get(row.id)??{id:row.id,kbId,statement:row.statement,evidence:[]};
+        assertion.evidence.push({documentId:row.document_id,version:row.document_version,start:row.start_offset,end:row.end_offset,excerpt:row.excerpt});
+        assertions.set(row.id,assertion);
+      }
+      return freezeCompilerSnapshot({kbId,schema:input.schema,entityTypes:spec.entityTypes,sources:input.sources,
+        entities:entities.map(e=>({id:e.id,kbId:e.kb_id,kind:e.kind,name:e.name,aliases:e.aliases})),assertions:[...assertions.values()]});
+    });
+  }
 
   private async write<T>(identity: SemanticReadIdentity, kbId: string, permission: ProductPermission,
     work: (db: PoolClient) => Promise<T>): Promise<T> {

@@ -5,6 +5,7 @@ import { Pool } from "pg";
 import { PostgresSemanticStore, PostgresFormalSemanticLoader, semanticValueHash } from "./store-postgres";
 import { PostgresSemanticReader } from "./read-postgres";
 import { SEMANTIC_RELEASE_FORMAT, type SemanticReleasePayload } from "./release-format";
+import { AtlasSemanticCandidateClient, runSemanticCompile } from "./compiler";
 
 test("formal store canonical values and invalid input fail before platform/SQL", async () => {
   assert.equal(semanticValueHash({ b: 2, a: 1 }), semanticValueHash({ a: 1, b: 2 }));
@@ -70,6 +71,29 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
     await admin.query("INSERT INTO karda_kb.span(id,document_id,document_version,start_offset,end_offset,excerpt) VALUES($1,$2,2,4,7,$3)", [span,doc,"\u4e2d\ud83d\ude00"]);
     await admin.query("INSERT INTO karda_kb.evidence(id,assertion_id,span_id,stance) VALUES($1,$2,$3,'supports')", [evidence,assertion,span]);
     assert.equal((await read()).edges.length, 0);
+    let modelCalls=0;
+    const specification={schema,entityTypes:payload.entityTypes,sources:payload.sources};
+    const compilerResult=await runSemanticCompile(identity,kb,"synthetic-compile",{
+      loadAuthorizedSnapshot:async(actor,id)=>({snapshot:await store.loadCompilerSnapshot(actor,id,specification),tenantId:randomUUID()}),
+      candidates:new AtlasSemanticCandidateClient({chat:async request=>{
+        modelCalls++;
+        const supplied=JSON.parse(request.messages[1].content);
+        assert.equal(supplied.assertions.length,1);assert.equal(supplied.assertions[0].evidence[0].excerpt,"\u4e2d\ud83d\ude00");
+        return{content:JSON.stringify({relations:[{type:"requires",source:{name:"left",type:"object"},
+          target:{name:"right",type:"object"},assertionIds:[assertion]}]})};
+      }}),store,
+    });
+    assert.ok(compilerResult.runId);assert.equal(modelCalls,1);
+    assert.equal((await read()).edges.length,0,"model candidates do not publish or approve knowledge");
+    await role("readonly");
+    await assert.rejects(store.loadCompilerSnapshot(identity,kb,specification),/semantic_write_denied/);
+    await role("member");
+    await admin.query("UPDATE karda_kb.assertion SET expires_at='2000-01-01' WHERE id=$1",[assertion]);
+    assert.equal((await store.loadCompilerSnapshot(identity,kb,specification)).assertions.length,0,"expired supports never leave for the model");
+    await admin.query("UPDATE karda_kb.assertion SET expires_at=NULL WHERE id=$1",[assertion]);
+    await admin.query("UPDATE karda_kb.document SET content_state='archived' WHERE id=$1",[doc]);
+    await assert.rejects(store.loadCompilerSnapshot(identity,kb,specification),/semantic_source_changed/);
+    await admin.query("UPDATE karda_kb.document SET content_state='indexed' WHERE id=$1",[doc]);
     const taskKey = "a".repeat(64), configHash = "b".repeat(64);
     const compile = await store.recordCompile(identity,kb,{taskKey,configHash,payload});
     assert.equal(compile.duplicate, false);
