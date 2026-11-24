@@ -8,7 +8,8 @@ import { useMessages } from "../../../../_i18n/useMessages";
 import { semantic } from "../../../../_i18n/messages/semantic";
 import { ApiError } from "../../../../_lib/api";
 import { SignInGate } from "../../../../_lib/ui";
-import { SemanticReviewApi, type CompileList, type CompileDetail, type ReleasePreview, type ReviewDecision } from "../../../../_lib/semantic-api";
+import { SemanticReviewApi, type CompileList, type CompileDetail, type ReleasePreview, type ReviewDecision,type CompileTaskRow } from "../../../../_lib/semantic-api";
+import type {Compilation} from "../../../../kb/semantic/compiler";
 
 export function SemanticReviewClient({kbId}:{kbId:string}) {
   const m=useMessages(semantic), api=useMemo(()=>new SemanticReviewApi(kbId),[kbId]);
@@ -16,25 +17,28 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
   const [preview,setPreview]=useState<ReleasePreview|null>(null), [notes,setNotes]=useState<Record<string,string>>({});
   const [busy,setBusy]=useState(false), [error,setError]=useState<number|null>(null), [notice,setNotice]=useState(false);
   const [login,setLogin]=useState(false);
+  const [tasks,setTasks]=useState<CompileTaskRow[]>([]),[inputMissing,setInputMissing]=useState(false);
+  const createId=useRef<string|null>(null);
   const sequence=useRef(0), locked=useRef(false);
 
   async function run(work:(current:()=>boolean)=>Promise<void>, preservePreview=false) {
     if(locked.current)return;
     locked.current=true; const ticket=++sequence.current, current=()=>ticket===sequence.current;
-    setBusy(true);setError(null);setNotice(false);
+    setBusy(true);setError(null);setNotice(false);setInputMissing(false);
     if(!preservePreview)setPreview(null);
     try { await work(current); }
     catch(e) { if(current()) {
       const status=e instanceof ApiError?e.status:500;
       if(status===401)setLogin(true);
       setError(status);
+      if(e instanceof ApiError&&e.code==="semantic_compile_inputs_required")setInputMissing(true);
       // On a lost network response retain the exact event binding for retry.
       // A semantic conflict instead requires a fresh inspection and preview.
       if(status===409||status===403||status===401)setPreview(null);
     }} finally {if(current()){locked.current=false;setBusy(false);}}
   }
   useEffect(()=>{
-    void run(async current=>{const page=await api.list();if(current())setList(page);});
+    void run(async current=>{const [page,taskPage]=await Promise.all([api.list(),api.tasks()]);if(current()){setList(page);setTasks(taskPage.tasks);}});
     return()=>{++sequence.current;locked.current=false;};
     // The server page keys this component by library, dropping all prior state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -56,9 +60,9 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
   const states={pending:m.pending,accept:m.accept,revise:m.revise,reject:m.reject,stale:m.stale};
   if(login)return <SignInGate from={`/assets/${kbId}/semantic`} />;
   const refresh=()=>run(async current=>{
-    const page=await api.list();
+    const [page,taskPage]=await Promise.all([api.list(),api.tasks()]);
     const loaded=detail?await api.detail(detail.runId):null;
-    if(current()){setList(page);setDetail(loaded);}
+    if(current()){setList(page);setDetail(loaded);setTasks(taskPage.tasks);}
   });
 
   return <div className="flex min-w-0 flex-col gap-md" aria-busy={busy}>
@@ -68,9 +72,34 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/knowledge`}>{m.back}</Link></Button>
     </div>
     <p className="text-body-sm text-muted-foreground">{m.description}</p>
-    {error&&<div role="alert"><Banner tone="danger" title={error===409?m.conflict:error===403?m.denied:error===503?m.unavailable:m.failed}/></div>}
+    {error&&<div role="alert"><Banner tone="danger" title={inputMissing?m.inputsRequired:error===409?m.conflict:error===403?m.denied:error===503?m.unavailable:m.failed}/></div>}
     {notice&&<div role="status"><Banner tone="success" title={m.published}/></div>}
     {busy&&<p role="status" className="text-body-sm">{m.loading}</p>}
+    <Card><CardContent className="flex flex-col gap-sm p-md">
+      <h2 className="text-title-sm">{m.tasks}</h2><p className="text-body-sm text-muted-foreground">{m.taskHint}</p>
+      <Button disabled={busy} onClick={()=>void run(async current=>{
+        const taskId=createId.current??crypto.randomUUID();createId.current=taskId;
+        await api.createTask(taskId);createId.current=null;
+        const value=await api.tasks();if(current())setTasks(value.tasks);
+      })}>{m.createTask}</Button>
+      {tasks.map(task=><div key={task.id} className="flex flex-wrap items-center gap-sm rounded-md border border-border p-sm">
+        <span className="text-body-sm">{m.batch} {task.id.slice(0,8)} &middot; {task.attempt}/3 &middot;
+          {task.state==="failed"?m.taskFailed:({queued:m.queued,running:m.running,completed:m.completed,needs_review:m.needs_review,suspended:m.suspended}[task.state]??task.state)}</span>
+        {task.error_code&&<span className="break-all font-mono text-code-sm">{task.error_code}</span>}
+        {task.run_id?<Button variant="outline" disabled={busy} onClick={()=>void choose(task.run_id!)}>{m.completed}</Button>:
+          task.state!=="needs_review"&&<Button variant="outline" disabled={busy||task.attempt>=3} onClick={()=>void run(async current=>{
+            await api.executeTask(task.id);
+            const [value,page]=await Promise.all([api.tasks(),api.list()]);if(current()){setTasks(value.tasks);setList(page);}
+          })}>{m.execute}</Button>}
+        {task.state==="needs_review"&&<details className="w-full"><summary>{m.needs_review}</summary>
+          <ul className="text-body-sm">
+            {(task.result.compilation as Compilation|undefined)?.rejected.map(issue=><li key={issue.index}>{m.rejectedItems} {issue.index+1}: {issue.reason}</li>)}
+            {(task.result.compilation as Compilation|undefined)?.conflicts.map((group,index)=><li className="break-all" key={index}>
+              {m.alternativeGroups}: {group.type} &middot; {group.relationIds.length}
+            </li>)}
+          </ul></details>}
+      </div>)}
+    </CardContent></Card>
     <div className="grid min-w-0 gap-md xl:grid-cols-[18rem_minmax(0,1fr)]">
       <Card><CardContent className="flex flex-col gap-sm p-md">
         <h2 className="text-title-sm">{m.runs}</h2>

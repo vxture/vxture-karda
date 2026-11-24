@@ -106,7 +106,7 @@ user 库挂载过滤，既有实体/断言/证据适配；详见 [170 §6](../30
 | K0b | IN PROGRESS — DRAFT DATA | [公开原文与评测准备](110-public-evaluation-20261124.md)：法规 79 锚点/60 草案（20 多条款），45 开发/15 保留；PR277 复核工具和多来源计分，PR278 生成保护；新增 3 个真实项目公告族、12 个正文锚点及离线复现。仍缺完整原文件/附件、人工复核和项目族留出冻结，未整批验收 |
 | K1a | LOCAL VERIFIED | 首批 PR272 已合并且 PR/main CI 通过；本轮再补人工验证到期检查，现有投影 21 项测试通过；不含 HTTP/DB 适配，不构成生产安全或端到端验收 |
 | K1b | PARTIAL IMPLEMENTATION | P1/PR274：隔离发布事务，主干 CI 933 项零跳过；P2/PR275：既有表服务角色读取，主干 CI 937 项零跳过；P3/PR276：持久发布到读取器桥接，代码 CI 943 项零跳过。P4/PR290 增量0016、51 表与 210/Prisma/98 锁步，新旧库重复应用及权限/事务回滚实际验证，CI45432097084 为 992 项零跳过；完整 OBO 权威适配及回放/重建未完成，质量验收按 owner 调整后移至 K6；详见[执行清单](120-rebuild-execution-checklist-20261124.md)与[170](../30-design/170-semantic-persistence-adapter.md) |
-| K2 | LOCAL IMPLEMENTATION IN PROGRESS | 正式编译输入、Atlas 候选协议、确定性实体/关系校验和快照入库已有；受权候选查询、逐关系裁决、无写入预览和指纹绑定提交 API 已接审核工作台。浏览器合成流程已验证；编译任务创建/调度及真实 Atlas 待接，未关闭 K2a；见 [170 §10–12](../30-design/170-semantic-persistence-adapter.md#10-k2a-本地关系候选编译2026-11-25) |
+| K2 | LOCAL IMPLEMENTATION IN PROGRESS | 编译/审核API及工作台已合并；本轮接首次任务创建、持久状态、租约执行/重试及候选结果入口，采用明确的本地通用词表。真实Atlas、冲突选择、多格式及系统验收仍待完成；实现不等于生产上线，见[170 §10–13](../30-design/170-semantic-persistence-adapter.md#10-k2a-本地关系候选编译2026-11-25) |
 | K3–K6 | NOT STARTED | 保持本文件 §40 的先后及验收门槛，不因纯函数通过而提前记完成 |
 
 当前原文基线为既有 BM25 组件，不含向量、精排或模型应答，报告不证明图增强收益。

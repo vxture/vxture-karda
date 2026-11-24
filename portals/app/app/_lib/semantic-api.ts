@@ -1,5 +1,6 @@
 import { ApiError } from "./api";
-import type { PostgresSemanticStore } from "../kb/semantic/store-postgres";
+import type { PostgresSemanticStore,CompileTaskRow } from "../kb/semantic/store-postgres";
+export type { CompileTaskRow };
 
 export type CompileList = Awaited<ReturnType<PostgresSemanticStore["listCompiles"]>>;
 export type CompileDetail = Awaited<ReturnType<PostgresSemanticStore["inspectCompile"]>>;
@@ -8,8 +9,8 @@ export type ReviewDecision = "accept" | "revise" | "reject";
 
 export class SemanticReviewApi {
   constructor(private readonly kbId: string) {}
-  private async request<T>(query: string, body?: unknown): Promise<T> {
-    const response = await fetch(`/api/kb/${encodeURIComponent(this.kbId)}/semantic${query}`, {
+  private async request<T>(query: string, body?: unknown,endpoint="semantic"): Promise<T> {
+    const response = await fetch(`/api/kb/${encodeURIComponent(this.kbId)}/${endpoint}${query}`, {
       cache: "no-store", credentials: "same-origin", ...(body ? {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       } : {}),
@@ -20,6 +21,9 @@ export class SemanticReviewApi {
     return result as T;
   }
   list(before?: string) { return this.request<CompileList>(before ? `?before=${encodeURIComponent(before)}` : ""); }
+  tasks(){return this.request<{tasks:CompileTaskRow[]}>("",undefined,"compile-tasks");}
+  createTask(taskId:string){return this.request<{taskId:string;duplicate:boolean}>("",{action:"create",taskId},"compile-tasks");}
+  executeTask(taskId:string){return this.request<{claimed:boolean;runId:string|null}>("",{action:"execute",taskId},"compile-tasks");}
   detail(runId: string) { return this.request<CompileDetail>(`?runId=${encodeURIComponent(runId)}`); }
   review(runId: string, relationId: string, expectedRevision: number, decision: ReviewDecision, note: string) {
     return this.request<{reviewId:string;revision:number}>("",{action:"review",runId,relationId,expectedRevision,decision,note});

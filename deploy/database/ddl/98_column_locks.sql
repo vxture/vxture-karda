@@ -281,3 +281,10 @@ REVOKE UPDATE, DELETE ON karda_kb.semantic_schema_version, karda_kb.semantic_rev
   karda_kb.semantic_release_source, karda_kb.semantic_release_review, karda_kb.semantic_event_receipt FROM karda_svc;
 GRANT UPDATE (generation, release_id, updated_at) ON karda_kb.semantic_release_head TO karda_svc;
 -- END SEMANTIC LOCKS
+
+-- BEGIN SEMANTIC TASK LOCKS
+GRANT SELECT, INSERT ON karda_kb.semantic_compile_task TO karda_svc;
+REVOKE UPDATE, DELETE ON karda_kb.semantic_compile_task FROM karda_svc;
+GRANT UPDATE (state,attempt,lease_id,lease_until,run_id,result,error_code,updated_at)
+  ON karda_kb.semantic_compile_task TO karda_svc;
+-- END SEMANTIC TASK LOCKS

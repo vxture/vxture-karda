@@ -986,6 +986,25 @@ model SemanticReleaseReview {
   @@schema("karda_kb")
 }
 
+model SemanticCompileTask {
+  id String @id @db.Uuid
+  kb_id String @db.Uuid
+  created_by String @db.VarChar(128)
+  snapshot Json
+  snapshot_hash String @db.VarChar(64)
+  state String @default("queued") @db.VarChar(16)
+  attempt Int @default(0)
+  lease_id String? @db.Uuid
+  lease_until DateTime? @db.Timestamptz()
+  run_id String? @db.Uuid
+  result Json @default("{}")
+  error_code String? @db.VarChar(128)
+  created_at DateTime @default(now()) @db.Timestamptz()
+  updated_at DateTime @default(now()) @db.Timestamptz()
+  @@map("semantic_compile_task")
+  @@schema("karda_kb")
+}
+
 model SemanticEventReceipt {
   kb_id String @db.Uuid
   event_id String @db.Uuid
