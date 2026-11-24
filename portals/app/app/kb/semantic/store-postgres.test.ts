@@ -289,6 +289,8 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
     await store.submitPreview(identity,kb,selectionPreview);
     const selectionPinned={schema:conflictCompilation.payload.schema,entityTypes:new Map(conflictCompilation.payload.entityTypes.map(t=>[t.kind,t.type]))};
     const selectedReader=new PostgresSemanticReader(service,objects,admit,(db,ids)=>new PostgresFormalSemanticLoader(selectionPinned).load(db,ids));
+    assert.equal((await selectedReader.read(identity,[kb],query)).edges.length,0,"publication does not restore a removed consumer attachment");
+    await admin.query("INSERT INTO karda_kb.kb_attachment(workspace_id,user_sub,product_code,kb_id) VALUES($1,$2,'karda',$3)",[ws,sub,kb]);
     const selectedGraph=await selectedReader.read(identity,[kb],query);
     assert.deepEqual(selectedGraph.edges.map(e=>e.id),[chosen.id],"selected, reviewed and published relations reach the authorized reader");
     const otherRun=await store.recordCompile(identity,other,{taskKey:"1".repeat(64),configHash,payload:{...payload,relations:[],sources:[]}});
