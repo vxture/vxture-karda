@@ -286,3 +286,12 @@ never enters local_usage.raw counter consumption. Reviewed db-init only.
 0016、baseline、Prisma 和 98 同步；新旧库重复应用在隔离测试执行。SQL 是 FK、CHECK、默认值及授权权威，Prisma 只生成客户端。
 既有 entity/assertion/document 增加同库唯一索引用于复合外键；不修改原有行或枚举，不迁移客户内容。
 FK 无级联删除，来源撤回沿用状态变化，永久清理需后续审计保留方案；旧应用仍能读取原表，结构回退保留新增表。
+
+## 11. 关系编译任务（0017）
+
+新增 semantic_compile_task，总表数52。保存用户创建的任务ID、同库作用域、创建者、不可变输入快照及哈希，
+以及 queued/running/completed/needs_review/failed/suspended 状态、最多3次尝试、5分钟执行租约、候选run和诊断。
+kb_id/run_id 复合外键保证完成结果同库；补充 semantic_compile_run(kb_id,id) 唯一索引。
+运行时只可更新状态、尝试、租约、结果及更新时间，不能修改身份、输入或删除任务。
+候选入库与任务completed同事务完成，旧租约不能提交；失败或冲突诊断不推进发布head。
+baseline/0017/Prisma/98锁步，生产结构仍须db-init，不在应用请求中自动建表。

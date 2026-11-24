@@ -6,6 +6,7 @@ import { PostgresSemanticStore, PostgresFormalSemanticLoader, semanticValueHash 
 import { PostgresSemanticReader } from "./read-postgres";
 import { SEMANTIC_RELEASE_FORMAT, type SemanticReleasePayload } from "./release-format";
 import { AtlasSemanticCandidateClient, runSemanticCompile } from "./compiler";
+import { executeCompileTask } from "./compile-task";
 
 test("formal store canonical values and invalid input fail before platform/SQL", async () => {
   assert.equal(semanticValueHash({ b: 2, a: 1 }), semanticValueHash({ a: 1, b: 2 }));
@@ -219,10 +220,49 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
     assert.equal((await read()).edges.length,1);
     await admin.query("DELETE FROM karda_kb.kb_attachment WHERE kb_id=$1",[kb]);
     assert.equal((await read()).edges.length,0);
+    await admin.query("UPDATE karda_kb.entity SET kind='thing' WHERE kb_id=$1",[kb]);
+    const taskId=randomUUID();
+    assert.deepEqual(await store.createCompileTask(identity,kb,taskId),{taskId,duplicate:false});
+    assert.deepEqual(await store.createCompileTask(identity,kb,taskId),{taskId,duplicate:true});
+    const claim=await store.claimCompileTask(identity,kb,taskId);assert.ok(claim);
+    assert.equal(await store.claimCompileTask(identity,kb,taskId),null,"a live lease prevents concurrent model work");
+    await admin.query("UPDATE karda_kb.semantic_compile_task SET lease_until=now()-interval '1 second' WHERE id=$1",[taskId]);
+    const replacement=await store.claimCompileTask(identity,kb,taskId);assert.ok(replacement);
+    await assert.rejects(store.recordCompile(identity,kb,{taskKey:"8".repeat(64),configHash,payload,
+      task:{id:taskId,leaseId:claim.lease_id}}),/semantic_task_stale_lease/);
+    await store.settleCompileTask(identity,kb,taskId,replacement.lease_id,"suspended",{},"semantic_test_suspend");
+    let proposals=0;
+    const taskDeps={store,tenantForWorkspace:async()=>ws,candidates:()=>({propose:async()=>{
+      proposals++;return [{type:"requires",source:{name:"left",type:"entity"},target:{name:"right",type:"entity"},assertionIds:[assertion]}];
+    }})};
+    const taskResult=await executeCompileTask(identity,kb,taskId,taskDeps);assert.ok(taskResult.runId);assert.equal(proposals,1);
+    const tasks=await store.listCompileTasks(identity,kb);
+    assert.equal(tasks[0].state,"completed");assert.equal(tasks[0].run_id,taskResult.runId);assert.equal(tasks[0].attempt,3);
+    assert.equal((await executeCompileTask(identity,kb,taskId,taskDeps)).claimed,false);assert.equal(proposals,1);
+    await assert.rejects(service.query("UPDATE karda_kb.semantic_compile_task SET snapshot='{}' WHERE id=$1",[taskId]),{code:"42501"});
+    const parkedId=randomUUID();await store.createCompileTask(identity,kb,parkedId);
+    await executeCompileTask(identity,kb,parkedId,{...taskDeps,candidates:()=>null});
+    const parked=(await store.listCompileTasks(identity,kb)).find(t=>t.id===parkedId)!;
+    assert.equal(parked.state,"suspended");assert.equal(parked.error_code,"atlas_not_configured");
+    await role("readonly");await assert.rejects(store.createCompileTask(identity,kb,randomUUID()),/semantic_write_denied/);
+    await assert.rejects(executeCompileTask(identity,kb,parkedId,taskDeps),/semantic_write_denied/);await role("member");
+    const changedId=randomUUID();await store.createCompileTask(identity,kb,changedId);
+    await admin.query("UPDATE karda_kb.document SET content_state='archived' WHERE id=$1",[doc]);
+    await executeCompileTask(identity,kb,changedId,taskDeps);
+    assert.equal((await store.listCompileTasks(identity,kb)).find(t=>t.id===changedId)?.state,"failed");assert.equal(proposals,1);
+    await admin.query("UPDATE karda_kb.document SET content_state='indexed' WHERE id=$1",[doc]);
+    const conflictId=randomUUID();await store.createCompileTask(identity,kb,conflictId);
+    await executeCompileTask(identity,kb,conflictId,{...taskDeps,candidates:()=>({propose:async()=>["left","right"].map(name=>({
+      type:"requires",source:{name:"left",type:"entity"},target:{name,type:"entity"},assertionIds:[assertion],
+    }))})});
+    const conflictTask=(await store.listCompileTasks(identity,kb)).find(t=>t.id===conflictId)!;
+    assert.equal(conflictTask.state,"needs_review");assert.equal(conflictTask.run_id,null);
+    const otherRun=await store.recordCompile(identity,other,{taskKey:"1".repeat(64),configHash,payload:{...payload,relations:[],sources:[]}});
+    await assert.rejects(service.query("UPDATE karda_kb.semantic_compile_task SET run_id=$2 WHERE id=$1",[taskId,otherRun.runId]),{code:"23503"});
   } finally {
     assert.match(constraint,/^semantic_injected_[a-f0-9]{32}$/);
     await admin.query(`ALTER TABLE karda_kb.semantic_event_receipt DROP CONSTRAINT IF EXISTS "${constraint}"`);
-    for (const table of ["semantic_event_receipt","semantic_release_head","semantic_release_review","semantic_relation_assertion",
+    for (const table of ["semantic_compile_task","semantic_event_receipt","semantic_release_head","semantic_release_review","semantic_relation_assertion",
       "semantic_relation","semantic_release_source","semantic_release","semantic_compile_run","semantic_review","semantic_schema_version"])
       await admin.query(`DELETE FROM karda_kb.${table} WHERE kb_id=ANY($1::uuid[])`,[[kb,other]]);
     await admin.query("DELETE FROM karda_kb.knowledge_base WHERE id=ANY($1::uuid[])",[[kb,other]]);

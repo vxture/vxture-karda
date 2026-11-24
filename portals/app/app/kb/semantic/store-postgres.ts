@@ -11,6 +11,12 @@ import { projectNeighborhood } from "./projection";
 import type { KnowledgeSnapshot } from "./contracts";
 import type { CompilerSnapshot } from "./compiler";
 import { freezeCompilerSnapshot } from "./compiler";
+import { localCompileProfile } from "./compile-profile";
+
+export interface CompileTaskRow {
+  id:string; state:string; attempt:number; run_id:string|null; error_code:string|null; result:Record<string,unknown>;
+}
+interface ClaimedCompileTask extends CompileTaskRow { snapshot:CompilerSnapshot; snapshot_hash:string; lease_id:string; }
 
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 const HASH = /^[a-f0-9]{64}$/;
@@ -64,6 +70,72 @@ function acceptedReviews(input: PublishedRelationInput, reviews: ReviewRow[]): v
 export class PostgresSemanticStore {
   constructor(private readonly pool: Pool, private readonly objects: Pick<ObjectStore, "get">,
     private readonly admitPlatform: (identity: SemanticReadIdentity) => Promise<boolean>) {}
+
+  async createCompileTask(identity:SemanticReadIdentity,kbId:string,taskId:string) {
+    if(!UUID.test(taskId))throw new Error("semantic_invalid_task");
+    const existing=await this.write(identity,kbId,"data.write",async db=>{
+      const row=(await db.query<{id:string}>("SELECT id FROM karda_kb.semantic_compile_task WHERE kb_id=$1 AND id=$2 AND created_by=$3",[kbId,taskId,identity.sub])).rows[0];
+      if(row)return {existing:row.id,sources:[]};
+      const sources=(await db.query<{id:string;active_chunk_version:number;content_hash:string}>(`SELECT id,active_chunk_version,content_hash
+        FROM karda_kb.document WHERE kb_id=$1 AND content_state='indexed' AND mime IN ('text/plain','text/markdown') ORDER BY id LIMIT 101`,[kbId])).rows;
+      if(!sources.length)throw new Error("semantic_compile_inputs_required");
+      if(sources.length>100)throw new Error("semantic_source_budget");
+      return {existing:null,sources:sources.map(s=>({kbId,documentId:s.id,version:s.active_chunk_version,contentHash:s.content_hash}))};
+    });
+    if(existing.existing)return {taskId:existing.existing,duplicate:true};
+    const snapshot=await this.loadCompilerSnapshot(identity,kbId,{...localCompileProfile(),sources:existing.sources});
+    if(!snapshot.assertions.length||snapshot.entities.length<2)throw new Error("semantic_compile_inputs_required");
+    if(snapshot.entities.some(e=>!snapshot.entityTypes.some(t=>t.kind===e.kind)))throw new Error("semantic_entity_kind_unmapped");
+    const snapshotHash=semanticValueHash(snapshot);
+    return this.write(identity,kbId,"data.write",async db=>{
+      await this.sources(db,decode(kbId,{format:"karda.semantic.release.v1",...snapshot,relations:[]}));
+      const inserted=await db.query(`INSERT INTO karda_kb.semantic_compile_task(id,kb_id,created_by,snapshot,snapshot_hash)
+        VALUES($1,$2,$3,$4,$5) ON CONFLICT(id) DO NOTHING RETURNING id`,[taskId,kbId,identity.sub,snapshot,snapshotHash]);
+      if(!inserted.rowCount){
+        const previous=(await db.query<{snapshot_hash:string}>("SELECT snapshot_hash FROM karda_kb.semantic_compile_task WHERE kb_id=$1 AND id=$2 AND created_by=$3",[kbId,taskId,identity.sub])).rows[0];
+        if(!previous||previous.snapshot_hash!==snapshotHash)throw new Error("semantic_task_conflict");
+      }
+      return {taskId,duplicate:!inserted.rowCount};
+    });
+  }
+
+  async listCompileTasks(identity:SemanticReadIdentity,kbId:string):Promise<CompileTaskRow[]> {
+    return this.write(identity,kbId,"data.write",async db=>{
+      await db.query(`UPDATE karda_kb.semantic_compile_task SET state='failed',lease_id=NULL,lease_until=NULL,
+        error_code='semantic_attempts_exhausted',updated_at=now() WHERE kb_id=$1 AND created_by=$2
+        AND state='running' AND attempt=3 AND lease_until<clock_timestamp()`,[kbId,identity.sub]);
+      return (await db.query<CompileTaskRow>(`SELECT id,state,attempt,run_id,error_code,result
+        FROM karda_kb.semantic_compile_task WHERE kb_id=$1 AND created_by=$2 ORDER BY created_at DESC,id DESC LIMIT 50`,[kbId,identity.sub])).rows;
+    });
+  }
+
+  async claimCompileTask(identity:SemanticReadIdentity,kbId:string,taskId:string):Promise<ClaimedCompileTask|null> {
+    if(!UUID.test(taskId))throw new Error("semantic_invalid_task");
+    return this.write(identity,kbId,"data.write",async db=>{
+      const row=(await db.query<ClaimedCompileTask>(`UPDATE karda_kb.semantic_compile_task
+        SET state='running',attempt=attempt+1,lease_id=$4,lease_until=clock_timestamp()+interval '5 minutes',error_code=NULL,updated_at=now()
+        WHERE kb_id=$1 AND id=$2 AND created_by=$3 AND attempt<3
+          AND (state IN ('queued','failed','suspended') OR (state='running' AND lease_until<clock_timestamp()))
+        RETURNING id,state,attempt,run_id,error_code,result,snapshot,snapshot_hash,lease_id`,[kbId,taskId,identity.sub,randomUUID()])).rows[0];
+      if(row)return row;
+      const found=(await db.query<{id:string}>("SELECT id FROM karda_kb.semantic_compile_task WHERE kb_id=$1 AND id=$2 AND created_by=$3",[kbId,taskId,identity.sub])).rows[0];
+      if(!found)throw new Error("semantic_task_unavailable");
+      return null;
+    });
+  }
+
+  async settleCompileTask(identity:SemanticReadIdentity,kbId:string,taskId:string,leaseId:string,
+    state:"needs_review"|"failed"|"suspended",result:Record<string,unknown>,errorCode:string|null) {
+    if(!UUID.test(taskId)||!UUID.test(leaseId)||!["needs_review","failed","suspended"].includes(state)||
+      (errorCode!==null&&!/^[a-z0-9_]{1,128}$/.test(errorCode)))throw new Error("semantic_invalid_task");
+    semanticValueHash(result);
+    return this.write(identity,kbId,"data.write",async db=>{
+      const updated=await db.query(`UPDATE karda_kb.semantic_compile_task SET state=$5,result=$6,error_code=$7,
+        lease_id=NULL,lease_until=NULL,updated_at=now() WHERE kb_id=$1 AND id=$2 AND created_by=$3 AND lease_id=$4
+        AND state='running' AND lease_until>clock_timestamp() RETURNING id`,[kbId,taskId,identity.sub,leaseId,state,result,errorCode]);
+      if(!updated.rowCount)throw new Error("semantic_task_stale_lease");
+    });
+  }
 
   /** Reviewer-only keyset pagination; UUID order is stable, not chronological. */
   async listCompiles(identity: SemanticReadIdentity, kbId: string, limit = 20, before?: string) {
@@ -239,13 +311,27 @@ export class PostgresSemanticStore {
   /** A validated compile is still a candidate snapshot, never a publication. */
   async recordCompile(identity: SemanticReadIdentity, kbId: string, input: {
     taskKey: string; configHash: string; payload: SemanticReleasePayload;
+    task?:{id:string;leaseId:string};
   }): Promise<{ runId: string; duplicate: boolean }> {
     if (!HASH.test(input.taskKey) || !HASH.test(input.configHash)) throw new Error("semantic_invalid_compile");
     const actor = identity.sub;
     const taskKey = input.taskKey, configHash = input.configHash, payload = frozenPayload(kbId, input.payload), decoded = decode(kbId, payload);
     const definition = { schema: payload.schema, entityTypes: payload.entityTypes };
     const definitionHash = semanticValueHash(definition), inputHash = semanticValueHash(decoded.sources);
+    const task=input.task?{...input.task}:null;
+    if(task&&(!UUID.test(task.id)||!UUID.test(task.leaseId)))throw new Error("semantic_invalid_task");
     return this.write(identity, kbId, "data.write", async db => {
+      if(task){
+        const fence=await db.query(`SELECT id FROM karda_kb.semantic_compile_task WHERE kb_id=$1 AND id=$2 AND created_by=$3
+          AND state='running' AND lease_id=$4 AND lease_until>clock_timestamp() FOR UPDATE`,[kbId,task.id,actor,task.leaseId]);
+        if(!fence.rowCount)throw new Error("semantic_task_stale_lease");
+      }
+      const complete=async(runId:string)=>{
+        if(task){const settled=await db.query(`UPDATE karda_kb.semantic_compile_task SET state='completed',run_id=$3,lease_id=NULL,
+          lease_until=NULL,error_code=NULL,result='{}',updated_at=now() WHERE kb_id=$1 AND id=$2 AND lease_id=$4
+          AND lease_until>clock_timestamp() RETURNING id`,[kbId,task.id,runId,task.leaseId]);
+          if(!settled.rowCount)throw new Error("semantic_task_stale_lease");}
+      };
       await this.sources(db, decoded);
       await db.query(`INSERT INTO karda_kb.semantic_schema_version(kb_id,namespace,schema_id,version,definition_hash,definition)
         VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(kb_id,namespace,schema_id,version) DO NOTHING`,
@@ -260,13 +346,13 @@ export class PostgresSemanticStore {
       if (previous) {
         if (semanticValueHash(previous.candidates) !== semanticValueHash(payload) || previous.config_hash !== configHash)
           throw new Error("semantic_compile_task_conflict");
-        return { runId: previous.id, duplicate: true };
+        await complete(previous.id);return { runId: previous.id, duplicate: true };
       }
       const runId = randomUUID();
       await db.query(`INSERT INTO karda_kb.semantic_compile_run(id,kb_id,schema_version_id,task_key,input_hash,config_hash,
         source_manifest,candidates,status,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'validated',$9)`,
         [runId, kbId, schema.id, taskKey, inputHash, configHash, JSON.stringify(decoded.sources), payload, actor]);
-      return { runId, duplicate: false };
+      await complete(runId);return { runId, duplicate: false };
     });
   }
 
