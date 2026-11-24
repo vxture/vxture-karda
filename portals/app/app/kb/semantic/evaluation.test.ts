@@ -32,6 +32,19 @@ function fixture(): {corpus:EvaluationCorpus;dataset:DraftDataset} {
   return {corpus,dataset};
 }
 
+test("multi-source scoring uses source/section identity and never credits a namesake section", () => {
+  const {corpus,dataset} = fixture();
+  corpus.sources.push({ ...structuredClone(corpus.sources[0]), id: "other-source", title: "Other", url: "https://example.org/other" });
+  dataset.corpusSha256 = corpusFingerprint(corpus);
+  dataset.cases = [{ id: "cross-doc", split: "development", kind: "multi_article", question: "采购预算金额",
+    expectedAnswer: "Both sources", evidence: [{sourceId:"source",sectionId:"s1"},{sourceId:"other-source",sectionId:"s1"}] }];
+  const report = evaluateDraftLexical(corpus, dataset, 1);
+  assert.equal(report.metrics.hitEvidence, 1);
+  assert.equal(report.metrics.completeEvidenceCases, 0);
+  assert.equal(report.cases[0].retrieved.length, 1);
+  assert.equal(report.evidenceIdentity, "source_and_section");
+});
+
 test("draft scoring reports evidence recall, never declares gold or exposes reserved questions",()=>{
   const {corpus,dataset}=fixture();
   const report=evaluateDraftLexical(corpus,dataset);

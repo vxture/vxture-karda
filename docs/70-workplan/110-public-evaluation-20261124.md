@@ -69,6 +69,34 @@ K0b 从「无真实来源」推进到「已具备可追溯真实来源和待审�
 本轮同时补上 K1a 的治理到期检查：verificationExpiresAt 与业务 validUntil 分开，verified 标签未及时转 stale 也不能继续出图。
 无数据库迁移、生产接线或客户权限变更。
 
+## 70. K0b 复核工具包（2026-11-24 后续批）
+
+已实现开发集复核导出与回执结构检查；不修改题库 reviewStatus、不产生 gold、不评分保留题。
+一次导出包含 45 道开发题、逐题指纹、答案草案、来源 URL/版本、UTF-16 锚点和精确原文段落；
+review.json 全部初始化为 pending，review.md 供逐项阅读。保留集的题目、答案与证据段落不导出。
+
+```powershell
+node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/export-review.ts D:\review-new-directory
+node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/check-review.ts D:\review-new-directory\review.json
+```
+
+导出目录必须全新，防止覆盖已填写的复核结果。回执 accept/revise/reject 必须填写 reviewer、
+ISO UTC reviewedAt 及理由；pending 不得带已复核身份。原文、题目、答案、证据或分区改变后，
+旧回执因 corpus/dataset/case 指纹不匹配而失效。拒绝重复、缺失、陌生或保留题回执。
+revise 需生成新数据版本后重新复核，不由工具偷偷修改题库；reject 也不静默减少评分分母。
+
+填写的 reviewer 只是**待核验归属的回执**，不是已认证的人类身份。
+即便所有开发题填 accept，结构检查仍固定 acceptedGold=false、humanIdentityVerified=false，
+不宣告 K0b 通过。保留集独立评测、业务资料族划分和人工验收仍需独立证据。
+本轮实际生成 45 项 pending，未代填任何人工结论。
+
+多来源评分入口同时修正：文档局部条款 ID 允许同名，检索和命中一律绑定 sourceId+sectionId；
+避免从另一份资料的“第一条”错误计入支持证据。报告升级 reportVersion=2，新增 evidenceIdentity。
+已重跑开发基线，仍为 52/53 条证据、41/42 题完整，15 道保留题未评分；这不是新质量收益。
+
+本轮仅完成 K0b 内可合并的复核工具及评测修正；独立项目资料、人工复核、跨文档留出和
+性能预算仍未完成。[17 项清单](120-rebuild-execution-checklist-20261124.md)数量保持 5 完成/12 未完成。
+
 ## 60. 本地验证
 
 新增评测校验 11 项与现行图投影 21 项，共 32 项通过；app TypeScript 通过。
