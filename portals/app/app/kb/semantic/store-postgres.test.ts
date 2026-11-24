@@ -300,6 +300,12 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
     assert.equal(pack.passages[0].excerpt,"\u4e2d\ud83d\ude00");assert.deepEqual(pack.gaps,[]);
     const directory=await selectedReader.readPackage(identity,[kb],query,true);
     assert.deepEqual(directory.nodes.map(n=>n.id),pack.nodes.map(n=>n.id));
+    const exportPack=await selectedReader.readPackage(identity,[kb],query,false,true);
+    assert.deepEqual(exportPack.passages,pack.passages);
+    await role("readonly");
+    await assert.rejects(selectedReader.readPackage(identity,[kb],query,false,true),/semantic_read_denied/);
+    assert.deepEqual((await selectedReader.readPackage(identity,[kb],query)).edges,pack.edges);
+    await role("member");
     const reverse=await selectedReader.readPackage(identity,[kb],{...query,seedIds:[right]});
     assert.deepEqual(reverse.edges,pack.edges,"backlinks use the same formal edge and evidence");
     await admin.query("UPDATE karda_kb.document SET content_state='archived' WHERE id=$1",[doc]);
