@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { corpusFingerprint, validateEvaluation, type DraftCase, type DraftDataset, type EvaluationCorpus } from "./evaluation";
+import { validateReviewReceipts } from "./review-receipts.js";
 
 export interface ReviewEntry {
   caseId: string;
@@ -56,28 +57,7 @@ export function createReviewSheet(corpus: EvaluationCorpus, dataset: DraftDatase
 /** Structural receipts only: typed reviewer names do not prove human identity. */
 export function inspectReviewSheet(corpus: EvaluationCorpus, dataset: DraftDataset, sheet: ReviewSheet) {
   const expected = createReviewSheet(corpus, dataset);
-  if (sheet.formatVersion !== 1 || sheet.purpose !== expected.purpose ||
-      sheet.corpusSha256 !== expected.corpusSha256 || sheet.datasetSha256 !== expected.datasetSha256 ||
-      !Array.isArray(sheet.entries) || sheet.entries.length !== expected.entries.length) throw new Error("review_binding_mismatch");
-  const cases = new Map(expected.entries.map(e => [e.caseId, e.caseSha256]));
-  const seen = new Set<string>();
-  const counts = { pending: 0, accept: 0, revise: 0, reject: 0 };
-  for (const entry of sheet.entries) {
-    if (seen.has(entry.caseId) || cases.get(entry.caseId) !== entry.caseSha256 ||
-        !["pending", "accept", "revise", "reject"].includes(entry.decision) || typeof entry.note !== "string") {
-      throw new Error("invalid_review_entry");
-    }
-    seen.add(entry.caseId);
-    if (entry.decision === "pending") {
-      if (entry.reviewer !== null || entry.reviewedAt !== null) throw new Error("invalid_pending_review");
-    } else {
-      if (typeof entry.reviewer !== "string" || !entry.reviewer.trim() || entry.reviewer.length > 128 ||
-          typeof entry.reviewedAt !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(entry.reviewedAt) ||
-          !Number.isFinite(Date.parse(entry.reviewedAt)) || new Date(entry.reviewedAt).toISOString() !== entry.reviewedAt ||
-          !entry.note.trim()) throw new Error("review_receipt_required");
-    }
-    counts[entry.decision]++;
-  }
+  const counts = validateReviewReceipts(expected, sheet);
   return { formatVersion: 1, purpose: sheet.purpose, corpusSha256: expected.corpusSha256,
     datasetSha256: expected.datasetSha256, counts, structurallyComplete: counts.pending === 0 && counts.revise === 0,
     acceptedGold: false, humanIdentityVerified: false, reservedCasesExported: 0,

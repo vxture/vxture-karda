@@ -30,6 +30,7 @@ function focusCase() {
   $("question").textContent = selectedCase.question; $("answer").textContent = selectedCase.expectedAnswer ?? words.unknown;
   const row = DATA.results.find(r => r.id === selectedCase.id), expected = selectedCase.evidence;
   $("case-status").textContent = expected.length ? "Top5: " + row.hitCount + "/" + row.expectedEvidence + " / " + words.pending : words.unknown;
+  loadReviewForm();
   $("supports").replaceChildren();
   for (const e of expected) { const id = JSON.stringify([e.sourceId, e.sectionId]), hit = row.retrieved.includes(id);
     $("supports").append(button((hit ? words.hit : words.missing) + " / " + sourceMap.get(e.sourceId).title + " / " + e.sectionId, () => choose(id), "evidence-button" + (hit ? "" : " missing")));
@@ -74,10 +75,69 @@ function applyView() { $("graph").setAttribute("viewBox", `${view.x} ${view.y} $
 function zoom(factor) { const w = Math.max(360, Math.min(2880, view.w * factor)), h = w * 850 / 1440; view = { x: view.x + (view.w - w) / 2, y: view.y + (view.h - h) / 2, w, h }; applyView(); }
 $("zoom-in").addEventListener("click", () => zoom(.8)); $("zoom-out").addEventListener("click", () => zoom(1.25));
 $("fit").addEventListener("click", () => { view = { x: 0, y: 0, w: 1440, h: 850 }; applyView(); });
-$("case-select").addEventListener("change", () => { selectedCase = DATA.cases.find(c => c.id === $("case-select").value); $("project-filter").value = ""; $("search").value = ""; focusCase(); draw(); });
+$("case-select").addEventListener("change", () => { rememberReviewDraft(); selectedCase = DATA.cases.find(c => c.id === $("case-select").value); $("project-filter").value = ""; $("search").value = ""; focusCase(); draw(); });
 $("search").addEventListener("input", draw); $("project-filter").addEventListener("change", draw);
 let drag = null;
 $("graph").addEventListener("pointerdown", e => { if (e.target.closest("[data-node]")) return; drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y }; $("graph").setPointerCapture(e.pointerId); });
 $("graph").addEventListener("pointermove", e => { if (!drag) return; const box = $("graph").getBoundingClientRect(), scale = Math.min(box.width / view.w, box.height / view.h); view.x = drag.vx - (e.clientX - drag.x) / scale; view.y = drag.vy - (e.clientY - drag.y) / scale; applyView(); });
 $("graph").addEventListener("pointerup", () => { drag = null; }); $("graph").addEventListener("pointercancel", () => { drag = null; });
+// Receipts are local memory only; validation never authenticates the reviewer.
+let reviewSheet = structuredClone(DATA.reviewSheet), importPreview = null, dirty = false;
+const reviewDrafts = new Map();
+function currentEntry() { return reviewSheet.entries.find(e => e.caseId === selectedCase.id); }
+function formValue() { return { decision: $("review-decision").value, reviewer: $("reviewer").value, note: $("review-note").value }; }
+function rememberReviewDraft() {
+  const entry = currentEntry(), draft = formValue();
+  if (draft.decision === entry.decision && draft.reviewer === (entry.reviewer ?? "") && draft.note === entry.note) reviewDrafts.delete(selectedCase.id);
+  else reviewDrafts.set(selectedCase.id, draft);
+}
+function loadReviewForm() {
+  const entry = currentEntry(), draft = reviewDrafts.get(selectedCase.id) ?? { decision: entry.decision, reviewer: entry.reviewer ?? "", note: entry.note };
+  $("review-decision").value = draft.decision; $("reviewer").value = draft.reviewer; $("review-note").value = draft.note;
+  $("review-status").textContent = "Saved: " + entry.decision + (entry.reviewedAt ? " / " + entry.reviewedAt : "");
+  updateReviewCounts();
+}
+function updateReviewCounts() {
+  const c = validateReviewReceipts(DATA.reviewSheet, reviewSheet);
+  $("review-counts").textContent = "Pending " + c.pending + " / Accept " + c.accept + " / Revise " + c.revise + " / Reject " + c.reject + " / Unsaved forms " + reviewDrafts.size;
+}
+for (const id of ["review-decision", "reviewer", "review-note"]) $(id).addEventListener("input", () => { dirty = true; rememberReviewDraft(); updateReviewCounts(); });
+$("review-save").addEventListener("click", () => {
+  try {
+    const draft = formValue(), next = structuredClone(reviewSheet), entry = next.entries.find(e => e.caseId === selectedCase.id);
+    Object.assign(entry, draft, { reviewer: draft.decision === "pending" ? null : draft.reviewer.trim(), reviewedAt: draft.decision === "pending" ? null : new Date().toISOString() });
+    validateReviewReceipts(DATA.reviewSheet, next);
+    reviewSheet = next; reviewDrafts.delete(selectedCase.id); dirty = true; loadReviewForm();
+  } catch (error) { $("review-status").textContent = "Not saved: " + error.message + " (reviewer and reason required)."; }
+});
+$("review-export").addEventListener("click", () => {
+  try {
+    if (reviewDrafts.size) throw new Error("save_each_edited_form_before_export");
+    validateReviewReceipts(DATA.reviewSheet, reviewSheet);
+    const url = URL.createObjectURL(new Blob([JSON.stringify(reviewSheet, null, 2) + "\n"], { type: "application/json" }));
+    const a = document.createElement("a"); a.href = url; a.download = "karda-review-" + DATA.datasetSha256.slice(0, 12) + "-" + Date.now() + ".json";
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    $("review-status").textContent = "Download started. Confirm the JSON file is saved before closing. Local memory only.";
+  } catch (error) { $("review-status").textContent = "Not exported: " + error.message; }
+});
+$("review-import").addEventListener("change", async () => {
+  importPreview = null; $("review-apply").disabled = true;
+  try {
+    const file = $("review-import").files[0]; if (!file) return;
+    if (file.size > 2097152) throw new Error("review_file_too_large");
+    const candidate = JSON.parse(await file.text()), c = validateReviewReceipts(DATA.reviewSheet, candidate);
+    importPreview = candidate; $("review-apply").disabled = false;
+    $("import-status").textContent = "Validated preview: pending " + c.pending + ", accept " + c.accept + ", revise " + c.revise + ", reject " + c.reject + ". Apply explicitly to resume.";
+  } catch (error) { $("import-status").textContent = "Not imported: " + error.message; }
+});
+$("review-apply").addEventListener("click", () => {
+  try {
+    if (!importPreview) throw new Error("no_validated_preview");
+    validateReviewReceipts(DATA.reviewSheet, importPreview);
+    if (dirty || reviewDrafts.size || JSON.stringify(reviewSheet) !== JSON.stringify(DATA.reviewSheet)) throw new Error("local_work_exists_open_fresh_page_to_import");
+    reviewSheet = structuredClone(importPreview); importPreview = null; $("review-apply").disabled = true; dirty = true;
+    loadReviewForm(); $("import-status").textContent = "Applied validated receipts. No server submission or gold promotion.";
+  } catch (error) { $("import-status").textContent = "Not applied: " + error.message; }
+});
+window.addEventListener("beforeunload", event => { if (dirty) { event.preventDefault(); event.returnValue = ""; } });
 focusCase(); draw();

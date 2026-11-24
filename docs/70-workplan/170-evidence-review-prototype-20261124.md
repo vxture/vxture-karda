@@ -27,7 +27,7 @@ node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/export-review-g
 
 输出仅新建或逐字节一致复现；修改资料或界面后使用新路径。可以直接用浏览器打开 HTML；
 本轮额外启动了仅绑定 127.0.0.1 的本地预览，实际文件为工作区外 `knowledge-review-graph-v2-20261124/index.html`。
-没有 API、数据库写入、人工裁决提交或生产路由；页面不保存评审结果。
+没有 API、数据库写入或生产路由。后续回执子批支持本页内存保存和 JSON 下载，不向服务端提交。
 用户复核仍通过原 24 题包及新增 8 题包或对话逐题回复进行，本轮没有任何已接收的人审结论。
 
 连线只表示资料归属/包含，不是业务关系本体、推理、矛盾裁决或已验证知识。
@@ -51,3 +51,33 @@ CSP 只允许与内嵌代码匹配的 SHA256 脚本，没有外部字体、脚�
 
 截图与浏览快照保存在 git-ignore 的 `output/playwright/`，不把临时浏览工件纳入产品源码。
 此批补足 K0 一条资料审阅交互路径，不关闭 K0b，不将 K3a/K3b 标为完成。
+
+## 4. 本地复核回执子批
+
+新导出内嵌当前 32 题的完整指纹绑定复核表，初始均 pending。
+在同页核对原文后，可逐题选择认可、修改、拒绝或待复核；明确裁决必须填写复核人和理由，
+保存时记录规范 UTC 时间。切换题目保留未保存表单；存在未保存表单时拒绝导出，防止遗漏。
+关闭页面前提示内存数据风险，下载只表示已发起，用户须确认 JSON 文件实际保存。
+没有自动裁决、批量认可、浏览器持久存储或服务端写入。
+
+导入先检查 JSON 大小、资料/题集/逐题指纹、字段白名单、裁决和归因，再显示计数预览，
+必须明确点击应用；已有本页工作时拒绝应用，防止覆盖。错误导入不改变现有裁决。
+旧 24 题包和新增 8 题包继续保留；不能直接导入此 32 题版本，也不自动复制旧结论。
+浏览器与 CLI 使用同一纯校验器，拒绝自加 acceptedGold 等字段；结构有效不认证复核身份，
+不使 acceptedGold 或 humanIdentityVerified 变为 true。合并到金标和正式迁移仍须独立验收。
+
+新入口位于工作区外 `knowledge-review-receipts-20261124/index.html`，本地预览端口 8768；
+旧 8767 页面和文件保留。导出 JSON 可通过以下命令检查：
+
+```powershell
+node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/project-review.ts check <receipt.json> --history
+```
+
+共享校验器的浏览器 VM/服务端一致性测试覆盖版本错配、保留题、重复题、漏字段、
+未知字段、空身份/理由、非法日期和超长理由。交互验证只使用明确标为 synthetic 的测试记录，
+不计入真实用户复核。本批不关闭 K0b，不更改 K3 或正式服务完成状态。
+
+本批本地全量 982 项：968 通过、14 项数据库隔离测试待 CI、零失败；TypeScript 与五项护栏通过。
+真实浏览器验证缺理由拒存、切题保留输入、保存并下载 JSON，CLI 回读为 31 pending / 1 accept，
+且 acceptedGold=false、humanIdentityVerified=false；全部仅为 Synthetic UI 测试。
+已有工作时导入应用被拒绝；新页面显式应用可恢复回执。
