@@ -12,6 +12,8 @@ import type { KnowledgeSnapshot } from "./contracts";
 import type { CompilerSnapshot, Compilation } from "./compiler";
 import { freezeCompilerSnapshot } from "./compiler";
 import { localCompileProfile } from "./compile-profile";
+import {parsePathFor} from "../processing/ir";
+import {readSourceSnapshot,PDF_MIME,DOCX_MIME} from "../processing/source-snapshot";
 import { maintenanceReport, type MaintenanceReport, type MaintenanceDocument, type MaintenanceAssertion, type MaintenanceGround } from "./maintenance";
 
 export interface CompileTaskRow {
@@ -66,7 +68,7 @@ function acceptedReviews(input: PublishedRelationInput, reviews: ReviewRow[]): v
   })) throw new Error("semantic_review_required");
 }
 
-/** Formal-table writer. Native-text, same-workspace user-owned libraries only.
+/** Formal-table writer. Same-workspace user-owned libraries and verified source text.
  * Identity and platform admission MUST come from verified server context.
  * The HTTP adapter owns verified RP admission; no offline receipt import or auto-approval.
  */
@@ -97,7 +99,8 @@ export class PostgresSemanticStore {
           if(size>budget)throw new Error("semantic_source_budget"); budget-=size;
           const bytes=await this.objects.get(doc.storage_ref);
           text=verifiedSourceText({contentState:doc.content_state,activeVersion:doc.active_chunk_version,
-            contentHash:doc.content_hash,mime:doc.mime},bytes?.length===size?bytes:null);
+            contentHash:doc.content_hash,mime:doc.mime,normalized:parsePathFor(doc.mime??"")==="fast"?null:
+              await readSourceSnapshot(async(sql,...values)=>(await db.query(sql,values)).rows,doc.id,expected.version)},bytes?.length===size?bytes:null);
         }
         texts.set(doc.id,text);
       }
@@ -123,7 +126,7 @@ export class PostgresSemanticStore {
       const row=(await db.query<{id:string}>("SELECT id FROM karda_kb.semantic_compile_task WHERE kb_id=$1 AND id=$2 AND created_by=$3",[kbId,taskId,identity.sub])).rows[0];
       if(row)return {existing:row.id,sources:[]};
       const sources=(await db.query<{id:string;active_chunk_version:number;content_hash:string}>(`SELECT id,active_chunk_version,content_hash
-        FROM karda_kb.document WHERE kb_id=$1 AND content_state='indexed' AND mime IN ('text/plain','text/markdown') ORDER BY id LIMIT 101`,[kbId])).rows;
+        FROM karda_kb.document WHERE kb_id=$1 AND content_state='indexed' AND mime IN ('text/plain','text/markdown',$2,$3) ORDER BY id LIMIT 101`,[kbId,PDF_MIME,DOCX_MIME])).rows;
       if(!sources.length)throw new Error("semantic_compile_inputs_required");
       if(sources.length>100)throw new Error("semantic_source_budget");
       return {existing:null,sources:sources.map(s=>({kbId,documentId:s.id,version:s.active_chunk_version,contentHash:s.content_hash}))};
@@ -382,7 +385,8 @@ export class PostgresSemanticStore {
       if (size > budget) throw new Error("semantic_source_budget"); budget -= size;
       const bytes = await this.objects.get(row.storage_ref);
       const text = verifiedSourceText({ activeVersion: row.active_chunk_version, contentState: row.content_state,
-        mime: row.mime, contentHash: row.content_hash }, bytes?.length === size ? bytes : null);
+        mime: row.mime, contentHash: row.content_hash, normalized:parsePathFor(row.mime??"")==="fast"?null:
+          await readSourceSnapshot(async(sql,...values)=>(await db.query(sql,values)).rows,source.documentId,source.version) }, bytes?.length === size ? bytes : null);
       if (text === null) throw new Error("semantic_source_changed");
       texts.set(source.documentId, text);
     }

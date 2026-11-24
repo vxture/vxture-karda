@@ -19,6 +19,8 @@ import { getExtractionClient } from "../atlas/extract";
 import type { ExtractionClient } from "../atlas/extract";
 import { runExtraction, type ExtractionRunResult } from "./extract-run";
 import { tenantForWorkspace } from "../processing/atlas-embedder";
+import {readSourceSnapshot} from "../processing/source-snapshot";
+import {parsePathFor} from "../processing/ir";
 
 /** Documents per sweep. A bounded pass, re-invoked on a schedule - the same
  *  discipline the processing tick uses, and for the same reason: scheduling is
@@ -200,6 +202,8 @@ export async function runExtractionPass(
         kbId: doc.kbId,
         mime: doc.mime,
         bytes,
+        normalized:parsePathFor(doc.mime??"")==="fast"?null:
+          await readSourceSnapshot((sql,...values)=>p.$queryRawUnsafe(sql,...values),doc.id,doc.activeChunkVersion!),
         tenantId,
         workspaceId: doc.knowledgeBase.workspaceId,
         taskId: task.id,

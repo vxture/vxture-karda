@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { Pool } from "pg";
 
 const ddl = fileURLToPath(new URL("../../../../../deploy/database/ddl/", import.meta.url));
-const read = (name: string) => readFileSync(`${ddl}/${name}`, "utf8");
+const read = (name: string) => readFileSync(`${ddl}/${name}`, "utf8").replace(/\r\n/g,"\n");
 const baseline = read("00_baseline.sql"), locks = read("98_column_locks.sql");
 const increment = read("incr/0016_semantic_foundation.sql");
 function section(text: string, name: string) {
@@ -50,10 +50,10 @@ test("semantic foundation PostgreSQL: fresh and old-41 upgrade twice, immutable 
     return { admin, service };
   }
   async function apply(admin: Pool, old = false) {
-    await admin.query(old ? baseline.replace(structure, "").replace(/-- BEGIN SEMANTIC TASK\r?\n[\s\S]*?-- END SEMANTIC TASK\r?\n/, "") : baseline);
+    await admin.query(old ? baseline.replace(/-- BEGIN DOCUMENT TEXT SNAPSHOT[\s\S]*?-- END DOCUMENT TEXT SNAPSHOT/, "").replace(structure, "").replace(/-- BEGIN SEMANTIC TASK\r?\n[\s\S]*?-- END SEMANTIC TASK\r?\n/, "") : baseline);
     await admin.query(read("97_service_role.sql"));
     for (const name of increments) if (!old || name < "0016") await admin.query(read(`incr/${name}`));
-    await admin.query(old ? locks.replace(grants, "").replace(/-- BEGIN SEMANTIC TASK LOCKS\r?\n[\s\S]*?-- END SEMANTIC TASK LOCKS\r?\n/, "") : locks);
+    await admin.query(old ? locks.replace(/-- BEGIN DOCUMENT TEXT LOCKS[\s\S]*?-- END DOCUMENT TEXT LOCKS/, "").replace(grants, "").replace(/-- BEGIN SEMANTIC TASK LOCKS\r?\n[\s\S]*?-- END SEMANTIC TASK LOCKS\r?\n/, "") : locks);
   }
   async function seed(admin: Pool) {
     await admin.query(`INSERT INTO karda_kb.knowledge_base(id,workspace_id,owner_type,owner_sub,name)
@@ -83,7 +83,7 @@ test("semantic foundation PostgreSQL: fresh and old-41 upgrade twice, immutable 
     for (const { admin, service } of [fresh, upgraded]) {
       if (admin === fresh.admin) await seed(admin);
       assert.equal(Number((await admin.query(`SELECT count(*) FROM information_schema.tables
-        WHERE table_schema IN ('karda_kb','local_authz','local_usage','vx_provision') AND table_type='BASE TABLE'`)).rows[0].count), 52);
+        WHERE table_schema IN ('karda_kb','local_authz','local_usage','vx_provision') AND table_type='BASE TABLE'`)).rows[0].count), 53);
       await service.query(`INSERT INTO karda_kb.semantic_schema_version(id,kb_id,namespace,schema_id,version,definition_hash,definition)
         VALUES($1,$2,'test','things','1',$3,'{}')`, [schema, kb, hash]);
       await service.query(`INSERT INTO karda_kb.semantic_review(id,kb_id,subject_key,revision,decision,subject_hash,reviewer_sub,note)

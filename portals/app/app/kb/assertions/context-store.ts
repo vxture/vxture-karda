@@ -6,7 +6,9 @@
 
 import { getPrismaClient, prismaEnabled } from "../../lib/db";
 import { getObjectStore } from "../storage/objectstore";
-import { canonicalText, decodeSourceBytes, parsePathFor } from "../processing/ir";
+import { parsePathFor } from "../processing/ir";
+import {readSourceSnapshot} from "../processing/source-snapshot";
+import {verifiedSourceText} from "../semantic/source-text";
 import { buildContext, contextNotFound, contextRefusal, type ContextResult } from "./context-read";
 
 /**
@@ -32,7 +34,7 @@ export async function readContext(
       endOffset: true,
       version: true,
       documentId: true,
-      document: { select: { storageRef: true, mime: true, activeChunkVersion: true } },
+      document: { select: { storageRef: true, mime: true, activeChunkVersion: true,contentHash:true,contentState:true } },
     },
   });
   if (!chunk) return contextNotFound(citationId);
@@ -56,13 +58,17 @@ export async function readContext(
   // (PDF and friends) have chunks whose ranges are measured against the parsed
   // text, which is not what the object store holds - decoding those bytes as
   // UTF-8 would produce mojibake and slice it confidently.
-  if (parsePathFor(doc.mime ?? "application/octet-stream") !== "fast") return at("not_text");
+  const normalized=parsePathFor(doc.mime??"")==="fast"?null:
+    await readSourceSnapshot((sql,...values)=>p.$queryRawUnsafe(sql,...values),chunk.documentId,chunk.version);
+  if(parsePathFor(doc.mime??"")!=="fast"&&!normalized)return at("not_text");
 
   if (!doc.storageRef) return at("source_unavailable");
   const bytes = await getObjectStore().get(doc.storageRef);
   if (!bytes) return at("source_unavailable");
 
-  const canonical = canonicalText(decodeSourceBytes(bytes));
+  const canonical=verifiedSourceText({activeVersion:doc.activeChunkVersion,contentState:doc.contentState,
+    contentHash:doc.contentHash,mime:doc.mime,normalized},bytes);
+  if(canonical===null)return at("source_unavailable");
   return buildContext(citationId, chunk.documentId, chunk.version, canonical, {
     start: chunk.startOffset,
     end: chunk.endOffset,

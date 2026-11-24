@@ -10,7 +10,9 @@
 // only assemble them, so the one impure piece - getProcessingRuntime() building
 // the real Prisma / object-store ports - has nothing to test, and everything
 // below it is covered with fakes.
-import { decodeSourceBytes } from "./ir";
+import { decodeSourceBytes, parseFastPath, parsePathFor } from "./ir";
+import {normalizeSource} from "./source-normalizer";
+import {snapshotIR, type SourceSnapshot} from "./source-snapshot";
 import { ContentService } from "../lib/content-service";
 import { getContentStore, type DocumentRow } from "../lib/content-store";
 import { getObjectStore, type ObjectStore } from "../storage/objectstore";
@@ -181,14 +183,24 @@ export function makeResolver(deps: ResolverDeps): WorkerDeps["resolve"] {
  * document silently.
  */
 export function rawSourceFor(doc: DocumentRow, objects: ObjectStore): RawSource {
+  let raw:Buffer|null=null,normalized:SourceSnapshot|null=null;
   return {
     mime: doc.mime ?? "application/octet-stream",
     fetchText: async () => {
       if (!doc.storageRef) throw new Error(`document ${doc.id} has no stored object`);
       const bytes = await objects.get(doc.storageRef);
       if (!bytes) throw new Error(`stored object ${doc.storageRef} is missing`);
-      return decodeSourceBytes(bytes);
+      raw=bytes;
+      return parsePathFor(doc.mime??"")==="fast"?decodeSourceBytes(bytes):"";
     },
+    parse:async text=>{
+      if(parsePathFor(doc.mime??"")==="fast")return parseFastPath(text);
+      if(!raw)throw new Error("source_bytes_unavailable");
+      normalized=await normalizeSource(doc.mime??"",raw);
+      if(normalized.contentHash!==doc.contentHash)throw new Error("source_content_changed");
+      return snapshotIR(normalized);
+    },
+    snapshot:()=>normalized,
   };
 }
 

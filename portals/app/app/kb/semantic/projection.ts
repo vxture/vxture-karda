@@ -188,6 +188,7 @@ export function projectNeighborhood(
     evidence: [...chosenEvidence.values()].map(e => ({
       id: e.id, kbId: e.kbId, documentId: e.documentId, documentVersion: e.documentVersion,
       stance: e.stance, start: e.start, end: e.end,
+      ...(e.pages?{pages:[...e.pages]}:{}),
     })).sort(compareIds),
     truncated,
   };

@@ -7,7 +7,7 @@ export const semantic = {
   refresh:{"zh-CN":"\u5237\u65b0","en-US":"Refresh"},
   runs:{"zh-CN":"\u5019\u9009\u6279\u6b21","en-US":"Candidate batches"},
   createTask:{"zh-CN":"\u521b\u5efa\u5173\u7cfb\u7f16\u8bd1\u4efb\u52a1","en-US":"Create relation compile task"},
-  taskHint:{"zh-CN":"\u4ece\u5f53\u524d\u5df2\u7d22\u5f15\u7684\u7eaf\u6587\u672c\u8d44\u6599\u548c\u5df2\u6838\u9a8c\u65ad\u8a00\u751f\u6210\u5019\u9009\uff0c\u9700\u81f3\u5c11\u4e24\u4e2a\u5b9e\u4f53\u3002\u4f7f\u7528\u672c\u5730\u901a\u7528\u672c\u4f53\uff0c\u5c1a\u672a\u63a5\u5165 Ontos\u3002","en-US":"Compile current indexed native text and verified assertions with at least two entities. Uses a local general vocabulary; Ontos is not connected yet."},
+  taskHint:{"zh-CN": "\u4ece\u5f53\u524d\u5df2\u7d22\u5f15\u8d44\u6599\u4e0e\u5df2\u6838\u9a8c\u65ad\u8a00\u751f\u6210\u5019\u9009\uff0c\u9700\u81f3\u5c11\u4e24\u4e2a\u5b9e\u4f53\u3002\u652f\u6301\u7eaf\u6587\u672c\u3001\u6587\u5b57\u5c42PDF\u53ca\u57fa\u7840\u6b63\u6587DOCX\uff1b\u626b\u63cf\u4ef6\u548c\u590d\u6742Office\u5c1a\u4e0d\u652f\u6301\u3002\u4f7f\u7528\u672c\u5730\u901a\u7528\u672c\u4f53\u3002", "en-US": "Compile indexed sources and verified assertions with at least two entities. Supports native text, PDF text layers and basic main-body DOCX. Scans and complex Office content are unsupported. Uses a local general vocabulary."},
   tasks:{"zh-CN":"\u7f16\u8bd1\u4efb\u52a1","en-US":"Compile tasks"},
   rejectedItems:{"zh-CN":"\u672a\u901a\u8fc7\u6821\u9a8c\u7684\u5019\u9009","en-US":"Rejected candidate"},
   alternativeGroups:{"zh-CN":"\u5f85\u9009\u62e9\u7684\u66ff\u4ee3\u5173\u7cfb","en-US":"Alternative relation group"},
@@ -18,7 +18,7 @@ export const semantic = {
   needs_review:{"zh-CN":"\u5019\u9009\u51b2\u7a81\u6216\u6821\u9a8c\u95ee\u9898\uff0c\u672a\u81ea\u52a8\u5165\u5e93","en-US":"Conflicts or validation issues; not automatically recorded"},
   taskFailed:{"zh-CN":"\u6267\u884c\u5931\u8d25","en-US":"Execution failed"},
   suspended:{"zh-CN":"\u80fd\u529b\u6216\u989d\u5ea6\u4e0d\u53ef\u7528\uff0c\u6682\u505c\u7b49\u5f85\u91cd\u8bd5","en-US":"Capability or quota unavailable; waiting for retry"},
-  inputsRequired:{"zh-CN":"\u8bf7\u5148\u51c6\u5907\u5df2\u7d22\u5f15\u7eaf\u6587\u672c\u8d44\u6599\u3001\u5df2\u6838\u9a8c\u65ad\u8a00\u53ca\u81f3\u5c11\u4e24\u4e2a\u5b9e\u4f53\u3002","en-US":"Prepare indexed native text, verified assertions and at least two entities first."},
+  inputsRequired:{"zh-CN": "\u8bf7\u5148\u51c6\u5907\u5df2\u7d22\u5f15\u4e14\u53ef\u6838\u9a8c\u7684\u8d44\u6599\u3001\u5df2\u6838\u9a8c\u65ad\u8a00\u53ca\u81f3\u5c11\u4e24\u4e2a\u5b9e\u4f53\u3002", "en-US": "Prepare indexed verifiable sources, verified assertions and at least two entities first."},
   batch:{"zh-CN":"\u6279\u6b21","en-US":"Batch"},
   relations:{"zh-CN":"\u6761\u5173\u7cfb","en-US":"relations"},
   more:{"zh-CN":"\u52a0\u8f7d\u66f4\u591a","en-US":"Load more"},
@@ -97,4 +97,5 @@ export const semantic = {
   evidence_missing:{"zh-CN": "\u7f3a\u5c11\u4e0e\u5f53\u524d\u539f\u4ef6\u5339\u914d\u7684\u6709\u6548\u8bc1\u636e", "en-US": "No valid evidence matching current source bytes"},
   review_changed:{"zh-CN": "\u5ba1\u6838\u5df2\u53d8\u5316\uff0c\u9700\u8981\u91cd\u65b0\u7ed1\u5b9a\u53d1\u5e03", "en-US": "Review changed; a new publication binding is required"},
   entity_missing:{"zh-CN": "\u5173\u7cfb\u7aef\u70b9\u7f3a\u5931\u6216\u7c7b\u578b\u4e0d\u5339\u914d", "en-US": "Relation endpoint missing or type mismatch"},
+  sourcePages:{"zh-CN":"\u7269\u7406\u9875","en-US":"Physical pages"},
 } satisfies Catalog;

@@ -359,6 +359,7 @@ model Document {
   processingTasks    ProcessingTask[]
 
   spans Span[]
+  textSnapshots DocumentTextSnapshot[]
 
   @@index([kbId, contentState], map: "idx_document_kb_state")
   @@map("document")
@@ -1014,5 +1015,21 @@ model SemanticEventReceipt {
   created_at DateTime @default(now()) @db.Timestamptz()
   @@id([kb_id, event_id])
   @@map("semantic_event_receipt")
+  @@schema("karda_kb")
+}
+
+model DocumentTextSnapshot {
+  documentId String @map("document_id") @db.Uuid
+  documentVersion Int @map("document_version")
+  contentHash String @map("content_hash") @db.VarChar(64)
+  mime String @db.VarChar(128)
+  parserVersion String @map("parser_version") @db.VarChar(64)
+  canonicalText String @map("canonical_text")
+  textHash String @map("text_hash") @db.VarChar(64)
+  locators Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  @@id([documentId, documentVersion])
+  @@map("document_text_snapshot")
   @@schema("karda_kb")
 }

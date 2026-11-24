@@ -13,12 +13,15 @@ import type { DocumentIR } from "./ir";
 import { parseFastPath, parsePathFor } from "./ir";
 import { chunkGeneral, type Chunk, type ChunkParams, DEFAULT_CHUNK_PARAMS } from "./chunk";
 import { classifyOutcome, type Stage, type FailureClass } from "./stages";
+import type {SourceSnapshot} from "./source-snapshot";
 
 // --- ports the orchestrator drives ------------------------------------------
 
 export interface RawSource {
   /** Fetch the raw bytes/text for a document. Fast path needs the text. */
   fetchText(): Promise<string>;
+  parse?(text:string):Promise<DocumentIR>;
+  snapshot?():SourceSnapshot|null;
   mime: string;
 }
 
@@ -42,7 +45,7 @@ export interface CommitTarget {
   /** Atomic replace (110-processing 6): write the new chunk set as a new
    *  version. `embeddingModel` identifies the vector space the chunks' vectors
    *  live in (KD-107 model lock); null when embedding was deferred. */
-  commit(chunks: CommittedChunk[], embeddingModel?: string | null): Promise<void>;
+  commit(chunks: CommittedChunk[], embeddingModel?: string | null, sourceSnapshot?:SourceSnapshot|null): Promise<void>;
 }
 
 export interface CommittedChunk extends Chunk {
@@ -100,7 +103,8 @@ export async function runPipeline(input: RunInput): Promise<StageResult> {
   // parse - fast path only in 5a; deep path is a permanent failure until A2.
   let ir: DocumentIR;
   try {
-    ir = await observed("parse", () => {
+    ir = await observed("parse", async () => {
+      if(input.source.parse)return input.source.parse(text);
       if (parsePathFor(input.source.mime) === "deep") {
         // Deep parsing is unavailable: park a permanent failure visibly.
         throw new Error("deep-path parsing requires Atlas vision models (unavailable)");
@@ -108,7 +112,7 @@ export async function runPipeline(input: RunInput): Promise<StageResult> {
       return parseFastPath(text);
     });
   } catch (e) {
-    return failure("parse", "permanent", errMessage(e), attempt);
+    return failure("parse", errMessage(e)==="source_normalizer_busy"?"transient":"permanent", errMessage(e), attempt);
   }
 
   // chunk
@@ -138,7 +142,7 @@ export async function runPipeline(input: RunInput): Promise<StageResult> {
   // vectors (chunk_embedding.model_code is what recall later matches against).
   try {
     const committed: CommittedChunk[] = chunks.map((c, i) => ({ ...c, vector: embedded.vectors[i] ?? null }));
-    await observed("commit", () => input.target.commit(committed, embedded.modelCode));
+    await observed("commit", () => input.target.commit(committed, embedded.modelCode,input.source.snapshot?.()));
     return { done: true, committed: committed.length };
   } catch (e) {
     return failure("commit", classifyFetchError(e), errMessage(e), attempt);
