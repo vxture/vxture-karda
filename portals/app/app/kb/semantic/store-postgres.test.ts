@@ -145,6 +145,17 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
     assert.equal(receipts[0].releaseId,receipts[1].releaseId);
     assert.equal(receipts.filter(r=>r.duplicate).length,1);
     const first = receipts[0];
+    const health=await store.maintenance(identity,kb);
+    assert.equal(health.generation,1);assert.equal(health.releaseId,first.releaseId);
+    assert.deepEqual(health.relations[0].issues,[]);assert.deepEqual(health.sources[0].relationIds,[relation]);
+    bytes=null;
+    assert.deepEqual((await store.maintenance(identity,kb)).relations[0].issues,["evidence_missing","source_unavailable"]);
+    bytes=raw;
+    await admin.query("UPDATE karda_kb.document SET active_chunk_version=3 WHERE id=$1",[doc]);
+    assert.deepEqual((await store.maintenance(identity,kb)).relations[0].issues,["evidence_missing","source_changed"]);
+    await admin.query("UPDATE karda_kb.document SET active_chunk_version=2 WHERE id=$1",[doc]);
+    assert.equal((await store.maintenance(identity,other)).releaseId,null);
+    await assert.rejects(store.maintenance({...identity,sub:`usr_${randomUUID()}`},kb),/semantic_write_denied/);
     const unchanged = await store.preview(identity,kb,compile.runId,randomUUID());
     assert.deepEqual(unchanged.changes,{added:[],removed:[],changed:[]});
     assert.equal(unchanged.expectedGeneration,1);
@@ -160,15 +171,18 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
     assert.equal((await read()).edges.length,1, "formal persisted tables feed the existing authorized reader");
     assert.equal((await reader().read(identity,[other],query)).edges.length,0);
     platform = false; const readsBefore = reads;
+    await assert.rejects(store.maintenance(identity,kb),/semantic_write_denied/);
     await assert.rejects(store.publish(identity,firstPlan), /semantic_write_denied/);
     await assert.rejects(read(), /semantic_read_denied/); assert.equal(reads,readsBefore); platform = true;
     await role("readonly");
     await assert.rejects(store.listCompiles(identity,kb),/semantic_write_denied/);
+    await assert.rejects(store.maintenance(identity,kb),/semantic_write_denied/);
     await assert.rejects(store.inspectCompile(identity,kb,compile.runId),/semantic_write_denied/);
     await assert.rejects(store.plan(identity,kb,compile.runId,randomUUID(),1), /semantic_write_denied/);
     assert.equal((await read()).edges.length,1); await role("member");
     await admin.query("UPDATE karda_kb.document SET content_state='archived' WHERE id=$1", [doc]);
     assert.equal((await read()).edges.length,0);
+    assert.deepEqual((await store.maintenance(identity,kb)).relations[0].issues,["evidence_missing","source_inactive"]);
     const staleSourcePlan = await store.plan(identity,kb,compile.runId,randomUUID(),1);
     await assert.rejects(store.publish(identity,staleSourcePlan), /semantic_source_changed/);
     await admin.query("UPDATE karda_kb.document SET content_state='indexed' WHERE id=$1", [doc]);
@@ -181,6 +195,7 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
       await snapshot.query("COMMIT");
     } finally { await snapshot.query("ROLLBACK"); snapshot.release(); }
     assert.equal((await read()).edges.length,0, "next snapshot observes changed human decision without cache expiry");
+    assert.deepEqual((await store.maintenance(identity,kb)).relations[0].issues,["review_changed"]);
     assert.equal((await store.publish(identity,firstPlan)).releaseId,first.releaseId, "historical receipt is not a current read grant");
     await review("accept",3);
     assert.equal((await read()).edges.length,0, "a newer acceptance requires a new release binding");
