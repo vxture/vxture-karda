@@ -4,15 +4,23 @@ import type { SemanticReadIdentity } from "./read-postgres";
 import { UnavailableError } from "../processing/unavailable";
 import { QuotaError } from "../processing/orchestrator";
 
-export function parseCompileTaskRequest(text:string):{action:"create"|"execute";taskId:string} {
+export type CompileTaskRequest = {action:"create"|"execute";taskId:string} |
+  {action:"resolve";taskId:string;resultHash:string;relationIds:string[];note:string};
+export function parseCompileTaskRequest(text:string):CompileTaskRequest {
   const invalid=():never=>{throw new Error("semantic_invalid_task_request");};
-  if(Buffer.byteLength(text)>1024)invalid();
+  if(Buffer.byteLength(text)>32768)invalid();
   let value:Record<string,unknown>;
   try{value=JSON.parse(text);}catch{return invalid();}
-  if(!value||typeof value!=="object"||Array.isArray(value)||Object.keys(value).sort().join(",")!=="action,taskId"||
-    !["create","execute"].includes(value.action as string)||typeof value.taskId!=="string"||
+  if(!value||typeof value!=="object"||Array.isArray(value)||typeof value.taskId!=="string"||
     !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(value.taskId))return invalid();
-  return value as {action:"create"|"execute";taskId:string};
+  if(value.action==="resolve") {
+    if(Object.keys(value).sort().join(",")!=="action,note,relationIds,resultHash,taskId"||
+      typeof value.resultHash!=="string"||!/^[a-f0-9]{64}$/.test(value.resultHash)||
+      !Array.isArray(value.relationIds)||!value.relationIds.length||value.relationIds.length>200||
+      value.relationIds.some(id=>typeof id!=="string"||!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(id))||
+      new Set(value.relationIds).size!==value.relationIds.length||typeof value.note!=="string"||!value.note.trim()||value.note.length>10000)return invalid();
+  } else if(Object.keys(value).sort().join(",")!=="action,taskId"||!["create","execute"].includes(value.action as string))return invalid();
+  return value as CompileTaskRequest;
 }
 
 /** Request-driven durable worker: reauthenticated on every attempt, no stored RP tokens. */

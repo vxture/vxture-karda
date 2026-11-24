@@ -24,6 +24,9 @@ export class SemanticReviewApi {
   tasks(){return this.request<{tasks:CompileTaskRow[]}>("",undefined,"compile-tasks");}
   createTask(taskId:string){return this.request<{taskId:string;duplicate:boolean}>("",{action:"create",taskId},"compile-tasks");}
   executeTask(taskId:string){return this.request<{claimed:boolean;runId:string|null}>("",{action:"execute",taskId},"compile-tasks");}
+  resolveTask(taskId:string,resultHash:string,relationIds:string[],note:string){
+    return this.request<{runId:string;duplicate:boolean}>("",{action:"resolve",taskId,resultHash,relationIds,note},"compile-tasks");
+  }
   detail(runId: string) { return this.request<CompileDetail>(`?runId=${encodeURIComponent(runId)}`); }
   review(runId: string, relationId: string, expectedRevision: number, decision: ReviewDecision, note: string) {
     return this.request<{reviewId:string;revision:number}>("",{action:"review",runId,relationId,expectedRevision,decision,note});

@@ -9,7 +9,7 @@ import { semantic } from "../../../../_i18n/messages/semantic";
 import { ApiError } from "../../../../_lib/api";
 import { SignInGate } from "../../../../_lib/ui";
 import { SemanticReviewApi, type CompileList, type CompileDetail, type ReleasePreview, type ReviewDecision,type CompileTaskRow } from "../../../../_lib/semantic-api";
-import type {Compilation} from "../../../../kb/semantic/compiler";
+import {TaskSelection} from "./task-selection";
 
 export function SemanticReviewClient({kbId}:{kbId:string}) {
   const m=useMessages(semantic), api=useMemo(()=>new SemanticReviewApi(kbId),[kbId]);
@@ -91,13 +91,12 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
             await api.executeTask(task.id);
             const [value,page]=await Promise.all([api.tasks(),api.list()]);if(current()){setTasks(value.tasks);setList(page);}
           })}>{m.execute}</Button>}
-        {task.state==="needs_review"&&<details className="w-full"><summary>{m.needs_review}</summary>
-          <ul className="text-body-sm">
-            {(task.result.compilation as Compilation|undefined)?.rejected.map(issue=><li key={issue.index}>{m.rejectedItems} {issue.index+1}: {issue.reason}</li>)}
-            {(task.result.compilation as Compilation|undefined)?.conflicts.map((group,index)=><li className="break-all" key={index}>
-              {m.alternativeGroups}: {group.type} &middot; {group.relationIds.length}
-            </li>)}
-          </ul></details>}
+        {task.state==="needs_review"&&<TaskSelection task={task} busy={busy} onSubmit={(ids,note)=>void run(async current=>{
+          const result=await api.resolveTask(task.id,task.resultHash!,ids,note);
+          const [value,page,loaded]=await Promise.all([api.tasks(),api.list(),api.detail(result.runId)]);
+          if(current()){setTasks(value.tasks);setList(page);setDetail(loaded);setNotes({});}
+        })}/>}
+        {!!task.result.selection&&<p className="w-full break-words text-body-sm">{m.selectionRecorded}: {String((task.result.selection as {note?:string}).note??"")}</p>}
       </div>)}
     </CardContent></Card>
     <div className="grid min-w-0 gap-md xl:grid-cols-[18rem_minmax(0,1fr)]">
