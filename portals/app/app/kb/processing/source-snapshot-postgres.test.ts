@@ -39,7 +39,7 @@ test("real PDF processing atomically binds chunks and immutable canonical text; 
   const object=await objects.put(ws,kb,bytes),content=new ContentService(new InMemoryContentStore());
   const result=await content.createDocument({kbId:kb,title:"synthetic PDF",source:"upload",mime:PDF_MIME,
     contentHash:object.contentHash,storageRef:object.key,sizeBytes:bytes.length});
-  assert.ok(result.ok);const doc=result.value,target=new PrismaCommitTarget(doc.id);let chunks:CommittedChunk[]=[];
+  assert.ok(result.ok);const doc={...result.value,id:randomUUID()},target=new PrismaCommitTarget(doc.id);let chunks:CommittedChunk[]=[];
   try{
     await admin.query("INSERT INTO karda_kb.knowledge_base(id,workspace_id,owner_type,owner_sub,name) VALUES($1,$2,'user',$3,'synthetic')",[kb,ws,sub]);
     await admin.query(`INSERT INTO karda_kb.document(id,kb_id,title,source,mime,content_hash,storage_ref,size_bytes)

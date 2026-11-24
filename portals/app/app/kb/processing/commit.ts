@@ -23,6 +23,9 @@ export class PrismaCommitTarget implements DocumentCommitTarget {
 
   async commit(chunks: CommittedChunk[], embeddingModel: string | null = null, sourceSnapshot?:SourceSnapshot|null): Promise<void> {
     if(sourceSnapshot&&!snapshotValid(sourceSnapshot))throw new Error("source_snapshot_invalid");
+    if(sourceSnapshot&&chunks.some(c=>!Number.isSafeInteger(c.sourceRange.start)||!Number.isSafeInteger(c.sourceRange.end)||
+      c.sourceRange.start<0||c.sourceRange.end<=c.sourceRange.start||c.sourceRange.end>sourceSnapshot!.text.length))
+      throw new Error("source_chunk_range_invalid");
     sourceSnapshot=sourceSnapshot?structuredClone(sourceSnapshot):null;
     const p = await getPrismaClient();
     const withVectors = embeddingModel !== null && chunks.some((c) => c.vector !== null);
