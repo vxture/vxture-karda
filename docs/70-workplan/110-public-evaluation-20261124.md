@@ -218,6 +218,32 @@ node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/project-review.
 本地验证：全量 976 项，962 通过、14 项数据库测试待 CI 环境执行、零失败；TypeScript 与五项护栏通过。
 新增 7 项 app 测试包含原始 DOCX 逐段复现、分区/父公告/审阅指纹失效，并实际执行 Python 提取器的 5 项安全测试。
 
+## 120. 本地组件性能诊断
+
+原始附件及跨文档草案已合并 [PR281](https://github.com/vxture/vxture-karda/pull/281)，PR CI45393899737
+为 976 项通过、零跳过。性能子批新增 `scripts/knowledge/benchmark-local.ts` 与
+[完整测量记录](150-local-component-performance-20261124.json)，补充可复现的负载及计时口径。
+
+```powershell
+node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/benchmark-local.ts D:\new-local-performance.json
+```
+
+| 负载 | 本次 P95 | 口径 |
+| --- | --- | --- |
+| 100 / 1000 / 5000 条合成关系 | 0.85 / 2.85 / 14.78 ms | 真实 projectNeighborhood；星形图，30% 为无权/撤回/旧版本支持，2 跳、最多 100 节点/1000 边 |
+| 真实开发资料 12 个章节 | 1.23 ms | 24 个开发查询轮转；真实 BM25 分词、统计、评分、排序及 Top5 |
+| 100 / 1000 份合成短文本 | 1.09 / 6.52 ms | 中英混合短模板，不能外推完整招标文件成本 |
+
+每种负载预热 5 次、测量 30 次、并发 1，P95 使用 nearest-rank；保留逐次耗时及机器/Node 参数。
+测试前构造夹具不计时；BM25 每次调用仍重算语料统计，没有添加跨身份缓存。
+每个图样本检查预期节点/边数、截断标记，以及结果中没有无权、撤回和旧版本证据；校验自身不计入耗时。
+保留脚本 LF 规范 hash、开发语料及题库指纹；保留项目不进入词法负载。
+重新运行必须指定新输出，旧测量不会被脚本自动覆盖；操作系统调度及 JIT 会造成波动。
+
+以上是单机暖进程的组件诊断，不含 DB/对象存储/网络、Atlas、浏览器布局与绘制，也不测并发或冷缓存。
+检索接口 P95 <700 ms、图首屏 ≤2 秒仍是待联调确认的系统目标，不能据上述数字宣告通过。
+本批固定了部分本地负载口径，K0b 的真实业务分布、系统规模/性能预算及人审留出仍未完成。
+
 ## 60. 本地验证
 
 新增评测校验 11 项与现行图投影 21 项，共 32 项通过；app TypeScript 通过。
