@@ -2,6 +2,8 @@
 
 ## Active knowledge platform reconstruction - 2026-11-24
 
+[Execution checklist with remaining counts](120-rebuild-execution-checklist-20261124.md): 7 major batches, 17 execution items (5 complete, 12 remaining); checkboxes distinguish verified implementation from full product acceptance. Update this checklist after each batch. Next: K0b independent business sources and human-review package.
+
 [K0-K6 capability map and implementation plan](80-knowledge-platform-rebuild-20261124.md): owner authorized design, batches and implementation. First foundation merged in PR272; K0b public-source draft evaluation is in progress and human-reviewed business gold remains pending. Platform I1 stays paused.
 
 [LLM Wiki source benchmark and adoption checklist](90-llm-wiki-source-benchmark-20261124.md): pinned upstream source, license boundary, capabilities and acceptance by batch.
