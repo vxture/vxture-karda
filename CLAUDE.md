@@ -1,6 +1,15 @@
 # vxture-karda Repository Standards
 
-## Current owner scope - 2026-11-24
+## Current owner scope - 2026-11-25
+
+Owner explicitly authorized completing the reconstruction and production release
+on 2026-11-25. Continue K batches autonomously, use the normal db-init and
+tag-based release workflows and their existing environment review gates. This
+authorizes additive product rollout, not fabricated business quality acceptance,
+platform changes, customer privilege changes or automatic acceptance of drafts.
+External Ontos/Agent contracts and owner quality review remain evidence gates.
+
+## Reconstruction scope - 2026-11-24
 
 Read docs/90-memory/20-platform-integration-handoff.md first for platform ownership, post-delivery verification and the user-paused I1 scope.
 

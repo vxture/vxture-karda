@@ -1,5 +1,7 @@
 # Agent entry point
 
+2026-11-25 owner 明确授权“完成所有工作并上线”，无需重复请求上线许可。按K批次继续建设，生产DDL与应用发布走既有db-init/tag流程及环境审核，不修改平台或真实客户权限。授权不等于业务人审/外部联调已经通过；允许增量上线产品功能，未验收业务切换继续保留门槛。
+
 2026-11-24 owner 已授权更新设计、批次并执行 Karda 重构。先读
 [160 持续知识架构](../30-design/160-continuous-knowledge-architecture.md)、
 [K0–K6 批次](../70-workplan/80-knowledge-platform-rebuild-20261124.md)和

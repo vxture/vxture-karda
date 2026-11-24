@@ -24,13 +24,13 @@ export function parsePackageRequest(value:unknown):PackageRequest {
 }
 
 /** Shared by RP knowledge pages and authenticated OBO tools. No model or draft reads. */
-export async function readKnowledgePackage(identity:SemanticReadIdentity,input:PackageRequest,admit:()=>Promise<boolean>) {
+export async function readKnowledgePackage(identity:SemanticReadIdentity,input:PackageRequest,admit:()=>Promise<boolean>,exporting=false) {
   if(!process.env.DATABASE_URL)throw new Error("semantic_store_unavailable");
   const profile=localCompileProfile();
   const pool=new Pool({connectionString:process.env.DATABASE_URL,max:1,connectionTimeoutMillis:5000,statement_timeout:15000,allowExitOnIdle:true});
   try{
     const loader=new PostgresFormalSemanticLoader({schema:profile.schema,entityTypes:new Map(profile.entityTypes.map(t=>[t.kind,t.type]))});
     const reader=new PostgresSemanticReader(pool,getObjectStore(),admit,(db,ids)=>loader.load(db,ids));
-    return await reader.readPackage(identity,[input.kbId],input.query,input.directory);
+    return await reader.readPackage(identity,[input.kbId],input.query,input.directory,exporting);
   }finally{await pool.end();}
 }

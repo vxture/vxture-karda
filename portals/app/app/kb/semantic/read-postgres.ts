@@ -61,7 +61,7 @@ export class PostgresSemanticReader {
       truncated:value.truncated,sourceStatus:value.sourceStatus};
   }
 
-  async readPackage(identity: SemanticReadIdentity, kbIds: string[], query: NeighborhoodQuery, directory=false): Promise<KnowledgePackage> {
+  async readPackage(identity: SemanticReadIdentity, kbIds: string[], query: NeighborhoodQuery, directory=false,exporting=false): Promise<KnowledgePackage> {
     // Capture caller-owned inputs before awaiting either authority or the pool.
     identity = { ...identity, roles: [...identity.roles] };
     kbIds = [...new Set(kbIds.map(id => id.toLowerCase()))];
@@ -79,7 +79,7 @@ export class PostgresSemanticReader {
       };
       // Local role/owner-anchor evaluation shares the source/release snapshot.
       const access = await readProductAccess(identity, sql);
-      if (!permits(access, "product.enter") || !permits(access, "data.read")) throw new Error("semantic_read_denied");
+      if (!permits(access, "product.enter") || !permits(access, "data.read") || (exporting&&!permits(access,"data.export"))) throw new Error("semantic_read_denied");
       const visible = (await db.query<{ id: string }>(`
         SELECT k.id FROM karda_kb.knowledge_base k
         JOIN karda_kb.kb_attachment a ON a.kb_id=k.id AND a.workspace_id=k.workspace_id

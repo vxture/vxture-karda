@@ -31,6 +31,8 @@ export function PublishedKnowledgeClient({kbId}:{kbId:string}){
   return <div className="flex min-w-0 flex-col gap-md" aria-busy={busy}>
     <PageHead title={m.knowledgeTitle}/>
     <Link href={`/assets/${kbId}/knowledge`}>{m.back}</Link>
+    <div className="flex flex-wrap gap-sm"><Button variant="outline" asChild><Link href={`/assets/${kbId}/graph`}>{m.graphTitle}</Link></Button>
+      <Button variant="outline" asChild><a href={`/api/kb/${kbId}/knowledge-package?format=markdown${focus?`&entity=${encodeURIComponent(focus)}`:""}`}>{m.exportKnowledge}</a></Button></div>
     <p className="text-body-sm text-muted-foreground">{m.knowledgeHint}</p>
     <Button disabled={busy} variant="outline" onClick={()=>void load("")}>{m.linkedEntities}</Button>
     <form onSubmit={e=>{e.preventDefault();void load(entity.trim());}} className="flex flex-wrap gap-sm">
