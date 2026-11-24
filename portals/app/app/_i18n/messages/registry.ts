@@ -7,6 +7,7 @@ import { evaluation } from "./evaluation";
 import { channels } from "./channels";
 import { home } from "./home";
 import { pipeline } from "./pipeline";
+import { semantic } from "./semantic";
 
 /**
  * Every namespace, in one place.
@@ -17,6 +18,6 @@ import { pipeline } from "./pipeline";
  * namespace is covered the moment it is imported, and the i18n guard has one
  * authority for what "the catalog" is.
  */
-export const NAMESPACES = { shell, common, states, assets, evaluation, channels, pipeline, home } satisfies Record<string, Catalog>;
+export const NAMESPACES = { shell, common, states, assets, evaluation, channels, pipeline, home, semantic } satisfies Record<string, Catalog>;
 
 export type NamespaceName = keyof typeof NAMESPACES;

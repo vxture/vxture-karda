@@ -50,6 +50,7 @@ import { useMessages } from "../../../../_i18n/useMessages";
 import { common } from "../../../../_i18n/messages/common";
 import type { Message } from "../../../../_i18n/catalog";
 import { assets } from "../../../../_i18n/messages/assets";
+import { semantic } from "../../../../_i18n/messages/semantic";
 
 // 知识确认台:卡尔达在**一个库**上的产出,由属主处置(KD-222)。
 //
@@ -99,6 +100,7 @@ function dots(...parts: (string | null | undefined)[]): string {
 export function KnowledgeClient() {
   const f = useFormat();
   const m = useMessages(assets);
+  const semanticMessages = useMessages(semantic);
   const c = useMessages(common);
   const params = useParams<{ kbId: string }>();
   const kbId = params.kbId;
@@ -408,9 +410,14 @@ export function KnowledgeClient() {
             : undefined
         }
         actions={
+          <>
+          <Button variant="outline" asChild>
+            <Link href={`/assets/${kbId}/semantic`}>{semanticMessages.title}</Link>
+          </Button>
           <Button variant="outline" asChild>
             <Link href={`/assets/${kbId}`}>{m.backToLibrary}</Link>
           </Button>
+          </>
         }
       />
 
