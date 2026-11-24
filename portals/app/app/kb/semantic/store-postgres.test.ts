@@ -60,7 +60,7 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
     member = (await admin.query("INSERT INTO local_authz.member(workspace_id,sub) VALUES($1,$2) RETURNING id", [ws,sub])).rows[0].id;
     await role("member");
     for (const id of [kb,other]) await admin.query(`INSERT INTO karda_kb.knowledge_base(id,workspace_id,owner_type,owner_sub,name)
-      VALUES($1,$2,'user',$3,'synthetic-store')`, [id,ws,sub]);
+      VALUES($1,$2,'user',$3,$4)`, [id,ws,sub,`synthetic-store-${id}`]);
     await admin.query("INSERT INTO karda_kb.kb_attachment(workspace_id,user_sub,product_code,kb_id) VALUES($1,$2,'karda',$3)", [ws,sub,kb]);
     await admin.query(`INSERT INTO karda_kb.document(id,kb_id,title,source,content_state,active_chunk_version,storage_ref,content_hash,mime,size_bytes)
       VALUES($1,$2,'synthetic','upload','indexed',2,'store-test-object',$3,'text/plain',$4)`, [doc,kb,hash,raw.length]);
