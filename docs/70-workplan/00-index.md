@@ -2,7 +2,7 @@
 
 ## Active knowledge platform reconstruction - 2026-11-24
 
-[Execution checklist with remaining counts](120-rebuild-execution-checklist-20261124.md): 7 major batches, 17 execution items (5 complete, 12 remaining); checkboxes distinguish verified implementation from full product acceptance. Update this checklist after each batch. Next: K0b independent business sources and human-review package.
+[Execution checklist with remaining counts](120-rebuild-execution-checklist-20261124.md): 7 major batches, 17 execution items (6 complete, 11 remaining); checkboxes distinguish verified implementation from full product acceptance. Owner now prioritizes functional completeness: P4 data foundation is implemented and isolated migration verified in PR290; continue P5 adapters, then K2-K5 local functionality. K0b human review/independent quality acceptance moves before K6 pilot/cutover and no longer blocks local development.
 
 [K0-K6 capability map and implementation plan](80-knowledge-platform-rebuild-20261124.md): owner authorized design, batches and implementation. First foundation merged in PR272; K0b public-source draft evaluation is in progress and human-reviewed business gold remains pending. Platform I1 stays paused.
 

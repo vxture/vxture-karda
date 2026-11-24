@@ -269,3 +269,15 @@ REVOKE INSERT, UPDATE, DELETE ON local_authz.role, local_authz.permission, local
 REVOKE UPDATE ON local_authz.member, local_authz.member_role, local_authz.owner_anchor FROM karda_svc;
 GRANT UPDATE (display_name, avatar_hash, status, updated_at) ON local_authz.member TO karda_svc;
 REVOKE UPDATE, DELETE ON local_authz.role_audit FROM karda_svc;
+
+-- BEGIN SEMANTIC LOCKS
+GRANT SELECT, INSERT ON karda_kb.semantic_schema_version, karda_kb.semantic_review,
+  karda_kb.semantic_compile_run, karda_kb.semantic_release, karda_kb.semantic_release_head,
+  karda_kb.semantic_relation, karda_kb.semantic_relation_assertion,
+  karda_kb.semantic_release_source, karda_kb.semantic_release_review, karda_kb.semantic_event_receipt TO karda_svc;
+REVOKE UPDATE, DELETE ON karda_kb.semantic_schema_version, karda_kb.semantic_review,
+  karda_kb.semantic_compile_run, karda_kb.semantic_release, karda_kb.semantic_release_head,
+  karda_kb.semantic_relation, karda_kb.semantic_relation_assertion,
+  karda_kb.semantic_release_source, karda_kb.semantic_release_review, karda_kb.semantic_event_receipt FROM karda_svc;
+GRANT UPDATE (generation, release_id, updated_at) ON karda_kb.semantic_release_head TO karda_svc;
+-- END SEMANTIC LOCKS
