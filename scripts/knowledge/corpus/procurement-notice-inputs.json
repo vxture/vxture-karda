@@ -1,0 +1,35 @@
+[
+  {
+    "projectFamilyId": "juno-storage-2026",
+    "savedHtmlSha256": "f206dcde25dbe2dc8e495daaa2f6b70c35f06d8a7e21c748a915805414b8e1c4",
+    "publishedOn": "2026-11-24",
+    "noticeKind": "correction",
+    "id": "juno-correction-20261124",
+    "projectNumber": "OITC-G260360399",
+    "file": "knowledge-juno-correction.html",
+    "url": "https://www.ccgp.gov.cn/cggg/zygg/gzgg/202611/t20261124_27747586.htm",
+    "title": "中国科学院高能物理研究所JUNO存储设备采购项目更正公告"
+  },
+  {
+    "projectFamilyId": "tju-insurance-2026",
+    "savedHtmlSha256": "94c0f6b68df731337431b9d74c06b956ddbb59a8380327775084c3714fc7b94c",
+    "publishedOn": "2026-11-24",
+    "noticeKind": "correction",
+    "id": "tju-correction-20261124",
+    "projectNumber": "TDQT202600081",
+    "file": "knowledge-tju-correction.html",
+    "url": "https://www.ccgp.gov.cn/cggg/zygg/gzgg/202611/t20261124_27747661.htm",
+    "title": "天津大学教职工团体惠民保服务项目更正公告"
+  },
+  {
+    "projectFamilyId": "satellite-software-2026",
+    "savedHtmlSha256": "c77358c1c6f3412f9e97497a982d74eac80376462d356ffa64f11d0a5c2108d2",
+    "publishedOn": "2026-11-24",
+    "noticeKind": "tender",
+    "id": "satellite-tender-20261124",
+    "projectNumber": "CEITCL-BJ03-2609026",
+    "file": "knowledge-satellite-tender.html",
+    "url": "https://www.ccgp.gov.cn/cggg/zygg/gkzb/202611/t20261124_27747559.htm",
+    "title": "国家卫星气象中心风云三号04批气象卫星工程地面系统数据处理定制软件研制项目公开招标公告"
+  }
+]

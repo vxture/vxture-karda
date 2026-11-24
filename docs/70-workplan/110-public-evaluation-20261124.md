@@ -116,6 +116,37 @@ revise 需生成新数据版本后重新复核，不由工具偷偷修改题库�
 或接口错误当原文。采集入口为 <https://www.zycg.gov.cn/>；后续应补可访问的项目原公告、补遗和独立项目族。
 本次外部采集失败不影响离线复核工具和原有法规快照的复现，但 K0b 仍不勾选。
 
+## 90. 独立项目业务来源（后续采集成功）
+
+中国政府采购网公开列表可访问，现已固定以下三份实际业务公告，取代“只有法规、没有任何项目材料”的状态。
+这只补上公告层材料，不能写成已获得完整招标文件、附件或成套项目历史。
+
+| 来源 | 项目编号 / 项目族 | 实际采集范围 |
+| --- | --- | --- |
+| [JUNO 存储设备更正公告](https://www.ccgp.gov.cn/cggg/zygg/gzgg/202611/t20261124_27747586.htm) | OITC-G260360399 / juno-storage-2026 | 2026-11-24 更正公告：获取文件、投标截止与开标安排变更；未取得 11-03 原公告及完整招标文件 |
+| [天津大学惠民保更正公告](https://www.ccgp.gov.cn/cggg/zygg/gzgg/202611/t20261124_27747661.htm) | TDQT202600081 / tju-insurance-2026 | 2026-11-24 更正公告：理赔条款、业绩证明变更、提交确认函要求；页面引用的答疑及确认函附件未下载 |
+| [卫星地面系统软件招标公告](https://www.ccgp.gov.cn/cggg/zygg/gkzb/202611/t20261124_27747559.htm) | CEITCL-BJ03-2609026 / satellite-software-2026 | 2026-11-24 公开招标公告的项目、资格、获取文件、提交期限、公告期限和政策章节；未购买/获取完整招标文件 |
+
+数据位于 `scripts/knowledge/corpus/procurement-notices-20261124.json`，输入登记位于
+`procurement-notice-inputs.json`。三份资料分别登记 URL、发布日期、项目编号/族、保存 HTML 的 SHA256、
+业务 HTML 片段和片段 hash、规范正文 hash 以及 UTF-16 半开锚点，共 12 节。
+`notice-corpus.ts` 可从仓库保留的业务 HTML 片段离线重建正文与锚点，测试逐份比对。
+保存 HTML hash 对应本次 UTF-8 保存快照，不声称是服务器原始传输字节的 hash。
+
+复现命令（先按 manifest 的 file 名保存网页 HTML，保持已登记快照内容不变）：
+
+```powershell
+node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/import-notices.ts scripts/knowledge/corpus/procurement-notice-inputs.json D:\saved-html-directory D:\new-notice-corpus.json
+```
+
+网页变化、标题/项目编号不符、章节缺失或未知 HTML 实体时明确失败，不猜测边界。
+公告原文不执行为脚本或模型指令。专门联系方式章节、概要表、导航页脚未纳入规范正文；
+业务章节内本来包含的地址、邮箱和提交方法保留，未暗改公告。
+
+以上是抓取时点快照，未持续监测后续更正。新增真实来源尚无人工标签，未计入旧法规 60 题或虚构跨文档正确率。
+下一子批按项目族划分开发/保留范围；同一项目原公告、补遗和附件必须同区，不能因 URL 不同就算独立。
+K0b 的人工复核、完整复杂题及独立留出冻结仍未完成；17 项清单保持 5 完成/12 未完成。
+
 ## 60. 本地验证
 
 新增评测校验 11 项与现行图投影 21 项，共 32 项通过；app TypeScript 通过。
