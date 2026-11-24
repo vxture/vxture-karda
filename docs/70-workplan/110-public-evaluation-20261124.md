@@ -244,6 +244,40 @@ node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/benchmark-local
 检索接口 P95 <700 ms、图首屏 ≤2 秒仍是待联调确认的系统目标，不能据上述数字宣告通过。
 本批固定了部分本地负载口径，K0b 的真实业务分布、系统规模/性能预算及人审留出仍未完成。
 
+## 130. 原公告到更正公告的历史链
+
+已从代理机构东方招标的公开项目查询结果获得 JUNO 原公告 URL，再实际访问并固定
+[中国政府采购网原公告](https://www.ccgp.gov.cn/cggg/zygg/gkzb/202611/t20261103_27613123.htm)。
+来源登记为 `procurement-history-notice-inputs.json`；保留业务 HTML、规范正文及 6 个 UTF-16 锚点，
+使用既有导入器离线重建，不复制代理平台代码或将其项目列表当作公告原文。
+原公告所链需求 DOCX 下载返回 403，未取得该附件；未尝试绕过访问限制，也没有取得完整付费招标文件。
+
+新资料版本 `procurement-project-history-20261124.json` 共 6 份资料、24 个章节，
+JUNO 原公告与更正严格处于同一开发项目族。新增 8 道 Agent 历史对照草案：时间/地点、获取期限与售价、
+整包货物、联合体及分包限制、预算及进口许可、关联供应商限制、获取方式、公告期限与获取期限的区别。
+原公告中进口许可的“否”跨两货物行合并，已对照保留 HTML 中 rowspan=2 核对，不将扁平文本顺序当表格关系。
+“其余均不变”来自更正原文；判断仅限所持两次快照，不声称监测全部后续更正。
+
+新版本共 32 道开发草案，其中结构上跨文档 20 道，分布在两个开发项目族；这不构成人审金标、
+独立留出或跨文档结论正确性验收。[新词法报告](160-history-lexical-draft-report-20261124.json)的
+Top5 为 53/58 个预期证据、25/30 道有答案题完整命中，2 道未知题仍有候选。
+题目与语料规模均变化，不把前后报告差异解释为检索改进或退步。
+
+用户已在本轮对话明确承担人工复核（回复“给我”），已提供原 24 题审阅包，尚无任何题的裁决。
+为保护正在进行的复核，新增 `selectReviewAdditions`：只允许旧来源、旧题原样保留的增量，
+拒绝旧题删除/改答案/改证据或旧来源变化；只导出新增题，不复用或迁移旧回执。
+原 24 题与原指纹不变，另导出 8 题 `knowledge-history-additions-review-20261124`，全部 pending。
+这两份审阅包各自独立绑定，不把旧包回执直接计入新版本完整 32 题的验收。
+
+```powershell
+node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/run-project-baseline.ts --history
+node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/project-review.ts export D:\new-history-additions-review --history-additions
+node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/project-review.ts check D:\new-history-additions-review\review.json --history-additions
+```
+
+`--history` 可导出完整新版本；`--materials` 仍对应原 24 题。新旧文件均保留；K0b 不关闭，
+后续仍需用户实际复核、独立留出集冻结、完整业务资料和系统交互/性能验收。
+
 ## 60. 本地验证
 
 新增评测校验 11 项与现行图投影 21 项，共 32 项通过；app TypeScript 通过。

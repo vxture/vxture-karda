@@ -24,6 +24,23 @@ export function caseFingerprint(item: DraftCase): string {
   return sha({ id: item.id, split: item.split, kind: item.kind, question: item.question,
     expectedAnswer: item.expectedAnswer, evidence: item.evidence.map(e => ({ sourceId: e.sourceId, sectionId: e.sectionId })) });
 }
+
+/** Additive review only. Changed old labels/sources need an explicit revised review. */
+export function selectReviewAdditions(previous: { corpus: EvaluationCorpus; dataset: DraftDataset }, current: { corpus: EvaluationCorpus; dataset: DraftDataset }) {
+  validateEvaluation(previous.corpus, previous.dataset); validateEvaluation(current.corpus, current.dataset);
+  if ([...previous.dataset.cases, ...current.dataset.cases].some(c => c.split !== "development")) throw new Error("review_additions_development_only");
+  const oldSources = new Set(previous.corpus.sources.map(s => s.id));
+  const retained = { ...current.corpus, sources: current.corpus.sources.filter(s => oldSources.has(s.id)) };
+  if (corpusFingerprint(retained) !== corpusFingerprint(previous.corpus)) throw new Error("review_additions_source_changed");
+  const cases = new Map(current.dataset.cases.map(c => [c.id, c]));
+  for (const old of previous.dataset.cases) {
+    if (!cases.has(old.id) || caseFingerprint(cases.get(old.id)!) !== caseFingerprint(old)) throw new Error("review_additions_case_changed");
+  }
+  const oldIds = new Set(previous.dataset.cases.map(c => c.id));
+  const additions = current.dataset.cases.filter(c => !oldIds.has(c.id));
+  if (!additions.length) throw new Error("review_additions_empty");
+  return { corpus: current.corpus, dataset: { ...current.dataset, cases: additions } };
+}
 export function datasetFingerprint(dataset: DraftDataset): string {
   return sha({ formatVersion: dataset.formatVersion, reviewStatus: dataset.reviewStatus,
     corpusSha256: dataset.corpusSha256, cases: dataset.cases.map(caseFingerprint) });
