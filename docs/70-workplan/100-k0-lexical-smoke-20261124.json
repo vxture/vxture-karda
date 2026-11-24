@@ -1,0 +1,205 @@
+{
+  "reportVersion": 1,
+  "dataClass": "synthetic",
+  "component": "existing bm25Rank only; no hybrid, reranker, answer generation or production authorization",
+  "corpus": {
+    "documents": 8,
+    "cases": 12,
+    "multiDocument": 4
+  },
+  "topK": 5,
+  "metrics": {
+    "expectedEvidence": 15,
+    "retrievedExpected": 15,
+    "evidenceRecall": 1,
+    "completeCases": 11,
+    "totalCases": 12
+  },
+  "limits": [
+    "Synthetic retrieval smoke report; not a business gold set or answer accuracy measure.",
+    "No claim that graph retrieval improves answers; run an independent real-source holdout after K0b.",
+    "No latency claim; server scope and source lifecycle integration are tested separately."
+  ],
+  "cases": [
+    {
+      "id": "q01",
+      "kind": "single",
+      "query": "河湾信息化项目质量管理体系认证要求",
+      "expected": [
+        "tender-current"
+      ],
+      "retrieved": [
+        "delivery",
+        "tender-current",
+        "certificate",
+        "authorization",
+        "financial"
+      ],
+      "found": 1,
+      "complete": true
+    },
+    {
+      "id": "q02",
+      "kind": "single",
+      "query": "联合体每个成员营业执照",
+      "expected": [
+        "supplement"
+      ],
+      "retrieved": [
+        "supplement"
+      ],
+      "found": 1,
+      "complete": true
+    },
+    {
+      "id": "q03",
+      "kind": "single",
+      "query": "法定代表人授权书签字公章",
+      "expected": [
+        "authorization"
+      ],
+      "retrieved": [
+        "authorization"
+      ],
+      "found": 1,
+      "complete": true
+    },
+    {
+      "id": "q04",
+      "kind": "single",
+      "query": "2025年度审计报告不足一年",
+      "expected": [
+        "financial"
+      ],
+      "retrieved": [
+        "financial"
+      ],
+      "found": 1,
+      "complete": true
+    },
+    {
+      "id": "q05",
+      "kind": "single",
+      "query": "部署验收交付期限",
+      "expected": [
+        "delivery"
+      ],
+      "retrieved": [
+        "delivery",
+        "sop-current"
+      ],
+      "found": 1,
+      "complete": true
+    },
+    {
+      "id": "q06",
+      "kind": "single",
+      "query": "退款SOP金额经理审核",
+      "expected": [
+        "sop-current"
+      ],
+      "retrieved": [
+        "sop-current",
+        "certificate"
+      ],
+      "found": 1,
+      "complete": true
+    },
+    {
+      "id": "q07",
+      "kind": "multi_document",
+      "query": "河湾信息化项目认证证书有哪些要求及审核有效条件",
+      "expected": [
+        "tender-current",
+        "certificate"
+      ],
+      "retrieved": [
+        "tender-current",
+        "certificate",
+        "delivery",
+        "authorization",
+        "financial"
+      ],
+      "found": 2,
+      "complete": true
+    },
+    {
+      "id": "q08",
+      "kind": "multi_document",
+      "query": "联合体投标的营业执照和授权代表身份证明要准备什么",
+      "expected": [
+        "supplement",
+        "authorization"
+      ],
+      "retrieved": [
+        "supplement",
+        "authorization",
+        "certificate",
+        "tender-current",
+        "delivery"
+      ],
+      "found": 2,
+      "complete": true
+    },
+    {
+      "id": "q09",
+      "kind": "multi_document",
+      "query": "河湾信息化项目投标截止日期与证书有效期限",
+      "expected": [
+        "tender-current",
+        "certificate"
+      ],
+      "retrieved": [
+        "tender-current",
+        "certificate",
+        "delivery",
+        "supplement",
+        "authorization"
+      ],
+      "found": 2,
+      "complete": true
+    },
+    {
+      "id": "q10",
+      "kind": "multi_document",
+      "query": "河湾信息化项目财务审计材料与法定代表人授权签字材料",
+      "expected": [
+        "financial",
+        "authorization"
+      ],
+      "retrieved": [
+        "authorization",
+        "financial",
+        "delivery",
+        "supplement",
+        "tender-current"
+      ],
+      "found": 2,
+      "complete": true
+    },
+    {
+      "id": "q11",
+      "kind": "single",
+      "query": "JSON批量导出单次最多记录",
+      "expected": [
+        "product"
+      ],
+      "retrieved": [
+        "product"
+      ],
+      "found": 1,
+      "complete": true
+    },
+    {
+      "id": "q12",
+      "kind": "unknown",
+      "query": "木星卫星遥测协议",
+      "expected": [],
+      "retrieved": [
+        "supplement"
+      ],
+      "found": 0,
+      "complete": false
+    }
+  ]
+}

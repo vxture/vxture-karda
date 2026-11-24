@@ -1,5 +1,9 @@
 # Karda 检索管线与工具面(Retrieval & Tool Surface)(120-retrieval-tools)
 
+2026-11-24 重构新增统一 KnowledgePackage、仅原文模式和受限图邻域契约，
+以 [160](160-continuous-knowledge-architecture.md) §4 为准；保留原文检索与既有工具兼容，
+新契约须接服务端授权与权威来源状态后才开放。图谱与 Agent 使用同一可见事实。
+
 > 版本:v0.1
 > 状态:Draft — 待拍板项 5 项(见 §10)
 > 上游文档:10-product-definition v0.3、100-kb-model v0.1、product_110(含用户维度增补 v2)、product_210 v1.0

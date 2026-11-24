@@ -11,6 +11,7 @@ platform repo's `{kind}_{domain}_{NNN}_{slug}` family is not used here.
 
 | Doc | Scope | State |
 |-----|-------|-------|
+| `160-continuous-knowledge-architecture.md` | LLM Wiki-inspired continuous compilation, ontology, evidence-backed graph and Agent service | v1.0, current reconstruction design; implementation tracked in K0–K6 |
 | `100-kb-model.md` | knowledge-base object model, dual templates, hierarchy, metadata, lifecycle state machines, library-level config surface | Draft v0.1, 4 open decisions |
 | `110-processing.md` | offline processing pipeline: multi-stage parsing, templated chunking, vectorization and atomic commit, incremental update, controlled rebuild, retry | Draft v0.1, 4 open decisions |
 | `120-retrieval-tools.md` | retrieval evaluation chain, cross-namespace union recall, visible-set cache, association manifest, v1 tool surface | Draft v0.1, 5 open decisions |
