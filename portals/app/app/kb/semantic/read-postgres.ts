@@ -4,7 +4,7 @@ import { readProductAccess, type MemberIdentity, type RoleSql } from "../../auth
 import type { ObjectStore } from "../storage/objectstore";
 import type { GraphProjection, KnowledgeSnapshot, NeighborhoodQuery, OntologySchema, SemanticRelation } from "./contracts";
 import { projectNeighborhood, validateNeighborhoodQuery, validateOntology } from "./projection";
-import { matchesSourceSpan, MAX_SEMANTIC_SOURCE_BYTES, verifiedSourceText } from "./source-text";
+import { matchesSourceSpan, MAX_SEMANTIC_SOURCE_BYTES, MAX_SEMANTIC_TEXT_CHARS, verifiedSourceText } from "./source-text";
 import {parsePathFor} from "../processing/ir";
 import {readSourceSnapshot,type SourceSnapshot} from "../processing/source-snapshot";
 
@@ -127,6 +127,7 @@ export class PostgresSemanticReader {
       const normalizedSources=new Map<string,SourceSnapshot>();
       let incomplete = false;
       let bytesBudget = 32 * 1024 * 1024;
+      let textBudget = MAX_SEMANTIC_TEXT_CHARS;
       for (const row of grounds) {
         const source = manifest.get(row.document_id);
         if (!source || source.kbId !== row.kb_id || source.version !== row.document_version ||
@@ -146,6 +147,7 @@ export class PostgresSemanticReader {
               await readSourceSnapshot(async(sql,...values)=>(await db.query(sql,values)).rows,row.document_id,row.document_version);
             text = verifiedSourceText({ activeVersion: row.active_chunk_version, contentState: row.content_state,
               mime: row.mime, contentHash: row.content_hash,normalized }, bytes?.length === size ? bytes : null);
+            if(text!==null){textBudget-=text.length;if(textBudget<0)throw new Error("semantic_source_budget");}
             if(text!==null&&normalized)normalizedSources.set(row.document_id,normalized);
           }
           texts.set(row.document_id, text);

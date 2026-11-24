@@ -3,6 +3,7 @@ import { canonicalText, decodeSourceBytes, parsePathFor } from "../processing/ir
 import {snapshotValid,type SourceSnapshot} from "../processing/source-snapshot";
 
 export const MAX_SEMANTIC_SOURCE_BYTES = 8 * 1024 * 1024;
+export const MAX_SEMANTIC_TEXT_CHARS = 16 * 1024 * 1024;
 export interface SourceTextMetadata {
   activeVersion: number | null;
   contentState: string;
