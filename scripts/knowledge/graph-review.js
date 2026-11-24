@@ -2,10 +2,15 @@
 const NS = "http://www.w3.org/2000/svg";
 const $ = id => document.getElementById(id);
 const words = { project: "\u9879\u76ee", document: "\u6587\u6863", section: "\u7ae0\u8282", missing: "Top5 \u672a\u547d\u4e2d", hit: "Top5 \u5df2\u547d\u4e2d", unknown: "\u672a\u77e5\u9898\uff1a\u5019\u9009\u4e0d\u7b49\u4e8e\u53ef\u4f5c\u7b54", source: "\u6253\u5f00\u539f\u516c\u544a\u6216\u9644\u4ef6", pending: "\u672a\u4eba\u5de5\u88c1\u51b3" };
+const PDF_MODE = DATA.mode === "local_pdf";
+let pdfGroup = "", pdfWindow = 0;
+const PDF_PAGE_SIZE = 12;
 const sources = [...DATA.sources].sort((a, b) => a.projectFamilyId.localeCompare(b.projectFamilyId) || a.publishedOn.localeCompare(b.publishedOn) || a.id.localeCompare(b.id));
 const families = [...new Set(sources.map(s => s.projectFamilyId))];
 const nodes = [], edges = [], sourceMap = new Map(sources.map(s => [s.id, s]));
-let selectedId = "", selectedCase = DATA.cases[0], view = { x: 0, y: 0, w: 1440, h: 850 };
+words.group = "\u7ae0\u8282\u5206\u7ec4";
+const HOME_VIEW = { x: 0, y: 0, w: 1440, h: PDF_MODE ? 980 : 850 };
+let selectedId = "", selectedCase = DATA.cases[0], view = { ...HOME_VIEW };
 function svg(tag, attrs, text) { const el = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, String(v)); if (text !== undefined) el.textContent = text; return el; }
 function button(text, action, className = "evidence-button") { const el = document.createElement("button"); el.textContent = text; el.className = className; el.addEventListener("click", action); return el; }
 for (const family of families) {
@@ -18,12 +23,27 @@ sources.forEach((s, i) => {
   const x = 160 + i * 270;
   nodes.push({ id: s.id, kind: "document", family: s.projectFamilyId, sourceId: s.id, label: s.title, subtitle: s.publishedOn + " / " + s.kind, x, y: 220 });
   edges.push([s.projectFamilyId, s.id]);
+  for (const group of s.groups ?? []) {
+    const id = JSON.stringify([s.id, "group", group.id]);
+    nodes.push({ id, kind: "group", family: s.projectFamilyId, sourceId: s.id, group, label: group.label, subtitle: "PDF " + group.startPage + "-" + group.endPage, x: 720, y: 300 });
+    edges.push([s.id, id]);
+    const option = document.createElement("option"); option.value = group.id; option.textContent = group.label; $("chapter-filter").append(option);
+  }
   s.sections.forEach((p, j) => { const id = JSON.stringify([s.id, p.id]);
-    nodes.push({ id, kind: "section", family: s.projectFamilyId, sourceId: s.id, section: p, label: p.label, subtitle: p.id, x, y: 350 + j * 76 }); edges.push([s.id, id]);
+    nodes.push({ id, kind: "section", family: s.projectFamilyId, sourceId: s.id, section: p, label: p.label, subtitle: p.id, x, y: 350 + j * 76 }); edges.push([p.groupId ? JSON.stringify([s.id, "group", p.groupId]) : s.id, id]);
   });
 });
+if (PDF_MODE) {
+  $("pdf-tools").hidden = false;
+  $("review-controls").open = false;
+  $("scope-note").textContent = "\u672c\u5730 PDF \u5f00\u53d1\u5ba1\u9605\uff1a\u7ae0\u8282\u5206\u7ec4\u4ec5\u4f5c\u5bfc\u822a\uff0c\u975e\u672c\u4f53\u4e8b\u5b9e\u3002\u65e0 OCR\u3001\u7b7e\u7ae0\u9a8c\u771f\u6216\u8868\u683c\u5173\u7cfb\u91cd\u5efa\uff1b\u8bf7\u6838\u5bf9\u539f PDF \u7269\u7406\u9875\u3002\u53ea\u4fdd\u5b58\u672c\u5730\u56de\u6267\uff0c\u4e0d\u63d0\u4ea4\u670d\u52a1\u7aef\u3002";
+  nodes.find(n => n.kind === "project").x = 720;
+  nodes.find(n => n.kind === "document").x = 720;
+  nodes.find(n => n.kind === "document").subtitle = sources[0].sections.length + " PDF pages";
+  nodes.filter(n => n.kind === "group").forEach((n, i) => { n.x = 240 + (i % 3) * 480; n.y = 330 + Math.floor(i / 3) * 82; });
+}
 const byId = new Map(nodes.map(n => [n.id, n]));
-$("summary").textContent = families.length + " " + words.project + " / " + sources.length + " " + words.document + " / " + nodes.filter(n => n.kind === "section").length + " " + words.section;
+$("summary").textContent = families.length + " " + words.project + " / " + sources.length + " " + words.document + " / " + nodes.filter(n => n.kind === "section").length + " " + (PDF_MODE ? "PDF pages" : words.section);
 $("provenance").textContent = "Corpus SHA256: " + DATA.corpusSha256 + "\nDataset SHA256: " + DATA.datasetSha256 + "\n" + DATA.cases.length + " drafts / " + words.pending;
 for (const c of DATA.cases) { const option = document.createElement("option"); option.value = c.id; option.textContent = c.id + " / " + c.question; $("case-select").append(option); }
 function focusCase() {
@@ -35,17 +55,25 @@ function focusCase() {
   for (const e of expected) { const id = JSON.stringify([e.sourceId, e.sectionId]), hit = row.retrieved.includes(id);
     $("supports").append(button((hit ? words.hit : words.missing) + " / " + sourceMap.get(e.sourceId).title + " / " + e.sectionId, () => choose(id), "evidence-button" + (hit ? "" : " missing")));
   }
+  if (PDF_MODE && expected.length) choose(JSON.stringify([expected[0].sourceId, expected[0].sectionId]));
 }
 function choose(id) {
   selectedId = id; const n = byId.get(id); if (!n) return;
+  if (PDF_MODE && (n.group || n.section)) {
+    pdfGroup = n.group?.id ?? n.section.groupId;
+    pdfWindow = n.section ? Math.floor(sourceMap.get(n.sourceId).sections.filter(p => p.groupId === pdfGroup).findIndex(p => p.id === n.section.id) / PDF_PAGE_SIZE) : 0;
+    $("chapter-filter").value = pdfGroup; $("search").value = "";
+  }
   $("detail-title").textContent = n.label; $("detail-links").replaceChildren(); $("excerpt").hidden = true;
   const s = sourceMap.get(n.sourceId);
   if (s) {
     $("detail-meta").textContent = s.edition + "\n" + s.id;
-    const a = document.createElement("a"); a.textContent = words.source; a.href = s.url; a.target = "_blank"; a.rel = "noopener noreferrer"; $("detail-links").append(a);
+    const a = document.createElement("a"); a.textContent = s.localPdfFile ? "\u6253\u5f00\u539f PDF / page " + (n.section?.page ?? n.group?.startPage ?? 1) : words.source; a.href = s.localPdfFile ? s.localPdfFile + "#page=" + (n.section?.page ?? n.group?.startPage ?? 1) : s.url; a.target = "_blank"; a.rel = "noopener noreferrer"; $("detail-links").append(a);
     if (n.section) { $("excerpt").textContent = s.text.slice(n.section.start, n.section.end); $("excerpt").hidden = false;
       $("detail-meta").textContent += " / UTF-16 [" + n.section.start + ", " + n.section.end + ")";
-    } else for (const p of s.sections) $("detail-links").append(button(p.label, () => choose(JSON.stringify([s.id, p.id]))));
+    } else if (s.groups && !n.group) {
+      for (const group of s.groups) $("detail-links").append(button(group.label + " / PDF " + group.startPage + "-" + group.endPage, () => choose(JSON.stringify([s.id, "group", group.id]))));
+    } else for (const p of s.sections.filter(p => !n.group || p.groupId === n.group.id)) $("detail-links").append(button(p.label, () => choose(JSON.stringify([s.id, p.id]))));
   } else { $("detail-meta").textContent = n.family; for (const d of sources.filter(s => s.projectFamilyId === n.family)) $("detail-links").append(button(d.title, () => choose(d.id))); }
   $("selection-status").textContent = words[n.kind] + ": " + n.label; draw();
 }
@@ -53,7 +81,20 @@ function draw() {
   const focusedId = document.activeElement?.closest("[data-node]")?.getAttribute("data-node");
   const family = $("project-filter").value, q = $("search").value.trim().toLocaleLowerCase();
   const allowedSections = nodes.filter(n => n.kind === "section" && (!family || n.family === family) && (!q || (sourceMap.get(n.sourceId).title + n.label + sourceMap.get(n.sourceId).text.slice(n.section.start, n.section.end)).toLocaleLowerCase().includes(q)));
-  const visible = new Set(allowedSections.flatMap(n => [n.id, n.sourceId, n.family]));
+  let displayedSections = allowedSections;
+  let visible;
+  if (PDF_MODE) {
+    const candidates = allowedSections.filter(n => q || n.section.groupId === pdfGroup);
+    const windows = Math.max(1, Math.ceil(candidates.length / PDF_PAGE_SIZE));
+    pdfWindow = Math.min(pdfWindow, windows - 1);
+    displayedSections = candidates.slice(pdfWindow * PDF_PAGE_SIZE, (pdfWindow + 1) * PDF_PAGE_SIZE);
+    visible = new Set(displayedSections.flatMap(n => [n.id, n.sourceId, n.family, JSON.stringify([n.sourceId, "group", n.section.groupId])]));
+    if (!q) for (const n of nodes.filter(n => n.kind !== "section")) visible.add(n.id);
+    displayedSections.forEach((n, i) => { n.x = 210 + (i % 4) * 340; n.y = 380 + Math.ceil(sources[0].groups.length / 3) * 82 + Math.floor(i / 4) * 82; });
+    $("pdf-prev").disabled = pdfWindow === 0;
+    $("pdf-next").disabled = pdfWindow + 1 >= windows;
+    $("pdf-range").textContent = candidates.length ? (pdfWindow * PDF_PAGE_SIZE + 1) + "-" + Math.min((pdfWindow + 1) * PDF_PAGE_SIZE, candidates.length) + " / " + candidates.length + " PDF pages" : "\u9009\u62e9\u7ae0\u8282\u5c55\u5f00\u9875\u7801";
+  } else visible = new Set(displayedSections.flatMap(n => [n.id, n.sourceId, n.family]));
   const expected = new Set(selectedCase.evidence.map(e => JSON.stringify([e.sourceId, e.sectionId]))), row = DATA.results.find(r => r.id === selectedCase.id);
   const graph = $("graph"); graph.replaceChildren();
   for (const [a, b] of edges) if (visible.has(a) && visible.has(b)) {
@@ -72,11 +113,14 @@ function draw() {
   if (focusedId) [...graph.querySelectorAll("[data-node]")].find(el => el.getAttribute("data-node") === focusedId)?.focus();
 }
 function applyView() { $("graph").setAttribute("viewBox", `${view.x} ${view.y} ${view.w} ${view.h}`); }
-function zoom(factor) { const w = Math.max(360, Math.min(2880, view.w * factor)), h = w * 850 / 1440; view = { x: view.x + (view.w - w) / 2, y: view.y + (view.h - h) / 2, w, h }; applyView(); }
+function zoom(factor) { const w = Math.max(360, Math.min(2880, view.w * factor)), h = w * HOME_VIEW.h / HOME_VIEW.w; view = { x: view.x + (view.w - w) / 2, y: view.y + (view.h - h) / 2, w, h }; applyView(); }
 $("zoom-in").addEventListener("click", () => zoom(.8)); $("zoom-out").addEventListener("click", () => zoom(1.25));
-$("fit").addEventListener("click", () => { view = { x: 0, y: 0, w: 1440, h: 850 }; applyView(); });
+$("fit").addEventListener("click", () => { view = { ...HOME_VIEW }; applyView(); });
 $("case-select").addEventListener("change", () => { rememberReviewDraft(); selectedCase = DATA.cases.find(c => c.id === $("case-select").value); $("project-filter").value = ""; $("search").value = ""; focusCase(); draw(); });
-$("search").addEventListener("input", draw); $("project-filter").addEventListener("change", draw);
+$("chapter-filter").addEventListener("change", () => { pdfGroup = $("chapter-filter").value; pdfWindow = 0; $("search").value = ""; draw(); });
+$("pdf-prev").addEventListener("click", () => { pdfWindow = Math.max(0, pdfWindow - 1); draw(); });
+$("pdf-next").addEventListener("click", () => { pdfWindow++; draw(); });
+$("search").addEventListener("input", () => { pdfWindow = 0; draw(); }); $("project-filter").addEventListener("change", draw);
 let drag = null;
 $("graph").addEventListener("pointerdown", e => { if (e.target.closest("[data-node]")) return; drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y }; $("graph").setPointerCapture(e.pointerId); });
 $("graph").addEventListener("pointermove", e => { if (!drag) return; const box = $("graph").getBoundingClientRect(), scale = Math.min(box.width / view.w, box.height / view.h); view.x = drag.vx - (e.clientX - drag.x) / scale; view.y = drag.vy - (e.clientY - drag.y) / scale; applyView(); });
