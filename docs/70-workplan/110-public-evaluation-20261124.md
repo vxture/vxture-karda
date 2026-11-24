@@ -180,6 +180,44 @@ K0b 仍需完整业务资料/附件、独立人工复核、跨文档复杂题、
 本地验证：新增项目隔离测试 9 项通过，app TypeScript 通过；全量 969 项，955 通过、
 14 项隔离数据库测试在未配置数据库的本地跳过、零失败。文档编号、数据锁步、i18n、工具登记和 Atlas 契约护栏通过。
 
+## 110. 公告与原始附件的跨文档草案
+
+项目族隔离批已合并 [PR280](https://github.com/vxture/vxture-karda/pull/280)，主干 CI45390912544、
+密钥扫描45390912451 通过，969 项测试通过、零跳过。
+后续已从天津大学更正公告的公开下载链接取得两份原始 DOCX，保存在
+`scripts/knowledge/corpus/tju-qa-20261124.docx` 与 `tju-confirmation-20261124.docx`。
+URL、原始二进制 hash、document.xml hash、父公告及项目身份登记在 `procurement-attachment-inputs.json`。
+发布日期沿用父公告，不声称是附件内部签署时间；空白确认函不是供应商已签署回执。
+
+`extract-docx.py` 使用 Python 标准库离线读取正文段落；不访问外部关系、不执行宏，限制压缩包、
+XML 和输出规模，拒绝 DTD、修订、字段、表格、图形及页眉页脚等尚未支持的结构，避免静默丢失内容。
+规范正文及 UTF-16 锚点可从保留段落重建，测试再从仓库中的原始 DOCX 重跑，核对全部段落和两个 hash。
+附件必须跟随同项目、同日期的父公告分区；原始 hash 纳入版本描述及审阅指纹，换字节后旧回执不能沿用。
+
+新版本 `procurement-project-materials-20261124.json` 为 5 份资料、18 个锚点，沿用三项目族的分区提议；
+旧公告语料、旧题库和旧报告保留。新题库共 24 道开发草案，其中新增 12 道结构上跨文档的题目，
+覆盖供应商建议与正式更正的区别、业绩材料、理赔条款、确认函义务、代理费和参与人数。
+这 12 道都来自同一开发项目族，不能代表多项目复杂任务分布，也不能代替 ≥20 道复杂题及独立留出门槛。
+原未知题在新版本中明确为完整保障责任和金额清单；已取得附件仍不提供该完整清单。
+
+复现（需要 Python 3；既有默认命令继续使用旧公告版本）：
+
+```powershell
+node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/import-attachments.ts scripts/knowledge/corpus/procurement-attachment-inputs.json scripts/knowledge/corpus D:\new-attachments.json
+node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/run-project-baseline.ts --materials
+node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/project-review.ts export D:\new-materials-review --materials
+node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/project-review.ts check D:\new-materials-review\review.json --materials
+```
+
+[新报告](140-materials-lexical-draft-report-20261124.json)：Top5 命中 37/39 个预期证据，
+20/22 道有答案题证据完整；2 道未知题仍返回候选。未调高 TopK 或改标签掩盖漏召回。
+这只测量草案证据召回，不是生成结论正确率、拒答正确率或图增强提升。
+实际新审阅包 `knowledge-materials-review-v2-20261124` 共 24 项 pending；旧包保留，未伪造人审。
+完整磋商文件、外部理赔须知、独立人工复核、冻结留出与性能验收仍未取得，K0b 不关闭。
+
+本地验证：全量 976 项，962 通过、14 项数据库测试待 CI 环境执行、零失败；TypeScript 与五项护栏通过。
+新增 7 项 app 测试包含原始 DOCX 逐段复现、分区/父公告/审阅指纹失效，并实际执行 Python 提取器的 5 项安全测试。
+
 ## 60. 本地验证
 
 新增评测校验 11 项与现行图投影 21 项，共 32 项通过；app TypeScript 通过。

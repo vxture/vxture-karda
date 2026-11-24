@@ -1,0 +1,371 @@
+{
+  "reportVersion": 2,
+  "evidenceIdentity": "source_and_section",
+  "dataClass": "public_business_notice_snapshot",
+  "reviewStatus": "agent_draft",
+  "acceptedGold": false,
+  "corpusSha256": "48ec4869baa6e1fa1998b027e09d73922764d0e06bac993fa33298d9dacfa2a6",
+  "topK": 5,
+  "evaluatedSplit": "development",
+  "reservedCasesNotScored": 0,
+  "metrics": {
+    "expectedEvidence": 39,
+    "hitEvidence": 37,
+    "evidenceRecall": 0.9487179487179487,
+    "answerableCases": 22,
+    "completeEvidenceCases": 20,
+    "unanswerableCasesReturningCandidates": 2
+  },
+  "limitations": [
+    "Agent-authored development labels; no human-reviewed gold or business acceptance.",
+    "Proposed project-family partition; not a frozen, independently reviewed or blinded holdout.",
+    "Reserved project sources are excluded before indexing; no reserved labels or scores produced.",
+    "Notice excerpts and any explicitly retained attachments only; not full tender documents or current procurement advice.",
+    "Cross-document evidence counts are structural, not proof of reasoning; no answer generation or graph improvement measured."
+  ],
+  "cases": [
+    {
+      "id": "j1",
+      "kind": "single",
+      "retrieved": [
+        "[\"juno-correction-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]",
+        "[\"tju-qa-20261124\",\"section-3\"]",
+        "[\"tju-qa-20261124\",\"section-1\"]"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "j2",
+      "kind": "single",
+      "retrieved": [
+        "[\"juno-correction-20261124\",\"section-2\"]",
+        "[\"juno-correction-20261124\",\"section-1\"]",
+        "[\"tju-qa-20261124\",\"section-5\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "j3",
+      "kind": "single",
+      "retrieved": [
+        "[\"juno-correction-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"tju-qa-20261124\",\"section-5\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "j4",
+      "kind": "multi_article",
+      "retrieved": [
+        "[\"juno-correction-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]",
+        "[\"juno-correction-20261124\",\"section-2\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]",
+        "[\"tju-qa-20261124\",\"section-2\"]"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "j5",
+      "kind": "unanswerable",
+      "retrieved": [
+        "[\"juno-correction-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]",
+        "[\"tju-qa-20261124\",\"section-4\"]",
+        "[\"tju-qa-20261124\",\"section-3\"]"
+      ],
+      "expectedEvidence": 0,
+      "hitCount": 0,
+      "allEvidenceRetrieved": null
+    },
+    {
+      "id": "t1",
+      "kind": "single",
+      "retrieved": [
+        "[\"tju-correction-20261124\",\"section-1\"]",
+        "[\"tju-qa-20261124\",\"section-1\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]",
+        "[\"juno-correction-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "t2",
+      "kind": "single",
+      "retrieved": [
+        "[\"tju-qa-20261124\",\"section-2\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-qa-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "t3",
+      "kind": "single",
+      "retrieved": [
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-qa-20261124\",\"section-3\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]",
+        "[\"tju-qa-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "t4",
+      "kind": "single",
+      "retrieved": [
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]",
+        "[\"tju-qa-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-qa-20261124\",\"section-1\"]"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "t5",
+      "kind": "single",
+      "retrieved": [
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-qa-20261124\",\"section-5\"]",
+        "[\"tju-qa-20261124\",\"section-1\"]"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "t6",
+      "kind": "multi_article",
+      "retrieved": [
+        "[\"tju-qa-20261124\",\"section-3\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]",
+        "[\"tju-qa-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 1,
+      "allEvidenceRetrieved": false
+    },
+    {
+      "id": "t7",
+      "kind": "unanswerable",
+      "retrieved": [
+        "[\"tju-qa-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-qa-20261124\",\"section-3\"]",
+        "[\"tju-qa-20261124\",\"section-5\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]"
+      ],
+      "expectedEvidence": 0,
+      "hitCount": 0,
+      "allEvidenceRetrieved": null
+    },
+    {
+      "id": "x1",
+      "kind": "multi_article",
+      "retrieved": [
+        "[\"tju-qa-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-qa-20261124\",\"section-3\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-3\"]"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "x2",
+      "kind": "multi_article",
+      "retrieved": [
+        "[\"tju-qa-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]",
+        "[\"tju-qa-20261124\",\"section-3\"]",
+        "[\"tju-qa-20261124\",\"section-4\"]"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "x3",
+      "kind": "multi_article",
+      "retrieved": [
+        "[\"tju-qa-20261124\",\"section-2\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"tju-qa-20261124\",\"section-3\"]"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "x4",
+      "kind": "multi_article",
+      "retrieved": [
+        "[\"tju-qa-20261124\",\"section-3\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-qa-20261124\",\"section-2\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-3\"]"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "x5",
+      "kind": "multi_article",
+      "retrieved": [
+        "[\"tju-qa-20261124\",\"section-3\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-qa-20261124\",\"section-2\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-3\"]"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "x6",
+      "kind": "multi_article",
+      "retrieved": [
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"tju-qa-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-qa-20261124\",\"section-4\"]",
+        "[\"tju-qa-20261124\",\"section-3\"]"
+      ],
+      "expectedEvidence": 3,
+      "hitCount": 3,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "x7",
+      "kind": "multi_article",
+      "retrieved": [
+        "[\"tju-confirmation-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"tju-qa-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]",
+        "[\"tju-qa-20261124\",\"section-1\"]"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "x8",
+      "kind": "multi_article",
+      "retrieved": [
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]",
+        "[\"tju-qa-20261124\",\"section-3\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]",
+        "[\"juno-correction-20261124\",\"section-1\"]"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "x9",
+      "kind": "multi_article",
+      "retrieved": [
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]",
+        "[\"tju-qa-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"juno-correction-20261124\",\"section-2\"]"
+      ],
+      "expectedEvidence": 3,
+      "hitCount": 3,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "x10",
+      "kind": "multi_article",
+      "retrieved": [
+        "[\"tju-qa-20261124\",\"section-3\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]",
+        "[\"juno-correction-20261124\",\"section-2\"]"
+      ],
+      "expectedEvidence": 3,
+      "hitCount": 3,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "x11",
+      "kind": "multi_article",
+      "retrieved": [
+        "[\"tju-qa-20261124\",\"section-4\"]",
+        "[\"tju-qa-20261124\",\"section-1\"]",
+        "[\"tju-confirmation-20261124\",\"section-1\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-1\"]"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 1,
+      "allEvidenceRetrieved": false
+    },
+    {
+      "id": "x12",
+      "kind": "multi_article",
+      "retrieved": [
+        "[\"tju-qa-20261124\",\"section-5\"]",
+        "[\"tju-correction-20261124\",\"section-3\"]",
+        "[\"juno-correction-20261124\",\"section-2\"]",
+        "[\"tju-qa-20261124\",\"section-2\"]",
+        "[\"tju-correction-20261124\",\"section-2\"]"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    }
+  ],
+  "fullCorpusSha256": "4f08c0b087e41c73a8059cc76b0219d89ee5e82c292b980a5df5489df63eb7c7",
+  "familyCorpusSha256": "42a2a8d3fe97f605d98b4f821e36401304946a330afe3e3cad549ae895331430",
+  "familyPlanSha256": "3b2f1ced5f9150f00375dac9dca81ea3c85589dfeb86f1b9e8b798367ae1bca2",
+  "reservedSourcesNotIndexed": 1,
+  "developmentProjectFamilies": 2,
+  "reservedProjectFamilies": 1,
+  "crossDocumentCases": 12
+}

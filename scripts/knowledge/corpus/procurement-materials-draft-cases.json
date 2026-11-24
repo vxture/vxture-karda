@@ -1,0 +1,377 @@
+{
+  "cases": [
+    {
+      "kind": "single",
+      "expectedAnswer": "OITC-G260360399。",
+      "evidence": [
+        {
+          "sourceId": "juno-correction-20261124",
+          "sectionId": "section-1"
+        }
+      ],
+      "id": "j1",
+      "question": "JUNO存储设备更正公告对应的原采购项目编号是什么？",
+      "split": "development"
+    },
+    {
+      "kind": "single",
+      "expectedAnswer": "延长至2026年12月1日17:00，北京时间，法定节假日除外。",
+      "evidence": [
+        {
+          "sourceId": "juno-correction-20261124",
+          "sectionId": "section-2"
+        }
+      ],
+      "id": "j2",
+      "question": "JUNO存储设备项目获取招标文件的时间延长到哪一天几点？",
+      "split": "development"
+    },
+    {
+      "kind": "single",
+      "expectedAnswer": "2026年12月4日上午09点00分，北京时间；中国科学院高能物理研究所主楼A623会议室。",
+      "evidence": [
+        {
+          "sourceId": "juno-correction-20261124",
+          "sectionId": "section-2"
+        }
+      ],
+      "id": "j3",
+      "question": "按照JUNO更正公告，提交投标文件截止和开标时间、开标地点分别是什么？",
+      "split": "development"
+    },
+    {
+      "kind": "multi_article",
+      "expectedAnswer": "首次公告为2026年11月3日；更正后的开标时间为2026年12月4日上午09点00分，北京时间。",
+      "evidence": [
+        {
+          "sourceId": "juno-correction-20261124",
+          "sectionId": "section-1"
+        },
+        {
+          "sourceId": "juno-correction-20261124",
+          "sectionId": "section-2"
+        }
+      ],
+      "id": "j4",
+      "question": "JUNO项目首次公告日期和此次更正后的开标日期分别是什么？",
+      "split": "development"
+    },
+    {
+      "kind": "unanswerable",
+      "expectedAnswer": null,
+      "evidence": [],
+      "id": "j5",
+      "question": "JUNO项目最终中标供应商和中标金额分别是什么？",
+      "split": "development"
+    },
+    {
+      "kind": "single",
+      "expectedAnswer": "首次公告日期为2026年11月16日，项目编号为TDQT202600081。",
+      "evidence": [
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-1"
+        }
+      ],
+      "id": "t1",
+      "question": "天津大学教职工团体惠民保项目的首次公告日期和项目编号是什么？",
+      "split": "development"
+    },
+    {
+      "kind": "single",
+      "expectedAnswer": "更正为按照公开发布的2026年度天津惠民保理赔须知执行；理赔款通过银行卡转入教职工个人账户。不能将所引旧文每月结算一次继续作为此次更正后的要求。",
+      "evidence": [
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-2"
+        }
+      ],
+      "id": "t2",
+      "question": "天津大学惠民保更正公告是否仍要求每月结算一次，现行理赔依据是什么？",
+      "split": "development"
+    },
+    {
+      "kind": "single",
+      "expectedAnswer": "可提供合同复印件加对应保单复印件作为有效业绩证明组合之一；保单至少包含保险人名称、险种、保险期限，并加盖承保保险人公章。",
+      "evidence": [
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-2"
+        }
+      ],
+      "id": "t3",
+      "question": "按照天津大学惠民保更正后的业绩规则，合同对应的保单能否作为证明，需包含哪些信息？",
+      "split": "development"
+    },
+    {
+      "kind": "single",
+      "expectedAnswer": "确认函附在响应文件中，同时将加盖单位公章的确认函扫描件发至公告指定邮箱zb@tjbd666.com。",
+      "evidence": [
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-3"
+        }
+      ],
+      "id": "t4",
+      "question": "天津大学惠民保供应商收到更正公告后，确认函需要如何提交？",
+      "split": "development"
+    },
+    {
+      "kind": "single",
+      "expectedAnswer": "不一致处以本公告为准，公告未涉及内容仍以竞争性磋商文件为准。",
+      "evidence": [
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-3"
+        }
+      ],
+      "id": "t5",
+      "question": "天津大学惠民保竞争性磋商文件与更正公告不一致时，以何者为准？",
+      "split": "development"
+    },
+    {
+      "kind": "multi_article",
+      "expectedAnswer": "业绩须提供合同和对应保单复印件，保单至少包含保险人、险种、保险期限并盖承保保险人公章；另将更正确认函附响应文件，并将盖公章的扫描件发公告指定邮箱。",
+      "evidence": [
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-2"
+        },
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-3"
+        }
+      ],
+      "id": "t6",
+      "question": "天津大学惠民保供应商选择合同加保单业绩证明时，还需怎样确认本次更正？",
+      "split": "development"
+    },
+    {
+      "kind": "unanswerable",
+      "expectedAnswer": null,
+      "evidence": [],
+      "id": "t7",
+      "question": "当前公告和已取得的两份附件是否提供天津惠民保全部保障责任及各项保险金额的完整清单？",
+      "split": "development"
+    },
+    {
+      "id": "x1",
+      "kind": "multi_article",
+      "split": "development",
+      "question": "答疑问题1建议按九十个自然日核定理赔，更正公告是否直接承诺这一固定时限？",
+      "expectedAnswer": "不能直接视为正式承诺。答疑记载供应商对共保体规则的说明和调整建议，采购人答复以更正公告为准；更正公告改为按照公开发布的2026年度理赔须知执行，未直接写入九十个自然日。",
+      "evidence": [
+        {
+          "sourceId": "tju-qa-20261124",
+          "sectionId": "section-2"
+        },
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-2"
+        }
+      ]
+    },
+    {
+      "id": "x2",
+      "kind": "multi_article",
+      "split": "development",
+      "question": "答疑问题1建议纸质理赔结算单两到三周开具，这是否就是更正公告最终写明的要求？",
+      "expectedAnswer": "不是。两到三周来自供应商的问题说明及建议；采购人答复以更正公告为准。更正公告要求按公开理赔须知执行，有需要可及时提供对应书面理赔材料，未直接规定两到三周。",
+      "evidence": [
+        {
+          "sourceId": "tju-qa-20261124",
+          "sectionId": "section-2"
+        },
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-2"
+        }
+      ]
+    },
+    {
+      "id": "x3",
+      "kind": "multi_article",
+      "split": "development",
+      "question": "结合答疑和更正公告，每月结算一次是原要求、供应商建议还是更正后的要求？",
+      "expectedAnswer": "每月结算一次是答疑引用的原磋商文件要求。供应商建议取消；答复要求以更正公告为准，更正公告改为按2026年度公开理赔须知执行并直接转入个人账户。",
+      "evidence": [
+        {
+          "sourceId": "tju-qa-20261124",
+          "sectionId": "section-2"
+        },
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-2"
+        }
+      ]
+    },
+    {
+      "id": "x4",
+      "kind": "multi_article",
+      "split": "development",
+      "question": "答疑问题2建议合同加盖章保单和投保单，更正公告最终要求的保单信息和证明组合是什么？",
+      "expectedAnswer": "答疑是供应商建议，采购人答复以更正公告为准。更正公告接受合同加对应保单复印件作为组合之一；保单至少包含保险人名称、险种、保险期限并盖承保保险人公章，未同时要求投保单。",
+      "evidence": [
+        {
+          "sourceId": "tju-qa-20261124",
+          "sectionId": "section-3"
+        },
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-2"
+        }
+      ]
+    },
+    {
+      "id": "x5",
+      "kind": "multi_article",
+      "split": "development",
+      "question": "综合答疑问题2和更正公告，保险业绩是否必须提供验收报告？",
+      "expectedAnswer": "不必一律提供。答疑提出保险产品无验收报告的困难，正式更正允许合同加验收报告或用户履约证明，或者合同加对应的盖章保单。",
+      "evidence": [
+        {
+          "sourceId": "tju-qa-20261124",
+          "sectionId": "section-3"
+        },
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-2"
+        }
+      ]
+    },
+    {
+      "id": "x6",
+      "kind": "multi_article",
+      "split": "development",
+      "question": "供应商可否把答疑附件中的调整建议直接当成覆盖磋商文件的新条款？",
+      "expectedAnswer": "不可。问题1和问题2的采购人答复均指向更正公告；公告又规定不符处以公告为准，未涉及内容仍以磋商文件为准。建议本身不证明已被采纳。",
+      "evidence": [
+        {
+          "sourceId": "tju-qa-20261124",
+          "sectionId": "section-2"
+        },
+        {
+          "sourceId": "tju-qa-20261124",
+          "sectionId": "section-3"
+        },
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-3"
+        }
+      ]
+    },
+    {
+      "id": "x7",
+      "kind": "multi_article",
+      "split": "development",
+      "question": "根据公告与确认函模板，收到天津大学更正公告后应确认什么并如何递交？",
+      "expectedAnswer": "模板确认已收到和阅读本项目更正公告、磋商中已考虑并包含要求且无异议；公告要求确认函附响应文件，并把加盖公章的扫描件发至zb@tjbd666.com。",
+      "evidence": [
+        {
+          "sourceId": "tju-confirmation-20261124",
+          "sectionId": "section-1"
+        },
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-3"
+        }
+      ]
+    },
+    {
+      "id": "x8",
+      "kind": "multi_article",
+      "split": "development",
+      "question": "更正确认函要写哪个项目编号、送给谁，公告还要求怎样处理盖章扫描件？",
+      "expectedAnswer": "编号TDQT202600081；致天津大学、天津滨德招标代理有限公司；供应商填写公司名称并盖章，公告要求盖章扫描件发至指定邮箱，同时附在响应文件中。",
+      "evidence": [
+        {
+          "sourceId": "tju-confirmation-20261124",
+          "sectionId": "section-1"
+        },
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-3"
+        }
+      ]
+    },
+    {
+      "id": "x9",
+      "kind": "multi_article",
+      "split": "development",
+      "question": "签署更正确认函后，能否继续按旧的理赔条款而忽略更正内容？",
+      "expectedAnswer": "模板声明已考虑并包含更正要求且无异议；公告规定不一致处以更正公告为准，理赔要求已改为按公开2026年度理赔须知执行，不能据此继续套用所引旧条款。",
+      "evidence": [
+        {
+          "sourceId": "tju-confirmation-20261124",
+          "sectionId": "section-1"
+        },
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-2"
+        },
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-3"
+        }
+      ]
+    },
+    {
+      "id": "x10",
+      "kind": "multi_article",
+      "split": "development",
+      "question": "若供应商以合同加保单证明业绩，结合公告和确认函，还应确认哪些更正事项？",
+      "expectedAnswer": "按公告提供合同及对应盖章保单，保单含保险人、险种、保险期限；确认函声明已阅读并在磋商中考虑和包含更正要求且无异议，按公告附响应文件并发盖章扫描件。",
+      "evidence": [
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-2"
+        },
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-3"
+        },
+        {
+          "sourceId": "tju-confirmation-20261124",
+          "sectionId": "section-1"
+        }
+      ]
+    },
+    {
+      "id": "x11",
+      "kind": "multi_article",
+      "split": "development",
+      "question": "天津大学项目的答疑附件如何回答代理费问题，公告未改的部分又适用什么文件？",
+      "expectedAnswer": "答疑问题3答复按所引2002和2003收费文件标准下浮20%计取；公告说明未涉及内容仍以竞争性磋商文件为准。这不等于当前法规效力审查或可直接计算具体收费金额。",
+      "evidence": [
+        {
+          "sourceId": "tju-qa-20261124",
+          "sectionId": "section-4"
+        },
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-3"
+        }
+      ]
+    },
+    {
+      "id": "x12",
+      "kind": "multi_article",
+      "split": "development",
+      "question": "附件中供应商担心参与不足三家，采购人是否已批准直接开标或改为二次招标，响应截止又是哪天？",
+      "expectedAnswer": "没有。答疑问题4仅答复严格依政府采购法和竞争性磋商暂行办法执行，未直接批准特定处置；更正公告把响应截止及磋商时间改为2026年11月30日13:30北京时间。",
+      "evidence": [
+        {
+          "sourceId": "tju-qa-20261124",
+          "sectionId": "section-5"
+        },
+        {
+          "sourceId": "tju-correction-20261124",
+          "sectionId": "section-2"
+        }
+      ]
+    }
+  ],
+  "corpusSha256": "4f08c0b087e41c73a8059cc76b0219d89ee5e82c292b980a5df5489df63eb7c7",
+  "formatVersion": 1,
+  "reviewStatus": "agent_draft"
+}
