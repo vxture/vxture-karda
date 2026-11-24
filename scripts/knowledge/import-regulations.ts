@@ -1,8 +1,8 @@
 // Reproduce the fixed historical source snapshot from a saved government HTML response.
 // Usage: tsx scripts/knowledge/import-regulations.ts <saved-html> <output-json>
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
+import { writeReproducibleArtifact } from "./artifact-output";
 
 const [input, output] = process.argv.slice(2);
 if (!input || !output) throw new Error("usage: import-regulations.ts saved-html output-json");
@@ -57,6 +57,5 @@ const corpus = {
     sections,
   }],
 };
-mkdirSync(dirname(output),{recursive:true});
-writeFileSync(output,JSON.stringify(corpus,null,2)+"\n","utf8");
+writeReproducibleArtifact(output,JSON.stringify(corpus,null,2)+"\n");
 console.log(JSON.stringify({sources:1,sections:sections.length,canonicalSha256:hash(text)}));
