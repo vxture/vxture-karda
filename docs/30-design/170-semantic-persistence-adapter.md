@@ -336,3 +336,29 @@ POST action=resolve 只接受 taskId、resultHash、relationIds 和 note，不�
 Playwright合成HTTP流程完成创建→执行→冲突选择→理由→逐条认可→替换预览→确认发布；
 另验证替代选择互斥、理由必填、选择不自动开放发布、HTML证据转义及390px主内容无横向溢出。
 这些页面替身不代替真实RP/Atlas/账单验收；生产未部署。
+
+
+## 15. K2b 已发布知识包与实体知识页（2026-11-25）
+
+新增 karda.knowledge_package 直连OBO工具、/api/kb/:id/knowledge-package RP读取API和/assets/:kbId/published实体知识页，
+三者复用PostgresSemanticReader.readPackage与正式发布loader；页面可从知识确认页进入。
+目录只从当前有效已发布边产生实体，点击实体可浏览正向关系、反向链接、关联实体、断言及精确原文支持片段。
+不依赖模型生成文本，未发布编译、未通过审核、过期/撤回支持和失效裁决均不成为知识页或Agent事实。
+知识包格式karda.knowledge-package.v1，包括固定schema、节点/边、断言状态及statement、证据坐标及excerpt，
+并明确no_published_support/source_support_unavailable/neighborhood_truncated缺口；返回缺口不推测隐蔽库的存在。
+
+工具只接受kb_id、entity_ids、relation_types、max_hops/max_nodes/max_edges；空entity_ids请求目录，非空请求实体邻域。
+默认1跳/50节点/100边，上限4跳/500节点/1000边，最多50个种子。目录扫描按ID排序最多200条正式边，
+选最多50个有效种子；扫描或展开截断明确标记。目录不从未发布entity表直接暴露名称。
+网页初始加载目录，保留实体UUID精确查询；正反链接按同一边计算，原文中的HTML只作文本。
+API禁止缓存，非法参数、权限拒绝和依赖不可用分开响应；未知/不可见实体返回同样的空知识包。
+
+S2S继续通过既有gateway校验JWT和委托准入，身份只取verified caller；工具初期仅OBO，拒绝service主体，
+按data.read而非data.write门控，SQL再次读取当前本地角色、工作空间及user库可见范围，并按act.sub调用产品的attachment求交。
+不复用Karda网页attachment给其他产品。RP请求每次重验userAdmission；原文、发布和角色读取保持同一只读快照。
+此项仅提供已有已发布资产的有界核验，不调用Atlas、不新增模型或检索计费，catalog明确免计量；既有供给日志继续记录调用。
+不改变现有search/ask/browse价格或平台商业配置。Runos现有service通道不开放该OBO工具，真实OBO及Runos联调分别待验。
+
+本批不关闭K2b：原文检索模式、主题页合成/导出、完整目录规模与跨库/平台预设库仍待后续实施。
+PDF/Office缺少与原件hash及版本绑定的规范文本层，暂不解码二进制原件冒充证据；规范解析/版本/失效需完整建设。
+没有生产DDL或部署，质量及真实外部联调不以本地功能测试替代。
