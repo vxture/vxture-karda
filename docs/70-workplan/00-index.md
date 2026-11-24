@@ -1,5 +1,13 @@
 # 70-workplan - Build plan and batch tracker
 
+## Active knowledge platform reconstruction - 2026-11-24
+
+[K0-K6 capability map and implementation plan](80-knowledge-platform-rebuild-20261124.md): owner authorized design, batches and implementation. K0a and K1a local work started; K0b real-source evaluation remains pending. Platform I1 stays paused.
+
+[LLM Wiki source benchmark and adoption checklist](90-llm-wiki-source-benchmark-20261124.md): pinned upstream source, license boundary, capabilities and acceptance by batch.
+
+[K0 audit, contracts and baseline](100-k0-audit-and-contracts-20261124.md): reusable code, source boundaries, reproducible lexical smoke report and external dependencies.
+
 ## Current integration closure - 2026-11-23
 
 Current authority: [I0-I6 integration closure](70-integration-closure-20261123.md).

@@ -1,5 +1,11 @@
 # Agent entry point
 
+2026-11-24 owner 已授权更新设计、批次并执行 Karda 重构。先读
+[160 持续知识架构](../30-design/160-continuous-knowledge-architecture.md)、
+[K0–K6 批次](../70-workplan/80-knowledge-platform-rebuild-20261124.md)和
+[源码对标](../70-workplan/90-llm-wiki-source-benchmark-20261124.md)。
+新 K 批次覆盖旧业务开发暂停口径；平台 I1 仍暂缓，生产发布及真实权限变更不在本地实施内。
+
 当前对接范围和恢复条件以[平台对接交接与长期记忆](20-platform-integration-handoff.md)为准。
 先看平台交付，再按批次验收；I1 登录、退出和切换标签页已由用户暂缓。
 下文旧版本、旧业务模块和历史验收记录只作背景，不作为当前任务。

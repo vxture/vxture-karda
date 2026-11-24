@@ -4,10 +4,13 @@
 
 Read docs/90-memory/20-platform-integration-handoff.md first for platform ownership, post-delivery verification and the user-paused I1 scope.
 
-Only integration closure I0-I6 is active:
-docs/70-workplan/70-integration-closure-20261123.md.
-Old product functions will be rebuilt; stop ingestion/index/retrieval/answer
-feature work and acceptance. Atlas147 is external history,not a closure blocker.
+Owner authorized the Karda reconstruction on 2026-11-24: update product/design
+documents, update batches, then execute them. Reconstruction authority:
+docs/30-design/160-continuous-knowledge-architecture.md and
+docs/70-workplan/80-knowledge-platform-rebuild-20261124.md.
+This supersedes the earlier stop on product feature work for the new K batches;
+old unfinished features are not retroactively accepted. I0-I6 integration closure
+remains separate, and user-paused I1 stays paused. Atlas147 is external history.
 Keep Accounts,authorization/roles/messages,managed configuration/domains,
 subscriptions/C2/C3/gauge/lifecycle/OBO and handoff. No platform code/server
 variables/manual routing or real customer privilege changes are allowed.

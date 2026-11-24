@@ -1,6 +1,6 @@
 # Karda 产品定位与设计思路(Product Definition)
 
-> 版本:v0.5
+> 版本:v0.6（2026-11-24 持续知识编译、图谱和本体融合）
 > 状态:Draft — 迭代基线
 > 上游文档:**30-agent-knowledge-blueprint(owner 蓝图,定位权威)**、product_100_matrix、product_110_sharing-isolation(含用户维度增补 v2)、product_200_integration、product_210_tool-protocol v1.0
 > 约束基线:product_110 已固化项与 product_210 协议规范对本文档具有约束力;**定位与方向以 30-blueprint 为准**
@@ -15,6 +15,13 @@
 ---
 
 ## 1. 定位陈述
+
+**2026-11-24 重构基线：** Karda 将原始资料持续编译为带证据、可更新的知识资产，
+统一服务 Agent、主题知识页与大幅图谱探索。本体 Schema/规则归 Ontos，实例/断言/证据
+归 Karda。LLM Wiki 的增量编译、双向链接、原文模式、知识体检和审核回存成为产品主线；
+相似性关系不得成为业务事实。详见 [160 持续知识架构](../30-design/160-continuous-knowledge-architecture.md)
+和决策 KD-227–KD-230。本文旧 v1/v2/v3 时序及「路线」标签保留作历史设计，
+不代表本轮验收或最新排期；当前交付状态以 K0–K6 和源码审计为准。
 
 **Karda — Vxture 面向 AI Agent 的共享知识基础设施(Vxture Agent Knowledge Platform)。**
 
@@ -78,7 +85,8 @@ Vxture Agent Knowledge Platform — the shared knowledge infrastructure for AI a
 | 路径 | 范围 | 状态 |
 |---|---|---|
 | `docs/20-specs/30-agent-knowledge-blueprint` | **定位权威**:owner 蓝图——五平台关系、六能力域、知识资产模型、边界表、第一阶段范围 | v1.0(2026-08-18) |
-| `docs/20-specs/10-product-definition`(本文) | 定位落地、结构、已定决策、v1 范围、产品级待拍板 | v0.5 |
+| `docs/20-specs/10-product-definition`(本文) | 定位落地、结构、已定决策、v1 范围、产品级待拍板 | v0.6 |
+| `docs/30-design/160-continuous-knowledge-architecture` | 重构主设计：知识编译、本体与证据、有类型关系、统一消费、图谱工作台 | v1.0，K0–K6 实施基线 |
 | `docs/30-design/100-kb-model` | 对象模型、双模板、层级、元数据、生命周期、库级配置面 | v0.1 |
 | `docs/30-design/110-processing` | 解析管线、分块参数化、增量与重建、失败重试工程 | v0.1 |
 | `docs/30-design/120-retrieval-tools` | 检索求值链、联合召回、可见集缓存、关联表达、工具面 | v0.1 |

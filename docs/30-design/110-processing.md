@@ -1,5 +1,9 @@
 # Karda 加工管线设计(Processing Pipeline)(110-processing)
 
+2026-11-24 重构增补以 [160](160-continuous-knowledge-architecture.md) §3 为准：
+抽取候选 → 类型与证据校验 → 审核发布，与嵌入管线独立；来源依赖驱动增量失效。
+本文件现行解析/分块设计可复用，但不把旧管线记录等同于新批次已验收。
+
 > 版本:v0.1
 > 状态:Draft — 待拍板项 4 项(见 §11)
 > 上游文档:10-product-definition v0.4、100-kb-model(对象模型/模板/状态机)、120-retrieval-tools(检索侧约束)、200-arda-channel(Arda 通道契约)、product_110/210
