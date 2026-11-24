@@ -41,9 +41,9 @@ export function validateEvaluation(corpus: EvaluationCorpus, dataset: DraftDatas
     throw new Error("invalid_evaluation_format");
   }
   const sourceIds = new Set<string>();
-  const sectionIds = new Set<string>();
   const sectionKeys = new Set<string>();
   for (const source of corpus.sources) {
+    const sectionIds = new Set<string>();
     if (![source.id,source.title,source.edition,source.text].every(nonempty) ||
         sourceIds.has(source.id) || !/^https:\/\//.test(source.url) || source.sections.length === 0) {
       throw new Error("invalid_source_manifest");
@@ -96,11 +96,11 @@ export function evaluateDraftLexical(corpus: EvaluationCorpus, dataset: DraftDat
   validateEvaluation(corpus,dataset);
   if (!Number.isInteger(topK) || topK < 1 || topK > 20) throw new Error("invalid_top_k");
   const documents = corpus.sources.flatMap(source => source.sections.map(section => ({
-    id:section.id, text:source.text.slice(section.start,section.end),
+    id:evidenceKey(source.id,section.id), text:source.text.slice(section.start,section.end),
   })));
   const results = dataset.cases.filter(c => c.split === "development").map(c => {
     const retrieved = bm25Rank(documents,c.question).slice(0,topK).map(r => r.id);
-    const hitCount = c.evidence.filter(e => retrieved.includes(e.sectionId)).length;
+    const hitCount = c.evidence.filter(e => retrieved.includes(evidenceKey(e.sourceId,e.sectionId))).length;
     return {
       id:c.id, kind:c.kind, retrieved, expectedEvidence:c.evidence.length, hitCount,
       allEvidenceRetrieved:c.kind === "unanswerable" ? null : hitCount === c.evidence.length,
@@ -110,7 +110,7 @@ export function evaluateDraftLexical(corpus: EvaluationCorpus, dataset: DraftDat
   const expectedEvidence = answerable.reduce((sum,r)=>sum+r.expectedEvidence,0);
   const hitEvidence = answerable.reduce((sum,r)=>sum+r.hitCount,0);
   return {
-    reportVersion:1, dataClass:corpus.dataClass, reviewStatus:dataset.reviewStatus,
+    reportVersion:2, evidenceIdentity:"source_and_section", dataClass:corpus.dataClass, reviewStatus:dataset.reviewStatus,
     acceptedGold:false, corpusSha256:corpusFingerprint(corpus), topK,
     evaluatedSplit:"development", reservedCasesNotScored:dataset.cases.filter(c=>c.split==="reserved").length,
     metrics:{

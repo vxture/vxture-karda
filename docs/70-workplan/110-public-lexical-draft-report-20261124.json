@@ -1,5 +1,6 @@
 {
-  "reportVersion": 1,
+  "reportVersion": 2,
+  "evidenceIdentity": "source_and_section",
   "dataClass": "public_historical_source",
   "reviewStatus": "agent_draft",
   "acceptedGold": false,
@@ -26,11 +27,11 @@
       "id": "p01",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-2",
-        "reg-2015-art-8",
-        "reg-2015-art-51",
-        "reg-2015-art-7",
-        "reg-2015-art-21"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-2\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-8\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-51\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-7\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-21\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -40,11 +41,11 @@
       "id": "p02",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-3",
-        "reg-2015-art-12",
-        "reg-2015-art-4",
-        "reg-2015-art-69",
-        "reg-2015-art-24"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-3\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-12\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-4\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-69\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-24\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -54,11 +55,11 @@
       "id": "p03",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-4",
-        "reg-2015-art-24",
-        "reg-2015-art-5",
-        "reg-2015-art-12",
-        "reg-2015-art-3"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-4\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-24\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-5\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-12\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-3\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -68,11 +69,11 @@
       "id": "p04",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-6",
-        "reg-2015-art-61",
-        "reg-2015-art-23",
-        "reg-2015-art-60",
-        "reg-2015-art-44"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-6\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-61\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-23\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-60\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-44\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -82,11 +83,11 @@
       "id": "p05",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-7",
-        "reg-2015-art-5",
-        "reg-2015-art-25",
-        "reg-2015-art-28",
-        "reg-2015-art-23"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-7\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-5\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-25\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-28\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-23\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -96,11 +97,11 @@
       "id": "p06",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-8",
-        "reg-2015-art-38",
-        "reg-2015-art-58",
-        "reg-2015-art-50",
-        "reg-2015-art-21"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-8\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-38\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-58\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-50\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-21\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -110,11 +111,11 @@
       "id": "p07",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-9",
-        "reg-2015-art-70",
-        "reg-2015-art-75",
-        "reg-2015-art-18",
-        "reg-2015-art-56"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-9\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-70\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-75\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-18\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-56\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -124,11 +125,11 @@
       "id": "p08",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-11",
-        "reg-2015-art-20",
-        "reg-2015-art-7",
-        "reg-2015-art-49",
-        "reg-2015-art-14"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-11\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-20\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-7\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-49\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-14\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -138,11 +139,11 @@
       "id": "p09",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-12",
-        "reg-2015-art-3",
-        "reg-2015-art-4",
-        "reg-2015-art-69",
-        "reg-2015-art-5"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-12\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-3\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-4\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-69\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-5\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -152,11 +153,11 @@
       "id": "p10",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-15",
-        "reg-2015-art-45",
-        "reg-2015-art-2",
-        "reg-2015-art-11",
-        "reg-2015-art-27"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-15\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-45\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-2\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-11\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-27\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -166,11 +167,11 @@
       "id": "p11",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-16",
-        "reg-2015-art-12",
-        "reg-2015-art-31",
-        "reg-2015-art-52",
-        "reg-2015-art-4"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-16\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-12\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-31\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-52\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-4\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -180,11 +181,11 @@
       "id": "p12",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-17",
-        "reg-2015-art-73",
-        "reg-2015-art-9",
-        "reg-2015-art-55",
-        "reg-2015-art-21"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-17\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-73\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-9\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-55\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-21\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -194,11 +195,11 @@
       "id": "p13",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-18",
-        "reg-2015-art-22",
-        "reg-2015-art-9",
-        "reg-2015-art-49",
-        "reg-2015-art-20"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-18\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-22\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-9\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-49\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-20\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -208,11 +209,11 @@
       "id": "p14",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-19",
-        "reg-2015-art-17",
-        "reg-2015-art-53",
-        "reg-2015-art-73",
-        "reg-2015-art-3"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-19\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-17\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-53\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-73\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-3\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -222,11 +223,11 @@
       "id": "p15",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-20",
-        "reg-2015-art-6",
-        "reg-2015-art-32",
-        "reg-2015-art-27",
-        "reg-2015-art-18"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-20\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-6\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-32\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-27\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-18\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -236,11 +237,11 @@
       "id": "p16",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-21",
-        "reg-2015-art-31",
-        "reg-2015-art-33",
-        "reg-2015-art-43",
-        "reg-2015-art-50"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-21\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-31\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-33\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-43\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-50\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -250,11 +251,11 @@
       "id": "p17",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-22",
-        "reg-2015-art-26",
-        "reg-2015-art-41",
-        "reg-2015-art-14",
-        "reg-2015-art-43"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-22\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-26\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-41\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-14\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-43\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -264,11 +265,11 @@
       "id": "p18",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-24",
-        "reg-2015-art-4",
-        "reg-2015-art-3",
-        "reg-2015-art-12",
-        "reg-2015-art-29"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-24\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-4\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-3\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-12\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-29\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -278,11 +279,11 @@
       "id": "p19",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-27",
-        "reg-2015-art-20",
-        "reg-2015-art-15",
-        "reg-2015-art-24",
-        "reg-2015-art-38"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-27\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-20\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-15\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-24\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-38\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -292,11 +293,11 @@
       "id": "p20",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-28",
-        "reg-2015-art-67",
-        "reg-2015-art-23",
-        "reg-2015-art-7",
-        "reg-2015-art-30"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-28\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-67\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-23\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-7\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-30\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -306,11 +307,11 @@
       "id": "p21",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-29",
-        "reg-2015-art-67",
-        "reg-2015-art-59",
-        "reg-2015-art-60",
-        "reg-2015-art-65"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-29\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-67\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-59\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-60\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-65\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -320,11 +321,11 @@
       "id": "p22",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-30",
-        "reg-2015-art-33",
-        "reg-2015-art-8",
-        "reg-2015-art-28",
-        "reg-2015-art-67"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-30\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-33\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-8\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-28\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-67\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -334,11 +335,11 @@
       "id": "p23",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-31",
-        "reg-2015-art-32",
-        "reg-2015-art-34",
-        "reg-2015-art-33",
-        "reg-2015-art-74"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-31\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-32\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-34\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-33\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-74\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -348,11 +349,11 @@
       "id": "p24",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-32",
-        "reg-2015-art-34",
-        "reg-2015-art-21",
-        "reg-2015-art-31",
-        "reg-2015-art-43"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-32\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-34\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-21\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-31\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-43\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -362,11 +363,11 @@
       "id": "p25",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-33",
-        "reg-2015-art-48",
-        "reg-2015-art-31",
-        "reg-2015-art-32",
-        "reg-2015-art-34"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-33\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-48\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-31\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-32\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-34\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -376,11 +377,11 @@
       "id": "p26",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-34",
-        "reg-2015-art-3",
-        "reg-2015-art-7",
-        "reg-2015-art-59",
-        "reg-2015-art-28"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-34\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-3\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-7\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-59\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-28\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -390,11 +391,11 @@
       "id": "p27",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-36",
-        "reg-2015-art-40",
-        "reg-2015-art-41",
-        "reg-2015-art-42",
-        "reg-2015-art-72"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-36\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-40\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-41\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-42\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-72\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -404,11 +405,11 @@
       "id": "p28",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-37",
-        "reg-2015-art-7",
-        "reg-2015-art-2",
-        "reg-2015-art-34",
-        "reg-2015-art-79"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-37\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-7\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-2\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-34\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-79\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -418,11 +419,11 @@
       "id": "p29",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-38",
-        "reg-2015-art-28",
-        "reg-2015-art-23",
-        "reg-2015-art-27",
-        "reg-2015-art-32"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-38\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-28\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-23\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-27\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-32\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -432,11 +433,11 @@
       "id": "p30",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-75",
-        "reg-2015-art-39",
-        "reg-2015-art-40",
-        "reg-2015-art-62",
-        "reg-2015-art-68"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-75\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-39\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-40\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-62\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-68\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -446,11 +447,11 @@
       "id": "p31",
       "kind": "single",
       "retrieved": [
-        "reg-2015-art-40",
-        "reg-2015-art-61",
-        "reg-2015-art-62",
-        "reg-2015-art-68",
-        "reg-2015-art-41"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-40\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-61\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-62\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-68\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-41\"]"
       ],
       "expectedEvidence": 1,
       "hitCount": 1,
@@ -460,11 +461,11 @@
       "id": "p36",
       "kind": "multi_article",
       "retrieved": [
-        "reg-2015-art-15",
-        "reg-2015-art-20",
-        "reg-2015-art-35",
-        "reg-2015-art-32",
-        "reg-2015-art-17"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-15\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-20\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-35\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-32\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-17\"]"
       ],
       "expectedEvidence": 2,
       "hitCount": 2,
@@ -474,11 +475,11 @@
       "id": "p37",
       "kind": "multi_article",
       "retrieved": [
-        "reg-2015-art-17",
-        "reg-2015-art-19",
-        "reg-2015-art-55",
-        "reg-2015-art-73",
-        "reg-2015-art-24"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-17\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-19\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-55\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-73\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-24\"]"
       ],
       "expectedEvidence": 2,
       "hitCount": 2,
@@ -488,11 +489,11 @@
       "id": "p38",
       "kind": "multi_article",
       "retrieved": [
-        "reg-2015-art-22",
-        "reg-2015-art-21",
-        "reg-2015-art-64",
-        "reg-2015-art-5",
-        "reg-2015-art-32"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-22\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-21\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-64\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-5\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-32\"]"
       ],
       "expectedEvidence": 2,
       "hitCount": 1,
@@ -502,11 +503,11 @@
       "id": "p39",
       "kind": "multi_article",
       "retrieved": [
-        "reg-2015-art-22",
-        "reg-2015-art-18",
-        "reg-2015-art-9",
-        "reg-2015-art-74",
-        "reg-2015-art-63"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-22\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-18\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-9\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-74\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-63\"]"
       ],
       "expectedEvidence": 2,
       "hitCount": 2,
@@ -516,11 +517,11 @@
       "id": "p40",
       "kind": "multi_article",
       "retrieved": [
-        "reg-2015-art-21",
-        "reg-2015-art-31",
-        "reg-2015-art-33",
-        "reg-2015-art-43",
-        "reg-2015-art-32"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-21\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-31\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-33\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-43\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-32\"]"
       ],
       "expectedEvidence": 2,
       "hitCount": 2,
@@ -530,11 +531,11 @@
       "id": "p41",
       "kind": "multi_article",
       "retrieved": [
-        "reg-2015-art-33",
-        "reg-2015-art-48",
-        "reg-2015-art-30",
-        "reg-2015-art-28",
-        "reg-2015-art-67"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-33\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-48\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-30\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-28\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-67\"]"
       ],
       "expectedEvidence": 2,
       "hitCount": 2,
@@ -544,11 +545,11 @@
       "id": "p42",
       "kind": "multi_article",
       "retrieved": [
-        "reg-2015-art-31",
-        "reg-2015-art-32",
-        "reg-2015-art-74",
-        "reg-2015-art-34",
-        "reg-2015-art-33"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-31\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-32\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-74\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-34\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-33\"]"
       ],
       "expectedEvidence": 2,
       "hitCount": 2,
@@ -558,11 +559,11 @@
       "id": "p43",
       "kind": "multi_article",
       "retrieved": [
-        "reg-2015-art-33",
-        "reg-2015-art-48",
-        "reg-2015-art-34",
-        "reg-2015-art-32",
-        "reg-2015-art-74"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-33\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-48\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-34\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-32\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-74\"]"
       ],
       "expectedEvidence": 2,
       "hitCount": 2,
@@ -572,11 +573,11 @@
       "id": "p44",
       "kind": "multi_article",
       "retrieved": [
-        "reg-2015-art-7",
-        "reg-2015-art-25",
-        "reg-2015-art-34",
-        "reg-2015-art-32",
-        "reg-2015-art-28"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-7\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-25\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-34\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-32\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-28\"]"
       ],
       "expectedEvidence": 2,
       "hitCount": 2,
@@ -586,11 +587,11 @@
       "id": "p45",
       "kind": "multi_article",
       "retrieved": [
-        "reg-2015-art-12",
-        "reg-2015-art-16",
-        "reg-2015-art-4",
-        "reg-2015-art-3",
-        "reg-2015-art-69"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-12\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-16\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-4\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-3\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-69\"]"
       ],
       "expectedEvidence": 2,
       "hitCount": 2,
@@ -600,11 +601,11 @@
       "id": "p46",
       "kind": "multi_article",
       "retrieved": [
-        "reg-2015-art-38",
-        "reg-2015-art-27",
-        "reg-2015-art-28",
-        "reg-2015-art-23",
-        "reg-2015-art-26"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-38\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-27\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-28\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-23\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-26\"]"
       ],
       "expectedEvidence": 2,
       "hitCount": 2,
@@ -614,11 +615,11 @@
       "id": "p56",
       "kind": "unanswerable",
       "retrieved": [
-        "reg-2015-art-43",
-        "reg-2015-art-63",
-        "reg-2015-art-33",
-        "reg-2015-art-38",
-        "reg-2015-art-35"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-43\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-63\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-33\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-38\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-35\"]"
       ],
       "expectedEvidence": 0,
       "hitCount": 0,
@@ -628,11 +629,11 @@
       "id": "p57",
       "kind": "unanswerable",
       "retrieved": [
-        "reg-2015-art-79",
-        "reg-2015-art-8",
-        "reg-2015-art-17",
-        "reg-2015-art-34",
-        "reg-2015-art-55"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-79\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-8\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-17\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-34\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-55\"]"
       ],
       "expectedEvidence": 0,
       "hitCount": 0,
@@ -642,11 +643,11 @@
       "id": "p58",
       "kind": "unanswerable",
       "retrieved": [
-        "reg-2015-art-4",
-        "reg-2015-art-24",
-        "reg-2015-art-3",
-        "reg-2015-art-29",
-        "reg-2015-art-5"
+        "[\"procurement-regulations-2015\",\"reg-2015-art-4\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-24\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-3\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-29\"]",
+        "[\"procurement-regulations-2015\",\"reg-2015-art-5\"]"
       ],
       "expectedEvidence": 0,
       "hitCount": 0,
