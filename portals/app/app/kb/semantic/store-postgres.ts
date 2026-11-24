@@ -12,6 +12,7 @@ import type { KnowledgeSnapshot } from "./contracts";
 import type { CompilerSnapshot, Compilation } from "./compiler";
 import { freezeCompilerSnapshot } from "./compiler";
 import { localCompileProfile } from "./compile-profile";
+import { maintenanceReport, type MaintenanceReport, type MaintenanceDocument, type MaintenanceAssertion, type MaintenanceGround } from "./maintenance";
 
 export interface CompileTaskRow {
   id:string; state:string; attempt:number; run_id:string|null; error_code:string|null; result:Record<string,unknown>;
@@ -72,6 +73,49 @@ function acceptedReviews(input: PublishedRelationInput, reviews: ReviewRow[]): v
 export class PostgresSemanticStore {
   constructor(private readonly pool: Pool, private readonly objects: Pick<ObjectStore, "get">,
     private readonly admitPlatform: (identity: SemanticReadIdentity) => Promise<boolean>) {}
+
+  async maintenance(identity: SemanticReadIdentity, kbId: string): Promise<MaintenanceReport> {
+    return this.write(identity, kbId, "service.publish", async db => {
+      const now = (await db.query<{now:Date}>("SELECT clock_timestamp() AS now")).rows[0].now;
+      const head = (await db.query<{id:string;generation:number;payload:PublicationCommand}>(`SELECT r.id,h.generation,r.payload
+        FROM karda_kb.semantic_release_head h JOIN karda_kb.semantic_release r
+        ON r.kb_id=h.kb_id AND r.id=h.release_id AND r.generation=h.generation WHERE h.kb_id=$1`,[kbId])).rows[0];
+      if (!head) return {generation:0,releaseId:null,checkedAt:now.toISOString(),sources:[],relations:[]};
+      const input = decodeSemanticRelease(head.payload);
+      // Validate the immutable release, its bound reviews and normalized rows.
+      const loaded = await new PostgresFormalSemanticLoader({schema:input.schema,entityTypes:input.entityTypes}).load(db,[kbId]);
+      if(input.sources.length>100)throw new Error("semantic_source_budget");
+      const documents = (await db.query<MaintenanceDocument & {storage_ref:string|null;mime:string|null;size_bytes:string|null}>(`SELECT
+        id,title,content_state,content_hash,active_chunk_version,storage_ref,mime,size_bytes FROM karda_kb.document
+        WHERE kb_id=$1 AND id=ANY($2::uuid[])`,[kbId,input.sources.map(row=>row.documentId)])).rows;
+      const texts = new Map<string,string|null>(); let budget = 32*1024*1024;
+      for (const doc of documents) {
+        const expected = input.sources.find(row=>row.documentId===doc.id)!;
+        const size = Number(doc.size_bytes); let text:string|null=null;
+        if (doc.content_state==="indexed" && doc.content_hash===expected.contentHash && doc.active_chunk_version===expected.version &&
+            doc.storage_ref && doc.size_bytes!==null && Number.isSafeInteger(size) && size>=0 && size<=MAX_SEMANTIC_SOURCE_BYTES) {
+          if(size>budget)throw new Error("semantic_source_budget"); budget-=size;
+          const bytes=await this.objects.get(doc.storage_ref);
+          text=verifiedSourceText({contentState:doc.content_state,activeVersion:doc.active_chunk_version,
+            contentHash:doc.content_hash,mime:doc.mime},bytes?.length===size?bytes:null);
+        }
+        texts.set(doc.id,text);
+      }
+      const ids=[...new Set(input.relations.flatMap(row=>row.assertionIds))];
+      const assertions=(await db.query<MaintenanceAssertion>(`SELECT id,content_state,verification_state,expires_at,valid_until,superseded_by
+        FROM karda_kb.assertion WHERE kb_id=$1 AND id=ANY($2::uuid[]) LIMIT 5001`,[kbId,ids])).rows;
+      const grounds=(await db.query<MaintenanceGround>(`SELECT e.assertion_id,s.document_id,s.document_version,s.start_offset,s.end_offset,s.excerpt
+        FROM karda_kb.evidence e JOIN karda_kb.assertion a ON a.id=e.assertion_id JOIN karda_kb.span s ON s.id=e.span_id
+        JOIN karda_kb.document d ON d.id=s.document_id AND d.kb_id=a.kb_id
+        WHERE a.kb_id=$1 AND a.id=ANY($2::uuid[]) AND e.stance='supports' AND e.supports_id IS NULL LIMIT 5001`,[kbId,ids])).rows;
+      const entities=(await db.query<{id:string;kind:string}>(`SELECT id,kind FROM karda_kb.entity WHERE kb_id=$1 AND id=ANY($2::uuid[]) LIMIT 5001`,
+        [kbId,[...new Set(input.relations.flatMap(row=>[row.sourceId,row.targetId]))]])).rows;
+      if([assertions,grounds,entities].some(rows=>rows.length>5000))throw new Error("semantic_snapshot_limit");
+      return maintenanceReport(input,{generation:head.generation,releaseId:head.id,now,documents,texts,assertions,grounds,
+        entityTypes:new Map(entities.map(row=>[row.id,input.entityTypes.get(row.kind)??""])),
+        reviewedIds:new Set(loaded.relations.map(row=>row.id))});
+    }, true);
+  }
 
   async createCompileTask(identity:SemanticReadIdentity,kbId:string,taskId:string) {
     if(!UUID.test(taskId))throw new Error("semantic_invalid_task");
@@ -294,7 +338,7 @@ export class PostgresSemanticStore {
   }
 
   private async write<T>(identity: SemanticReadIdentity, kbId: string, permission: ProductPermission,
-    work: (db: PoolClient) => Promise<T>): Promise<T> {
+    work: (db: PoolClient) => Promise<T>, snapshot = false): Promise<T> {
     identity = { ...identity, roles: [...identity.roles] };
     if (!UUID.test(kbId) || !UUID.test(identity.workspaceId) ||
       !/^usr_[a-f0-9-]{36}$/i.test(identity.sub) || !/^[a-z][a-z0-9_-]{0,31}$/.test(identity.productCode))
@@ -302,7 +346,7 @@ export class PostgresSemanticStore {
     if (await this.admitPlatform(identity) !== true) throw new Error("semantic_write_denied");
     const db = await this.pool.connect();
     try {
-      await db.query("BEGIN");
+      await db.query(snapshot ? "BEGIN ISOLATION LEVEL REPEATABLE READ" : "BEGIN");
       // Same lock as the product role editor, then one lock for all semantic
       // writes in this library (including review inserts and first publication).
       await db.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [`karda:roles:${identity.workspaceId}`]);

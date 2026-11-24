@@ -34,6 +34,13 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   try {
   const { id } = await ctx.params;
   const url = new URL(req.url), runId = url.searchParams.get("runId");
+  if (url.searchParams.has("view")) {
+    if (url.searchParams.get("view") !== "maintenance" || [...url.searchParams.keys()].some(key=>key!=="view"))
+      throw new Error("semantic_invalid_query");
+    const report = await withStore((store,identity)=>store.maintenance(identity,id));
+    if(!report.ok)return report.response;
+    return NextResponse.json(report.value,{headers:{"Cache-Control":"private, no-store"}});
+  }
   const result = await withStore(async (store, identity) => runId
     ? store.inspectCompile(identity, id, runId)
     : store.listCompiles(identity, id, Number(url.searchParams.get("limit") ?? "20"), url.searchParams.get("before") ?? undefined));
