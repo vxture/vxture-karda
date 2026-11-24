@@ -59,11 +59,90 @@ function acceptedReviews(input: PublishedRelationInput, reviews: ReviewRow[]): v
 
 /** Formal-table writer. Native-text, same-workspace user-owned libraries only.
  * Identity and platform admission MUST come from verified server context.
- * No environment factory, public route, offline receipt import or auto-approval.
+ * The HTTP adapter owns verified RP admission; no offline receipt import or auto-approval.
  */
 export class PostgresSemanticStore {
   constructor(private readonly pool: Pool, private readonly objects: Pick<ObjectStore, "get">,
     private readonly admitPlatform: (identity: SemanticReadIdentity) => Promise<boolean>) {}
+
+  /** Reviewer-only keyset pagination; UUID order is stable, not chronological. */
+  async listCompiles(identity: SemanticReadIdentity, kbId: string, limit = 20, before?: string) {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 50 || (before !== undefined && !UUID.test(before)))
+      throw new Error("semantic_invalid_query");
+    return this.write(identity, kbId, "service.publish", async db => {
+      const rows = (await db.query<{id: string; status: string; created_at: Date; created_by: string; relation_count: number}>(`
+        SELECT id,status,created_at,created_by,jsonb_array_length(candidates->'relations') AS relation_count
+        FROM karda_kb.semantic_compile_run WHERE kb_id=$1 AND ($2::uuid IS NULL OR id<$2::uuid)
+        ORDER BY id DESC LIMIT $3`, [kbId, before ?? null, limit + 1])).rows;
+      return { items: rows.slice(0, limit), next: rows.length > limit ? rows[limit - 1].id : null };
+    });
+  }
+
+  /** Current review revisions include stale decisions so the next CAS is usable. */
+  async inspectCompile(identity: SemanticReadIdentity, kbId: string, runId: string) {
+    if (!UUID.test(runId)) throw new Error("semantic_invalid_compile");
+    return this.write(identity, kbId, "service.publish", async db => {
+      const { row, input } = await compiled(db, kbId, runId);
+      const reviews = await latestReviews(db, kbId, input);
+      const notes = (await db.query<{id: string; reviewer_sub: string; note: string; created_at: Date}>(`
+        SELECT id,reviewer_sub,note,created_at FROM karda_kb.semantic_review WHERE kb_id=$1 AND id=ANY($2::uuid[])`,
+        [kbId, reviews.map(r => r.id)])).rows;
+      const ids = [...new Set(input.relations.flatMap(r => [r.sourceId, r.targetId]))];
+      const entities = (await db.query<{id: string; kind: string; name: string}>(`
+        SELECT id,kind,name FROM karda_kb.entity WHERE kb_id=$1 AND id=ANY($2::uuid[]) ORDER BY id`, [kbId, ids])).rows;
+      const supports = [...new Set(input.relations.flatMap(r => r.assertionIds))];
+      const evidence = (await db.query<{assertion_id: string; statement: string; document_id: string; document_version: number;
+        start_offset: number; end_offset: number; excerpt: string}>(`
+        SELECT a.id AS assertion_id,a.statement,s.document_id,s.document_version,s.start_offset,s.end_offset,s.excerpt
+        FROM karda_kb.assertion a JOIN karda_kb.evidence e ON e.assertion_id=a.id
+        JOIN karda_kb.span s ON s.id=e.span_id JOIN karda_kb.document d ON d.id=s.document_id AND d.kb_id=a.kb_id
+        WHERE a.kb_id=$1 AND a.id=ANY($2::uuid[]) AND e.stance='supports' AND e.supports_id IS NULL
+        ORDER BY a.id,e.id LIMIT 5001`, [kbId, supports])).rows;
+      if (evidence.length > 5000) throw new Error("semantic_snapshot_limit");
+      return { runId: row.id, payload: row.candidates, entities, evidence, evidenceStatus: "historical_unvalidated" as const,
+        relations: input.relations.map(relation => {
+        const review = reviews.find(r => r.subject_key === `relation/${relation.id}`);
+        const matches = review?.subject_hash === subjectHash(input, relation.id);
+        return { relationId: relation.id, revision: review?.revision ?? 0,
+          state: review ? matches ? review.decision : "stale" : "pending",
+          review: review ? { ...review, ...notes.find(note => note.id === review.id) } : null };
+      }) };
+    });
+  }
+
+  /** No writes: check real grounds and show the full replacement's removals. */
+  async preview(identity: SemanticReadIdentity, kbId: string, runId: string, eventId: string) {
+    if (!UUID.test(runId) || !UUID.test(eventId)) throw new Error("semantic_invalid_compile");
+    return this.write(identity, kbId, "service.publish", async db => {
+      const { row, input } = await compiled(db, kbId, runId);
+      const reviews = await latestReviews(db, kbId, input); acceptedReviews(input, reviews);
+      await validateGrounds(db, input, await this.sources(db, input));
+      const head = (await db.query<{generation: number; payload: PublicationCommand}>(`
+        SELECT h.generation,r.payload FROM karda_kb.semantic_release_head h JOIN karda_kb.semantic_release r
+        ON r.kb_id=h.kb_id AND r.id=h.release_id AND r.generation=h.generation WHERE h.kb_id=$1`, [kbId])).rows[0];
+      const previous = head ? decodeSemanticRelease(head.payload).relations : [];
+      const prepared = preparePublication({ kbId, eventId, expectedGeneration: head?.generation ?? 0,
+        sourceRevision: row.input_hash, schemaRevision: semanticValueHash({ schema: input.schema, entityTypes: row.candidates.entityTypes }),
+        reviewRevision: semanticValueHash(reviews), payload: { ...row.candidates, compileRunId: runId } });
+      return { runId, eventId, expectedGeneration: prepared.command.expectedGeneration, fingerprint: prepared.fingerprint,
+        relationCount: input.relations.length, changes: {
+          added: input.relations.filter(r => !previous.some(p => p.id === r.id)).map(r => r.id),
+          removed: previous.filter(p => !input.relations.some(r => r.id === p.id)).map(p => p.id),
+          changed: input.relations.filter(r => previous.some(p => p.id === r.id && semanticValueHash(p) !== semanticValueHash(r))).map(r => r.id),
+        } };
+    });
+  }
+
+  /** Reconstruct server-owned payload; a browser supplies only a preview token. */
+  async submitPreview(identity: SemanticReadIdentity, kbId: string, token: {
+    runId: string; eventId: string; expectedGeneration: number; fingerprint: string;
+  }): Promise<PublicationReceipt> {
+    token = { ...token };
+    if (!HASH.test(token.fingerprint)) throw new Error("semantic_invalid_preview");
+    const command = await this.plan(identity, kbId, token.runId, token.eventId, token.expectedGeneration);
+    if (preparePublication(command).fingerprint !== token.fingerprint) throw new Error("semantic_preview_changed");
+    return this.publish(identity, command);
+  }
 
   /** Load before model egress, requiring both source write and AI permission.
    * The model runs after transaction release, never while holding source locks.
