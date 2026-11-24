@@ -11,6 +11,13 @@ docs/70-workplan/80-knowledge-platform-rebuild-20261124.md.
 This supersedes the earlier stop on product feature work for the new K batches;
 old unfinished features are not retroactively accepted. I0-I6 integration closure
 remains separate, and user-paused I1 stays paused. Atlas147 is external history.
+Owner priority update (2026-11-24): complete functionality first; improve the
+current evaluation results later. K0b human review/independent holdout and quality
+optimization no longer block K1 data-layer work, isolated migrations or local
+K2-K5 feature implementation. They remain acceptance gates before K6 pilot and
+formal cutover. This does not accept draft answers or authorize production DDL,
+customer migration, platform changes or privilege changes. Keep function delivery
+separate from quality acceptance in the checklist.
 Keep Accounts,authorization/roles/messages,managed configuration/domains,
 subscriptions/C2/C3/gauge/lifecycle/OBO and handoff. No platform code/server
 variables/manual routing or real customer privilege changes are allowed.

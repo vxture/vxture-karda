@@ -263,3 +263,26 @@ Reservations and confirmed physical deletions queue snapshots in the same
 transaction. Failed reports retain pending work across process restarts.
 Acknowledgement binds exact workspace/product/metric/value/observation. Gauge
 never enters local_usage.raw counter consumption. Reviewed db-init only.
+
+## 10. 语义编译与发布底座（0016）
+
+按 owner「先完备功能、效果后续优化」调整，实施 K1b-P4 数据层及隔离迁移；不等待 K0b 金标，不视为业务质量通过。
+设计详见 [170 §8](170-semantic-persistence-adapter.md#8-k1b-p4正式数据层与隔离迁移)。51 表声明包含 10 张语义表：
+
+| 表 | 责任 / 唯一约束 |
+| --- | --- |
+| semantic_schema_version | kb/namespace/schema_id/version 唯一，冻结定义与哈希 |
+| semantic_review | kb/subject_key/revision 唯一，追加人审与修订，不随编译重建 |
+| semantic_compile_run | kb/task_key 唯一，冻结输入、配置、候选与结束状态 |
+| semantic_release | kb/generation 唯一，固定编译及本体版本、指纹和完整载荷 |
+| semantic_release_head | kb 主键，指向同库/同代次发布，事务 CAS 切换 |
+| semantic_relation | kb/release/relation 主键，显式 asserted 关系与同库端点 |
+| semantic_relation_assertion | 关系的同库支持断言，复合主键防重 |
+| semantic_release_source | 同库文档、物理版本与字节哈希清单，文档影响索引 |
+| semantic_release_review | 发布实际引用的同库裁决 ID，不复制或改写人审 |
+| semantic_event_receipt | kb/event 主键，绑定指纹、发布与代次，支持幂等回放 |
+
+全部 id/kb_id/created_at 和历史内容不可 UPDATE/DELETE；只有 head 的 generation/release_id/updated_at 可更新。
+0016、baseline、Prisma 和 98 同步；新旧库重复应用在隔离测试执行。SQL 是 FK、CHECK、默认值及授权权威，Prisma 只生成客户端。
+既有 entity/assertion/document 增加同库唯一索引用于复合外键；不修改原有行或枚举，不迁移客户内容。
+FK 无级联删除，来源撤回沿用状态变化，永久清理需后续审计保留方案；旧应用仍能读取原表，结构回退保留新增表。

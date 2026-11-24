@@ -363,6 +363,7 @@ model Document {
   @@index([kbId, contentState], map: "idx_document_kb_state")
   @@map("document")
   @@schema("karda_kb")
+  @@unique([kbId, id], map: "uidx_document_semantic_scope")
 }
 
 model Entry {
@@ -717,6 +718,7 @@ model Assertion {
   @@index([kbId, subject], map: "idx_assertion_kb_subject")
   @@map("assertion")
   @@schema("karda_kb")
+  @@unique([kbId, id], map: "uidx_assertion_semantic_scope")
 }
 
 /// A byte range in ONE VERSION of a document - the third of the three questions
@@ -781,6 +783,7 @@ model Entity {
   @@unique([kbId, kind, name], map: "uidx_entity_kb_kind_name")
   @@map("entity")
   @@schema("karda_kb")
+  @@unique([kbId, id], map: "uidx_entity_semantic_scope")
 }
 
 /// Which entities an assertion names, and in what role. The whole row is the
@@ -852,4 +855,145 @@ model RoleAudit {
   created_at DateTime @default(now()) @db.Timestamptz()
   @@map("role_audit")
   @@schema("local_authz")
+}
+
+// Semantic foundation (increment 0016); SQL enforces scope FKs and checks.
+model SemanticSchemaVersion {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kb_id String @db.Uuid
+  namespace String @db.VarChar(128)
+  schema_id String @db.VarChar(128)
+  version String @db.VarChar(128)
+  definition_hash String @db.VarChar(64)
+  definition Json
+  created_at DateTime @default(now()) @db.Timestamptz()
+  @@unique([kb_id, namespace, schema_id, version])
+  @@unique([kb_id, id])
+  @@map("semantic_schema_version")
+  @@schema("karda_kb")
+}
+
+model SemanticReview {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kb_id String @db.Uuid
+  subject_key String @db.VarChar(256)
+  revision Int
+  decision String @db.VarChar(16)
+  subject_hash String @db.VarChar(64)
+  reviewer_sub String @db.VarChar(128)
+  note String
+  correction Json @default("{}")
+  created_at DateTime @default(now()) @db.Timestamptz()
+  @@unique([kb_id, subject_key, revision])
+  @@unique([kb_id, id])
+  @@map("semantic_review")
+  @@schema("karda_kb")
+}
+
+model SemanticCompileRun {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kb_id String @db.Uuid
+  schema_version_id String @db.Uuid
+  task_key String @db.VarChar(64)
+  input_hash String @db.VarChar(64)
+  config_hash String @db.VarChar(64)
+  source_manifest Json
+  candidates Json
+  status String @db.VarChar(16)
+  error_code String? @db.VarChar(128)
+  created_by String @db.VarChar(128)
+  created_at DateTime @default(now()) @db.Timestamptz()
+  @@unique([kb_id, task_key])
+  @@unique([kb_id, id, schema_version_id])
+  @@map("semantic_compile_run")
+  @@schema("karda_kb")
+}
+
+model SemanticRelease {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kb_id String @db.Uuid
+  generation Int
+  schema_version_id String @db.Uuid
+  compile_run_id String @db.Uuid
+  fingerprint String @db.VarChar(64)
+  payload Json
+  created_by String @db.VarChar(128)
+  created_at DateTime @default(now()) @db.Timestamptz()
+  @@unique([kb_id, generation])
+  @@unique([kb_id, id])
+  @@unique([kb_id, id, generation])
+  @@map("semantic_release")
+  @@schema("karda_kb")
+}
+
+model SemanticReleaseHead {
+  kb_id String @id @db.Uuid
+  generation Int
+  release_id String @db.Uuid
+  updated_at DateTime @default(now()) @db.Timestamptz()
+  @@map("semantic_release_head")
+  @@schema("karda_kb")
+}
+
+model SemanticRelation {
+  kb_id String @db.Uuid
+  release_id String @db.Uuid
+  relation_id String @db.Uuid
+  type String @db.VarChar(128)
+  source_id String @db.Uuid
+  target_id String @db.Uuid
+  origin String @default("asserted") @db.VarChar(16)
+  created_at DateTime @default(now()) @db.Timestamptz()
+  @@id([kb_id, release_id, relation_id])
+  @@map("semantic_relation")
+  @@schema("karda_kb")
+  @@index([kb_id, release_id, source_id], map: "idx_semantic_relation_source")
+  @@index([kb_id, release_id, target_id], map: "idx_semantic_relation_target")
+}
+
+model SemanticRelationAssertion {
+  kb_id String @db.Uuid
+  release_id String @db.Uuid
+  relation_id String @db.Uuid
+  assertion_id String @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz()
+  @@id([kb_id, release_id, relation_id, assertion_id])
+  @@map("semantic_relation_assertion")
+  @@schema("karda_kb")
+  @@index([kb_id, assertion_id], map: "idx_semantic_assertion_impact")
+}
+
+model SemanticReleaseSource {
+  kb_id String @db.Uuid
+  release_id String @db.Uuid
+  document_id String @db.Uuid
+  document_version Int
+  content_hash String @db.VarChar(64)
+  created_at DateTime @default(now()) @db.Timestamptz()
+  @@id([kb_id, release_id, document_id])
+  @@map("semantic_release_source")
+  @@schema("karda_kb")
+  @@index([kb_id, document_id], map: "idx_semantic_source_impact")
+}
+
+model SemanticReleaseReview {
+  kb_id String @db.Uuid
+  release_id String @db.Uuid
+  review_id String @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz()
+  @@id([kb_id, release_id, review_id])
+  @@map("semantic_release_review")
+  @@schema("karda_kb")
+}
+
+model SemanticEventReceipt {
+  kb_id String @db.Uuid
+  event_id String @db.Uuid
+  fingerprint String @db.VarChar(64)
+  release_id String @db.Uuid
+  generation Int
+  created_at DateTime @default(now()) @db.Timestamptz()
+  @@id([kb_id, event_id])
+  @@map("semantic_event_receipt")
+  @@schema("karda_kb")
 }
