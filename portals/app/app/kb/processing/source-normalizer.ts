@@ -30,7 +30,8 @@ export function snapshotFromExtraction(mime:string,bytes:Buffer,value:unknown):S
 export async function normalizeSource(mime:string,bytes:Buffer):Promise<SourceSnapshot>{
   if(![PDF_MIME,DOCX_MIME].includes(mime)||bytes.length>SOURCE_BYTE_LIMIT||!bytes.length)throw new Error("source_format_unsupported");
   let script="";
-  for(const path of [resolve(process.cwd(),"source-tools/normalize-source.py"),resolve(process.cwd(),"../../scripts/knowledge/normalize-source.py")]){
+  for(const path of [resolve(process.cwd(),"source-tools/normalize-source.py"),resolve(process.cwd(),"../../source-tools/normalize-source.py"),
+    resolve(process.cwd(),"../../scripts/knowledge/normalize-source.py")]){
     try{await access(path);script=path;break;}catch{/* try the local development layout */}
   }
   if(!script)throw new Error("source_extractor_unavailable");

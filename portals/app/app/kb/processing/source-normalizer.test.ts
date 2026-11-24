@@ -6,6 +6,9 @@ import {DOCX_MIME,PDF_MIME,readSourceSnapshot,sourceHash,snapshotIR,snapshotVali
 import {verifiedSourceText} from "../semantic/source-text";
 import {syntheticPdf} from "./source-fixtures";
 import {runExtraction} from "../assertions/extract-run";
+import {mkdtemp,mkdir,copyFile,rm} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import {resolve,join} from "node:path";
 
 test("normalized source coordinates preserve UTF-16, parser identity and physical page gaps",async()=>{
   const bytes=Buffer.from("synthetic bytes"),text="A\ud83d\ude00B";
@@ -48,4 +51,15 @@ test("real bounded PDF and DOCX runtime extraction rejects malformed and scan-on
   const normalized=await normalizeSource(DOCX_MIME,docx);
   assert.equal(normalized.text,"One \u4e2d\ud83d\ude00 proof.");
   assert.equal(normalized.text.slice(4,7),"\u4e2d\ud83d\ude00");
+});
+
+test("standalone image finds pinned extractors after Next changes the runtime working directory",async()=>{
+  const cwd=process.cwd(),folder=await mkdtemp(join(tmpdir(),"karda-runtime-layout-"));
+  try{
+    await mkdir(join(folder,"source-tools"));await mkdir(join(folder,"portals/app"),{recursive:true});
+    for(const name of ["normalize-source.py","extract-pdf.py","extract-docx.py"])
+      await copyFile(resolve(cwd,"../../scripts/knowledge",name),join(folder,"source-tools",name));
+    process.chdir(join(folder,"portals/app"));
+    assert.equal((await normalizeSource(PDF_MIME,syntheticPdf(["Runtime proof"]))).text,"Runtime proof");
+  }finally{process.chdir(cwd);await rm(folder,{recursive:true,force:true});}
 });
