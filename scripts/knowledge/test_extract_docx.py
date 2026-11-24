@@ -1,8 +1,11 @@
 """Safety and reproducibility checks for the offline corpus importer."""
 import importlib.util
+import hashlib
+import io
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 import zipfile
 
 ROOT = Path(__file__).parent
@@ -18,6 +21,52 @@ class ExtractionTests(unittest.TestCase):
             with zipfile.ZipFile(target, "w") as z:
                 z.writestr("word/document.xml", xml)
             return module.extract(target)
+
+    def document(self, text="Snapshot one"):
+        return ('<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+                '<w:body><w:p><w:r><w:t>' + text + '</w:t></w:r></w:p></w:body></w:document>')
+
+    def test_utf8_bom_preserves_binary_and_xml_hashes(self):
+        xml = b"\xef\xbb\xbf" + ('<?xml version="1.0" encoding="UTF-8"?>' + self.document()).encode()
+        output = self.altered(xml)
+        self.assertEqual(output["documentXmlSha256"], hashlib.sha256(xml).hexdigest())
+        self.assertEqual(output["paragraphs"], ["Snapshot one"])
+
+    def test_non_utf8_documents_and_disguised_declarations_refused(self):
+        for encoding in ("utf-16", "utf-16-le", "utf-16-be", "utf-32", "utf-32-le", "utf-32-be"):
+            for prefix in ("", '<!DOCTYPE a [<!ENTITY x "hidden">]>'):
+                with self.subTest(encoding=encoding, dtd=bool(prefix)):
+                    with self.assertRaisesRegex(ValueError, "attachment_xml_encoding_refused"):
+                        self.altered((prefix + self.document()).encode(encoding))
+        for declaration in ("UTF-16", "ISO-8859-1"):
+            with self.subTest(declaration=declaration):
+                with self.assertRaisesRegex(ValueError, "attachment_xml_encoding_refused"):
+                    self.altered(('<?xml version="1.0" encoding="' + declaration + '"?>' + self.document()).encode())
+        with self.assertRaisesRegex(ValueError, "attachment_xml_encoding_refused"):
+            self.altered(self.document().encode() + b"\xff")
+
+    def test_replaced_path_cannot_mix_hash_and_paragraph_snapshots(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "input.docx"
+            first_xml = self.document().encode()
+            with zipfile.ZipFile(target, "w") as archive:
+                archive.writestr("word/document.xml", first_xml)
+            first = target.read_bytes()
+            replacement = io.BytesIO()
+            with zipfile.ZipFile(replacement, "w") as archive:
+                archive.writestr("word/document.xml", self.document("Snapshot two"))
+            original_zip = zipfile.ZipFile
+
+            def replace_before_unpack(argument):
+                target.write_bytes(replacement.getvalue())
+                return original_zip(argument)
+
+            with patch.object(module.zipfile, "ZipFile", side_effect=replace_before_unpack):
+                output = module.extract(target)
+            self.assertEqual(output["binarySha256"], hashlib.sha256(first).hexdigest())
+            self.assertEqual(output["documentXmlSha256"], hashlib.sha256(first_xml).hexdigest())
+            self.assertEqual(output["paragraphs"], ["Snapshot one"])
+            self.assertNotEqual(target.read_bytes(), first)
 
     def test_real_documents(self):
         for name in ("qa", "confirmation"):
