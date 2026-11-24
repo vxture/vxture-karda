@@ -27,6 +27,7 @@ async function handle(req:Request,ctx:{params:Promise<{id:string}>}) {
     if(req.method==="GET")return NextResponse.json({tasks:await store.listCompileTasks(identity,id)},{headers});
     const body=parseCompileTaskRequest(await req.text());
     const result=body.action==="create"?await store.createCompileTask(identity,id,body.taskId):
+      body.action==="resolve"?await store.resolveCompileTask(identity,id,body):
       await executeCompileTask(identity,id,body.taskId,{store,tenantForWorkspace,candidates:()=>{
         const generation=getGenerationClient();return generation?new AtlasSemanticCandidateClient(generation):null;
       }});

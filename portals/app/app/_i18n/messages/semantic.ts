@@ -43,4 +43,9 @@ export const semantic = {
   signIn:{"zh-CN":"\u8bf7\u5148\u767b\u5f55","en-US":"Please sign in"},
   loading:{"zh-CN":"\u5904\u7406\u4e2d\u2026","en-US":"Working..."},
   noRelations:{"zh-CN":"\u8be5\u6279\u6b21\u65e0\u5173\u7cfb\uff1b\u53d1\u5e03\u5c06\u79fb\u9664\u5f53\u524d\u5173\u7cfb\u3002","en-US":"This batch has no relations. Publishing removes current relations."},
+  selectCandidates:{"zh-CN": "\u9009\u62e9\u6709\u6548\u5019\u9009", "en-US": "Select valid candidates"},
+  selectionHint:{"zh-CN": "\u9010\u6761\u67e5\u770b\u8bc1\u636e\u5e76\u52fe\u9009\u4fdd\u7559\u5173\u7cfb\uff1b\u540c\u7ec4\u66ff\u4ee3\u5173\u7cfb\u6700\u591a\u4fdd\u7559\u4e00\u6761\u3002\u672a\u901a\u8fc7\u6821\u9a8c\u548c\u672a\u52fe\u9009\u7684\u5173\u7cfb\u4f1a\u88ab\u6392\u9664\uff0c\u539f\u59cb\u7ed3\u679c\u548c\u88c1\u51b3\u7406\u7531\u4fdd\u7559\u3002\u63d0\u4ea4\u540e\u4ecd\u987b\u9010\u6761\u5ba1\u9605\u53ca\u9884\u89c8\u53d1\u5e03\u3002", "en-US": "Inspect evidence and select relations to keep, at most one per alternative group. Invalid and unchecked candidates are excluded; the original result and reason are retained. Selection still requires relation review and publication preview."},
+  submitSelection:{"zh-CN": "\u4fdd\u5b58\u9009\u62e9\u5e76\u8fdb\u5165\u5ba1\u9605", "en-US": "Save selection and review"},
+  selectionRecorded:{"zh-CN": "\u5df2\u4fdd\u5b58\u9009\u62e9\u7406\u7531", "en-US": "Selection reason saved"},
+  noSelectable:{"zh-CN": "\u6ca1\u6709\u901a\u8fc7\u6821\u9a8c\u7684\u5173\u7cfb\uff0c\u8bf7\u4fee\u6b63\u8d44\u6599\u540e\u521b\u5efa\u65b0\u4efb\u52a1\u3002", "en-US": "No valid relations. Correct the source material and create a new task."},
 } satisfies Catalog;

@@ -9,12 +9,14 @@ import type { PublishedRelationInput, SemanticReadIdentity } from "./read-postgr
 import { matchesSourceSpan, verifiedSourceText, MAX_SEMANTIC_SOURCE_BYTES } from "./source-text";
 import { projectNeighborhood } from "./projection";
 import type { KnowledgeSnapshot } from "./contracts";
-import type { CompilerSnapshot } from "./compiler";
+import type { CompilerSnapshot, Compilation } from "./compiler";
 import { freezeCompilerSnapshot } from "./compiler";
 import { localCompileProfile } from "./compile-profile";
 
 export interface CompileTaskRow {
   id:string; state:string; attempt:number; run_id:string|null; error_code:string|null; result:Record<string,unknown>;
+  resultHash?:string;
+  context?:Pick<CompilerSnapshot,"entities"|"assertions">;
 }
 interface ClaimedCompileTask extends CompileTaskRow { snapshot:CompilerSnapshot; snapshot_hash:string; lease_id:string; }
 
@@ -104,8 +106,9 @@ export class PostgresSemanticStore {
       await db.query(`UPDATE karda_kb.semantic_compile_task SET state='failed',lease_id=NULL,lease_until=NULL,
         error_code='semantic_attempts_exhausted',updated_at=now() WHERE kb_id=$1 AND created_by=$2
         AND state='running' AND attempt=3 AND lease_until<clock_timestamp()`,[kbId,identity.sub]);
-      return (await db.query<CompileTaskRow>(`SELECT id,state,attempt,run_id,error_code,result
-        FROM karda_kb.semantic_compile_task WHERE kb_id=$1 AND created_by=$2 ORDER BY created_at DESC,id DESC LIMIT 50`,[kbId,identity.sub])).rows;
+      return (await db.query<CompileTaskRow>(`SELECT id,state,attempt,run_id,error_code,result,
+        CASE WHEN state='needs_review' THEN jsonb_build_object('entities',snapshot->'entities','assertions',snapshot->'assertions') ELSE NULL END AS context
+        FROM karda_kb.semantic_compile_task WHERE kb_id=$1 AND created_by=$2 ORDER BY created_at DESC,id DESC LIMIT 50`,[kbId,identity.sub])).rows.map(row=>({...row,resultHash:semanticValueHash(row.result)}));
     });
   }
 
@@ -135,6 +138,40 @@ export class PostgresSemanticStore {
         AND state='running' AND lease_until>clock_timestamp() RETURNING id`,[kbId,taskId,identity.sub,leaseId,state,result,errorCode]);
       if(!updated.rowCount)throw new Error("semantic_task_stale_lease");
     });
+  }
+
+  /** Select only admitted relations. The immutable task result retains excluded alternatives and diagnostics. */
+  async resolveCompileTask(identity:SemanticReadIdentity,kbId:string,request:{taskId:string;resultHash:string;relationIds:string[];note:string}) {
+    const input=structuredClone(request);
+    if(!UUID.test(input.taskId)||!HASH.test(input.resultHash)||!Array.isArray(input.relationIds)||
+      !input.relationIds.length||input.relationIds.length>200||input.relationIds.some(id=>!UUID.test(id))||
+      new Set(input.relationIds).size!==input.relationIds.length||typeof input.note!=="string"||!input.note.trim()||input.note.length>10000)
+      throw new Error("semantic_invalid_selection");
+    input.relationIds.sort();input.note=input.note.trim();
+    const selection={resultHash:input.resultHash,relationIds:input.relationIds,note:input.note,reviewer:identity.sub};
+    const selectionHash=semanticValueHash(selection);
+    const task=await this.write(identity,kbId,"service.publish",async db=>{
+      const row=(await db.query<ClaimedCompileTask>(`SELECT id,state,run_id,result,snapshot,snapshot_hash
+        FROM karda_kb.semantic_compile_task WHERE kb_id=$1 AND id=$2 AND created_by=$3`,[kbId,input.taskId,identity.sub])).rows[0];
+      if(!row)throw new Error("semantic_task_unavailable");
+      return row;
+    });
+    if(task.state==="completed") {
+      if(task.result.selectionHash!==selectionHash)throw new Error("semantic_selection_conflict");
+      return {runId:task.run_id!,duplicate:true};
+    }
+    if(task.state!=="needs_review"||semanticValueHash(task.result)!==input.resultHash)throw new Error("semantic_selection_conflict");
+    const current=await this.loadCompilerSnapshot(identity,kbId,task.snapshot);
+    if(semanticValueHash(current)!==task.snapshot_hash)throw new Error("semantic_task_source_changed");
+    const compilation=task.result.compilation as Compilation;
+    if(!compilation||compilation.snapshotHash!==task.snapshot_hash)throw new Error("semantic_corrupt_compile");
+    const relations=compilation.payload.relations.filter(r=>input.relationIds.includes(r.id));
+    if(relations.length!==input.relationIds.length)throw new Error("semantic_invalid_selection");
+    if(compilation.conflicts.some(group=>group.relationIds.filter(id=>input.relationIds.includes(id)).length>1))
+      throw new Error("semantic_selection_conflict");
+    const configHash=semanticValueHash({version:"human-selection-v1",selectionHash});
+    return this.recordCompile(identity,kbId,{taskKey:semanticValueHash({taskId:task.id,selectionHash}),configHash,
+      payload:{...compilation.payload,relations},resolution:{taskId:task.id,resultHash:input.resultHash,selectionHash,selection}});
   }
 
   /** Reviewer-only keyset pagination; UUID order is stable, not chronological. */
@@ -312,6 +349,7 @@ export class PostgresSemanticStore {
   async recordCompile(identity: SemanticReadIdentity, kbId: string, input: {
     taskKey: string; configHash: string; payload: SemanticReleasePayload;
     task?:{id:string;leaseId:string};
+    resolution?:{taskId:string;resultHash:string;selectionHash:string;selection:Record<string,unknown>};
   }): Promise<{ runId: string; duplicate: boolean }> {
     if (!HASH.test(input.taskKey) || !HASH.test(input.configHash)) throw new Error("semantic_invalid_compile");
     const actor = identity.sub;
@@ -319,14 +357,25 @@ export class PostgresSemanticStore {
     const definition = { schema: payload.schema, entityTypes: payload.entityTypes };
     const definitionHash = semanticValueHash(definition), inputHash = semanticValueHash(decoded.sources);
     const task=input.task?{...input.task}:null;
+    const resolution=input.resolution?structuredClone(input.resolution):null;
+    if(resolution&&(!UUID.test(resolution.taskId)||!HASH.test(resolution.resultHash)||!HASH.test(resolution.selectionHash)||task))throw new Error("semantic_invalid_selection");
     if(task&&(!UUID.test(task.id)||!UUID.test(task.leaseId)))throw new Error("semantic_invalid_task");
-    return this.write(identity, kbId, "data.write", async db => {
+    return this.write(identity, kbId, resolution?"service.publish":"data.write", async db => {
+      if(resolution){
+        const row=(await db.query<CompileTaskRow>(`SELECT state,result,run_id FROM karda_kb.semantic_compile_task
+          WHERE kb_id=$1 AND id=$2 AND created_by=$3 FOR UPDATE`,[kbId,resolution.taskId,actor])).rows[0];
+        if(row?.state==="completed"&&row.result.selectionHash===resolution.selectionHash)return {runId:row.run_id!,duplicate:true};
+        if(!row||row.state!=="needs_review"||semanticValueHash(row.result)!==resolution.resultHash)throw new Error("semantic_selection_conflict");
+      }
       if(task){
         const fence=await db.query(`SELECT id FROM karda_kb.semantic_compile_task WHERE kb_id=$1 AND id=$2 AND created_by=$3
           AND state='running' AND lease_id=$4 AND lease_until>clock_timestamp() FOR UPDATE`,[kbId,task.id,actor,task.leaseId]);
         if(!fence.rowCount)throw new Error("semantic_task_stale_lease");
       }
       const complete=async(runId:string)=>{
+        if(resolution)await db.query(`UPDATE karda_kb.semantic_compile_task SET state='completed',run_id=$3,
+          result=result || $4::jsonb,error_code=NULL,updated_at=now() WHERE kb_id=$1 AND id=$2`,
+          [kbId,resolution.taskId,runId,JSON.stringify({selectionHash:resolution.selectionHash,selection:resolution.selection})]);
         if(task){const settled=await db.query(`UPDATE karda_kb.semantic_compile_task SET state='completed',run_id=$3,lease_id=NULL,
           lease_until=NULL,error_code=NULL,result='{}',updated_at=now() WHERE kb_id=$1 AND id=$2 AND lease_id=$4
           AND lease_until>clock_timestamp() RETURNING id`,[kbId,task.id,runId,task.leaseId]);

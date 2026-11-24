@@ -10,8 +10,16 @@ test("compile task requests cannot inject snapshots, identity or model configura
   const body={action:"create",taskId:randomUUID()};assert.deepEqual(parseCompileTaskRequest(JSON.stringify(body)),body);
   for(const extra of [{snapshot:{}},{sub:"user"},{endpointCode:"other"},{taskId:"bad"},{action:"publish"}])
     assert.throws(()=>parseCompileTaskRequest(JSON.stringify({...body,...extra})),/semantic_invalid_task_request/);
-  for(const text of ["null","[]","broken"," ".repeat(1025)])assert.throws(()=>parseCompileTaskRequest(text),/semantic_invalid_task_request/);
+  for(const text of ["null","[]","broken"," ".repeat(32769)])assert.throws(()=>parseCompileTaskRequest(text),/semantic_invalid_task_request/);
   assert.equal(parseCompileTaskRequest(JSON.stringify({...body,action:"execute"})).action,"execute");
+});
+
+test("human selection requests bind exact task result and allow only IDs and a reason",()=>{
+  const body={action:"resolve",taskId:randomUUID(),resultHash:"a".repeat(64),relationIds:[randomUUID()],note:"Keep the supported alternative"};
+  assert.deepEqual(parseCompileTaskRequest(JSON.stringify(body)),body);
+  for(const extra of [{resultHash:"bad"},{relationIds:[]},{relationIds:[body.relationIds[0],body.relationIds[0]]},
+    {relationIds:["bad"]},{note:" "},{note:"x".repeat(10001)},{payload:{}},{reviewer:"other"}])
+    assert.throws(()=>parseCompileTaskRequest(JSON.stringify({...body,...extra})),/semantic_invalid_task_request/);
 });
 
 test("bootstrap ontology is a fixed local definition and never claims an Ontos version",()=>{
