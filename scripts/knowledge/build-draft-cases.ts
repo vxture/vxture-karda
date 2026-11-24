@@ -1,8 +1,9 @@
 // Agent-authored review candidates grounded in the fixed 2015 source.
 // This creates draft data, never marks review complete and never scores reserved cases.
-import {readFileSync,writeFileSync} from "node:fs";
+import {readFileSync} from "node:fs";
 import {resolve} from "node:path";
 import {corpusFingerprint,validateEvaluation,type EvaluationCorpus,type DraftCase,type DraftDataset} from "../../portals/app/app/kb/semantic/evaluation";
+import {writeReproducibleArtifact} from "./artifact-output";
 
 const singles: [number,string,string][] = [
   [2,"在该发布快照中，财政性资金如何定义，混合资金无法分割采购时适用什么规则？","财政性资金是纳入预算管理的资金；以此作为还款来源的借贷资金视同财政性资金；无法分割采购的统一适用政府采购法及本条例。"],
@@ -87,7 +88,7 @@ unknown.forEach((q,index)=>append([],q,null,"unanswerable",index<3?"development"
 const dataset:DraftDataset={formatVersion:1,reviewStatus:"agent_draft",corpusSha256:corpusFingerprint(corpus),cases};
 validateEvaluation(corpus,dataset);
 if(cases.length!==60) throw new Error("unexpected_case_count");
-writeFileSync(resolve(folder,"procurement-draft-cases.json"),JSON.stringify(dataset,null,2)+"\n","utf8");
+writeReproducibleArtifact(resolve(folder,"procurement-draft-cases.json"),JSON.stringify(dataset,null,2)+"\n");
 console.log(JSON.stringify({
   cases:cases.length,complex:complex.length,
   development:cases.filter(c=>c.split==="development").length,
