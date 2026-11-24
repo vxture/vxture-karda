@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { preparePublication, type PublicationCommand, type PublicationReceipt } from "./publication";
+import { decodeSemanticRelease } from "./release-format";
 
 export interface PublicationAuthority {
   canPublish: boolean;
@@ -23,6 +24,13 @@ export class PostgresPublicationProtocol {
   ) {
     if (!/^semantic_protocol_test_[a-f0-9]{32}$/.test(schema)) throw new Error("publication_sandbox_required");
     this.schema = `"${schema}"`;
+  }
+
+  /** Typed semantic path; the generic protocol remains available for its tests. */
+  async publishSemantic(input: PublicationCommand): Promise<PublicationReceipt> {
+    const { command } = preparePublication(input);
+    decodeSemanticRelease(command);
+    return this.publish(command);
   }
 
   async publish(input: PublicationCommand): Promise<PublicationReceipt> {

@@ -4,6 +4,10 @@ import { createHash, randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import { PostgresSemanticReader, type PublishedRelationInput } from "./read-postgres";
 import type { NeighborhoodQuery } from "./contracts";
+import { PostgresPublicationProtocol } from "./publication-postgres";
+import { PostgresSemanticReleaseLoader } from "./release-postgres";
+import { SEMANTIC_RELEASE_FORMAT } from "./release-format";
+import { createReleaseTestFixture } from "./release-test-fixture";
 
 const endpoint = process.env.KARDA_PROVISION_TEST_DATABASE_URL;
 test("semantic native-text adapter: live roles, attachment/tenant scope, source versions and consistent snapshots", { skip: !endpoint, timeout: 30000 }, async () => {
@@ -14,6 +18,7 @@ test("semantic native-text adapter: live roles, attachment/tenant scope, source 
   url.username = "karda_svc";
   const service = new Pool({ connectionString: url.toString(), statement_timeout: 5000 });
   const ws = randomUUID(), otherWs = randomUUID(), sub = `usr_${randomUUID()}`;
+  const namespace = `semantic_protocol_test_${randomUUID().replaceAll("-", "")}`;
   const kb = randomUUID(), hiddenKb = randomUUID(), otherKb = randomUUID();
   const doc = randomUUID(), assertion = randomUUID(), span = randomUUID(), evidence = randomUUID();
   const left = randomUUID(), right = randomUUID();
@@ -120,7 +125,28 @@ test("semantic native-text adapter: live roles, attachment/tenant scope, source 
     assert.equal((await read()).edges.length, 1, "connection remains usable after a denied read rolls back");
     const restarted = new PostgresSemanticReader(service, { get: async () => raw }, async () => true, async () => published);
     assert.deepEqual(await restarted.read(identity, [kb], query), await read());
+
+    // Bridge P1's durable head into P2's actual service-role source projection.
+    await createReleaseTestFixture(admin, namespace);
+    const writer = new PostgresPublicationProtocol(admin, namespace, async () => ({
+      canPublish: true, sourceRevision: "s1", reviewRevision: "r1", schemaRevision: "o1",
+    }));
+    await writer.publishSemantic({ kbId: kb, eventId: randomUUID(), expectedGeneration: 0,
+      sourceRevision: "s1", reviewRevision: "r1", schemaRevision: "o1", payload: {
+        format: SEMANTIC_RELEASE_FORMAT, schema: published.schema,
+        entityTypes: [...published.entityTypes].map(([kind, type]) => ({ kind, type })),
+        relations: published.relations, sources: published.sources,
+      } });
+    const loader = new PostgresSemanticReleaseLoader(namespace, published);
+    const durableReader = new PostgresSemanticReader(service, { get: async () => raw }, async () => true,
+      loader.load.bind(loader));
+    assert.deepEqual(await durableReader.read(identity, [kb], query), await read());
+    await admin.query("UPDATE karda_kb.document SET content_state='deleted' WHERE id=$1", [doc]);
+    assert.equal((await durableReader.read(identity, [kb], query)).edges.length, 0,
+      "persisted release cannot restore a withdrawn live source");
   } finally {
+    assert.match(namespace, /^semantic_protocol_test_[a-f0-9]{32}$/);
+    await admin.query(`DROP SCHEMA IF EXISTS "${namespace}" CASCADE`);
     await admin.query("DELETE FROM karda_kb.knowledge_base WHERE id=ANY($1::uuid[])", [[kb, hiddenKb, otherKb]]);
     if (member) await admin.query("DELETE FROM local_authz.member WHERE id=$1", [member]);
     await service.end(); await admin.end();

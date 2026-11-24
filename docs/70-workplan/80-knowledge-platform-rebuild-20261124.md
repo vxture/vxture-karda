@@ -1,6 +1,6 @@
 # Karda 知识平台重构：能力图与实施批次
 
-日期：2026-11-24。状态：**owner 已授权设计更新、更新批次并执行**。设计基线为 [160 持续知识架构](../30-design/160-continuous-knowledge-architecture.md)。K0a、K1a 开始本地实施，K0 整批仍待真实评测；本文件不变更平台 I1 暂缓、平台配置和真实客户权限边界，也不把旧业务功能当作已验收。各批实际证据见 §70。
+日期：2026-11-24。状态：**owner 已授权设计更新、更新批次并执行**。设计基线为 [160 持续知识架构](../30-design/160-continuous-knowledge-architecture.md)。K0a、K1a、K1b-P1/P2 已完成各自限定范围的实现验证；K0/K1 整批验收仍未完成。带勾选标记及剩余数量的入口为 [17 项执行清单](120-rebuild-execution-checklist-20261124.md)。本文件不变更平台 I1 暂缓、平台配置和真实客户权限边界，也不把旧业务功能当作已验收。各批实际证据见 §70。
 
 ## 10. 产品目标与边界
 
@@ -105,7 +105,7 @@ user 库挂载过滤，既有实体/断言/证据适配；详见 [170 §6](../30
 | K0a | LOCAL COMPLETE | [源码审计与接口草案](100-k0-audit-and-contracts-20261124.md)；固定 8 段合成材料、12 道检索冒烟题；[基线报告](100-k0-lexical-smoke-20261124.json) 15/15 个预期资料召回、11/12 题完整命中；未知题出现弱相关结果，尚无生成/拒答验证 |
 | K0b | IN PROGRESS — DRAFT DATA | [公开原文与评测准备](110-public-evaluation-20261124.md)：1 份历史法规、79 条款锚点、60 道 agent 草案（20 多条款），45 开发/15 保留；仍待独立业务资料、人工复核和跨文档留出，未整批验收 |
 | K1a | LOCAL VERIFIED | 首批 PR272 已合并且 PR/main CI 通过；本轮再补人工验证到期检查，现有投影 21 项测试通过；不含 HTTP/DB 适配，不构成生产安全或端到端验收 |
-| K1b | DESIGN PREPARED | [170 适配设计](../30-design/170-semantic-persistence-adapter.md)已细化；DDL/Prisma、权威适配、事务及持久回放尚未实施，迁移门槛仍依赖 K0b |
+| K1b | PARTIAL IMPLEMENTATION | P1/PR274：隔离发布事务，主干 CI 933 项零跳过；P2/PR275：既有表服务角色读取，主干 CI 937 项零跳过；P3 持久发布到读取器桥接进行中。正式 DDL/Prisma、完整 OBO 权威适配及回放/重建未完成，迁移仍依赖 K0b；详见[执行清单](120-rebuild-execution-checklist-20261124.md)与[170](../30-design/170-semantic-persistence-adapter.md) |
 | K2–K6 | NOT STARTED | 保持本文件 §40 的先后及验收门槛，不因纯函数通过而提前记完成 |
 
 当前原文基线为既有 BM25 组件，不含向量、精排或模型应答，报告不证明图增强收益。
