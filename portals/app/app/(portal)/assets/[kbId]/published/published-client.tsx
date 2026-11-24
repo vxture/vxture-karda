@@ -40,14 +40,14 @@ export function PublishedKnowledgeClient({kbId}:{kbId:string}){
       <Button disabled={busy} type="submit">{m.openKnowledge}</Button>
     </form>
     {busy&&<p role="status">{m.loading}</p>}
-    {!!error&&<Banner tone="danger" title={error===403?m.denied:error===400?m.invalidEntity:m.unavailable}/>}
+    {!!error&&<Banner tone="danger" title={error===403?m.packageDenied:error===400?m.invalidEntity:m.unavailable}/>}
     {value&&<>
       <p className="break-all font-mono text-code-sm">{value.schema.namespace} / {value.schema.schemaId} / {value.schema.version}</p>
       {value.gaps.map(gap=><Banner key={gap} tone="warning" title={gap==="no_published_support"?m.noPublished:gap==="neighborhood_truncated"?m.packageTruncated:m.partialSources}/>)}
-      <h2 className="break-words text-title-md">{label(focus)}</h2>
+      <h2 className="break-words text-title-md">{focus?label(focus):m.linkedEntities}</h2>
       <nav aria-label={m.linkedEntities} className="flex flex-wrap gap-sm">{value.nodes.filter(n=>n.id!==focus).map(n=>
         <Button key={n.id} variant="outline" disabled={busy} onClick={()=>void load(n.id)}>{n.label}</Button>)}</nav>
-      {(["outgoing","incoming"] as const).map(direction=><section key={direction} className="flex min-w-0 flex-col gap-sm">
+      {!!focus&&(["outgoing","incoming"] as const).map(direction=><section key={direction} className="flex min-w-0 flex-col gap-sm">
         <h3 className="text-title-sm">{m[direction]}</h3>
         {value.edges.filter(e=>direction==="outgoing"?e.sourceId===focus:e.targetId===focus).map(edge=><Card key={edge.id}>
           <CardContent className="flex min-w-0 flex-col gap-sm p-md">

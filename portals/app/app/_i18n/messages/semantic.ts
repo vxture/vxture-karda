@@ -59,4 +59,5 @@ export const semantic = {
   linkedEntities:{"zh-CN": "\u5173\u8054\u5b9e\u4f53\u76ee\u5f55", "en-US": "Linked entities"},
   outgoing:{"zh-CN": "\u6b63\u5411\u5173\u7cfb", "en-US": "Outgoing relations"},
   incoming:{"zh-CN": "\u53cd\u5411\u94fe\u63a5", "en-US": "Incoming links"},
+  packageDenied:{"zh-CN": "\u5f53\u524d\u8eab\u4efd\u6ca1\u6709\u77e5\u8bc6\u8bfb\u53d6\u6743\u9650\u3002", "en-US": "Your current identity cannot read this knowledge."},
 } satisfies Catalog;
