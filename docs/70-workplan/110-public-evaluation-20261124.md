@@ -147,6 +147,39 @@ node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/import-notices.
 下一子批按项目族划分开发/保留范围；同一项目原公告、补遗和附件必须同区，不能因 URL 不同就算独立。
 K0b 的人工复核、完整复杂题及独立留出冻结仍未完成；17 项清单保持 5 完成/12 未完成。
 
+## 100. 项目族隔离与开发基线
+
+真实公告语料已合并 [PR279](https://github.com/vxture/vxture-karda/pull/279)，
+主干 CI45389646673 和密钥扫描45389646560 通过；PR CI 为 960 项通过、零跳过。
+
+`procurement-project-split.json` 将 JUNO、天津大学两项目族列为开发区，卫星软件项目族列为保留区。
+状态固定为 proposed_unreviewed：这是待独立复核的分区提议，不是已冻结或盲测的留出集。
+同项目的原公告、更正和附件必须同区；重复编号、漏分来源、跨区相同 URL/正文/保存快照均拒绝。
+分区绑定项目元数据、语料和保留 HTML 的重建结果；重命名不能绕过隔离。
+
+新增 12 道 Agent 开发草案：8 道单节、2 道多节、2 道未知问题，全部为 agent_draft。
+多节沿用 multi_article 编码，只证明同一公告内多节证据，不能计入跨文档/多跳题数。
+保留项目在建索引和导出审阅包之前移除，没有编写保留题或产生保留区分数。
+
+复现入口：
+
+```powershell
+node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/run-project-baseline.ts
+node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/project-review.ts export D:\new-project-review
+node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/project-review.ts check D:\new-project-review\review.json
+```
+
+[开发报告](130-project-lexical-draft-report-20261124.json)：Top5 命中 12/12 个预期证据，
+10/10 道有答案题证据完整；2 道未知题均仍返回候选。没有生成答案、拒答正确率或图增强收益测量。
+实际审阅包位于工作区外 `knowledge-project-review-20261124`，12 项全部 pending，
+未填写人工回执；humanIdentityVerified 和 acceptedGold 仍为 false。
+
+K0b 仍需完整业务资料/附件、独立人工复核、跨文档复杂题、独立分区冻结以及规模/性能预算。
+本批不改变 17 项清单的 5 完成/12 未完成，也不解除正式迁移与 K2 接线门槛。
+
+本地验证：新增项目隔离测试 9 项通过，app TypeScript 通过；全量 969 项，955 通过、
+14 项隔离数据库测试在未配置数据库的本地跳过、零失败。文档编号、数据锁步、i18n、工具登记和 Atlas 契约护栏通过。
+
 ## 60. 本地验证
 
 新增评测校验 11 项与现行图投影 21 项，共 32 项通过；app TypeScript 通过。
