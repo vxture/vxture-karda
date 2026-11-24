@@ -385,3 +385,8 @@ owner已授权继续全部建设并按正式流程上线。新增/assets/:kbId/g
 RP要求data.export，SQL快照再次检查data.export及data.read，避免只读用户经直链导出；输出无可执行HTML/链接，
 包含固定schema、实体、关系、断言、来源版本和UTF-16坐标及缺口。导出注明为历史快照，后续使用需重新核验。
 尚不提供可重新导入权威资产的回写入口，不把静态导出当实时访问权。
+
+
+验证：[PR298](https://github.com/vxture/vxture-karda/pull/298)，代码289b3e3，CI45473800168与secret scan通过，1013项通过、零失败/跳过；
+真实PostgreSQL覆盖导出快照及readonly可读但不可导出。合成500节点/1000边的30次布局/路径循环本机约42ms（非生产延迟承诺）。
+Playwright合成HTTP覆盖节点Enter键激活、起终点/路径、关系证据、类型筛选、缩放、大画布切换和390px无主内容溢出、HTML证据转义。
