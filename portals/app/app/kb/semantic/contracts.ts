@@ -25,6 +25,7 @@ export interface GraphEvidence {
   stance: "supports" | "contradicts";
   start: number;
   end: number;
+  pages?:number[];
 }
 export interface GraphAssertion {
   id: string;

@@ -4,7 +4,9 @@ import { readProductAccess, type MemberIdentity, type RoleSql } from "../../auth
 import type { ObjectStore } from "../storage/objectstore";
 import type { GraphProjection, KnowledgeSnapshot, NeighborhoodQuery, OntologySchema, SemanticRelation } from "./contracts";
 import { projectNeighborhood, validateNeighborhoodQuery, validateOntology } from "./projection";
-import { matchesSourceSpan, MAX_SEMANTIC_SOURCE_BYTES, verifiedSourceText } from "./source-text";
+import { matchesSourceSpan, MAX_SEMANTIC_SOURCE_BYTES, MAX_SEMANTIC_TEXT_CHARS, verifiedSourceText } from "./source-text";
+import {parsePathFor} from "../processing/ir";
+import {readSourceSnapshot,type SourceSnapshot} from "../processing/source-snapshot";
 
 export interface SemanticReadIdentity extends MemberIdentity {
   /** Verified consumer context, never accepted from an HTTP request body. */
@@ -43,7 +45,7 @@ function bounded<T>(rows: T[]): T[] {
 }
 
 /**
- * Internal, native-text, same-workspace owned-library adapter. No env factory
+ * Internal, same-workspace adapter with version-bound source text. No env factory
  * or HTTP/Agent wiring. Platform admission and published relations are mandatory
  * trusted dependencies; the old cached visible-set is deliberately not used.
  */
@@ -122,8 +124,10 @@ export class PostgresSemanticReader {
         [visible, assertionIds])).rows);
       const snapshot: KnowledgeSnapshot = { entities, relations, assertions: [], evidence: [], sources: [] };
       const texts = new Map<string, string | null>();
+      const normalizedSources=new Map<string,SourceSnapshot>();
       let incomplete = false;
       let bytesBudget = 32 * 1024 * 1024;
+      let textBudget = MAX_SEMANTIC_TEXT_CHARS;
       for (const row of grounds) {
         const source = manifest.get(row.document_id);
         if (!source || source.kbId !== row.kb_id || source.version !== row.document_version ||
@@ -139,8 +143,12 @@ export class PostgresSemanticReader {
             // Backend failure aborts the read; a missing/mismatched object only
             // removes its evidence. No excerpts or chunk lengths substitute.
             const bytes = await this.objects.get(row.storage_ref);
+            const normalized=parsePathFor(row.mime??"")==="fast"?null:
+              await readSourceSnapshot(async(sql,...values)=>(await db.query(sql,values)).rows,row.document_id,row.document_version);
             text = verifiedSourceText({ activeVersion: row.active_chunk_version, contentState: row.content_state,
-              mime: row.mime, contentHash: row.content_hash }, bytes?.length === size ? bytes : null);
+              mime: row.mime, contentHash: row.content_hash,normalized }, bytes?.length === size ? bytes : null);
+            if(text!==null){textBudget-=text.length;if(textBudget<0)throw new Error("semantic_source_budget");}
+            if(text!==null&&normalized)normalizedSources.set(row.document_id,normalized);
           }
           texts.set(row.document_id, text);
           if (text !== null) snapshot.sources.push({ kbId: row.kb_id, documentId: row.document_id,
@@ -150,8 +158,9 @@ export class PostgresSemanticReader {
         if (text === null || text === undefined || !matchesSourceSpan(text, row.start_offset, row.end_offset, row.excerpt)) {
           incomplete = true; continue;
         }
+        const pages=[...new Set(normalizedSources.get(row.document_id)?.locators.filter(l=>l.page!==undefined&&l.start<row.end_offset&&l.end>row.start_offset).map(l=>l.page!)??[])];
         snapshot.evidence.push({ id: row.id, kbId: row.kb_id, documentId: row.document_id,
-          documentVersion: row.document_version, stance: "supports", start: row.start_offset, end: row.end_offset });
+          documentVersion: row.document_version, stance: "supports", start: row.start_offset, end: row.end_offset,...(pages.length?{pages}:{}) });
       }
       const eligibleEvidence = new Set(snapshot.evidence.map(row => row.id));
       const evidenceIds = new Map<string, string[]>();

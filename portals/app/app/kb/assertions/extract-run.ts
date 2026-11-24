@@ -13,6 +13,7 @@ import { encodeUnavailable } from "../processing/unavailable";
 import type { ExtractionClient, TextWindow } from "../atlas/extract";
 import { prepare, type PreparedBatch } from "./extract";
 import { storeExtraction, type ExtractionContext, type StoredExtraction } from "./store";
+import {sourceHash,snapshotValid,type SourceSnapshot} from "../processing/source-snapshot";
 
 /**
  * Characters of document text per Atlas call.
@@ -83,6 +84,7 @@ export interface ExtractionRunInput {
   kbId: string;
   mime: string | null;
   bytes: Buffer | null;
+  normalized?:SourceSnapshot|null;
   tenantId: string;
   workspaceId: string;
   taskId: string;
@@ -120,12 +122,13 @@ export async function runExtraction(
 
   // Character offsets do not index bytes that are not text - the same rule
   // get_context enforces, one layer up.
-  if (parsePathFor(input.mime ?? "application/octet-stream") !== "fast") {
+  if (parsePathFor(input.mime ?? "application/octet-stream") !== "fast" &&
+    !(input.normalized&&snapshotValid(input.normalized)&&input.normalized.mime===input.mime&&input.bytes&&input.normalized.contentHash===sourceHash(input.bytes))) {
     return empty("not_extractable", "deep_path_mime");
   }
   if (!input.bytes) return empty("not_extractable", "no_source_bytes");
 
-  const canonical = canonicalText(decodeSourceBytes(input.bytes));
+  const canonical = parsePathFor(input.mime??"")==="fast"?canonicalText(decodeSourceBytes(input.bytes)):input.normalized!.text;
   const windows = windowDocument(canonical);
   if (windows.length === 0) return empty("not_extractable", "empty_document");
 

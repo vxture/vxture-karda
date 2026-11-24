@@ -295,3 +295,10 @@ kb_id/run_id 复合外键保证完成结果同库；补充 semantic_compile_run(
 运行时只可更新状态、尝试、租约、结果及更新时间，不能修改身份、输入或删除任务。
 候选入库与任务completed同事务完成，旧租约不能提交；失败或冲突诊断不推进发布head。
 baseline/0017/Prisma/98锁步，生产结构仍须db-init，不在应用请求中自动建表。
+
+## 12. 固定版本的规范化来源（0018）
+
+新增 `document_text_snapshot`，声明总表数53。以 document_id/document_version 为主键，记录原始 content_hash、mime、parser_version、canonical_text、text_hash、UTF-16 半开区间 locators 和 created_at。
+服务角色只可 SELECT/INSERT，不可 UPDATE/DELETE；文档物理删除可由 FK 级联清理。分块提交在锁定文档并核验当前原始哈希后，与规范化快照及 active_chunk_version 同事务提交。
+PDF 文本层固定 pypdf6.21.4-v1，DOCX 为有限的正文段落合同；拒绝扫描件、加密 PDF、复杂 DOCX 而不假装已解析。读取端必须再次核验同版本快照、原始字节哈希及文本哈希，不实时重跑解析器。
+baseline/0018/Prisma/98 锁步；生产通过 db-init 增量执行，容器不自动迁移。

@@ -7,6 +7,7 @@
 // over karda_kb.chunk. In-memory sibling for tests.
 import type { CommitTarget, CommittedChunk } from "./orchestrator";
 import { getPrismaClient } from "../../lib/db";
+import {snapshotValid,type SourceSnapshot} from "./source-snapshot";
 
 export interface DocumentCommitTarget extends CommitTarget {
   /** The active version after the last commit, for verification/tests. */
@@ -20,7 +21,12 @@ export class PrismaCommitTarget implements DocumentCommitTarget {
 
   constructor(private documentId: string) {}
 
-  async commit(chunks: CommittedChunk[], embeddingModel: string | null = null): Promise<void> {
+  async commit(chunks: CommittedChunk[], embeddingModel: string | null = null, sourceSnapshot?:SourceSnapshot|null): Promise<void> {
+    if(sourceSnapshot&&!snapshotValid(sourceSnapshot))throw new Error("source_snapshot_invalid");
+    if(sourceSnapshot&&chunks.some(c=>!Number.isSafeInteger(c.sourceRange.start)||!Number.isSafeInteger(c.sourceRange.end)||
+      c.sourceRange.start<0||c.sourceRange.end<=c.sourceRange.start||c.sourceRange.end>sourceSnapshot!.text.length))
+      throw new Error("source_chunk_range_invalid");
+    sourceSnapshot=sourceSnapshot?structuredClone(sourceSnapshot):null;
     const p = await getPrismaClient();
     const withVectors = embeddingModel !== null && chunks.some((c) => c.vector !== null);
 
@@ -28,11 +34,18 @@ export class PrismaCommitTarget implements DocumentCommitTarget {
     // writing inside a transaction keeps the increment consistent under the
     // per-KB serial window the queue already enforces.
     await p.$transaction(async (tx) => {
+      await tx.$queryRawUnsafe("SELECT id FROM karda_kb.document WHERE id=$1::uuid FOR UPDATE",this.documentId);
       const doc = await tx.document.findUnique({
         where: { id: this.documentId },
-        select: { activeChunkVersion: true },
+        select: { activeChunkVersion: true,contentHash:true,mime:true },
       });
+      if(!doc||(sourceSnapshot&&(doc.contentHash!==sourceSnapshot.contentHash||doc.mime!==sourceSnapshot.mime)))
+        throw new Error("source_content_changed");
       const nextVersion = (doc?.activeChunkVersion ?? 0) + 1;
+      if(sourceSnapshot)await tx.$executeRawUnsafe(`INSERT INTO karda_kb.document_text_snapshot
+        (document_id,document_version,content_hash,mime,parser_version,canonical_text,text_hash,locators)
+        VALUES($1::uuid,$2,$3,$4,$5,$6,$7,$8::jsonb)`,this.documentId,nextVersion,sourceSnapshot.contentHash,
+        sourceSnapshot.mime,sourceSnapshot.parserVersion,sourceSnapshot.text,sourceSnapshot.textHash,JSON.stringify(sourceSnapshot.locators));
 
       // 1. write the new version's chunks (coexists with the old - the unique
       //    key includes version, so ordinals do not collide). vector_ref is the

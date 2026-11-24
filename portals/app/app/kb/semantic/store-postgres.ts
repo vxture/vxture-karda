@@ -6,12 +6,14 @@ import type { ObjectStore } from "../storage/objectstore";
 import { preparePublication, type PublicationCommand, type PublicationReceipt } from "./publication";
 import { decodeSemanticRelease, semanticDefinitionKey, type SemanticReleasePayload } from "./release-format";
 import type { PublishedRelationInput, SemanticReadIdentity } from "./read-postgres";
-import { matchesSourceSpan, verifiedSourceText, MAX_SEMANTIC_SOURCE_BYTES } from "./source-text";
+import { matchesSourceSpan, verifiedSourceText, MAX_SEMANTIC_SOURCE_BYTES, MAX_SEMANTIC_TEXT_CHARS } from "./source-text";
 import { projectNeighborhood } from "./projection";
 import type { KnowledgeSnapshot } from "./contracts";
 import type { CompilerSnapshot, Compilation } from "./compiler";
 import { freezeCompilerSnapshot } from "./compiler";
 import { localCompileProfile } from "./compile-profile";
+import {parsePathFor} from "../processing/ir";
+import {readSourceSnapshot,PDF_MIME,DOCX_MIME} from "../processing/source-snapshot";
 import { maintenanceReport, type MaintenanceReport, type MaintenanceDocument, type MaintenanceAssertion, type MaintenanceGround } from "./maintenance";
 
 export interface CompileTaskRow {
@@ -66,7 +68,7 @@ function acceptedReviews(input: PublishedRelationInput, reviews: ReviewRow[]): v
   })) throw new Error("semantic_review_required");
 }
 
-/** Formal-table writer. Native-text, same-workspace user-owned libraries only.
+/** Formal-table writer. Same-workspace user-owned libraries and verified source text.
  * Identity and platform admission MUST come from verified server context.
  * The HTTP adapter owns verified RP admission; no offline receipt import or auto-approval.
  */
@@ -88,7 +90,7 @@ export class PostgresSemanticStore {
       const documents = (await db.query<MaintenanceDocument & {storage_ref:string|null;mime:string|null;size_bytes:string|null}>(`SELECT
         id,title,content_state,content_hash,active_chunk_version,storage_ref,mime,size_bytes FROM karda_kb.document
         WHERE kb_id=$1 AND id=ANY($2::uuid[])`,[kbId,input.sources.map(row=>row.documentId)])).rows;
-      const texts = new Map<string,string|null>(); let budget = 32*1024*1024;
+      const texts = new Map<string,string|null>(); let budget = 32*1024*1024,textBudget=MAX_SEMANTIC_TEXT_CHARS;
       for (const doc of documents) {
         const expected = input.sources.find(row=>row.documentId===doc.id)!;
         const size = Number(doc.size_bytes); let text:string|null=null;
@@ -97,9 +99,11 @@ export class PostgresSemanticStore {
           if(size>budget)throw new Error("semantic_source_budget"); budget-=size;
           const bytes=await this.objects.get(doc.storage_ref);
           text=verifiedSourceText({contentState:doc.content_state,activeVersion:doc.active_chunk_version,
-            contentHash:doc.content_hash,mime:doc.mime},bytes?.length===size?bytes:null);
+            contentHash:doc.content_hash,mime:doc.mime,normalized:parsePathFor(doc.mime??"")==="fast"?null:
+              await readSourceSnapshot(async(sql,...values)=>(await db.query(sql,values)).rows,doc.id,expected.version)},bytes?.length===size?bytes:null);
         }
         texts.set(doc.id,text);
+        if(text!==null){textBudget-=text.length;if(textBudget<0)throw new Error("semantic_source_budget");}
       }
       const ids=[...new Set(input.relations.flatMap(row=>row.assertionIds))];
       const assertions=(await db.query<MaintenanceAssertion>(`SELECT id,content_state,verification_state,expires_at,valid_until,superseded_by
@@ -123,7 +127,7 @@ export class PostgresSemanticStore {
       const row=(await db.query<{id:string}>("SELECT id FROM karda_kb.semantic_compile_task WHERE kb_id=$1 AND id=$2 AND created_by=$3",[kbId,taskId,identity.sub])).rows[0];
       if(row)return {existing:row.id,sources:[]};
       const sources=(await db.query<{id:string;active_chunk_version:number;content_hash:string}>(`SELECT id,active_chunk_version,content_hash
-        FROM karda_kb.document WHERE kb_id=$1 AND content_state='indexed' AND mime IN ('text/plain','text/markdown') ORDER BY id LIMIT 101`,[kbId])).rows;
+        FROM karda_kb.document WHERE kb_id=$1 AND content_state='indexed' AND mime IN ('text/plain','text/markdown',$2,$3) ORDER BY id LIMIT 101`,[kbId,PDF_MIME,DOCX_MIME])).rows;
       if(!sources.length)throw new Error("semantic_compile_inputs_required");
       if(sources.length>100)throw new Error("semantic_source_budget");
       return {existing:null,sources:sources.map(s=>({kbId,documentId:s.id,version:s.active_chunk_version,contentHash:s.content_hash}))};
@@ -370,7 +374,7 @@ export class PostgresSemanticStore {
   /** Validates current physical inputs; hashes and offsets use the same bytes. */
   private async sources(db: PoolClient, input: PublishedRelationInput): Promise<Map<string, string>> {
     if (input.sources.length > 100) throw new Error("semantic_source_budget");
-    const texts = new Map<string, string>(); let budget = 32 * 1024 * 1024;
+    const texts = new Map<string, string>(); let budget = 32 * 1024 * 1024,textBudget=MAX_SEMANTIC_TEXT_CHARS;
     for (const source of [...input.sources].sort((a, b) => a.documentId.localeCompare(b.documentId))) {
       const row = (await db.query<{active_chunk_version: number; content_state: string; content_hash: string;
         mime: string; storage_ref: string; size_bytes: string}>(`SELECT active_chunk_version,content_state,content_hash,mime,storage_ref,size_bytes
@@ -382,8 +386,10 @@ export class PostgresSemanticStore {
       if (size > budget) throw new Error("semantic_source_budget"); budget -= size;
       const bytes = await this.objects.get(row.storage_ref);
       const text = verifiedSourceText({ activeVersion: row.active_chunk_version, contentState: row.content_state,
-        mime: row.mime, contentHash: row.content_hash }, bytes?.length === size ? bytes : null);
+        mime: row.mime, contentHash: row.content_hash, normalized:parsePathFor(row.mime??"")==="fast"?null:
+          await readSourceSnapshot(async(sql,...values)=>(await db.query(sql,values)).rows,source.documentId,source.version) }, bytes?.length === size ? bytes : null);
       if (text === null) throw new Error("semantic_source_changed");
+      textBudget-=text.length;if(textBudget<0)throw new Error("semantic_source_budget");
       texts.set(source.documentId, text);
     }
     return texts;

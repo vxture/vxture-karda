@@ -15,7 +15,7 @@ export function packageMarkdown(input:KnowledgePackage):string {
       const assertion=input.assertions.find(a=>a.id===id);
       for(const e of input.evidence.filter(e=>assertion?.evidenceIds.includes(e.id))){
         lines.push(`> ${text(input.passages.find(p=>p.evidenceId===e.id)?.excerpt??"")}`,
-          `Source: ${e.documentId} / v${e.documentVersion} / UTF-16 ${e.start}:${e.end}`,"");
+          `Source: ${e.documentId} / v${e.documentVersion} / UTF-16 ${e.start}:${e.end}${e.pages?.length?` / pages ${e.pages.join(", ")}`:""}`,"");
       }
     }
   }

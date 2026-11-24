@@ -92,7 +92,7 @@ export function GraphClient({kbId}:{kbId:string}){
           {chosen&&<Card><CardContent className="flex min-w-0 flex-col gap-sm p-md"><p>{chosen.type}</p>{chosen.assertionIds.map(id=><div key={id}>
             <p className="break-words text-body-sm">{data.statements.find(s=>s.id===id)?.statement}</p>
             {data.evidence.filter(e=>data.assertions.find(a=>a.id===id)?.evidenceIds.includes(e.id)).map(e=><blockquote key={e.id} className="border-l-2 border-border pl-sm text-body-sm">
-              <p className="break-words">{data.passages.find(p=>p.evidenceId===e.id)?.excerpt}</p><p className="break-all font-mono text-code-sm">{e.documentId} / v{e.documentVersion} / {e.start}:{e.end}</p>
+              <p className="break-words">{data.passages.find(p=>p.evidenceId===e.id)?.excerpt}</p><p className="break-all font-mono text-code-sm">{e.documentId} / v{e.documentVersion} / {e.start}:{e.end}{e.pages?.length?` / ${m.sourcePages} ${e.pages.join(", ")}`:""}</p>
             </blockquote>)}
           </div>)}</CardContent></Card>}
         </aside>

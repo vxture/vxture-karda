@@ -31,7 +31,7 @@ test("bootstrap ontology is a fixed local definition and never claims an Ontos v
 
 test("compile task baseline and increment keep structure and column locks in sync",()=>{
   const root=new URL("../../../../../deploy/database/ddl/",import.meta.url);
-  const read=(name:string)=>readFileSync(new URL(name,root),"utf8");
+  const read=(name:string)=>readFileSync(new URL(name,root),"utf8").replace(/\r\n/g,"\n");
   const increment=read("incr/0017_semantic_compile_task.sql");
   for(const [label,file] of [["TASK","00_baseline.sql"],["TASK LOCKS","98_column_locks.sql"]]){
     const section=(text:string)=>text.match(new RegExp(`-- BEGIN SEMANTIC ${label}\\r?\\n[\\s\\S]*?-- END SEMANTIC ${label}(?:\\r?\\n|$)`))![0];

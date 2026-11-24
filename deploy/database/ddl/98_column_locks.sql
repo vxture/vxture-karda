@@ -288,3 +288,8 @@ REVOKE UPDATE, DELETE ON karda_kb.semantic_compile_task FROM karda_svc;
 GRANT UPDATE (state,attempt,lease_id,lease_until,run_id,result,error_code,updated_at)
   ON karda_kb.semantic_compile_task TO karda_svc;
 -- END SEMANTIC TASK LOCKS
+
+-- BEGIN DOCUMENT TEXT LOCKS
+GRANT SELECT, INSERT ON karda_kb.document_text_snapshot TO karda_svc;
+REVOKE UPDATE, DELETE ON karda_kb.document_text_snapshot FROM karda_svc;
+-- END DOCUMENT TEXT LOCKS
