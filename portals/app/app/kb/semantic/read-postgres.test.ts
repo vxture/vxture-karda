@@ -46,7 +46,7 @@ test("semantic native-text adapter: live roles, attachment/tenant scope, source 
     assert.equal((await grant()).rowCount, 1);
     for (const [id, workspace, owner] of [[kb, ws, sub], [hiddenKb, ws, `usr_${randomUUID()}`], [otherKb, otherWs, sub]]) {
       await admin.query(`INSERT INTO karda_kb.knowledge_base(id,workspace_id,owner_type,owner_sub,name)
-        VALUES($1,$2,'user',$3,'semantic-adapter-test')`, [id, workspace, owner]);
+        VALUES($1,$2,'user',$3,$4)`, [id, workspace, owner, `semantic-adapter-${id}`]);
       await admin.query(`INSERT INTO karda_kb.kb_attachment(workspace_id,user_sub,product_code,kb_id)
         VALUES($1,$2,'karda',$3)`, [workspace, sub, id]);
     }
