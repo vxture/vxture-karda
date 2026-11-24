@@ -1,6 +1,7 @@
 // Offline evaluation contracts. No model grading and no production endpoint.
 import { createHash } from "node:crypto";
 import { bm25Rank } from "../retrieval/bm25";
+import { validateLocalPdfSource, type LocalPdfSource } from "./pdf-corpus";
 
 export interface EvaluationSource {
   id: string; title: string; url: string; edition: string; canonicalSha256: string; text: string;
@@ -43,9 +44,14 @@ export function validateEvaluation(corpus: EvaluationCorpus, dataset: DraftDatas
   const sourceIds = new Set<string>();
   const sectionKeys = new Set<string>();
   for (const source of corpus.sources) {
+    const localPdf = source.url?.startsWith("urn:sha256:") || "origin" in source || ("normalization" in source && source.normalization === "pdf-page-text-v1");
+    if (localPdf) {
+      if (corpus.dataClass !== "owner_supplied_local_pdf_snapshot") throw new Error("invalid_local_pdf_classification");
+      validateLocalPdfSource(source as LocalPdfSource);
+    }
     const sectionIds = new Set<string>();
     if (![source.id,source.title,source.edition,source.text].every(nonempty) ||
-        sourceIds.has(source.id) || !/^https:\/\//.test(source.url) || source.sections.length === 0) {
+        sourceIds.has(source.id) || (!localPdf && !/^https:\/\//.test(source.url)) || source.sections.length === 0) {
       throw new Error("invalid_source_manifest");
     }
     sourceIds.add(source.id);
@@ -123,8 +129,14 @@ export function evaluateDraftLexical(corpus: EvaluationCorpus, dataset: DraftDat
     limitations:[
       "Agent-authored draft labels; not a human-reviewed gold set.",
       "Retrieval evidence coverage only; not answer correctness, refusal quality or graph improvement.",
-      "Historical legal source snapshot; current legal status has not been determined.",
-      "Reserved evidence is disjoint by article, but is not an independent business-document holdout.",
+      ...(corpus.dataClass === "owner_supplied_local_pdf_snapshot" ? [
+        "Owner-supplied local historical PDF; authenticity, current validity and later amendments are not verified.",
+        "Physical page text only; no OCR or verified table relationships. Check key claims against the original PDF.",
+        "Development material already inspected by the author; not an independently frozen or blinded business holdout.",
+      ] : [
+        "Historical legal source snapshot; current legal status has not been determined.",
+        "Reserved evidence is disjoint by article, but is not an independent business-document holdout.",
+      ]),
     ],
     cases:results,
   };

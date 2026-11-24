@@ -304,6 +304,51 @@ node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/project-review.
 正文、二进制/XML 哈希、规范文本、UTF-16 锚点和词法报告逐项不变。
 现有语料、题目、指纹绑定回执及用户审阅页面不变；不关闭 K0b 或推进正式迁移。
 
+## 160. 用户提供的完整 PDF 本地业务样本
+
+用户已提供一份完整历史招标 PDF，本轮实际检查为 89 个物理页，含采购需求、商务合同范本、
+投标格式及证明材料模板。该材料按 owner_supplied_local_pdf_snapshot 单独保存于仓库外，
+不把用户文件、提取正文、题目答案或绝对来源路径提交到公开 Git；公开 PR 仅含通用工具与合成测试。
+现有公开项目语料、原 24 题/增量 8 题/完整 32 题回执及 8767/8768 页面均不改变。
+
+新增 `import-local-pdf.ts` 使用 pypdf 6.21.4 提取物理页文本；依赖精确版本及 wheel SHA256 固定，
+CI 在隔离 Python venv 安装，并纳入现有 OSV 硬门扫描，未减少或重命名任何必需检查。
+输入限制 20 MiB、300 页，逐页/总文本上限，子进程 30 秒超时；不宣称隔离了所有解析器内存开销。
+加密文件拒绝，整份无可提取文本时要求 OCR；不执行 PDF 动作、链接、脚本或嵌入附件。
+解析不做 OCR、签章认证、表格关系重建或现行效力判断；封面可见图像内容未全部进入文本。
+本轮将重点预算、付款、评分、证明模板等原页渲染后逐项对照，不能由纯文本顺序推断表格关系。
+
+输出保留原 PDF 的二进制快照及 SHA256、全部物理页（包括无文本页）、逐页文本 SHA256，
+规范文本以 PDF page N 为锚，使用 UTF-16 半开位置。来源 URI 是 urn:sha256，不伪造线上出处。
+提取器版本、项目身份、原始二进制和规范文本均进入可核验绑定；二进制变化即使正文相同也使旧回执失效。
+新目录独占创建；位于仓库内（含解析符号链接后的目录）的导入/审阅输出拒绝，已存在目录拒绝覆盖。
+
+本地另存 28 道 Agent 开发草案：26 道有答案、2 道资料不足，其中 20 道跨物理页，**跨文档为 0**。
+资格/证明材料、评分/模板及合同条件形成实际跨章节核查，不把同一 PDF 的跨页当多文档。
+与公开项目 32 道合计有 60 道业务开发草案，但分属不同资料指纹，未自动合并回执或形成冻结金标。
+该 PDF 本轮已经被作者查看和用于开发，不能再称独立盲测留出集。
+
+真实本地词法诊断：Top5 命中 40/49 个预期证据，26 道可回答题中 19 道全部命中；
+2 道未知题均返回候选。仅是未复核标签的检索覆盖，不含答案生成、正确拒答或图增强增益。
+全部 28 项复核初始为 pending；没有代填用户结论。
+本地审阅包：工作区外 `knowledge-qinbao-review-v2-20261124`，原始快照位于
+`knowledge-qinbao-local-20261124/imported-v2`。包名仅作本机恢复定位，不构成可公开共享的业务资料。
+
+```powershell
+# Install hash-pinned offline tooling; optional KARDA_KNOWLEDGE_PYTHON selects a venv.
+python -m pip install --require-hashes --only-binary=:all: -r scripts/knowledge/requirements.txt
+node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/import-local-pdf.ts <source.pdf> <metadata.json> <new-outside-directory>
+# metadata has exactly id, title, projectNumber; no claim of a public URL or publication date.
+node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/review-local-corpus.ts export <source.json> <draft-cases.json> <new-review-directory>
+node portals/app/node_modules/tsx/dist/cli.mjs scripts/knowledge/review-local-corpus.ts check <source.json> <draft-cases.json> <review.json>
+```
+
+5 项新增 TypeScript 检查及 5 项 Python 场景检查覆盖真实合成 PDF 的解析、空页/无文本、加密、
+大小/页数限制、读取期间路径替换、逐页遗漏/乱序/文本篡改、来源伪装、版本变化回执失效，
+以及导入→审阅→检查、目录保护与拒绝覆盖。CI 不读取用户原文件。
+K0b 已补一份完整业务文件，仍缺用户实际裁决、独立留出冻结及系统性能/交互验收；
+不因草案数量达到 60 自动关闭门槛，P4/P5 和 K2 正式接线继续依赖 K0b。
+
 ## 60. 本地验证
 
 新增评测校验 11 项与现行图投影 21 项，共 32 项通过；app TypeScript 通过。
