@@ -31,6 +31,8 @@ export interface GraphAssertion {
   kbId: string;
   contentState: string;
   verificationState: string;
+  /** Human-verification expiry, separate from the statement's business validity. */
+  verificationExpiresAt: string | null;
   supersededById: string | null;
   validFrom: string | null;
   validUntil: string | null;

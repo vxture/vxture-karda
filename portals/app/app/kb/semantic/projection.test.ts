@@ -94,6 +94,17 @@ test("validUntil is exclusive, future and invalid validity windows fail closed",
   assert.equal(read(snapshot).edges.length, 3);
 });
 
+test("expired human verification cannot remain usable while the stale-state sweep lags", () => {
+  for (const verificationExpiresAt of [CLOCK, "2026-11-23T00:00:00Z", "bad"]) {
+    const snapshot = tenderSnapshot();
+    snapshot.assertions[1].verificationExpiresAt = verificationExpiresAt;
+    assert.deepEqual(ids(read(snapshot).edges), ["r1"]);
+  }
+  const snapshot = tenderSnapshot();
+  snapshot.assertions[1].verificationExpiresAt = "2026-11-25T00:00:00Z";
+  assert.equal(read(snapshot).edges.length, 3);
+});
+
 test("wrong endpoint types, unknown relation types and schema version drift cannot publish edges", () => {
   for (const mutate of [
     (s: KnowledgeSnapshot) => {s.entities[2].type = "project";},

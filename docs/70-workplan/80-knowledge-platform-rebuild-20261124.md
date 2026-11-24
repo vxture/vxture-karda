@@ -93,9 +93,9 @@ K0a 完成后可验证 K1a；K0b 未完成时不得声称 K0/K1 整批验收，K
 | --- | --- | --- |
 | 设计更新 | LOCAL COMPLETE | 产品定义 v0.6、KD-227–230、160 主设计、110/120/140 增补及设计索引已更新；owner 授权补入执行入口 |
 | K0a | LOCAL COMPLETE | [源码审计与接口草案](100-k0-audit-and-contracts-20261124.md)；固定 8 段合成材料、12 道检索冒烟题；[基线报告](100-k0-lexical-smoke-20261124.json) 15/15 个预期资料召回、11/12 题完整命中；未知题出现弱相关结果，尚无生成/拒答验证 |
-| K0b | PENDING DATA | 待可公开/脱敏真实资料、人工标注与独立留出集；合成样本不替代本门槛 |
-| K1a | LOCAL VERIFIED | app/kb/semantic/ 本体契约和安全现行图投影，20 项新增行为测试通过，TypeScript 通过；全量 906 通过、11 跳过；不含 HTTP/DB 适配，不构成生产安全或端到端验收 |
-| K1b | NOT STARTED | 数据设计/DDL/Prisma、权威状态读取、持久化编译发布、并发及事件回放，依赖 K0b 和 K1a |
+| K0b | IN PROGRESS — DRAFT DATA | [公开原文与评测准备](110-public-evaluation-20261124.md)：1 份历史法规、79 条款锚点、60 道 agent 草案（20 多条款），45 开发/15 保留；仍待独立业务资料、人工复核和跨文档留出，未整批验收 |
+| K1a | LOCAL VERIFIED | 首批 PR272 已合并且 PR/main CI 通过；本轮再补人工验证到期检查，现有投影 21 项测试通过；不含 HTTP/DB 适配，不构成生产安全或端到端验收 |
+| K1b | DESIGN PREPARED | [170 适配设计](../30-design/170-semantic-persistence-adapter.md)已细化；DDL/Prisma、权威适配、事务及持久回放尚未实施，迁移门槛仍依赖 K0b |
 | K2–K6 | NOT STARTED | 保持本文件 §40 的先后及验收门槛，不因纯函数通过而提前记完成 |
 
 当前原文基线为既有 BM25 组件，不含向量、精排或模型应答，报告不证明图增强收益。

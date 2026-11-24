@@ -1,0 +1,656 @@
+{
+  "reportVersion": 1,
+  "dataClass": "public_historical_source",
+  "reviewStatus": "agent_draft",
+  "acceptedGold": false,
+  "corpusSha256": "2da8cbb282bbe590e5e26de6973cd236229ed2369c71d1d76fe4b0d3bccefc90",
+  "topK": 5,
+  "evaluatedSplit": "development",
+  "reservedCasesNotScored": 15,
+  "metrics": {
+    "expectedEvidence": 53,
+    "hitEvidence": 52,
+    "evidenceRecall": 0.9811320754716981,
+    "answerableCases": 42,
+    "completeEvidenceCases": 41,
+    "unanswerableCasesReturningCandidates": 3
+  },
+  "limitations": [
+    "Agent-authored draft labels; not a human-reviewed gold set.",
+    "Retrieval evidence coverage only; not answer correctness, refusal quality or graph improvement.",
+    "Historical legal source snapshot; current legal status has not been determined.",
+    "Reserved evidence is disjoint by article, but is not an independent business-document holdout."
+  ],
+  "cases": [
+    {
+      "id": "p01",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-2",
+        "reg-2015-art-8",
+        "reg-2015-art-51",
+        "reg-2015-art-7",
+        "reg-2015-art-21"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p02",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-3",
+        "reg-2015-art-12",
+        "reg-2015-art-4",
+        "reg-2015-art-69",
+        "reg-2015-art-24"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p03",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-4",
+        "reg-2015-art-24",
+        "reg-2015-art-5",
+        "reg-2015-art-12",
+        "reg-2015-art-3"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p04",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-6",
+        "reg-2015-art-61",
+        "reg-2015-art-23",
+        "reg-2015-art-60",
+        "reg-2015-art-44"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p05",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-7",
+        "reg-2015-art-5",
+        "reg-2015-art-25",
+        "reg-2015-art-28",
+        "reg-2015-art-23"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p06",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-8",
+        "reg-2015-art-38",
+        "reg-2015-art-58",
+        "reg-2015-art-50",
+        "reg-2015-art-21"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p07",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-9",
+        "reg-2015-art-70",
+        "reg-2015-art-75",
+        "reg-2015-art-18",
+        "reg-2015-art-56"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p08",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-11",
+        "reg-2015-art-20",
+        "reg-2015-art-7",
+        "reg-2015-art-49",
+        "reg-2015-art-14"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p09",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-12",
+        "reg-2015-art-3",
+        "reg-2015-art-4",
+        "reg-2015-art-69",
+        "reg-2015-art-5"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p10",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-15",
+        "reg-2015-art-45",
+        "reg-2015-art-2",
+        "reg-2015-art-11",
+        "reg-2015-art-27"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p11",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-16",
+        "reg-2015-art-12",
+        "reg-2015-art-31",
+        "reg-2015-art-52",
+        "reg-2015-art-4"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p12",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-17",
+        "reg-2015-art-73",
+        "reg-2015-art-9",
+        "reg-2015-art-55",
+        "reg-2015-art-21"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p13",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-18",
+        "reg-2015-art-22",
+        "reg-2015-art-9",
+        "reg-2015-art-49",
+        "reg-2015-art-20"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p14",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-19",
+        "reg-2015-art-17",
+        "reg-2015-art-53",
+        "reg-2015-art-73",
+        "reg-2015-art-3"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p15",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-20",
+        "reg-2015-art-6",
+        "reg-2015-art-32",
+        "reg-2015-art-27",
+        "reg-2015-art-18"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p16",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-21",
+        "reg-2015-art-31",
+        "reg-2015-art-33",
+        "reg-2015-art-43",
+        "reg-2015-art-50"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p17",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-22",
+        "reg-2015-art-26",
+        "reg-2015-art-41",
+        "reg-2015-art-14",
+        "reg-2015-art-43"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p18",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-24",
+        "reg-2015-art-4",
+        "reg-2015-art-3",
+        "reg-2015-art-12",
+        "reg-2015-art-29"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p19",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-27",
+        "reg-2015-art-20",
+        "reg-2015-art-15",
+        "reg-2015-art-24",
+        "reg-2015-art-38"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p20",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-28",
+        "reg-2015-art-67",
+        "reg-2015-art-23",
+        "reg-2015-art-7",
+        "reg-2015-art-30"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p21",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-29",
+        "reg-2015-art-67",
+        "reg-2015-art-59",
+        "reg-2015-art-60",
+        "reg-2015-art-65"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p22",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-30",
+        "reg-2015-art-33",
+        "reg-2015-art-8",
+        "reg-2015-art-28",
+        "reg-2015-art-67"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p23",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-31",
+        "reg-2015-art-32",
+        "reg-2015-art-34",
+        "reg-2015-art-33",
+        "reg-2015-art-74"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p24",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-32",
+        "reg-2015-art-34",
+        "reg-2015-art-21",
+        "reg-2015-art-31",
+        "reg-2015-art-43"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p25",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-33",
+        "reg-2015-art-48",
+        "reg-2015-art-31",
+        "reg-2015-art-32",
+        "reg-2015-art-34"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p26",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-34",
+        "reg-2015-art-3",
+        "reg-2015-art-7",
+        "reg-2015-art-59",
+        "reg-2015-art-28"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p27",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-36",
+        "reg-2015-art-40",
+        "reg-2015-art-41",
+        "reg-2015-art-42",
+        "reg-2015-art-72"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p28",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-37",
+        "reg-2015-art-7",
+        "reg-2015-art-2",
+        "reg-2015-art-34",
+        "reg-2015-art-79"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p29",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-38",
+        "reg-2015-art-28",
+        "reg-2015-art-23",
+        "reg-2015-art-27",
+        "reg-2015-art-32"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p30",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-75",
+        "reg-2015-art-39",
+        "reg-2015-art-40",
+        "reg-2015-art-62",
+        "reg-2015-art-68"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p31",
+      "kind": "single",
+      "retrieved": [
+        "reg-2015-art-40",
+        "reg-2015-art-61",
+        "reg-2015-art-62",
+        "reg-2015-art-68",
+        "reg-2015-art-41"
+      ],
+      "expectedEvidence": 1,
+      "hitCount": 1,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p36",
+      "kind": "multi_article",
+      "retrieved": [
+        "reg-2015-art-15",
+        "reg-2015-art-20",
+        "reg-2015-art-35",
+        "reg-2015-art-32",
+        "reg-2015-art-17"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p37",
+      "kind": "multi_article",
+      "retrieved": [
+        "reg-2015-art-17",
+        "reg-2015-art-19",
+        "reg-2015-art-55",
+        "reg-2015-art-73",
+        "reg-2015-art-24"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p38",
+      "kind": "multi_article",
+      "retrieved": [
+        "reg-2015-art-22",
+        "reg-2015-art-21",
+        "reg-2015-art-64",
+        "reg-2015-art-5",
+        "reg-2015-art-32"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 1,
+      "allEvidenceRetrieved": false
+    },
+    {
+      "id": "p39",
+      "kind": "multi_article",
+      "retrieved": [
+        "reg-2015-art-22",
+        "reg-2015-art-18",
+        "reg-2015-art-9",
+        "reg-2015-art-74",
+        "reg-2015-art-63"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p40",
+      "kind": "multi_article",
+      "retrieved": [
+        "reg-2015-art-21",
+        "reg-2015-art-31",
+        "reg-2015-art-33",
+        "reg-2015-art-43",
+        "reg-2015-art-32"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p41",
+      "kind": "multi_article",
+      "retrieved": [
+        "reg-2015-art-33",
+        "reg-2015-art-48",
+        "reg-2015-art-30",
+        "reg-2015-art-28",
+        "reg-2015-art-67"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p42",
+      "kind": "multi_article",
+      "retrieved": [
+        "reg-2015-art-31",
+        "reg-2015-art-32",
+        "reg-2015-art-74",
+        "reg-2015-art-34",
+        "reg-2015-art-33"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p43",
+      "kind": "multi_article",
+      "retrieved": [
+        "reg-2015-art-33",
+        "reg-2015-art-48",
+        "reg-2015-art-34",
+        "reg-2015-art-32",
+        "reg-2015-art-74"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p44",
+      "kind": "multi_article",
+      "retrieved": [
+        "reg-2015-art-7",
+        "reg-2015-art-25",
+        "reg-2015-art-34",
+        "reg-2015-art-32",
+        "reg-2015-art-28"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p45",
+      "kind": "multi_article",
+      "retrieved": [
+        "reg-2015-art-12",
+        "reg-2015-art-16",
+        "reg-2015-art-4",
+        "reg-2015-art-3",
+        "reg-2015-art-69"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p46",
+      "kind": "multi_article",
+      "retrieved": [
+        "reg-2015-art-38",
+        "reg-2015-art-27",
+        "reg-2015-art-28",
+        "reg-2015-art-23",
+        "reg-2015-art-26"
+      ],
+      "expectedEvidence": 2,
+      "hitCount": 2,
+      "allEvidenceRetrieved": true
+    },
+    {
+      "id": "p56",
+      "kind": "unanswerable",
+      "retrieved": [
+        "reg-2015-art-43",
+        "reg-2015-art-63",
+        "reg-2015-art-33",
+        "reg-2015-art-38",
+        "reg-2015-art-35"
+      ],
+      "expectedEvidence": 0,
+      "hitCount": 0,
+      "allEvidenceRetrieved": null
+    },
+    {
+      "id": "p57",
+      "kind": "unanswerable",
+      "retrieved": [
+        "reg-2015-art-79",
+        "reg-2015-art-8",
+        "reg-2015-art-17",
+        "reg-2015-art-34",
+        "reg-2015-art-55"
+      ],
+      "expectedEvidence": 0,
+      "hitCount": 0,
+      "allEvidenceRetrieved": null
+    },
+    {
+      "id": "p58",
+      "kind": "unanswerable",
+      "retrieved": [
+        "reg-2015-art-4",
+        "reg-2015-art-24",
+        "reg-2015-art-3",
+        "reg-2015-art-29",
+        "reg-2015-art-5"
+      ],
+      "expectedEvidence": 0,
+      "hitCount": 0,
+      "allEvidenceRetrieved": null
+    }
+  ]
+}

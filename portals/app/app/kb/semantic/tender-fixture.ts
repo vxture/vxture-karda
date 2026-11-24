@@ -33,11 +33,11 @@ export function tenderSnapshot(): KnowledgeSnapshot {
     ],
     assertions: [
       { id: "a1", kbId: KB, contentState: "indexed", verificationState: "verified", supersededById: null,
-        validFrom: null, validUntil: null, evidenceIds: ["e1"] },
+        validFrom: null, validUntil: null, verificationExpiresAt: null, evidenceIds: ["e1"] },
       { id: "a2", kbId: KB, contentState: "indexed", verificationState: "verified", supersededById: null,
-        validFrom: null, validUntil: null, evidenceIds: ["e2"] },
+        validFrom: null, validUntil: null, verificationExpiresAt: null, evidenceIds: ["e2"] },
       { id: "a3", kbId: KB, contentState: "indexed", verificationState: "verified", supersededById: null,
-        validFrom: null, validUntil: null, evidenceIds: ["e3"] },
+        validFrom: null, validUntil: null, verificationExpiresAt: null, evidenceIds: ["e3"] },
     ],
     relations: [
       { id: "r1", kbId: KB, schema: { ...tenderSchema }, type: "has_clause", sourceId: "project", targetId: "clause", assertionIds: ["a1"], origin: "asserted" },

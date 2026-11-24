@@ -41,7 +41,9 @@ const sourceKey = (kbId: string, documentId: string, version: number): string =>
 function activeAt(a: GraphAssertion, now: number): boolean {
   const from = a.validFrom === null ? -Infinity : Date.parse(a.validFrom);
   const until = a.validUntil === null ? Infinity : Date.parse(a.validUntil);
-  return !Number.isNaN(from) && !Number.isNaN(until) && from < until && from <= now && now < until;
+  const verificationExpiry = a.verificationExpiresAt === null ? Infinity : Date.parse(a.verificationExpiresAt);
+  return !Number.isNaN(from) && !Number.isNaN(until) && !Number.isNaN(verificationExpiry) &&
+    from < until && from <= now && now < until && now < verificationExpiry;
 }
 
 function validateQuery(query: NeighborhoodQuery): void {
@@ -177,7 +179,8 @@ export function projectNeighborhood(
       // Never expose dangling, hidden, stale or contradictory evidence IDs.
       return {
         id: assertion.id, kbId: assertion.kbId, contentState: assertion.contentState,
-        verificationState: assertion.verificationState, supersededById: assertion.supersededById,
+        verificationState: assertion.verificationState, verificationExpiresAt: assertion.verificationExpiresAt,
+        supersededById: assertion.supersededById,
         validFrom: assertion.validFrom, validUntil: assertion.validUntil,
         evidenceIds: (supported.get(id) ?? []).map(e => e.id).sort(),
       };
