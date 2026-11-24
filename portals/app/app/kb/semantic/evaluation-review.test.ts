@@ -1,3 +1,5 @@
+import { runInNewContext } from "node:vm";
+import { validateReviewReceipts } from "./review-receipts.js";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
@@ -101,4 +103,33 @@ test("checked-in review pack exports 45 pending cases without any reserved promp
   assert.equal(sheet.entries.length, 45);
   assert.equal(inspectReviewSheet(corpus, dataset, sheet).counts.pending, 45);
   for (const item of dataset.cases.filter(c => c.split === "reserved")) assert.equal(markdown.includes(item.question), false);
+});
+
+
+test("browser and server reject malformed or self-promoted receipts identically", () => {
+  const { corpus, dataset } = fixture(), expected = createReviewSheet(corpus, dataset);
+  const source = readFileSync(new URL("./review-receipts.js", import.meta.url), "utf8").replace(/^export /gm, "");
+  const browser = runInNewContext(source + ";validateReviewReceipts");
+  const valid = structuredClone(expected);
+  Object.assign(valid.entries[0], { decision: "accept", reviewer: "Synthetic test reviewer", reviewedAt: "2026-11-24T12:00:00.000Z", note: "Synthetic structural test only" });
+  assert.deepEqual(JSON.parse(JSON.stringify(browser(expected, valid))), validateReviewReceipts(expected, valid));
+  const mutations = [
+    (s: any) => { s.acceptedGold = true; },
+    (s: any) => { s.entries[0].authenticated = true; },
+    (s: any) => { s.entries[0].reviewer = " "; },
+    (s: any) => { s.entries[0].note = " "; },
+    (s: any) => { s.entries[0].reviewedAt = "2026-02-30T12:00:00.000Z"; },
+    (s: any) => { s.entries[0].note = "x".repeat(10001); },
+    (s: any) => { s.entries[0].decision = "pending"; },
+    (s: any) => { s.entries[0].caseId = "reserved-id"; },
+    (s: any) => { s.entries.push(s.entries[0]); },
+    (s: any) => { delete s.entries[0].note; },
+    (s: any) => { s.datasetSha256 = "old-version"; },
+  ];
+  for (const mutate of mutations) {
+    const bad = structuredClone(valid); mutate(bad);
+    assert.throws(() => validateReviewReceipts(expected, bad));
+    assert.throws(() => browser(expected, bad));
+  }
+  assert.equal(inspectReviewSheet(corpus, dataset, valid).acceptedGold, false);
 });
