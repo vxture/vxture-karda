@@ -87,7 +87,16 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-26): v0.12.24 / 20b20129, deploy45670439314
+Current production (2026-11-26): v0.12.25 / 2b3d8166, deploy45675152084
+succeeded at2026-11-25T18:32:38Z through normal production review. PR354
+adds merged PPTX logical cell grids with exact anchor provenance.
+Stage CI45674199061:1095pass/zero skips; main CI45674679675/scan45674679803pass.
+Migration0027 run45675031188 succeeded,55tables; health/ready and anonymous
+compile/source-search/package refusal pass. No local full-suite duplication
+or automatic customer reprocessing. Fixed17items:7complete/10unfinished.
+See docs/50-deployment/270-pptx-grid-release-20261126.md.
+
+Historical production (2026-11-26): v0.12.24 / 20b20129, deploy45670439314
 succeeded at2026-11-25T18:06:32Z through normal production review. PR352
 adds explicit XLSX merge ranges and single anchor literals with current source
 provenance. Stage CI45669424124:1092pass/zero skips; main CI45669950253/scan45669950251pass.
