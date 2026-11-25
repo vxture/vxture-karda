@@ -27,7 +27,7 @@ export function TopicsClient({kbId}:{kbId:string}){
   },[]);
   if(error===401)return <SignInGate from={`/assets/${kbId}/topics`}/>;
   return <div className="flex min-w-0 flex-col gap-md" aria-busy={busy}>
-    <PageHead title={m.dossierTitle}/><p className="text-body-sm text-muted-foreground">{m.dossierHint}</p>
+    <PageHead title={m.dossierTitle}/><p className="text-body-sm text-muted-foreground">{m.topicExportHint}</p><p className="text-body-sm text-muted-foreground">{m.dossierHint}</p>
     <div className="flex flex-wrap gap-sm"><Button variant="outline" disabled={busy} onClick={()=>void load(false,undefined,history.at(-1)??"",history)}>{m.refresh}</Button>
       <Button variant="outline" disabled={busy} onClick={()=>void load()}>{m.topicHistoryHome}</Button>
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/published`}>{m.knowledgeTitle}</Link></Button>
@@ -52,6 +52,7 @@ export function TopicsClient({kbId}:{kbId:string}){
         <p className="break-all text-body-sm">{row.createdAt} / {row.createdBy}</p>
         <p className="break-all font-mono text-code-sm">{row.id}</p>
         {!data.focusedId&&<Button variant="outline" disabled={busy} onClick={()=>{const query=`?dossier=${row.id}`;void load(false,undefined,query,[...history,query]);}}>{m.topicHistoryOpen}</Button>}
+        {row.payload&&<div className="flex flex-wrap gap-sm">{(["json","markdown"] as const).map(format=><Button key={format} variant="outline" asChild><a href={`/api/kb/${kbId}/topics?dossier=${row.id}&format=${format}`}>{format==="json"?m.topicExportJson:m.topicExportMarkdown}</a></Button>)}</div>}
         {row.payload&&<><p className="text-body-sm text-muted-foreground">{m.summaryHint}</p><Button disabled={busy} onClick={()=>{
           const id=pending.current.get(row.id)??crypto.randomUUID();pending.current.set(row.id,id);void load(false,{action:"generate",id,dossierId:row.id});
         }}>{m.summaryGenerate}</Button></>}
@@ -62,6 +63,7 @@ export function TopicsClient({kbId}:{kbId:string}){
             <ul>{p.citations.map(id=>{const evidence=row.payload?.sections.flatMap(s=>s.statements.flatMap(a=>a.evidence)).find(e=>e.id===id);
               return <li key={id} className="break-words text-body-sm"><details><summary>{m.summaryCitation}: {id}</summary><p>{evidence?.excerpt}</p>
                 <p className="break-all font-mono text-code-sm">{evidence?.documentId} / v{evidence?.version} / {evidence?.start}:{evidence?.end}{evidence?.pages.length?` / ${m.sourcePages} ${evidence.pages.join(", ")}`:""}</p></details></li>;})}</ul></div>)}
+          {summary.state==="accept"&&summary.payload&&<div className="flex flex-wrap gap-sm">{(["json","markdown"] as const).map(format=><Button key={format} variant="outline" asChild><a href={`/api/kb/${kbId}/topics?dossier=${row.id}&summary=${summary.id}&format=${format}`}>{format==="json"?m.acceptedSummaryJson:m.acceptedSummaryMarkdown}</a></Button>)}</div>}
           {summary.note&&<p className="break-words text-body-sm">{m.note}: {summary.note}</p>}
           {summary.payload&&<><label htmlFor={`summary-note-${summary.id}`}>{m.note}</label><textarea id={`summary-note-${summary.id}`} maxLength={10000} value={notes[summary.id]??""} onChange={e=>setNotes(n=>({...n,[summary.id]:e.target.value}))} className="min-w-0 rounded-md border border-border bg-background p-sm"/>
             <div className="flex flex-wrap gap-sm">{(["accept","revise","reject"] as const).map(decision=><Button key={decision} variant="outline" disabled={busy||!notes[summary.id]?.trim()} onClick={()=>void load(false,{action:"review",id:summary.id,dossierId:row.id,expectedRevision:summary.revision,decision,note:notes[summary.id]})}>{m[decision]}</Button>)}</div></>}
@@ -69,6 +71,7 @@ export function TopicsClient({kbId}:{kbId:string}){
         {row.summaryNext&&<Button variant="outline" disabled={busy} onClick={()=>{const query=`?dossier=${row.id}&summary_before=${row.summaryNext}`;void load(false,undefined,query,[...history,query]);}}>{m.topicSummaryOlder}</Button>}
         {row.payload?.sections.map(section=><section key={section.relationId} className="flex min-w-0 flex-col gap-sm">
           <h3 className="break-words text-title-sm">{section.source.label} &rarr; {row.relationType} &rarr; {section.target.label}</h3>
+          <div className="flex flex-wrap gap-sm">{[section.source,section.target].filter((n,i,a)=>a.findIndex(v=>v.id===n.id)===i).map(n=><Button key={n.id} variant="outline" asChild><Link href={`/assets/${kbId}/published?entity=${encodeURIComponent(n.id)}`}>{n.label}</Link></Button>)}<Button variant="outline" asChild><Link href={`/assets/${kbId}/graph?entity=${encodeURIComponent(section.source.id)}`}>{m.entityGraph}</Link></Button></div>
           {section.statements.map(s=><div key={s.id}><p className="break-words text-body-sm">{s.text}</p>{s.evidence.map(e=><blockquote key={e.id} className="border-l-2 border-border pl-sm text-body-sm">
             <p className="whitespace-pre-wrap break-words">{e.excerpt}</p><p className="break-all font-mono text-code-sm">{e.documentId} / v{e.version} / {e.start}:{e.end}{e.pages.length?` / ${m.sourcePages} ${e.pages.join(", ")}`:""}</p>
           </blockquote>)}</div>)}

@@ -1,3 +1,4 @@
+import {exportCurrentTopic} from "./topic-export";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {randomUUID} from "node:crypto";
@@ -76,6 +77,12 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     assert.equal(summary.items[0].summaries[0].state,"pending");
     const accepted=await topics.handle(identity,kb,{action:"summary_review",id:summaryId,dossierId:draftId,expectedRevision:0,decision:"accept",note:"Synthetic cited summary checked"});
     assert.equal(accepted.items[0].summaries[0].state,"accept");
+    const exportRead=await topics.handle(identity,kb,{action:"list",dossierId:draftId,summaryId},true);
+    const exported=exportCurrentTopic(kb,exportRead.checkedAt,exportRead.items[0],summaryId);
+    assert.equal(exported.summary?.reviewedBy,sub);assert.equal(exported.summary?.state,"human_accepted");
+    assert.match(exported.dossier.payload.sections[0].statements[0].evidence[0].excerpt,/operator approval/);
+    await assert.rejects(topics.handle(identity,kb,{action:"list",dossierId:draftId,summaryId:randomUUID()},true),/semantic_topic_conflict/);
+
     assert.equal((await topics.handle(identity,kb,{action:"summary_prepare",id:summaryId,dossierId:draftId})).modelInput,null,"saved generation is not repeated");
     await assert.rejects(topics.handle(identity,kb,{action:"summary_review",id:summaryId,dossierId:draftId,expectedRevision:0,decision:"reject",note:"conflicting decision"}),/semantic_topic_conflict/);
     await assert.rejects(service.query("DELETE FROM karda_kb.topic_summary WHERE id=$1",[summaryId]),{code:"42501"});
@@ -94,6 +101,9 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     assert.equal(summaryIds.length,105);assert.equal(new Set(summaryIds).size,105);
     const oldReview=await topics.handle(identity,kb,{action:"summary_review",id:summaryId,dossierId:draftId,expectedRevision:1,decision:"accept",note:"Historical record rechecked"});
     assert.equal(oldReview.items[0].summaries[0].id,summaryId);assert.equal(oldReview.items[0].summaries[0].revision,2);
+    const olderExport=await topics.handle(identity,kb,{action:"list",dossierId:draftId,summaryId},true);
+    assert.equal(olderExport.items[0].summaries.length,1);
+    assert.equal(exportCurrentTopic(kb,olderExport.checkedAt,olderExport.items[0],summaryId).summary?.revision,2);
     await assert.rejects(topics.handle(identity,kb,{action:"list",dossierId:draftId,summaryBefore:randomUUID()}),/semantic_topic_conflict/);
     await assert.rejects(topics.handle(identity,kb,{action:"list",before:draftId,dossierId:draftId}),/semantic_topic_invalid/);
     const historyIds:string[]=[];
@@ -116,6 +126,8 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     assert.deepEqual(sourceSync.knowledge?.edges,[]);assert.deepEqual(sourceSync.knowledge?.passages,[]);
     assert.equal((await sync(sourceSync.revision)).action,"unchanged");
     assert.equal((await factSearch("operator approval")).search?.matchedRelations,0,"source changes remove facts before ranking");
+    const staleExport=await topics.handle(identity,kb,{action:"list",dossierId:draftId,summaryId},true);
+    assert.throws(()=>exportCurrentTopic(kb,staleExport.checkedAt,staleExport.items[0],summaryId),/semantic_topic_conflict/);
     const invalidated=await read();assert.deepEqual(invalidated.edges,[]);assert.deepEqual(invalidated.passages,[]);
     const invalidDraft=await topics.handle(identity,kb,{action:"list"});assert.equal(invalidDraft.items[0].state,"stale_draft");assert.equal(invalidDraft.items[0].payload,null);
     assert.equal(invalidDraft.items[0].summaries[0].payload,null);assert.equal(invalidDraft.items[0].summaries[0].state,"stale");
@@ -167,6 +179,7 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     await admin.query("DELETE FROM local_authz.member_role WHERE member_id=$1",[member]);
     await admin.query("INSERT INTO local_authz.member_role(member_id,role_id) SELECT $1,id FROM local_authz.role WHERE role_code='readonly'",[member]);
     await assert.rejects(topics.handle(identity,kb,{action:"list"}),/semantic_topic_denied/);
+    await assert.rejects(topics.handle(identity,kb,{action:"list",dossierId:draftId},true),/semantic_topic_denied/);
     await assert.rejects(factSearch("approval"),/semantic_read_denied/);
   }finally{
     await admin.query("DELETE FROM karda_kb.topic_summary WHERE kb_id=$1",[kb]);

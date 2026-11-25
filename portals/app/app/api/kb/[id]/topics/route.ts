@@ -5,6 +5,7 @@ import {getOidcConfig} from "../../../../auth/lib/config";
 import {reviewOriginAllowed} from "../../../../kb/semantic/review-request";
 import {topicDossiers} from "../../../../kb/semantic/topic-dossier-store";
 import {executeTopicSummary} from "../../../../kb/semantic/topic-summary-execution";
+import {exportCurrentTopic,topicExportMarkdown} from "../../../../kb/semantic/topic-export";
 
 export const dynamic="force-dynamic";
 async function handle(req:Request,ctx:{params:Promise<{id:string}>}){
@@ -14,10 +15,13 @@ async function handle(req:Request,ctx:{params:Promise<{id:string}>}){
     const {id}=await ctx.params;
     let request:Parameters<typeof topicDossiers>[2]={action:"list"};
     const params=new URL(req.url).searchParams;
-    if([...params.keys()].some(k=>!["before","dossier","summary_before"].includes(k))||
+    const format=params.get("format"),exporting=format!==null;
+    if([...params.keys()].some(k=>!["before","dossier","summary_before","summary","format"].includes(k))||
       [...new Set(params.keys())].some(k=>params.getAll(k).length!==1)|| (req.method==="POST"&&params.size))throw new Error("semantic_topic_invalid");
+    if(exporting&&(!["json","markdown"].includes(format!)||!params.has("dossier")||params.has("before")||params.has("summary_before")))throw new Error("semantic_topic_invalid");
+    if(params.has("summary")&&!exporting)throw new Error("semantic_topic_invalid");
     if(req.method==="GET")request={action:"list",...(params.has("before")?{before:params.get("before")!}:{}),
-      ...(params.has("dossier")?{dossierId:params.get("dossier")!}:{}),...(params.has("summary_before")?{summaryBefore:params.get("summary_before")!}:{})};
+      ...(params.has("dossier")?{dossierId:params.get("dossier")!}:{}),...(params.has("summary_before")?{summaryBefore:params.get("summary_before")!}:{}),...(params.has("summary")?{summaryId:params.get("summary")!}:{})};
     if(req.method==="POST"){
       if(!reviewOriginAllowed(req,getOidcConfig().appOrigin)||!req.headers.get("content-type")?.startsWith("application/json"))return NextResponse.json({error:"origin_invalid"},{status:403,headers});
       const text=await req.text();if(Buffer.byteLength(text)>16384)throw new Error("semantic_topic_invalid");
@@ -33,7 +37,13 @@ async function handle(req:Request,ctx:{params:Promise<{id:string}>}){
         request={action:"summary_review",id:value.id,dossierId:value.dossierId,expectedRevision:value.expectedRevision,decision:value.decision as "accept"|"reject"|"revise",note:value.note};
       else throw new Error("semantic_topic_invalid");
     }
-    const value=await topicDossiers({workspaceId:auth.user.activeWorkspace,sub:auth.user.sub,roles:[...auth.user.roles],productCode:"karda"},id,request,async()=>(await userAdmission(auth.user)).allowed);
+    const value=await topicDossiers({workspaceId:auth.user.activeWorkspace,sub:auth.user.sub,roles:[...auth.user.roles],productCode:"karda"},id,request,async()=>(await userAdmission(auth.user)).allowed,exporting);
+    if(exporting){
+      const row=value.items[0];if(!row||value.truncated)throw new Error("semantic_topic_conflict");
+      const output=exportCurrentTopic(id,value.checkedAt,row,params.get("summary")??undefined);
+      const download={...headers,"X-Content-Type-Options":"nosniff","Content-Disposition":`attachment; filename="topic-knowledge.${format==="json"?"json":"md"}"`};
+      return format==="json"?NextResponse.json(output,{headers:download}):new Response(topicExportMarkdown(output),{headers:{...download,"Content-Type":"text/markdown; charset=utf-8"}});
+    }
     return NextResponse.json(value,{headers});
   }catch(error){
     const code=error instanceof Error?error.message:"";
