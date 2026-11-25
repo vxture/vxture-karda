@@ -87,7 +87,17 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-25): v0.12.14 / 52d538ad, deploy45601558941
+Current production (2026-11-25): v0.12.15 / 8d2e992b, deploy45609671438
+succeeded at2026-11-25T12:07:21Z through normal production review. PR334
+consolidates isolated camera updates, viewport drawing, label density, minimap
+navigation and correct rectangular pointer transforms. Final stage CI1060pass/
+zero skips; main CI45609316906/scan45609317211pass. No DDL,55tables.
+Health/ready and anonymous graph package/diagnostics refusal pass. No local
+full-suite repetition. Fixed17items remain7complete/10unfinished; real business
+scale and external acceptance gates remain open. See
+ docs/50-deployment/170-graph-navigation-release-20261125.md.
+
+Historical production (2026-11-25): v0.12.14 / 52d538ad, deploy45601558941
 succeeded at2026-11-25T11:27:45Z through normal production review. PR332
 consolidates PPTX authored text/tables and PDF/DOCX/XLSX/PPTX format contracts.
 Stage CI1056pass/zero skips; main CI45600733220/scan45600733050pass.
