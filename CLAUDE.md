@@ -87,7 +87,16 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-25): v0.12.10 / fe0ec4be, deploy45571791463
+Current production (2026-11-25): v0.12.11 / 4decdd6a, deploy45583316756
+succeeded at2026-11-25T09:32:32Z through normal production review. PR326
+consolidates topic/summary history paging, lookup and old-record review.
+No local full-suite repetition: targeted implementation checks and grouped
+browser acceptance, mandatory stage CI1049pass/zero skips; main CI45582817718
+and scan45582817737pass. No DDL,55tables. Health/ready and anonymous history
+refusal pass. Fixed17items remain7complete/10unfinished. Real external and
+business gates stay open. See docs/50-deployment/130-operations-history-release-20261125.md.
+
+Historical production (2026-11-25): v0.12.10 / fe0ec4be, deploy45571791463
 succeeded at2026-11-25T08:01:14Z through normal production review. PR323 adds
 graph page/neighborhood navigation; PR324 adds bounded XLSX literal-cell
 sources with sheet/A1/type provenance and0022 migration45571486614 (55 tables).

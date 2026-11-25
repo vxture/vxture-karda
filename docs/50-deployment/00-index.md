@@ -17,6 +17,7 @@ Deployment and bootstrap material for this repo.
 | `100-model-graph-source-release-20261125.md` | cited model summaries, keyboard graph navigation, DOCX tables and production release evidence |
 | `110-directory-contract-release-20261125.md` | v0.12.9 authority-bound directory paging, DOCX database contract repair and rollout evidence |
 | `120-graph-xlsx-release-20261125.md` | v0.12.10 graph page navigation, XLSX literal-cell source chain and migration/rollout evidence |
+| `130-operations-history-release-20261125.md` | v0.12.11 consolidated topic/summary history operations and stage-level verification |
 
 The tag-to-env CD pipeline (deploy/build/rollback/db-init workflows and the
 `tailnet-ssh-connect` composite action) is inherited from the template and lives
