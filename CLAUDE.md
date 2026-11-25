@@ -87,7 +87,17 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-25): v0.12.16 / 47e39dbc, deploy45614811554
+Current production (2026-11-25): v0.12.17 / e9232509, deploy45621971377
+succeeded at2026-11-25T13:22:48Z through normal production review. PR338
+consolidates structural/grouped/circular layouts, topology-only Worker,
+validated output, cancellation, timeout and safe fallback. Stage CI1067pass/
+zero skips; main CI45621438162/scan45621438138pass. No DDL,55tables.
+Health/ready and anonymous graph package/sync refusal pass. No local full-suite
+repetition. Fixed17items remain7complete/10unfinished; real business/scale and
+external authority gates remain open. See
+ docs/50-deployment/190-structural-layout-release-20261125.md.
+
+Historical production (2026-11-25): v0.12.16 / 47e39dbc, deploy45614811554
 succeeded at2026-11-25T12:40:14Z through normal production review. PR336
 consolidates RP/OBO current-window synchronization, scope-bound revisions,
 authority/source revalidation and explicit replace/unchanged/discard semantics.
