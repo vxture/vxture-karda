@@ -79,7 +79,7 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     assert.equal(overviewHistory.items[0].summaries.length,5);assert.ok(overviewHistory.items[0].summaryNext);
     const focusedHistory=await topics.handle(identity,kb,{action:"list",dossierId:draftId});
     assert.equal(focusedHistory.items[0].summaries.length,20);assert.ok(focusedHistory.items[0].summaryNext);
-    const summaryIds=focusedHistory.items[0].summaries.map(s=>s.id);let summaryCursor=focusedHistory.items[0].summaryNext;
+    const summaryIds=focusedHistory.items[0].summaries.map(s=>s.id);let summaryCursor:string|null=focusedHistory.items[0].summaryNext;
     while(summaryCursor){const page=await topics.handle(identity,kb,{action:"list",dossierId:draftId,summaryBefore:summaryCursor});
       summaryIds.push(...page.items[0].summaries.map(s=>s.id));summaryCursor=page.items[0].summaryNext;}
     assert.equal(summaryIds.length,105);assert.equal(new Set(summaryIds).size,105);

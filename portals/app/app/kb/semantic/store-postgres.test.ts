@@ -257,8 +257,10 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
     assert.deepEqual(await store.createCompileTask(identity,kb,taskId),{taskId,duplicate:false});
     assert.deepEqual(await store.createCompileTask(identity,kb,taskId),{taskId,duplicate:true});
     const claim=await store.claimCompileTask(identity,kb,taskId);assert.ok(claim);
+    assert.equal((await store.browseCompileTasks(identity,kb,{taskId})).tasks[0].canRetry,false,"a live lease cannot be restarted by the page");
     assert.equal(await store.claimCompileTask(identity,kb,taskId),null,"a live lease prevents concurrent model work");
     await admin.query("UPDATE karda_kb.semantic_compile_task SET lease_until=now()-interval '1 second' WHERE id=$1",[taskId]);
+    assert.equal((await store.browseCompileTasks(identity,kb,{taskId})).tasks[0].canRetry,true,"expired lease is explicitly recoverable before attempt limit");
     const replacement=await store.claimCompileTask(identity,kb,taskId);assert.ok(replacement);
     await assert.rejects(store.recordCompile(identity,kb,{taskKey:"8".repeat(64),configHash,payload,
       task:{id:taskId,leaseId:claim.lease_id}}),/semantic_task_stale_lease/);
@@ -288,6 +290,20 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
       type:"requires",source:{name:"left",type:"entity"},target:{name,type:"entity"},assertionIds:[assertion],
     }))})});
     const conflictTask=(await store.listCompileTasks(identity,kb)).find(t=>t.id===conflictId)!;
+    const taskMetadata=await store.browseCompileTasks(identity,kb,{state:"needs_review"});
+    assert.ok(taskMetadata.tasks.every(t=>Object.keys(t.result).length===0&&t.context===undefined));
+    const currentTask=(await store.browseCompileTasks(identity,kb,{taskId:conflictId})).tasks[0];
+    assert.equal(currentTask.sourceState,"current");assert.ok(currentTask.context?.assertions.length);
+    const historyTasks:string[]=[];
+    await admin.query(`INSERT INTO karda_kb.semantic_compile_task(id,kb_id,created_by,snapshot,snapshot_hash)
+      SELECT gen_random_uuid(),kb_id,created_by,snapshot,snapshot_hash FROM karda_kb.semantic_compile_task CROSS JOIN generate_series(1,26) WHERE id=$1`,[conflictId]);
+    let taskCursor:string|undefined;
+    do{const page=await store.browseCompileTasks(identity,kb,{state:"queued",...(taskCursor?{before:taskCursor}:{})});
+      historyTasks.push(...page.tasks.map(t=>t.id));taskCursor=page.next??undefined;}while(taskCursor);
+    assert.equal(historyTasks.length,26);assert.equal(new Set(historyTasks).size,26);
+    await assert.rejects(store.browseCompileTasks(identity,kb,{taskId:randomUUID()}),/semantic_task_unavailable/);
+    await assert.rejects(store.browseCompileTasks(identity,kb,{before:randomUUID()}),/semantic_task_unavailable/);
+    await assert.rejects(store.browseCompileTasks({...identity,sub:`usr_${randomUUID()}`},kb,{taskId:conflictId}),/semantic_write_denied/);
     assert.equal(conflictTask.state,"needs_review");assert.equal(conflictTask.run_id,null);
     const conflictCompilation=conflictTask.result.compilation as import("./compiler").Compilation;
     const candidates=conflictCompilation.payload.relations;
@@ -302,6 +318,8 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
     await role("readonly");await assert.rejects(store.resolveCompileTask(identity,kb,selection),/semantic_write_denied/);await role("member");
     await admin.query("UPDATE karda_kb.document SET content_state='archived' WHERE id=$1",[doc]);
     await assert.rejects(store.resolveCompileTask(identity,kb,selection),/semantic_source_changed/);
+    const staleTask=(await store.browseCompileTasks(identity,kb,{taskId:conflictId})).tasks[0];
+    assert.equal(staleTask.sourceState,"changed");assert.deepEqual(staleTask.result,{});assert.equal(staleTask.context,undefined);
     await admin.query("UPDATE karda_kb.document SET content_state='indexed' WHERE id=$1",[doc]);
     const reviewCount=Number((await admin.query("SELECT count(*) FROM karda_kb.semantic_review WHERE kb_id=$1",[kb])).rows[0].count);
     const resolutions=await Promise.all([store.resolveCompileTask(identity,kb,selection),store.resolveCompileTask(identity,kb,selection)]);

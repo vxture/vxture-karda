@@ -180,4 +180,12 @@ export const semantic = {
   topicHistoryOlder:{"zh-CN":"\u66f4\u65e9\u7684\u4e3b\u9898\u8bb0\u5f55","en-US":"Older topic records"},
   topicSummaryOlder:{"zh-CN":"\u66f4\u65e9\u7684\u6458\u8981\u8bb0\u5f55","en-US":"Older summary records"},
   topicHistoryHint:{"zh-CN":"\u5386\u53f2\u4ec5\u7528\u4e8e\u5ba1\u9605\uff1b\u6bcf\u9875\u91cd\u65b0\u6838\u9a8c\u5f53\u524d\u6743\u9650\u548c\u6765\u6e90\uff0c\u5931\u6548\u6b63\u6587\u9690\u85cf\u3002\u6982\u89c8\u6bcf\u4e3b\u9898\u663e\u793a\u6700\u65b0 5 \u4efd\u6458\u8981\uff0c\u5355\u4e3b\u9898\u6bcf\u9875 20 \u4efd\uff1b\u4e0d\u81ea\u52a8\u8c03\u7528\u6a21\u578b\u6216\u53d1\u5e03\u3002","en-US":"History is for review. Each page rechecks current authority and sources; stale content stays hidden. Overview shows 5 summaries per topic, focused history 20 per page. Browsing never calls a model or publishes."},
+  taskOperationsHint:{"zh-CN":"\u4efb\u52a1\u5217\u8868\u4ec5\u663e\u793a\u672c\u4eba\u4efb\u52a1\u5143\u6570\u636e\u3002\u67e5\u770b\u8be6\u60c5\u4f1a\u91cd\u65b0\u6838\u9a8c\u5f53\u524d\u6765\u6e90\uff1b\u5931\u6548\u6b63\u6587\u9690\u85cf\u3002\u8d85\u65f6\u79df\u7ea6\u4ec5\u5728\u670d\u52a1\u7aef\u5141\u8bb8\u4e14\u672a\u7528\u5c3d 3 \u6b21\u5c1d\u8bd5\u65f6\u53ef\u6062\u590d\uff0c\u6d4f\u89c8\u4e0d\u8c03\u7528\u6a21\u578b\u3002","en-US":"Lists show only your task metadata. Details recheck current sources and hide changed content. Expired leases can resume only when the server permits, within 3 attempts. Browsing never calls a model."},
+  taskStateFilter:{"zh-CN":"\u4efb\u52a1\u72b6\u6001\u7b5b\u9009","en-US":"Task state filter"},
+  taskLatest:{"zh-CN":"\u6700\u65b0\u4efb\u52a1","en-US":"Latest tasks"},
+  taskOlder:{"zh-CN":"\u66f4\u65e9\u4efb\u52a1","en-US":"Older tasks"},
+  taskLookup:{"zh-CN":"\u7f16\u8bd1\u4efb\u52a1 ID","en-US":"Compile task ID"},
+  taskInspect:{"zh-CN":"\u67e5\u770b\u4efb\u52a1\u8be6\u60c5","en-US":"Inspect task"},
+  taskLease:{"zh-CN":"\u6267\u884c\u79df\u7ea6\u5230\u671f","en-US":"Execution lease expiry"},
+  taskSourceChanged:{"zh-CN":"\u4efb\u52a1\u8f93\u5165\u5df2\u53d8\u5316\uff0c\u65e7\u5019\u9009\u548c\u8bc1\u636e\u5df2\u9690\u85cf\u3002\u8bf7\u521b\u5efa\u57fa\u4e8e\u5f53\u524d\u8d44\u6599\u7684\u65b0\u4efb\u52a1\u3002","en-US":"Task inputs changed; old candidates and evidence are hidden. Create a new task from current sources."},
 } satisfies Catalog;
