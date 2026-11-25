@@ -40,6 +40,7 @@ export function MaintenanceClient({kbId}:{kbId:string}){
     <div className="flex flex-wrap gap-sm">
       <Button variant="outline" disabled={busy} onClick={()=>void load()}>{m.refresh}</Button>
       {report&&<Button variant="outline" asChild><a href={`/api/kb/${kbId}/semantic?view=maintenance&format=json`}>{m.impactExport}</a></Button>}
+      {report&&(["audit","audit-markdown"] as const).map(format=><Button key={format} variant="outline" asChild><a href={`/api/kb/${kbId}/semantic?view=maintenance&format=${format}`}>{format==="audit"?m.auditJson:m.auditMarkdown}</a></Button>)}
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/history`}>{m.historyTitle}</Link></Button>
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/topics`}>{m.dossierTitle}</Link></Button>
       <Button asChild><Link href={`/assets/${kbId}/semantic`}>{m.maintenanceRebuild}</Link></Button>
@@ -49,6 +50,7 @@ export function MaintenanceClient({kbId}:{kbId:string}){
     {busy&&<p role="status">{m.loading}</p>}
     {!!error&&<Banner tone="danger" title={error===403?m.denied:m.unavailable}/>}
     {report&&<>
+      <p className="text-body-sm text-muted-foreground">{m.auditScopeHint}</p>
       <p className="break-all text-body-sm">{m.generation}: {report.generation} / {m.maintenanceChecked}: {report.checkedAt}</p>
       {!report.releaseId?<Banner tone="warning" title={m.noPublished}/>:<>
         <p role="status">{m.maintenanceAffected}: {affected} / {report.relations.length}</p>

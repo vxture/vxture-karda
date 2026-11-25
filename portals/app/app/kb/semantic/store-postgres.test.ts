@@ -1,3 +1,4 @@
+import {maintenanceAudit} from "./maintenance-audit";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID, createHash } from "node:crypto";
@@ -146,6 +147,9 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
     assert.equal(receipts.filter(r=>r.duplicate).length,1);
     const first = receipts[0];
     const health=await store.maintenance(identity,kb);
+    const auditExport=maintenanceAudit(await store.maintenance(identity,kb,true),kb);
+    assert.equal(auditExport.kbId,kb);assert.equal(auditExport.generation,health.generation);
+    assert.deepEqual(auditExport.relations.map(r=>r.id),health.relations.map(r=>r.id));
     assert.deepEqual((await store.maintenance(identity,kb,true)).relations,health.relations,"diagnostic export reuses the current authorized read");
     assert.equal(health.generation,1);assert.equal(health.releaseId,first.releaseId);
     assert.deepEqual(health.relations[0].issues,[]);assert.deepEqual(health.sources[0].relationIds,[relation]);
@@ -173,12 +177,14 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
     assert.equal((await reader().read(identity,[other],query)).edges.length,0);
     platform = false; const readsBefore = reads;
     await assert.rejects(store.maintenance(identity,kb),/semantic_write_denied/);
+    await assert.rejects(store.maintenance(identity,kb,true),/semantic_write_denied/);
     await assert.rejects(store.auditHistory(identity,kb),/semantic_write_denied/);
     await assert.rejects(store.publish(identity,firstPlan), /semantic_write_denied/);
     await assert.rejects(read(), /semantic_read_denied/); assert.equal(reads,readsBefore); platform = true;
     await role("readonly");
     await assert.rejects(store.listCompiles(identity,kb),/semantic_write_denied/);
     await assert.rejects(store.maintenance(identity,kb),/semantic_write_denied/);
+    await assert.rejects(store.maintenance(identity,kb,true),/semantic_write_denied/);
     await assert.rejects(store.inspectCompile(identity,kb,compile.runId),/semantic_write_denied/);
     await assert.rejects(store.plan(identity,kb,compile.runId,randomUUID(),1), /semantic_write_denied/);
     assert.equal((await read()).edges.length,1); await role("member");
