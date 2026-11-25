@@ -87,7 +87,16 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-26): v0.12.25 / 2b3d8166, deploy45675152084
+Current production (2026-11-26): v0.12.26 / 32d73ac7, deploy45679953790
+succeeded at2026-11-25T19:01:46Z through normal production review. PR356
+adds bounded authored PPTX groups and uniquely linked speaker-note provenance.
+Stage CI45678859179:1098pass/zero skips; main CI45679344725/scan45679345381pass.
+Migration0028 run45679842996 succeeded,55tables; health/ready and anonymous
+compile/source-search/package refusal pass. No local full-suite duplication
+or automatic customer reprocessing. Fixed17items:7complete/10unfinished.
+See docs/50-deployment/280-pptx-stories-release-20261126.md.
+
+Historical production (2026-11-26): v0.12.25 / 2b3d8166, deploy45675152084
 succeeded at2026-11-25T18:32:38Z through normal production review. PR354
 adds merged PPTX logical cell grids with exact anchor provenance.
 Stage CI45674199061:1095pass/zero skips; main CI45674679675/scan45674679803pass.
