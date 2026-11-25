@@ -59,6 +59,16 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     const draft=await topics.handle(identity,kb,{action:"compose",id:draftId,relationType:"requires"});
     assert.equal(draft.items[0].state,"current_draft");assert.match(draft.items[0].payload!.sections[0].statements[0].evidence[0].excerpt,/operator approval/);
     assert.equal((await topics.handle(identity,kb,{action:"compose",id:randomUUID(),relationType:"requires"})).duplicate,true);
+    const summaryId=randomUUID(),summaryInput=await topics.handle(identity,kb,{action:"summary_prepare",id:summaryId,dossierId:draftId});
+    assert.ok(summaryInput.modelInput);const cited=summaryInput.modelInput.sections[0].statements[0].evidence[0].id;
+    const summary=await topics.handle(identity,kb,{action:"summary_save",id:summaryId,dossierId:draftId,
+      payload:{format:"karda.topic-summary.v1",inputHash:summaryInput.modelInput.inputHash,paragraphs:[{text:"Recovery requires operator approval.",citations:[cited]}]},selection:{endpointCode:"chat/extract"}});
+    assert.equal(summary.items[0].summaries[0].state,"pending");
+    const accepted=await topics.handle(identity,kb,{action:"summary_review",id:summaryId,dossierId:draftId,expectedRevision:0,decision:"accept",note:"Synthetic cited summary checked"});
+    assert.equal(accepted.items[0].summaries[0].state,"accept");
+    assert.equal((await topics.handle(identity,kb,{action:"summary_prepare",id:summaryId,dossierId:draftId})).modelInput,null,"saved generation is not repeated");
+    await assert.rejects(topics.handle(identity,kb,{action:"summary_review",id:summaryId,dossierId:draftId,expectedRevision:0,decision:"reject",note:"conflicting decision"}),/semantic_topic_conflict/);
+    await assert.rejects(service.query("DELETE FROM karda_kb.topic_summary WHERE id=$1",[summaryId]),{code:"42501"});
     await assert.rejects(service.query("UPDATE karda_kb.topic_dossier SET payload='{}' WHERE id=$1",[draftId]),{code:"42501"});
 
     // A revision updates raw bytes/version before any new semantic publication.
@@ -66,6 +76,9 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     await admin.query("UPDATE karda_kb.document SET active_chunk_version=2,content_hash=$2,size_bytes=$3 WHERE id=$1",[doc,sourceHash(bytes),bytes.length]);
     const invalidated=await read();assert.deepEqual(invalidated.edges,[]);assert.deepEqual(invalidated.passages,[]);
     const invalidDraft=await topics.handle(identity,kb,{action:"list"});assert.equal(invalidDraft.items[0].state,"stale_draft");assert.equal(invalidDraft.items[0].payload,null);
+    assert.equal(invalidDraft.items[0].summaries[0].payload,null);assert.equal(invalidDraft.items[0].summaries[0].state,"stale");
+    await assert.rejects(topics.handle(identity,kb,{action:"summary_save",id:randomUUID(),dossierId:draftId,
+      payload:{format:"karda.topic-summary.v1",inputHash:summaryInput.modelInput.inputHash,paragraphs:[{text:"old answer",citations:[cited]}]},selection:{endpointCode:"chat/extract"}}),/semantic_topic_/);
     assert.ok((await store.maintenance(identity,kb)).sources[0].issues.includes("source_changed"));
     const raw=await new PostgresSourceSearch(service,objects,async()=>true).read(identity,parseSourceSearch({kb_ids:[kb],query:"two-person"}));
     assert.equal(raw.items[0].documentVersion,2,"source-only retrieval is independent of semantic publication");
@@ -98,6 +111,7 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     await admin.query("INSERT INTO local_authz.member_role(member_id,role_id) SELECT $1,id FROM local_authz.role WHERE role_code='readonly'",[member]);
     await assert.rejects(topics.handle(identity,kb,{action:"list"}),/semantic_topic_denied/);
   }finally{
+    await admin.query("DELETE FROM karda_kb.topic_summary WHERE kb_id=$1",[kb]);
     await admin.query("DELETE FROM karda_kb.topic_dossier WHERE kb_id=$1",[kb]);
     for(const table of ["semantic_compile_task","semantic_event_receipt","semantic_release_head","semantic_release_review","semantic_relation_assertion",
       "semantic_relation","semantic_release_source","semantic_release","semantic_compile_run","semantic_review","semantic_schema_version"])
