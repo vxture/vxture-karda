@@ -125,8 +125,12 @@ export class PostgresSemanticStore {
     },true);
   }
 
-  async maintenance(identity: SemanticReadIdentity, kbId: string): Promise<MaintenanceReport> {
+  async maintenance(identity: SemanticReadIdentity, kbId: string,exporting=false): Promise<MaintenanceReport> {
     return this.write(identity, kbId, "service.publish", async db => {
+      if(exporting){const access=await readProductAccess(identity,{
+        $queryRawUnsafe:async<R>(s:string,...v:unknown[])=>(await db.query(s,v)).rows as R,
+        $executeRawUnsafe:async()=>{throw new Error("semantic_write_denied");},
+      });if(!permits(access,"data.export"))throw new Error("semantic_write_denied");}
       const now = (await db.query<{now:Date}>("SELECT clock_timestamp() AS now")).rows[0].now;
       const head = (await db.query<{id:string;generation:number;payload:PublicationCommand}>(`SELECT r.id,h.generation,r.payload
         FROM karda_kb.semantic_release_head h JOIN karda_kb.semantic_release r
