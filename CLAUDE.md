@@ -76,7 +76,17 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-25): v0.12.7 / daa1a244, owner-authorized deploy
+Current production (2026-11-25): v0.12.9 / 3b3fb0da, deploy45561196377
+succeeded at2026-11-25T06:37:39Z through normal production review. PR319 adds
+current-authority directory paging; PR320 fixes DOCX v2 database CHECK with
+0021/migration45559421934 (55 tables); PR321 bounds shared-proof fingerprint
+work. PR1047 tests pass/zero skips; main CI45560881319 and scan45560881362
+pass. Health/ready/dependencies and anonymous paging/export refusal pass.
+v0.12.8 was cancelled before deployment, keep its tag fixed. Fixed17 items
+remain7complete/10unfinished; real Agent/Atlas/authority, scale and business
+gates remain open. See docs/50-deployment/110-directory-contract-release-20261125.md.
+
+Historical production (2026-11-25): v0.12.7 / daa1a244, owner-authorized deploy
 45553159505 succeeded at2026-11-25T05:29:58Z via normal production review.
 PR315 adds cited Atlas topic summaries with immutable storage/review/source
 invalidation; PR316 adds graph keyboard/list navigation and bounded synthetic
