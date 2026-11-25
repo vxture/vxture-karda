@@ -2,6 +2,41 @@ import type {GraphEntity,SemanticRelation} from "./contracts";
 
 export interface GraphGroup {id:string;nodeIds:string[];edgeIds:string[]}
 
+/** Bounded deterministic local modularity optimization over authorized topology.
+ * Undirected simple edges guide navigation only; business directions stay intact. */
+export function graphCommunities(nodes:GraphEntity[],edges:SemanticRelation[]):GraphGroup[]{
+  graphGroups(nodes,edges); // shared hard budget and identity validation
+  const ids=[...nodes.map(n=>n.id)].sort(),neighbors=new Map(ids.map(id=>[id,new Set<string>()]));
+  for(const edge of edges){
+    if(edge.sourceId===edge.targetId||!neighbors.has(edge.sourceId)||!neighbors.has(edge.targetId))continue;
+    neighbors.get(edge.sourceId)!.add(edge.targetId);neighbors.get(edge.targetId)!.add(edge.sourceId);
+  }
+  const degree=new Map(ids.map(id=>[id,neighbors.get(id)!.size])),totalDegree=[...degree.values()].reduce((a,b)=>a+b,0);
+  if(!totalDegree)return graphGroups(nodes,edges);
+  const membership=new Map(ids.map(id=>[id,id])),totals=new Map(degree);
+  for(let pass=0;pass<20;pass++){
+    let changed=false;
+    for(const id of ids){
+      const current=membership.get(id)!,d=degree.get(id)!;if(!d)continue;
+      totals.set(current,totals.get(current)!-d);
+      const links=new Map<string,number>();
+      for(const next of neighbors.get(id)!){const group=membership.get(next)!;links.set(group,(links.get(group)??0)+1);}
+      const score=(group:string)=>(links.get(group)??0)-d*(totals.get(group)??0)/totalDegree;
+      let best=current,bestScore=score(current);
+      for(const group of [...links.keys()].sort()){
+        const value=score(group);
+        if(value>bestScore+1e-12){best=group;bestScore=value;}
+      }
+      membership.set(id,best);totals.set(best,(totals.get(best)??0)+d);if(best!==current)changed=true;
+    }
+    if(!changed)break;
+  }
+  const groups=new Map<string,GraphGroup>();
+  for(const id of ids){const key=membership.get(id)!,group=groups.get(key)??{id,nodeIds:[],edgeIds:[]};group.nodeIds.push(id);groups.set(key,group);}
+  for(const edge of edges){const a=membership.get(edge.sourceId),b=membership.get(edge.targetId);if(a!==undefined&&a===b)groups.get(a)!.edgeIds.push(edge.id);}
+  return [...groups.values()].map(g=>({...g,id:g.nodeIds[0],edgeIds:g.edgeIds.sort()})).sort((a,b)=>b.nodeIds.length-a.nodeIds.length||a.id.localeCompare(b.id));
+}
+
 /** Connected components of this authorized projection, never a whole-corpus claim. */
 export function graphGroups(nodes:GraphEntity[],edges:SemanticRelation[]):GraphGroup[]{
   const ids=new Set(nodes.map(n=>n.id));
@@ -25,8 +60,8 @@ export function graphGroups(nodes:GraphEntity[],edges:SemanticRelation[]):GraphG
 }
 
 /** Pack component circles in separate cells; bounded and independent of input order. */
-export function layoutGroupedGraph(nodes:GraphEntity[],edges:SemanticRelation[]){
-  const groups=graphGroups(nodes,edges),byId=new Map(nodes.map(n=>[n.id,n]));
+export function layoutGroupedGraph(nodes:GraphEntity[],edges:SemanticRelation[],communities=false){
+  const groups=communities?graphCommunities(nodes,edges):graphGroups(nodes,edges),byId=new Map(nodes.map(n=>[n.id,n]));
   const columns=Math.max(1,Math.ceil(Math.sqrt(groups.length)));
   const cell=Math.max(400,...groups.map(g=>Math.max(100,g.nodeIds.length*4)*2+160));
   const rows=Math.max(1,Math.ceil(groups.length/columns)),size=Math.max(columns,rows)*cell;
