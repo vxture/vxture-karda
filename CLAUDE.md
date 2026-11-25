@@ -87,7 +87,17 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-25): v0.12.15 / 8d2e992b, deploy45609671438
+Current production (2026-11-25): v0.12.16 / 47e39dbc, deploy45614811554
+succeeded at2026-11-25T12:40:14Z through normal production review. PR336
+consolidates RP/OBO current-window synchronization, scope-bound revisions,
+authority/source revalidation and explicit replace/unchanged/discard semantics.
+Final stage CI1064pass/zero skips after interface-register correction; main
+CI45614436808/scan45614436654pass. No DDL,55tables. Health/ready and anonymous
+sync/package refusal pass. No local full-suite repetition. Fixed17items remain
+7complete/10unfinished; real Agent/event/business gates remain open. See
+ docs/50-deployment/180-knowledge-sync-release-20261125.md.
+
+Historical production (2026-11-25): v0.12.15 / 8d2e992b, deploy45609671438
 succeeded at2026-11-25T12:07:21Z through normal production review. PR334
 consolidates isolated camera updates, viewport drawing, label density, minimap
 navigation and correct rectangular pointer transforms. Final stage CI1060pass/
