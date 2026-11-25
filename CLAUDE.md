@@ -87,7 +87,17 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-25): v0.12.12 / 98e8e579, deploy45592086696
+Current production (2026-11-25): v0.12.13 / a2fdf7cb, deploy45596889070
+succeeded at2026-11-25T10:45:41Z through normal production review. PR330
+consolidates source issue summary/filtering, bounded related inspection,
+human action suggestions, paging and authorized diagnostic JSON export.
+No local full-suite repetition; stage CI1053pass/zero skips on first run,
+main CI45596466345/scan45596465959pass. No DDL,55tables. Health/ready and
+anonymous diagnostics/export refusal pass. Fixed17items remain7complete/
+10unfinished; external/business gates remain open. See
+ docs/50-deployment/150-impact-operations-release-20261125.md.
+
+Historical production (2026-11-25): v0.12.12 / 98e8e579, deploy45592086696
 succeeded at2026-11-25T10:15:49Z through normal production review. PR328
 consolidates compile task history/state/lookup, metadata lists, current-source
 details and lease recovery. Bounded retry of rolled-back DB deadlocks keeps
