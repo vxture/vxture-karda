@@ -1,5 +1,6 @@
 import { isRecallable } from "../assertions/kinds";
 import {directoryFingerprint,decodeDirectoryCursor,encodeDirectoryCursor} from "./directory-cursor";
+import {rankPublishedRelations,validatePublishedSearch,type PublishedSearchQuery} from "./published-search";
 import type {
   AuthorizedReadScope, GraphAssertion, GraphEvidence, GraphProjection,
   KnowledgeSnapshot, NeighborhoodQuery, OntologySchema, SchemaRef, SemanticRelation,
@@ -84,8 +85,14 @@ export function projectDirectory(snapshot:KnowledgeSnapshot,schema:OntologySchem
   return projectCurrentKnowledge(snapshot,schema,scope,{...limits,seedIds:["directory"],maxHops:1},true);
 }
 
+export function projectPublishedSearch(snapshot:KnowledgeSnapshot,schema:OntologySchema,scope:AuthorizedReadScope,
+  request:PublishedSearchQuery,statements:ReadonlyMap<string,string>,excerpts:ReadonlyMap<string,string>,relationTypes?:string[]):GraphProjection{
+  validatePublishedSearch(request);
+  return projectCurrentKnowledge(snapshot,schema,scope,{seedIds:["directory"],maxHops:0,maxNodes:40,maxEdges:20,relationTypes},true,{request,statements,excerpts});
+}
+
 function projectCurrentKnowledge(snapshot:KnowledgeSnapshot,schema:OntologySchema,scope:AuthorizedReadScope,
-  query:NeighborhoodQuery,directory:boolean):GraphProjection{
+  query:NeighborhoodQuery,directory:boolean,searchInput?:{request:PublishedSearchQuery;statements:ReadonlyMap<string,string>;excerpts:ReadonlyMap<string,string>}):GraphProjection{
   validateOntology(schema);
   validateNeighborhoodQuery(query);
   const now = Date.parse(scope.now);
@@ -153,7 +160,13 @@ function projectCurrentKnowledge(snapshot:KnowledgeSnapshot,schema:OntologySchem
   let truncated = false;
   const chosen = new Map<string, SemanticRelation>();
   let directoryPage:{nextCursor:string|null}|undefined;
-  if(directory){
+  let search:GraphProjection["search"];
+  if(searchInput){
+    search=rankPublishedRelations(eligible,entities,searchInput.statements,supported,searchInput.excerpts,searchInput.request);
+    const byId=new Map(eligible.map(e=>[e.id,e]));
+    for(const match of search.items){const edge=byId.get(match.relationId)!;chosen.set(edge.id,edge);reached.add(edge.sourceId);reached.add(edge.targetId);}
+    truncated=search.matchedRelations>search.items.length;
+  }else if(directory){
     const paged=query.pageCursor!==undefined;
     let hash="";
     if(paged){
@@ -211,6 +224,7 @@ function projectCurrentKnowledge(snapshot:KnowledgeSnapshot,schema:OntologySchem
   for (const id of assertionIds) for (const ground of supported.get(id) ?? []) chosenEvidence.set(ground.id, ground);
   const compareIds = <T extends {id: string}>(a: T, b: T): number => a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
   return {
+    ...(search?{search}:{}),
     ...(directoryPage?{directoryPage}:{}),
     schema: { namespace: schema.namespace, schemaId: schema.schemaId, version: schema.version },
     nodes: [...reached].map(id => {

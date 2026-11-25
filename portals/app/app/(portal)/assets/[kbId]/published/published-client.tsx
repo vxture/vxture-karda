@@ -40,6 +40,7 @@ export function PublishedKnowledgeClient({kbId,initialEntity=""}:{kbId:string;in
     <PageHead title={m.knowledgeTitle}/>
     <Link href={`/assets/${kbId}/knowledge`}>{m.back}</Link>
     <div className="flex flex-wrap gap-sm"><Button variant="outline" asChild><Link href={`/assets/${kbId}/graph`}>{m.graphTitle}</Link></Button>
+      <Button variant="outline" asChild><Link href={`/assets/${kbId}/facts`}>{m.factSearchTitle}</Link></Button>
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/sources`}>{m.sourceSearchTitle}</Link></Button>
       <Button variant="outline" disabled={busy} onClick={()=>{const current=activeWindow.current;void load(current.entity,current.cursor,current.history);}}>{m.recheckKnowledge}</Button>
       {focus&&value?.nodes.some(n=>n.id===focus)&&<Button variant="outline" asChild><Link href={`/assets/${kbId}/graph?entity=${encodeURIComponent(focus)}`}>{m.entityGraph}</Link></Button>}

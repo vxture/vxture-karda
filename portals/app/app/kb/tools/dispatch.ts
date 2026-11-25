@@ -20,6 +20,7 @@ export interface DispatchResult {
 }
 
 export interface ToolBackends {
+  publishedSearch?(caller:CallerContext,args:Record<string,unknown>):Promise<DispatchResult>;
   knowledgeSync?(caller:CallerContext,args:Record<string,unknown>):Promise<DispatchResult>;
   sourceSearch?(caller:CallerContext,args:Record<string,unknown>):Promise<DispatchResult>;
   knowledgePackage?(caller:CallerContext,args:Record<string,unknown>):Promise<DispatchResult>;
@@ -91,13 +92,15 @@ async function dispatchUnchecked(
   }
 
   if(caller.mode === "obo") {
-    const permission=(name==="karda.ask"||name==="karda.search"||name==="karda.source_search")?"ai.use":["karda.knowledge_package","karda.knowledge_sync"].includes(name)?"data.read":tool.mode==="obo_only"?"data.write":"data.read";
+    const permission=["karda.ask","karda.search","karda.source_search","karda.published_search"].includes(name)?"ai.use":["karda.knowledge_package","karda.knowledge_sync"].includes(name)?"data.read":tool.mode==="obo_only"?"data.write":"data.read";
     if(!permits(caller.productAccess,permission)) return accessDenied("product permission required");
   }
   const ws = caller.workspace;
   if (!ws) return { status: 400, body: { error: "no_workspace", detail: "token carries no workspace" } };
 
   switch (name) {
+    case "karda.published_search":
+      return backends.publishedSearch?backends.publishedSearch(caller,args):notImplemented(name);
     case "karda.knowledge_sync":
       return backends.knowledgeSync?backends.knowledgeSync(caller,args):notImplemented(name);
     case "karda.source_search":
