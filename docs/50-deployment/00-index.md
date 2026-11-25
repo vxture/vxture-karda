@@ -45,3 +45,5 @@ exercised (live since v0.1.0); the beta tier stays a reserved channel (TD-001).
 | `240-topic-delivery-release-20261126.md` | v0.12.22 current topic evidence and accepted summary delivery |
 
 | `250-docx-grid-release-20261126.md` | v0.12.23 merged/nested DOCX cell grids, migration0025 and production evidence |
+
+| `260-xlsx-ranges-release-20261126.md` | v0.12.24 explicit XLSX merged ranges, migration0026 and production evidence |

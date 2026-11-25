@@ -87,7 +87,16 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-26): v0.12.23 / ec8f90f6, deploy45665206576
+Current production (2026-11-26): v0.12.24 / 20b20129, deploy45670439314
+succeeded at2026-11-25T18:06:32Z through normal production review. PR352
+adds explicit XLSX merge ranges and single anchor literals with current source
+provenance. Stage CI45669424124:1092pass/zero skips; main CI45669950253/scan45669950251pass.
+Migration0026 run45670321534 succeeded,55tables; health/ready and anonymous
+compile/source-search/package refusal pass. No local full-suite duplication
+or automatic customer reprocessing. Fixed17items:7complete/10unfinished.
+See docs/50-deployment/260-xlsx-ranges-release-20261126.md.
+
+Historical production (2026-11-26): v0.12.23 / ec8f90f6, deploy45665206576
 succeeded at2026-11-25T17:35:31Z through normal production review. PR350
 adds bounded merged/nested DOCX cell grids with versioned source provenance.
 Stage CI45664184133:1089pass/zero skips; main CI45664689200/scan45664689191pass.
