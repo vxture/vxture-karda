@@ -21,4 +21,5 @@ elif mime == "application/vnd.openxmlformats-officedocument.wordprocessingml.doc
 else:
     raise ValueError("source_format_unsupported")
 module = runpy.run_path(str(Path(__file__).with_name(script)))
-print(json.dumps(module["extract"](source), ensure_ascii=True))
+result = module["extract"](source, tables=True) if script == "extract-docx.py" else module["extract"](source)
+print(json.dumps(result, ensure_ascii=True))

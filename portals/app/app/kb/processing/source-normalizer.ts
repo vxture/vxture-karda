@@ -15,8 +15,9 @@ export function snapshotFromExtraction(mime:string,bytes:Buffer,value:unknown):S
       throw new Error("source_pdf_contract");
     parts=data.pages.filter(p=>p.text.length>0).map(p=>({text:p.text,page:p.page}));parserVersion="pypdf-6.21.4-v1";
   }else if(mime===DOCX_MIME){
-    if(!Array.isArray(data.paragraphs)||data.paragraphs.some(p=>typeof p!=="string"))throw new Error("source_docx_contract");
-    parts=data.paragraphs.map(text=>({text}));parserVersion="docx-main-body-v1";
+    if(!Array.isArray(data.paragraphs)||data.paragraphs.some(p=>typeof p!=="string")||
+      (data.extractor!==undefined&&data.extractor.version!=="docx-body-tables-v2"))throw new Error("source_docx_contract");
+    parts=data.paragraphs.map(text=>({text}));parserVersion=data.extractor?.version==="docx-body-tables-v2"?"docx-body-tables-v2":"docx-main-body-v1";
   }else throw new Error("source_format_unsupported");
   let text="";
   const locators=parts.map((part,ordinal)=>{if(ordinal)text+="\n\n";const start=text.length;text+=part.text;
