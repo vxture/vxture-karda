@@ -51,3 +51,5 @@ exercised (live since v0.1.0); the beta tier stays a reserved channel (TD-001).
 | `270-pptx-grid-release-20261126.md` | v0.12.25 merged PPTX cell grids, migration0027 and production evidence |
 
 | `280-pptx-stories-release-20261126.md` | v0.12.26 authored PPTX groups/notes, migration0028 and production evidence |
+
+| `290-source-readiness-release-20261126.md` | v0.12.27 current source diagnostics and production evidence |
