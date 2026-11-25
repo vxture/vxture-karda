@@ -1,6 +1,20 @@
 // Synthetic fixtures only; never imported by product code.
 import {execFileSync} from "node:child_process";
 
+export function syntheticDocxStories(overrides:Record<string,string>={}):Buffer{
+  const w="http://schemas.openxmlformats.org/wordprocessingml/2006/main",r="http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+  const p=(text:string)=>`<w:p><w:r><w:t>${text}</w:t></w:r></w:p>`;
+  const parts={
+    "word/document.xml":`<w:document xmlns:w="${w}" xmlns:r="${r}"><w:body><w:p><w:r><w:t>Proof body \u4e2d\ud83d\ude00</w:t><w:footnoteReference w:id="7"/><w:endnoteReference w:id="3"/></w:r></w:p><w:sectPr><w:headerReference w:type="default" r:id="h"/><w:footerReference w:type="first" r:id="f"/></w:sectPr></w:body></w:document>`,
+    "word/_rels/document.xml.rels":`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="h" Type="${r}/header" Target="header1.xml"/><Relationship Id="f" Type="${r}/footer" Target="footer2.xml"/><Relationship Id="fn" Type="${r}/footnotes" Target="footnotes.xml"/><Relationship Id="en" Type="${r}/endnotes" Target="endnotes.xml"/></Relationships>`,
+    "word/header1.xml":`<w:hdr xmlns:w="${w}">${p("Required header")}</w:hdr>`,
+    "word/footer2.xml":`<w:ftr xmlns:w="${w}">${p("Footer proof")}</w:ftr>`,
+    "word/footnotes.xml":`<w:footnotes xmlns:w="${w}"><w:footnote w:id="-1" w:type="separator"><w:p><w:r><w:separator/></w:r></w:p></w:footnote><w:footnote w:id="7">${p("Required note \u4e2d\ud83d\ude00")}</w:footnote></w:footnotes>`,
+    "word/endnotes.xml":`<w:endnotes xmlns:w="${w}"><w:endnote w:id="3">${p("Endnote proof")}</w:endnote></w:endnotes>`,...overrides};
+  const python=process.env.KARDA_KNOWLEDGE_PYTHON||(process.platform==="win32"?"python":"python3");
+  return execFileSync(python,["-I","-c",'import io,json,sys,zipfile; b=io.BytesIO(); z=zipfile.ZipFile(b,"w"); [z.writestr(k,v) for k,v in json.loads(sys.stdin.buffer.read().decode("utf-8")).items()]; z.close(); sys.stdout.buffer.write(b.getvalue())'],{input:JSON.stringify(parts),timeout:10000,windowsHide:true});
+}
+
 export function syntheticPptx(overrides:Record<string,string>={}):Buffer{
   const a='http://schemas.openxmlformats.org/drawingml/2006/main',p='http://schemas.openxmlformats.org/presentationml/2006/main';
   const parts={

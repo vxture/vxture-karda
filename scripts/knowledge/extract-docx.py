@@ -14,6 +14,10 @@ def extract(path, tables=False):
     # Hash and unpack the same bounded snapshot, even if the path changes later.
     with path.open("rb") as handle:
         data = handle.read(2 * 1024 * 1024 + 1)
+    return extract_bytes(data, tables)
+
+
+def extract_bytes(data, tables=False):
     if len(data) > 2 * 1024 * 1024:
         raise ValueError("attachment_size_limit")
     with zipfile.ZipFile(io.BytesIO(data)) as archive:
