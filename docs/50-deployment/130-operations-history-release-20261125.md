@@ -19,7 +19,7 @@ Playwright合成HTTP通过主题分页/返回/ID定位、摘要分页、旧摘�
 
 v0.12.11固定4decdd6a05f2cbdb30aea94cff3a99c036dc798b，[部署45583316756](https://github.com/vxture/vxture-karda/actions/runs/45583316756)经原production审核于北京时间17:32:32成功。
 health/ready确认v0.12.11/4decdd6a/production及db/redis/storageConfig均ok；匿名主题before、dossier+summary_before请求均401。无DDL、55表保留。正常应用回滚目标v0.12.10固定fe0ec4be1ca0ccf1133c2c7bc638698e669c46b9，保留既有增量结构。
-本次镜像构建/推送耗时约17分钟，是本轮主要等待；未因此重复测试、重建发布或绕过审核。合成UI/数据库验收不代替真实业务质量。
+本次镜像构建/推送耗时约17分钟，其中日志pushing layers为867.2秒（约14.5分钟），是本轮主要等待；未因此重复测试、重建发布或绕过审核。合成UI/数据库验收不代替真实业务质量。
 
 ## 4. 剩余范围
 
