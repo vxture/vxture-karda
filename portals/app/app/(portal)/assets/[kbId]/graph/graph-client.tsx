@@ -7,6 +7,7 @@ import {useMessages} from "../../../../_i18n/useMessages";
 import {semantic} from "../../../../_i18n/messages/semantic";
 import {SignInGate} from "../../../../_lib/ui";
 import {layoutGraph,layoutGroupedGraph,graphGroups,graphCommunities,graphPath} from "../../../../kb/semantic/graph-view";
+import {useStructuralLayout} from "./use-structural-layout";
 import {GraphCanvas} from "./graph-canvas";
 import type {KnowledgePackage} from "../../../../kb/semantic/read-postgres";
 
@@ -14,7 +15,7 @@ export function GraphClient({kbId}:{kbId:string}){
   const m=useMessages(semantic),[data,setData]=useState<KnowledgePackage|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(0);
   const [selected,setSelected]=useState(""),[edgeId,setEdgeId]=useState(""),[filter,setFilter]=useState(""),[from,setFrom]=useState(""),[to,setTo]=useState("");
   const [search,setSearch]=useState(""),[wide,setWide]=useState(false);
-  const [entityType,setEntityType]=useState(""),[groupId,setGroupId]=useState(""),[grouped,setGrouped]=useState(true);
+  const [entityType,setEntityType]=useState(""),[groupId,setGroupId]=useState(""),[layoutMode,setLayoutMode]=useState("structural");
   const [communities,setCommunities]=useState(false);
   const [pages,setPages]=useState<string[]>([""]),[neighborhood,setNeighborhood]=useState(false);
   const sequence=useRef(0);
@@ -36,7 +37,9 @@ export function GraphClient({kbId}:{kbId:string}){
   const groups=useMemo(()=>communities?graphCommunities(typedNodes,typedEdges):graphGroups(typedNodes,typedEdges),[typedNodes,typedEdges,communities]);
   const nodes=useMemo(()=>{const ids=groups.find(g=>g.id===groupId)?.nodeIds;return groupId?typedNodes.filter(n=>ids?.includes(n.id)):typedNodes;},[typedNodes,groups,groupId]);
   const edges=useMemo(()=>{const ids=new Set(nodes.map(n=>n.id));return typedEdges.filter(e=>ids.has(e.sourceId)&&ids.has(e.targetId));},[nodes,typedEdges]);
-  const layout=useMemo(()=>grouped?layoutGroupedGraph(nodes,edges,communities):layoutGraph(nodes,edges),[nodes,edges,grouped,communities]);
+  const fallback=useMemo(()=>layoutMode!=="circular"?layoutGroupedGraph(nodes,edges,communities):layoutGraph(nodes,edges),[nodes,edges,layoutMode,communities]);
+  const structural=useStructuralLayout(nodes,edges,layoutMode==="structural");
+  const layout=structural.layout??fallback;
   function resetSelection(){setSelected("");setEdgeId("");setFrom("");setTo("");}
   const path=useMemo(()=>from&&to?graphPath(nodes,edges,from,to):null,[nodes,edges,from,to]);
   const nodeIndex=useMemo(()=>new Map(data?.nodes.map(n=>[n.id,n])??[]),[data]);
@@ -75,7 +78,7 @@ export function GraphClient({kbId}:{kbId:string}){
         <label htmlFor="entity-type-filter">{m.entityTypeFilter}</label><select id="entity-type-filter" value={entityType} onChange={e=>{setEntityType(e.target.value);setGroupId("");resetSelection();}} className="min-w-0 rounded-md border border-border bg-background p-sm">
           <option value="">{m.allTypes}</option>{[...new Set(data.nodes.map(n=>n.type))].sort().map(type=><option key={type}>{type}</option>)}
         </select>
-        <Button variant="outline" aria-pressed={grouped} onClick={()=>{setGrouped(!grouped);resetSelection();}}>{grouped?m.groupedLayout:m.circularLayout}</Button>
+        <label htmlFor="graph-layout">{m.layoutMode}</label><select id="graph-layout" value={layoutMode} onChange={e=>{setLayoutMode(e.target.value);resetSelection();}} className="min-w-0 rounded-md border border-border bg-background p-sm"><option value="structural">{m.structuralLayout}</option><option value="grouped">{m.groupedLayout}</option><option value="circular">{m.circularLayout}</option></select>
         <Button variant="outline" aria-pressed={communities} onClick={()=>{setCommunities(!communities);setGroupId("");resetSelection();}}>{communities?m.communityMode:m.componentMode}</Button>
         <label htmlFor="node-search">{m.findNode}</label><input id="node-search" value={search} onChange={e=>setSearch(e.target.value)} className="min-w-0 rounded-md border border-border bg-background p-sm"/>
       </div>
@@ -85,9 +88,11 @@ export function GraphClient({kbId}:{kbId:string}){
           <option value="">{m.allGroups}</option>{groups.map((group,i)=><option key={group.id} value={group.id}>{i+1}. {label(group.id)} ({group.nodeIds.length} / {group.edgeIds.length})</option>)}
         </select>
       </section>
+      {structural.pending&&<p role="status">{m.layoutWorking}</p>}
+      {structural.failed&&<Banner tone="warning" title={m.layoutFallback}/>}
       <div className="grid min-w-0 gap-md xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="min-w-0 overflow-hidden rounded-md border border-border bg-background">
-          <GraphCanvas key={JSON.stringify([sequence.current,entityType,filter,groupId,grouped,communities])} layout={layout} selected={selected} edgeId={edgeId} path={path} onNode={chooseNode} onEdge={setEdgeId}/>
+          {!structural.pending&&<GraphCanvas key={JSON.stringify([sequence.current,entityType,filter,groupId,layoutMode,communities,Boolean(structural.layout)])} layout={layout} selected={selected} edgeId={edgeId} path={path} onNode={chooseNode} onEdge={setEdgeId}/>}
         </div>
         <aside className="flex min-w-0 flex-col gap-sm" aria-label={m.evidencePanel}>
           <h2 className="text-title-sm">{m.linkedEntities}</h2>
