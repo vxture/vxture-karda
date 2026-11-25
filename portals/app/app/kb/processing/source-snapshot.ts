@@ -13,7 +13,7 @@ export function snapshotValid(snapshot:SourceSnapshot):boolean {
   if(!snapshot||!new RegExp("^[a-f0-9]{64}$").test(snapshot.contentHash)||typeof snapshot.text!=="string"||
     snapshot.text.length>5000000||!snapshot.text.trim()||snapshot.text.includes("\0")||sourceHash(snapshot.text)!==snapshot.textHash||
     !((snapshot.mime===PDF_MIME&&snapshot.parserVersion==="pypdf-6.21.4-v1")||
-      (snapshot.mime===DOCX_MIME&&snapshot.parserVersion==="docx-main-body-v1"))||
+      (snapshot.mime===DOCX_MIME&&["docx-main-body-v1","docx-body-tables-v2"].includes(snapshot.parserVersion)))||
     !Array.isArray(snapshot.locators)||!snapshot.locators.length||snapshot.locators.length>20000)return false;
   let end=0;
   return snapshot.locators.every((row,index)=>{

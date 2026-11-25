@@ -53,6 +53,26 @@ test("real bounded PDF and DOCX runtime extraction rejects malformed and scan-on
   assert.equal(normalized.text.slice(4,7),"\u4e2d\ud83d\ude00");
 });
 
+test("DOCX table snapshots preserve body/cell order and UTF-16 while refusing ambiguous structures",async()=>{
+  const python=process.env.KARDA_KNOWLEDGE_PYTHON||(process.platform==="win32"?"python":"python3");
+  const p=(s:string)=>`<w:p><w:r><w:t>${s}</w:t></w:r></w:p>`,cell=(s:string)=>`<w:tc>${p(s)}</w:tc>`;
+  const table=`<w:tbl><w:tblGrid><w:gridCol/><w:gridCol/></w:tblGrid><w:tr>${cell("Name")}${cell("Value")}</w:tr><w:tr>${cell("\u4e2d\ud83d\ude00")}${cell("")}</w:tr></w:tbl>`;
+  const make=(body:string)=>execFileSync(python,["-I","-c",'import io,sys,zipfile; b=io.BytesIO(); z=zipfile.ZipFile(b,"w"); z.writestr("word/document.xml",sys.stdin.buffer.read()); z.close(); sys.stdout.buffer.write(b.getvalue())'],
+    {input:Buffer.from(`<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}</w:body></w:document>`),timeout:10000,windowsHide:true});
+  const bytes=make(p("Before")+table+p("After")),snapshot=await normalizeSource(DOCX_MIME,bytes);
+  assert.equal(snapshot.parserVersion,"docx-body-tables-v2");
+  assert.equal(snapshot.text,"Before\n\nName\tValue\n\n\u4e2d\ud83d\ude00\t\n\nAfter");
+  assert.deepEqual(snapshot.locators.map(l=>snapshot.text.slice(l.start,l.end)),["Before","Name\tValue","\u4e2d\ud83d\ude00\t","After"]);
+  assert.equal(verifiedSourceText({activeVersion:1,contentState:"indexed",contentHash:sourceHash(bytes),mime:DOCX_MIME,normalized:snapshot},bytes),snapshot.text);
+  assert.equal(snapshotValid({...snapshot,parserVersion:"docx-main-body-v1"}),true);
+  assert.ok(snapshotIR(snapshot).elements.some(e=>snapshot.text.slice(e.range.start,e.range.end).includes("\u4e2d\ud83d\ude00")));
+  for(const bad of [table.replace('<w:tc>','<w:tc><w:tcPr><w:gridSpan w:val="2"/></w:tcPr>'),
+    table.replace('<w:tc>','<w:tc><w:tcPr><w:vMerge/></w:tcPr>'),table.replace(cell("Value"),""),
+    table.replace(cell("Value"),`<w:tc>${table}</w:tc>`),table.replace('<w:tr>','<w:tr><w:trPr><w:gridBefore w:val="1"/></w:trPr>'),
+    `<w:sdt>${p("hidden")}</w:sdt>`])await assert.rejects(normalizeSource(DOCX_MIME,make(bad)),/source_extraction_refused/);
+  assert.throws(()=>snapshotFromExtraction(DOCX_MIME,bytes,{binarySha256:sourceHash(bytes),extractor:{version:"future"},paragraphs:["bad"]}),/source_docx_contract/);
+});
+
 test("standalone image finds pinned extractors after Next changes the runtime working directory",async()=>{
   const cwd=process.cwd(),folder=await mkdtemp(join(tmpdir(),"karda-runtime-layout-"));
   try{
