@@ -1345,8 +1345,10 @@ CREATE TABLE IF NOT EXISTS karda_kb.document_text_snapshot (
   locators JSONB NOT NULL CHECK (jsonb_typeof(locators)='array' AND jsonb_array_length(locators) BETWEEN 1 AND 20000),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY(document_id,document_version),
-  CHECK ((mime='application/pdf' AND parser_version='pypdf-6.21.4-v1') OR
-    (mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document' AND parser_version='docx-main-body-v1'))
+  CONSTRAINT document_text_snapshot_parser_check CHECK (
+    (mime='application/pdf' AND parser_version='pypdf-6.21.4-v1') OR
+    (mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      AND parser_version IN ('docx-main-body-v1','docx-body-tables-v2')))
 );
 -- END DOCUMENT TEXT SNAPSHOT
 

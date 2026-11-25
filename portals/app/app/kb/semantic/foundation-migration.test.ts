@@ -75,10 +75,18 @@ test("semantic foundation PostgreSQL: fresh and old-41 upgrade twice, immutable 
     assert.equal(Number((await upgraded.admin.query(`SELECT count(*) FROM information_schema.tables
       WHERE table_schema IN ('karda_kb','local_authz','local_usage','vx_provision') AND table_type='BASE TABLE'`)).rows[0].count), 41);
     await seed(upgraded.admin);
+    // Preserve an actual v1 row created under the historical 0018 CHECK.
+    await upgraded.admin.query(read("incr/0018_document_text_snapshot.sql"));
+    await upgraded.admin.query(`INSERT INTO karda_kb.document_text_snapshot
+      (document_id,document_version,content_hash,mime,parser_version,canonical_text,text_hash,locators)
+      VALUES($1,1,$2,'application/vnd.openxmlformats-officedocument.wordprocessingml.document','docx-main-body-v1','legacy',$2,'[{"start":0,"end":6,"ordinal":0}]')`,[doc,hash]);
     const original = (await upgraded.admin.query("SELECT * FROM karda_kb.entity WHERE id=$1", [oldEntity])).rows[0];
     // Run the actual db-init order on the existing 41-table database twice.
     await apply(upgraded.admin); await apply(upgraded.admin);
     assert.deepEqual(await snapshot(upgraded.admin), await snapshot(fresh.admin));
+    const parserChecks=async(admin:Pool)=>(await admin.query("SELECT conname,pg_get_constraintdef(oid) AS definition FROM pg_constraint WHERE conrelid='karda_kb.document_text_snapshot'::regclass AND contype='c' ORDER BY conname")).rows;
+    assert.deepEqual(await parserChecks(upgraded.admin),await parserChecks(fresh.admin));
+    assert.equal((await upgraded.admin.query("SELECT parser_version FROM karda_kb.document_text_snapshot WHERE document_id=$1",[doc])).rows[0].parser_version,"docx-main-body-v1");
     assert.deepEqual((await upgraded.admin.query("SELECT * FROM karda_kb.entity WHERE id=$1", [oldEntity])).rows[0], original);
     for (const { admin, service } of [fresh, upgraded]) {
       if (admin === fresh.admin) await seed(admin);
