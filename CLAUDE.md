@@ -76,7 +76,18 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-25): v0.12.0 / c6ab3320, owner-authorized run
+Current production (2026-11-25): v0.12.1 / 9bfa2d3e, owner-authorized run
+45532514296 succeeded at 2026-11-25T02:28:19Z through the normal production
+review gate. PR303/304 provide grouped graph navigation, published relation
+topics/evidence search and complete authorized overviews within existing
+budgets. Main CI45532115482 and secret scan45532115547 passed; final PR CI
+45531804106 ran1026 tests, all passed, zero skips. Canonical health/ready
+confirm this version, db/redis/storageConfig ok; anonymous package/export/
+maintenance/compile-task reads refuse401. No new DDL. K3a function delivery
+complete; fixed checklist now7complete/10unfinished, K3b and business/external
+acceptance remain open. See docs/50-deployment/60-knowledge-exploration-release-20261125.md.
+
+Historical production (2026-11-25): v0.12.0 / c6ab3320, owner-authorized run
 45483761795 succeeded at 2026-11-24T20:49:34Z through the existing production
 review gate. Main CI45483291937 and secret scan45483291372 passed. PR301 ran
 1019 tests, all passed, zero skips. Production db-init45474033618 applied

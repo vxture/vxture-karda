@@ -10,6 +10,7 @@ Deployment and bootstrap material for this repo.
 | `rebuild/` | rebuild artifacts; holds `main-ruleset.json` (the branch-protection ruleset) |
 | `40-commercial-draft-preparation.md` | approved Karda package draft input and readback checklist; publication excluded |
 | `50-knowledge-platform-release-20261125.md` | knowledge platform v0.12.0 migration, release evidence and remaining acceptance gates |
+| `60-knowledge-exploration-release-20261125.md` | v0.12.1 grouped graph, evidence exploration, complete bounded overview and batch acceptance |
 
 The tag-to-env CD pipeline (deploy/build/rollback/db-init workflows and the
 `tailnet-ssh-connect` composite action) is inherited from the template and lives
