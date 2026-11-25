@@ -11,6 +11,7 @@ import { SignInGate } from "../../../../_lib/ui";
 import { SemanticReviewApi, type CompileList, type CompileDetail, type ReleasePreview, type ReviewDecision,type CompileTaskRow } from "../../../../_lib/semantic-api";
 import {TaskSelection} from "./task-selection";
 import {COMPILE_TASK_STATES} from "../../../../kb/semantic/task-query";
+import type {SourceReadiness,SourceIssue} from "../../../../kb/semantic/source-readiness";
 
 export function SemanticReviewClient({kbId}:{kbId:string}) {
   const m=useMessages(semantic), api=useMemo(()=>new SemanticReviewApi(kbId),[kbId]);
@@ -22,12 +23,14 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
   const createId=useRef<string|null>(null);
   const [taskState,setTaskState]=useState(""),[taskLookup,setTaskLookup]=useState(""),[taskNext,setTaskNext]=useState<string|null>(null),[taskTrail,setTaskTrail]=useState<(string|undefined)[]>([undefined]);
   const [taskDetail,setTaskDetail]=useState<CompileTaskRow|null>(null);
+  const [sources,setSources]=useState<SourceReadiness|null>(null);
   const sequence=useRef(0), locked=useRef(false);
 
   async function run(work:(current:()=>boolean)=>Promise<void>, preservePreview=false) {
     if(locked.current)return;
     locked.current=true; const ticket=++sequence.current, current=()=>ticket===sequence.current;
     setBusy(true);setError(null);setNotice(false);setInputMissing(false);
+    setSources(null);
     if(!preservePreview)setPreview(null);
     try { await work(current); }
     catch(e) { if(current()) {
@@ -77,6 +80,8 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
     });
   }
   const states={pending:m.pending,accept:m.accept,revise:m.revise,reject:m.reject,stale:m.stale};
+  const sourceIssues:Record<SourceIssue,string>={unsupported_format:m.sourceUnsupported,not_indexed:m.sourceNotIndexed,version_missing:m.sourceVersionMissing,
+    original_unavailable:m.sourceOriginalUnavailable,snapshot_unavailable:m.sourceSnapshotUnavailable,text_empty:m.sourceTextEmpty};
   if(login)return <SignInGate from={`/assets/${kbId}/semantic`} />;
   const refresh=()=>run(async current=>{
     const [page,taskPage]=await Promise.all([api.list(),api.tasks()]);
@@ -96,6 +101,19 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
     {busy&&<p role="status" className="text-body-sm">{m.loading}</p>}
     <Card><CardContent className="flex flex-col gap-sm p-md">
       <h2 className="text-title-sm">{m.tasks}</h2><p className="text-body-sm text-muted-foreground">{m.taskHint}</p>
+      <Button variant="outline" disabled={busy} onClick={()=>void run(async current=>{const value=await api.sources();if(current())setSources(value);})}>{m.checkSources}</Button>
+      <p className="text-body-sm text-muted-foreground">{m.sourceCheckHint}</p>
+      {sources&&<section className="flex min-w-0 flex-col gap-sm" aria-label={m.checkSources}>
+        <p role="status" className="break-words text-body-sm">{m.sourceCheckCounts}: {sources.readable}/{sources.total} &middot; {m.sourceBlocked}: {sources.blocked}</p>
+        <p className="break-words text-body-sm">{m.sourceCheckedAt}: {sources.checkedAt}</p>
+        {!sources.total&&<p className="text-body-sm">{m.sourceCheckEmpty}</p>}
+        {sources.items.map(row=><div key={row.id} className="flex min-w-0 flex-col gap-xs rounded-md border border-border p-sm">
+          <span className="break-words font-medium">{row.title}</span>
+          <span className="break-all text-body-sm">{row.id} &middot; {row.mime??m.sourceUnknown} &middot; v{row.version??"-"}</span>
+          <span className="break-all text-body-sm">{row.state} &middot; {row.parserVersion??m.sourceUnknown} &middot; {m.sourceCharacters}: {row.characters??"-"}</span>
+          <span className="text-body-sm">{row.issues.length?row.issues.map(issue=>sourceIssues[issue]).join("; "):m.sourceReadable}</span>
+        </div>)}
+      </section>}
       <p className="text-body-sm text-muted-foreground">{m.taskOperationsHint}</p>
       <div className="flex flex-wrap gap-sm"><label htmlFor="compile-task-state">{m.taskStateFilter}</label>
         <select id="compile-task-state" value={taskState} disabled={busy} onChange={e=>void taskPage(undefined,e.target.value)} className="min-w-0 rounded-md border border-border bg-background p-sm"><option value="">{m.allTypes}</option>{COMPILE_TASK_STATES.map(state=><option key={state} value={state}>{state}</option>)}</select>

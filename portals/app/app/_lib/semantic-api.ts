@@ -9,6 +9,7 @@ export type ReviewDecision = "accept" | "revise" | "reject";
 
 export class SemanticReviewApi {
   constructor(private readonly kbId: string) {}
+  sources(){return this.request<import("../kb/semantic/source-readiness").SourceReadiness>("?view=sources");}
   private async request<T>(query: string, body?: unknown,endpoint="semantic"): Promise<T> {
     const response = await fetch(`/api/kb/${encodeURIComponent(this.kbId)}/${endpoint}${query}`, {
       cache: "no-store", credentials: "same-origin", ...(body ? {

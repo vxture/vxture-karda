@@ -36,6 +36,12 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   const { id } = await ctx.params;
   const url = new URL(req.url), runId = url.searchParams.get("runId");
   if (url.searchParams.has("view")) {
+    if(url.searchParams.get("view")==="sources"){
+      if([...url.searchParams.keys()].some(k=>k!=="view")||url.searchParams.getAll("view").length!==1)throw new Error("semantic_invalid_query");
+      const result=await withStore((store,identity)=>store.sourceReadiness(identity,id));
+      if(!result.ok)return result.response;
+      return NextResponse.json(result.value,{headers:{"Cache-Control":"private, no-store"}});
+    }
     const format=url.searchParams.get("format"),exporting=["json","audit","audit-markdown"].includes(format??"");
     if (url.searchParams.get("view") !== "maintenance" || [...url.searchParams.keys()].some(key=>!["view","format"].includes(key))||
       url.searchParams.getAll("view").length!==1||url.searchParams.getAll("format").length>1||(url.searchParams.has("format")&&!exporting))
