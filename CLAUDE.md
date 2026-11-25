@@ -76,7 +76,17 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-25): v0.12.9 / 3b3fb0da, deploy45561196377
+Current production (2026-11-25): v0.12.10 / fe0ec4be, deploy45571791463
+succeeded at2026-11-25T08:01:14Z through normal production review. PR323 adds
+graph page/neighborhood navigation; PR324 adds bounded XLSX literal-cell
+sources with sheet/A1/type provenance and0022 migration45571486614 (55 tables).
+PR1049 tests pass/zero skips, including real XLSX processing-to-publication/
+search/withdrawal/rollback and full migration replay over an XLSX row. Main
+CI45571127548 and scan45571127246 pass. Health/ready/dependencies and anonymous
+API refusal pass. Fixed17 items remain7complete/10unfinished; external and
+business gates remain open. See docs/50-deployment/120-graph-xlsx-release-20261125.md.
+
+Historical production (2026-11-25): v0.12.9 / 3b3fb0da, deploy45561196377
 succeeded at2026-11-25T06:37:39Z through normal production review. PR319 adds
 current-authority directory paging; PR320 fixes DOCX v2 database CHECK with
 0021/migration45559421934 (55 tables); PR321 bounds shared-proof fingerprint
