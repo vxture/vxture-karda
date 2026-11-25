@@ -24,7 +24,7 @@ test("source-only PostgreSQL search enforces live authority, exact PDF/native so
     member=(await admin.query("INSERT INTO local_authz.member(workspace_id,sub) VALUES($1,$2) RETURNING id",[ws,sub])).rows[0].id;
     await admin.query("INSERT INTO local_authz.member_role(member_id,role_id) SELECT $1,id FROM local_authz.role WHERE role_code='member'",[member]);
     for(const [id,space,owner] of [[kb,ws,sub],[hidden,ws,"someone-else"],[other,randomUUID(),sub]]){
-      await admin.query("INSERT INTO karda_kb.knowledge_base(id,workspace_id,owner_type,owner_sub,name) VALUES($1,$2,'user',$3,$1::text)",[id,space,owner]);
+      await admin.query("INSERT INTO karda_kb.knowledge_base(id,workspace_id,owner_type,owner_sub,name) VALUES($1,$2,'user',$3,$4)",[id,space,owner,`source-search-${id}`]);
       await admin.query("INSERT INTO karda_kb.kb_attachment(workspace_id,user_sub,product_code,kb_id) VALUES($1,$2,'karda',$3)",[space,sub,id]);
     }
     for(const [id,library,mime,key,bytes] of [[doc,kb,"text/plain","native",native],[pdf,kb,PDF_MIME,"pdf",binary],[randomUUID(),hidden,"text/plain","hidden",native],[randomUUID(),other,"text/plain","other",native]] as const){

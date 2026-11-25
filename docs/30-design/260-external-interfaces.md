@@ -57,6 +57,7 @@
 | `karda.find_entity` | OBO/service | per_call | 已交付 | **未实现** | `140` §8.1 |
 | `karda.get_context` | OBO/service | **免计量** | 已交付 | **未实现** | `140` §8.3 |
 | `karda.knowledge_package` | **仅 OBO** | 免计量，有界已发布知识核验 | 本仓实现，真实 OBO 待验 | 未开放，现有 service 通道不适用 | `170` §15 |
+| `karda.source_search` | **仅 OBO** | per_call，沿用karda.search | 本仓实现，真实OBO/账单待验 | 未开放，现有service通道不适用 | `170` §21 |
 | `karda.browse` | OBO/service | per_call | 已交付 | **未实现** | `140` §8.5 |
 | `karda.attach_kb` | **仅 OBO** | 免计量 | 已交付 | 不做 | `120` §6 |
 | `karda.detach_kb` | **仅 OBO** | 免计量 | 已交付 | 不做 | `120` §6 |
