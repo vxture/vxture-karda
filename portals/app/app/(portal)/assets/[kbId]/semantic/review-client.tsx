@@ -10,6 +10,7 @@ import { ApiError } from "../../../../_lib/api";
 import { SignInGate } from "../../../../_lib/ui";
 import { SemanticReviewApi, type CompileList, type CompileDetail, type ReleasePreview, type ReviewDecision,type CompileTaskRow } from "../../../../_lib/semantic-api";
 import {TaskSelection} from "./task-selection";
+import {COMPILE_TASK_STATES} from "../../../../kb/semantic/task-query";
 
 export function SemanticReviewClient({kbId}:{kbId:string}) {
   const m=useMessages(semantic), api=useMemo(()=>new SemanticReviewApi(kbId),[kbId]);
@@ -19,6 +20,8 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
   const [login,setLogin]=useState(false);
   const [tasks,setTasks]=useState<CompileTaskRow[]>([]),[inputMissing,setInputMissing]=useState(false);
   const createId=useRef<string|null>(null);
+  const [taskState,setTaskState]=useState(""),[taskLookup,setTaskLookup]=useState(""),[taskNext,setTaskNext]=useState<string|null>(null),[taskTrail,setTaskTrail]=useState<(string|undefined)[]>([undefined]);
+  const [taskDetail,setTaskDetail]=useState<CompileTaskRow|null>(null);
   const sequence=useRef(0), locked=useRef(false);
 
   async function run(work:(current:()=>boolean)=>Promise<void>, preservePreview=false) {
@@ -31,6 +34,7 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
       const status=e instanceof ApiError?e.status:500;
       if(status===401)setLogin(true);
       setError(status);
+      setTasks([]);setTaskDetail(null);setDetail(null);setNotes({});
       if(e instanceof ApiError&&e.code==="semantic_compile_inputs_required")setInputMissing(true);
       // On a lost network response retain the exact event binding for retry.
       // A semantic conflict instead requires a fresh inspection and preview.
@@ -38,7 +42,7 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
     }} finally {if(current()){locked.current=false;setBusy(false);}}
   }
   useEffect(()=>{
-    void run(async current=>{const [page,taskPage]=await Promise.all([api.list(),api.tasks()]);if(current()){setList(page);setTasks(taskPage.tasks);}});
+    void run(async current=>{const [page,taskPage]=await Promise.all([api.list(),api.tasks()]);if(current()){setList(page);setTasks(taskPage.tasks);setTaskNext(taskPage.next??null);}});
     return()=>{++sequence.current;locked.current=false;};
     // The server page keys this component by library, dropping all prior state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -47,6 +51,21 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
   async function choose(runId:string) {
     setDetail(null);setNotes({});
     await run(async current=>{const loaded=await api.detail(runId);if(current())setDetail(loaded);});
+  }
+  async function taskPage(before?:string,state=taskState,trail:(string|undefined)[]=[undefined]){
+    setTasks([]);setTaskDetail(null);
+    await run(async current=>{const value=await api.tasks({...(before?{before}:{}),...(state?{state}:{})});
+      if(current()){setTasks(value.tasks);setTaskNext(value.next??null);setTaskTrail(trail);setTaskState(state);}});
+  }
+  async function openTask(id:string){
+    setTaskDetail(null);setPreview(null);setDetail(null);setNotes({});
+    await run(async current=>{const value=await api.tasks({taskId:id});if(current())setTaskDetail(value.tasks[0]??null);});
+  }
+  async function executeTask(id:string){
+    setTaskDetail(null);setDetail(null);setNotes({});
+    await run(async current=>{await api.executeTask(id);
+      const [value,page,focused]=await Promise.all([api.tasks(),api.list(),api.tasks({taskId:id})]);
+      if(current()){setTasks(value.tasks);setTaskNext(value.next??null);setTaskTrail([undefined]);setTaskState("");setTaskDetail(focused.tasks[0]??null);setList(page);}});
   }
   async function decide(relationId:string, revision:number, decision:ReviewDecision) {
     if(!detail)return;
@@ -62,7 +81,7 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
   const refresh=()=>run(async current=>{
     const [page,taskPage]=await Promise.all([api.list(),api.tasks()]);
     const loaded=detail?await api.detail(detail.runId):null;
-    if(current()){setList(page);setDetail(loaded);setTasks(taskPage.tasks);}
+    if(current()){setList(page);setDetail(loaded);setTasks(taskPage.tasks);setTaskDetail(null);setTaskNext(taskPage.next??null);setTaskTrail([undefined]);setTaskState("");}
   });
 
   return <div className="flex min-w-0 flex-col gap-md" aria-busy={busy}>
@@ -77,27 +96,46 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
     {busy&&<p role="status" className="text-body-sm">{m.loading}</p>}
     <Card><CardContent className="flex flex-col gap-sm p-md">
       <h2 className="text-title-sm">{m.tasks}</h2><p className="text-body-sm text-muted-foreground">{m.taskHint}</p>
+      <p className="text-body-sm text-muted-foreground">{m.taskOperationsHint}</p>
+      <div className="flex flex-wrap gap-sm"><label htmlFor="compile-task-state">{m.taskStateFilter}</label>
+        <select id="compile-task-state" value={taskState} disabled={busy} onChange={e=>void taskPage(undefined,e.target.value)} className="min-w-0 rounded-md border border-border bg-background p-sm"><option value="">{m.allTypes}</option>{COMPILE_TASK_STATES.map(state=><option key={state} value={state}>{state}</option>)}</select>
+        <Button variant="outline" disabled={busy} onClick={()=>void taskPage(undefined,"")}>{m.taskLatest}</Button>
+        <Button variant="outline" disabled={busy||taskTrail.length<2} onClick={()=>{const trail=taskTrail.slice(0,-1);void taskPage(trail.at(-1),taskState,trail);}}>{m.topicHistoryBack}</Button>
+        <Button variant="outline" disabled={busy||!taskNext} onClick={()=>void taskPage(taskNext!,taskState,[...taskTrail,taskNext!])}>{m.taskOlder}</Button>
+      </div>
+      <form className="flex min-w-0 flex-wrap gap-sm" onSubmit={e=>{e.preventDefault();void openTask(taskLookup.trim());}}>
+        <label htmlFor="compile-task-lookup">{m.taskLookup}</label><input id="compile-task-lookup" required value={taskLookup} onChange={e=>setTaskLookup(e.target.value)} pattern="[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}" className="min-w-0 rounded-md border border-border bg-background p-sm"/>
+        <Button type="submit" disabled={busy}>{m.taskInspect}</Button>
+      </form>
       <Button disabled={busy} onClick={()=>void run(async current=>{
         const taskId=createId.current??crypto.randomUUID();createId.current=taskId;
         await api.createTask(taskId);createId.current=null;
-        const value=await api.tasks();if(current())setTasks(value.tasks);
+        const value=await api.tasks();if(current()){setTasks(value.tasks);setTaskNext(value.next??null);setTaskTrail([undefined]);setTaskState("");setTaskDetail(null);}
       })}>{m.createTask}</Button>
       {tasks.map(task=><div key={task.id} className="flex flex-wrap items-center gap-sm rounded-md border border-border p-sm">
         <span className="text-body-sm">{m.batch} {task.id.slice(0,8)} &middot; {task.attempt}/3 &middot;
           {task.state==="failed"?m.taskFailed:({queued:m.queued,running:m.running,completed:m.completed,needs_review:m.needs_review,suspended:m.suspended}[task.state]??task.state)}</span>
         {task.error_code&&<span className="break-all font-mono text-code-sm">{task.error_code}</span>}
+        {task.created_at&&<span className="break-all text-body-sm">{String(task.created_at)}</span>}
+        <Button variant="outline" disabled={busy} onClick={()=>void openTask(task.id)}>{m.taskInspect}</Button>
         {task.run_id?<Button variant="outline" disabled={busy} onClick={()=>void choose(task.run_id!)}>{m.completed}</Button>:
-          task.state!=="needs_review"&&<Button variant="outline" disabled={busy||task.attempt>=3} onClick={()=>void run(async current=>{
-            await api.executeTask(task.id);
-            const [value,page]=await Promise.all([api.tasks(),api.list()]);if(current()){setTasks(value.tasks);setList(page);}
-          })}>{m.execute}</Button>}
-        {task.state==="needs_review"&&<TaskSelection task={task} busy={busy} onSubmit={(ids,note)=>void run(async current=>{
-          const result=await api.resolveTask(task.id,task.resultHash!,ids,note);
-          const [value,page,loaded]=await Promise.all([api.tasks(),api.list(),api.detail(result.runId)]);
-          if(current()){setTasks(value.tasks);setList(page);setDetail(loaded);setNotes({});}
-        })}/>}
-        {!!task.result.selection&&<p className="w-full break-words text-body-sm">{m.selectionRecorded}: {String((task.result.selection as {note?:string}).note??"")}</p>}
+          task.state!=="needs_review"&&<Button variant="outline" disabled={busy||task.canRetry!==true} onClick={()=>void executeTask(task.id)}>{m.execute}</Button>}
       </div>)}
+      {taskDetail&&<section className="flex min-w-0 flex-col gap-sm rounded-md border border-border p-md">
+        <h3 className="break-all text-title-sm">{m.taskInspect}: {taskDetail.id}</h3><p>{taskDetail.state} / {taskDetail.attempt} / 3</p>
+        {taskDetail.error_code&&<p className="break-all font-mono text-code-sm">{taskDetail.error_code}</p>}
+        {taskDetail.updated_at&&<p className="break-all text-body-sm">{String(taskDetail.updated_at)}</p>}
+        {taskDetail.lease_until&&<p className="break-all text-body-sm">{m.taskLease}: {String(taskDetail.lease_until)}</p>}
+        {taskDetail.sourceState==="changed"&&<Banner tone="warning" title={m.taskSourceChanged}/>}
+        {taskDetail.canRetry&&<Button disabled={busy||taskDetail.sourceState!=="current"} onClick={()=>void executeTask(taskDetail.id)}>{m.execute}</Button>}
+        {taskDetail.state==="needs_review"&&taskDetail.sourceState==="current"&&<TaskSelection key={`${taskDetail.id}/${taskDetail.resultHash}`} task={taskDetail} busy={busy} onSubmit={(ids,note)=>void run(async current=>{
+          const result=await api.resolveTask(taskDetail.id,taskDetail.resultHash!,ids,note);
+          const [value,page,loaded]=await Promise.all([api.tasks(),api.list(),api.detail(result.runId)]);
+          if(current()){setTasks(value.tasks);setTaskNext(value.next??null);setTaskTrail([undefined]);setTaskState("");setTaskDetail(null);setList(page);setDetail(loaded);setNotes({});}
+        })}/>}
+        {!!taskDetail.result.selection&&<p className="break-words text-body-sm">{m.selectionRecorded}: {String((taskDetail.result.selection as {note?:string}).note??"")}</p>}
+        {taskDetail.run_id&&<Button variant="outline" disabled={busy} onClick={()=>void choose(taskDetail.run_id!)}>{m.completed}</Button>}
+      </section>}
     </CardContent></Card>
     <div className="grid min-w-0 gap-md xl:grid-cols-[18rem_minmax(0,1fr)]">
       <Card><CardContent className="flex flex-col gap-sm p-md">

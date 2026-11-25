@@ -21,7 +21,10 @@ export class SemanticReviewApi {
     return result as T;
   }
   list(before?: string) { return this.request<CompileList>(before ? `?before=${encodeURIComponent(before)}` : ""); }
-  tasks(){return this.request<{tasks:CompileTaskRow[]}>("",undefined,"compile-tasks");}
+  tasks(query:{before?:string;state?:string;taskId?:string}={}){
+    const params=new URLSearchParams(Object.entries(query).filter((e):e is [string,string]=>e[1]!==undefined)).toString();
+    return this.request<{tasks:CompileTaskRow[];next?:string|null}>(params?`?${params}`:"",undefined,"compile-tasks");
+  }
   createTask(taskId:string){return this.request<{taskId:string;duplicate:boolean}>("",{action:"create",taskId},"compile-tasks");}
   executeTask(taskId:string){return this.request<{claimed:boolean;runId:string|null}>("",{action:"execute",taskId},"compile-tasks");}
   resolveTask(taskId:string,resultHash:string,relationIds:string[],note:string){

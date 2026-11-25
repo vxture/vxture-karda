@@ -16,8 +16,11 @@ import {parsePathFor} from "../processing/ir";
 import {readSourceSnapshot,PDF_MIME,DOCX_MIME,XLSX_MIME} from "../processing/source-snapshot";
 import { maintenanceReport, type MaintenanceReport, type MaintenanceDocument, type MaintenanceAssertion, type MaintenanceGround } from "./maintenance";
 import {verifyAuditWindow,type AuditHistory,type AuditRelease} from "./audit-history";
+import {parseCompileTaskQuery,type CompileTaskQuery} from "./task-query";
+import {retrySemanticTransaction} from "./transaction-retry";
 
 export interface CompileTaskRow {
+  created_at?:Date;updated_at?:Date;lease_until?:Date|null;canRetry?:boolean;sourceState?:"current"|"changed"|"not_loaded";
   id:string; state:string; attempt:number; run_id:string|null; error_code:string|null; result:Record<string,unknown>;
   resultHash?:string;
   context?:Pick<CompilerSnapshot,"entities"|"assertions">;
@@ -206,6 +209,43 @@ export class PostgresSemanticStore {
     });
   }
 
+  /** Lists carry metadata only; candidate/source text is loaded for one task. */
+  async browseCompileTasks(identity:SemanticReadIdentity,kbId:string,request:CompileTaskQuery={}) {
+    const query=parseCompileTaskQuery(new URLSearchParams(Object.entries(request).filter((entry):entry is [string,string]=>entry[1]!==undefined)));
+    return this.write(identity,kbId,"data.write",async db=>{
+      await db.query(`UPDATE karda_kb.semantic_compile_task SET state='failed',lease_id=NULL,lease_until=NULL,
+        error_code='semantic_attempts_exhausted',updated_at=now() WHERE kb_id=$1 AND created_by=$2
+        AND state='running' AND attempt=3 AND lease_until<clock_timestamp()`,[kbId,identity.sub]);
+      if(query.before&&(await db.query("SELECT id FROM karda_kb.semantic_compile_task WHERE kb_id=$1 AND created_by=$2 AND id=$3",[kbId,identity.sub,query.before])).rowCount!==1)
+        throw new Error("semantic_task_unavailable");
+      const rows=(await db.query<ClaimedCompileTask>(`SELECT id,state,attempt,run_id,error_code,created_at,updated_at,lease_until,
+        (attempt<3 AND (state IN ('queued','failed','suspended') OR (state='running' AND lease_until<clock_timestamp()))) AS "canRetry",
+        CASE WHEN $3::uuid IS NOT NULL THEN result ELSE '{}'::jsonb END AS result,
+        CASE WHEN $3::uuid IS NOT NULL THEN snapshot ELSE NULL END AS snapshot,snapshot_hash
+        FROM karda_kb.semantic_compile_task WHERE kb_id=$1 AND created_by=$2
+          AND ($3::uuid IS NULL OR id=$3) AND ($4::text IS NULL OR state=$4)
+          AND ($5::uuid IS NULL OR (created_at,id)<(SELECT created_at,id FROM karda_kb.semantic_compile_task WHERE kb_id=$1 AND created_by=$2 AND id=$5))
+        ORDER BY created_at DESC,id DESC LIMIT 21`,[kbId,identity.sub,query.taskId??null,query.state??null,query.before??null])).rows;
+      if(query.taskId&&!rows.length)throw new Error("semantic_task_unavailable");
+      const more=rows.length>20;if(more)rows.pop();
+      const tasks:CompileTaskRow[]=[];
+      for(const row of rows){
+        const {snapshot,snapshot_hash,...metadata}=row;
+        let current:CompilerSnapshot|null=null;
+        if(query.taskId){
+          if(semanticValueHash(snapshot)!==snapshot_hash)throw new Error("semantic_corrupt_compile");
+          try{const loaded=await this.compilerSnapshot(db,kbId,snapshot);if(semanticValueHash(loaded)===snapshot_hash)current=loaded;}
+          catch(error){if(!(error instanceof Error)||error.message!=="semantic_source_changed")throw error;}
+        }
+        const result=current?row.result:{};
+        if(Buffer.byteLength(JSON.stringify([result,current?.entities,current?.assertions]))>2*1024*1024)throw new Error("semantic_snapshot_limit");
+        tasks.push({...metadata,result,sourceState:query.taskId?(current?"current":"changed"):"not_loaded",
+          ...(current?{resultHash:semanticValueHash(result),context:{entities:current.entities,assertions:current.assertions}}:{})});
+      }
+      return {tasks,next:more?rows.at(-1)!.id:null};
+    },true);
+  }
+
   async claimCompileTask(identity:SemanticReadIdentity,kbId:string,taskId:string):Promise<ClaimedCompileTask|null> {
     if(!UUID.test(taskId))throw new Error("semantic_invalid_task");
     return this.write(identity,kbId,"data.write",async db=>{
@@ -362,6 +402,13 @@ export class PostgresSemanticStore {
         $executeRawUnsafe:async()=>{throw new Error("semantic_role_read_only");},
       });
       if(!permits(access,"ai.use"))throw new Error("semantic_write_denied");
+      return this.compilerSnapshot(db,kbId,spec);
+    });
+  }
+
+  private async compilerSnapshot(db:PoolClient,kbId:string,specification:{schema:CompilerSnapshot["schema"];entityTypes:CompilerSnapshot["entityTypes"];sources:CompilerSnapshot["sources"]}):Promise<CompilerSnapshot>{
+      const spec=structuredClone(specification);
+      const input=decode(kbId,{format:"karda.semantic.release.v1",...spec,relations:[]});
       const texts=await this.sources(db,input);
       const entities=(await db.query<{id:string;kb_id:string;kind:string;name:string;aliases:string[]}>(`SELECT id,kb_id,kind,name,aliases
         FROM karda_kb.entity WHERE kb_id=$1 ORDER BY id LIMIT 1001`,[kbId])).rows;
@@ -384,11 +431,16 @@ export class PostgresSemanticStore {
       }
       return freezeCompilerSnapshot({kbId,schema:input.schema,entityTypes:spec.entityTypes,sources:input.sources,
         entities:entities.map(e=>({id:e.id,kbId:e.kb_id,kind:e.kind,name:e.name,aliases:e.aliases})),assertions:[...assertions.values()]});
-    });
   }
 
   private async write<T>(identity: SemanticReadIdentity, kbId: string, permission: ProductPermission,
     work: (db: PoolClient) => Promise<T>, snapshot = false): Promise<T> {
+    const actor={...identity,roles:[...identity.roles]};
+    return retrySemanticTransaction(()=>this.writeAttempt(actor,kbId,permission,work,snapshot));
+  }
+
+  private async writeAttempt<T>(identity:SemanticReadIdentity,kbId:string,permission:ProductPermission,
+    work:(db:PoolClient)=>Promise<T>,snapshot:boolean):Promise<T>{
     identity = { ...identity, roles: [...identity.roles] };
     if (!UUID.test(kbId) || !UUID.test(identity.workspaceId) ||
       !/^usr_[a-f0-9-]{36}$/i.test(identity.sub) || !/^[a-z][a-z0-9_-]{0,31}$/.test(identity.productCode))

@@ -10,6 +10,7 @@ import { executeCompileTask,parseCompileTaskRequest } from "../../../../kb/seman
 import { AtlasSemanticCandidateClient } from "../../../../kb/semantic/compiler";
 import { getGenerationClient } from "../../../../kb/retrieval/generation";
 import { tenantForWorkspace } from "../../../../kb/processing/atlas-embedder";
+import {parseCompileTaskQuery} from "../../../../kb/semantic/task-query";
 
 export const dynamic="force-dynamic";
 const headers={"Cache-Control":"private, no-store"};
@@ -24,7 +25,8 @@ async function handle(req:Request,ctx:{params:Promise<{id:string}>}) {
     const objects=getObjectStore();
     pool=new Pool({connectionString:process.env.DATABASE_URL,max:1,connectionTimeoutMillis:5000,statement_timeout:15000,allowExitOnIdle:true});
     const store=new PostgresSemanticStore(pool,objects,async()=> (await userAdmission(auth.user)).allowed);
-    if(req.method==="GET")return NextResponse.json({tasks:await store.listCompileTasks(identity,id)},{headers});
+    if(req.method==="GET")return NextResponse.json(await store.browseCompileTasks(identity,id,parseCompileTaskQuery(new URL(req.url).searchParams)),{headers});
+    if(new URL(req.url).searchParams.size)throw new Error("semantic_invalid_task_request");
     const body=parseCompileTaskRequest(await req.text());
     const result=body.action==="create"?await store.createCompileTask(identity,id,body.taskId):
       body.action==="resolve"?await store.resolveCompileTask(identity,id,body):
