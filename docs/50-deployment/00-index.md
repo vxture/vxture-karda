@@ -12,6 +12,7 @@ Deployment and bootstrap material for this repo.
 | `50-knowledge-platform-release-20261125.md` | knowledge platform v0.12.0 migration, release evidence and remaining acceptance gates |
 | `60-knowledge-exploration-release-20261125.md` | v0.12.1 grouped graph, evidence exploration, complete bounded overview and batch acceptance |
 | `70-sources-audit-release-20261125.md` | v0.12.2 exact source search, publication replay audit and SOP revision lifecycle evidence |
+| `80-topic-dossiers-release-20261125.md` | v0.12.3 immutable evidence-bound topic drafts, 0019 migration and rollout evidence |
 
 The tag-to-env CD pipeline (deploy/build/rollback/db-init workflows and the
 `tailnet-ssh-connect` composite action) is inherited from the template and lives
