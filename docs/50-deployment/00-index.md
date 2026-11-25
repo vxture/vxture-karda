@@ -27,6 +27,8 @@ Deployment and bootstrap material for this repo.
 
 | `180-knowledge-sync-release-20261125.md` | v0.12.16 revalidated RP/OBO knowledge window synchronization and production evidence |
 
+| `190-structural-layout-release-20261125.md` | v0.12.17 structural layout, dedicated Worker lifecycle and production evidence |
+
 The tag-to-env CD pipeline (deploy/build/rollback/db-init workflows and the
 `tailnet-ssh-connect` composite action) is inherited from the template and lives
 in `.github/`. Both checklists above are done and the production chain is
