@@ -14,6 +14,12 @@ test("knowledge package requests are bounded and cannot choose identity, schema 
     {schema:{}},{user:"other"},{relations:[]},{source_revision:"old"},{relation_types:[1]}])
     assert.throws(()=>parsePackageRequest({...value,...extra}),/semantic_invalid_package_request/);
 });
+test("cross-library package input is explicit, bounded, deduplicated and mutually exclusive with the legacy single library",()=>{
+  const a=randomUUID(),b=randomUUID(),value={kb_ids:[a,b,a],entity_ids:[]};
+  const input=parsePackageRequest(value);assert.deepEqual(input.kbIds,[a,b]);assert.equal(input.kbId,a);assert.equal(input.directory,true);
+  for(const patch of [{kb_id:a},{kb_ids:[]},{kb_ids:["bad"]},{kb_ids:Array.from({length:21},()=>randomUUID())},{kb_ids:[a],productCode:"other"}])
+    assert.throws(()=>parsePackageRequest({...value,...patch}),/semantic_invalid_package_request/);
+});
 
 test("published package tool uses authenticated calling product and read permission, refuses service before backend",async()=>{
   const caller:CallerContext={mode:"obo",callerProduct:"runos",org:randomUUID(),workspace:randomUUID(),user:`usr_${randomUUID()}`,
