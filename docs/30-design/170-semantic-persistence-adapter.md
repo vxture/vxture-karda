@@ -760,3 +760,13 @@ JSON的digestAlgorithm=sha256-json-body-v1：对去掉digestAlgorithm与digest�
 source-formats/分派/镜像COPY/读取兼容同步更新，独立运行目录包含新脚本及旧解析辅助脚本。0024只扩展document_text_snapshot格式CHECK；0023增加全重放向前保护，避免已有v3行被旧约束拒绝。baseline一致，55表/Prisma字段/授权不变，不做向下迁移。新解析版本即使对纯正文结果相同也保留明确v3身份，不覆盖旧版本坐标。
 
 开发只9项来源相关检查、类型/数据/i18n守卫，无本地全量。新增定向覆盖页眉/页脚、脚注/尾注ID、Unicode与无伪页码、附属文字hash变化及外链/隐藏/动态域/错误引用拒绝。阶段CI扩展实际DOCX附注规范化→分块→Prisma提交→编译→人工裁决发布→Agent/知识页/图谱同一读取器的附注精确证据→原文检索→撤回/字节变化/晚期失败回滚链，以及旧41表/新库重复迁移、已有v3行后的全增量重放。合成来源/模型不等于真实客户资料或业务质量验收，复杂Office/OCR仍待。
+
+## 44. 已发布事实检索阶段（2026-11-25）
+
+新增karda.published_search（OBO only、沿用karda.search per_call计量）和RP POST /api/kb/{id}/published-search，统一PostgresSemanticReader当前授权读取。先按调用产品attachment、平台准入、当前角色/所有权、发布关系、断言有效期、原件版本/hash和supports证据过滤，再对当前已合格关系的实体标签、关系类型、断言和精确支持摘录做有界BM25排序。不会检索草稿/建议/推理边，不会以目录页的maxNodes截断搜索全集；topK只限制返回关系。
+
+结果复用karda.knowledge-package.v1内完整边/断言/证据/坐标及search统计，format=karda.published-search.v1/mode=published_facts；分数只用于本次排序，不是置信度、阈值或跨查询可比数值。relation_types只收窄关系类型；kb_ids最多20个显式库，同名实体保留来源身份。原文hash/证据无效、撤回、过期、人审变化或权限变化均不进入排序。错误、metering失败或知识正文超2MiB不交付结果。
+
+预算：最多5000合格关系、每关系合成文本64KiB、总检索文本8MiB、20返回关系、正文2MiB；不做图扩展、向量召回、模型回答或自动主题推理。查询/关系类型/库范围严格校验；匿名/服务模式拒绝，保留现有source_search、knowledge_package和knowledge_sync语义。页面/facts提供人工查询和当前结果证据，图谱/知识页增加入口；前端取消迟到请求，结果仍需独立当前读取。
+
+开发期仅4项搜索/权限/计量定向、16项工具目录守卫、类型/i18n/文档检查，无本地全量。阶段CI扩展真实PostgreSQL SOP已发布关系/来源变化/重新发布/attachment撤回/类型筛选/角色拒绝链；TopK/预算/计量失败由定向契约检查覆盖；合成事实不接受为真实Agent质量、Ontos推理或业务金标。无DDL/依赖，55表保持。

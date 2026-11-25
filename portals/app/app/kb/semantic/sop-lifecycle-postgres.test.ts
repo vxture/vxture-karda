@@ -26,6 +26,7 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
   const objects={get:async()=>bytes},store=new PostgresSemanticStore(service,objects,async()=>true);
   const reader=()=>new PostgresSemanticReader(service,objects,async()=>true,(db,ids)=>new PostgresFormalSemanticLoader({schema:profile.schema,
     entityTypes:new Map(profile.entityTypes.map(t=>[t.kind,t.type]))}).load(db,ids));
+  const factSearch=(query:string,relationTypes?:string[])=>reader().readPackage(identity,[kb],{seedIds:["directory"],maxHops:0,maxNodes:40,maxEdges:20,relationTypes},true,false,undefined,{query,topK:20});
   const read=()=>reader().readPackage(identity,[kb],{seedIds:[procedure],maxHops:2,maxNodes:20,maxEdges:20});
   const addEvidence=async(id:string,text:string,version:number)=>{
     const span=randomUUID();
@@ -60,6 +61,9 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     const sync=(knownRevision?:string)=>readKnowledgeSync(identity,{...syncRequest,knownRevision},async()=>true,async()=>read());
     const initialSync=await sync();assert.equal(initialSync.action,"replace");
     assert.equal((await sync(initialSync.revision)).action,"unchanged");
+    const publishedFacts=await factSearch("operator approval");assert.equal(publishedFacts.search?.items[0]?.relationId,first.relationId);
+    assert.equal(publishedFacts.edges.length,1);assert.match(publishedFacts.passages[0].excerpt,/operator approval/);
+    assert.equal((await factSearch("operator approval",["supports"])).edges.length,0);
     const oldKnowledge=await read();assert.equal(oldKnowledge.edges[0].targetId,legacyStep);assert.match(oldKnowledge.passages[0].excerpt,/operator approval/);
     const topics=new PostgresTopicDossiers(service,objects,async()=>true),draftId=randomUUID();
     const draft=await topics.handle(identity,kb,{action:"compose",id:draftId,relationType:"requires"});
@@ -111,6 +115,7 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     const sourceSync=await sync(initialSync.revision);assert.equal(sourceSync.action,"replace");
     assert.deepEqual(sourceSync.knowledge?.edges,[]);assert.deepEqual(sourceSync.knowledge?.passages,[]);
     assert.equal((await sync(sourceSync.revision)).action,"unchanged");
+    assert.equal((await factSearch("operator approval")).search?.matchedRelations,0,"source changes remove facts before ranking");
     const invalidated=await read();assert.deepEqual(invalidated.edges,[]);assert.deepEqual(invalidated.passages,[]);
     const invalidDraft=await topics.handle(identity,kb,{action:"list"});assert.equal(invalidDraft.items[0].state,"stale_draft");assert.equal(invalidDraft.items[0].payload,null);
     assert.equal(invalidDraft.items[0].summaries[0].payload,null);assert.equal(invalidDraft.items[0].summaries[0].state,"stale");
@@ -130,6 +135,7 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     const preview=await restarted.preview(identity,kb,second.runId,randomUUID());
     assert.deepEqual(preview.changes.removed,[first.relationId]);assert.deepEqual(preview.changes.added,[second.relationId]);
     await restarted.submitPreview(identity,kb,preview);
+    assert.equal((await factSearch("two-person approval")).edges[0]?.targetId,revisedStep);
     const publishedSync=await sync(sourceSync.revision);assert.equal(publishedSync.action,"replace");
     assert.equal(publishedSync.knowledge?.edges[0]?.targetId,revisedStep);
     const knowledge=await read();assert.equal(knowledge.edges[0].targetId,revisedStep);assert.match(knowledge.passages[0].excerpt,/two-person approval/);
@@ -146,6 +152,7 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     assert.deepEqual(diff.added,[second.relationId]);assert.deepEqual(diff.removed,[first.relationId]);assert.equal(diff.sourceChanges[0].after?.version,2);
     assert.deepEqual((await restarted.maintenance(identity,kb)).relations[0].issues,[]);
     await admin.query("DELETE FROM karda_kb.kb_attachment WHERE kb_id=$1 AND product_code='karda'",[kb]);
+    assert.equal((await factSearch("two-person approval")).search?.eligibleRelations,0,"attachment removal excludes corpus and counts");
     const detachedSync=await sync(publishedSync.revision);assert.equal(detachedSync.action,"replace");assert.deepEqual(detachedSync.knowledge?.edges,[]);
     await admin.query("INSERT INTO karda_kb.kb_attachment(workspace_id,user_sub,product_code,kb_id) VALUES($1,$2,'karda',$3)",[ws,sub,kb]);
     assert.equal((await sync(detachedSync.revision)).action,"replace");
@@ -153,12 +160,14 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
       async()=>new PostgresSemanticReader(service,objects,async()=>false,(db,ids)=>new PostgresFormalSemanticLoader({schema:profile.schema,entityTypes:new Map(profile.entityTypes.map(t=>[t.kind,t.type]))}).load(db,ids))
         .readPackage(identity,[kb],syncRequest.input.query)),/semantic_read_denied/);
     await admin.query("UPDATE karda_kb.document SET content_state='archived' WHERE id=$1",[doc]);
+    assert.equal((await factSearch("two-person approval")).edges.length,0);
     const withdrawnSync=await sync(publishedSync.revision);assert.equal(withdrawnSync.action,"replace");assert.deepEqual(withdrawnSync.knowledge?.passages,[]);
     assert.deepEqual((await read()).edges,[]);assert.equal((await restarted.auditHistory(identity,kb)).replay,"complete","audit history does not reactivate withdrawn sources");
     assert.ok((await topics.handle(identity,kb,{action:"list"})).items.every(d=>d.payload===null));
     await admin.query("DELETE FROM local_authz.member_role WHERE member_id=$1",[member]);
     await admin.query("INSERT INTO local_authz.member_role(member_id,role_id) SELECT $1,id FROM local_authz.role WHERE role_code='readonly'",[member]);
     await assert.rejects(topics.handle(identity,kb,{action:"list"}),/semantic_topic_denied/);
+    await assert.rejects(factSearch("approval"),/semantic_read_denied/);
   }finally{
     await admin.query("DELETE FROM karda_kb.topic_summary WHERE kb_id=$1",[kb]);
     await admin.query("DELETE FROM karda_kb.topic_dossier WHERE kb_id=$1",[kb]);

@@ -3,7 +3,8 @@ import { permits } from "../../authz/policy";
 import { readProductAccess, type MemberIdentity, type RoleSql } from "../../authz/store";
 import type { ObjectStore } from "../storage/objectstore";
 import type { GraphProjection, KnowledgeSnapshot, NeighborhoodQuery, OntologySchema, SemanticRelation } from "./contracts";
-import { projectNeighborhood, projectDirectory, validateNeighborhoodQuery, validateOntology } from "./projection";
+import { projectNeighborhood, projectDirectory, projectPublishedSearch, validateNeighborhoodQuery, validateOntology } from "./projection";
+import {validatePublishedSearch,type PublishedSearchQuery} from "./published-search";
 import { matchesSourceSpan, MAX_SEMANTIC_SOURCE_BYTES, MAX_SEMANTIC_TEXT_CHARS, verifiedSourceText } from "./source-text";
 import {parsePathFor} from "../processing/ir";
 import {readSourceSnapshot,type SourceSnapshot} from "../processing/source-snapshot";
@@ -28,6 +29,7 @@ export type KnowledgePackage = SemanticReadResult & {
   gaps:string[];
 };
 interface AssertionRow {
+  search_statement:string|null;
   statement_hash:string|null;
   id: string; kb_id: string; content_state: string; verification_state: string;
   expires_at: Date | null; valid_until: Date | null; superseded_by: string | null;
@@ -64,12 +66,13 @@ export class PostgresSemanticReader {
       truncated:value.truncated,sourceStatus:value.sourceStatus};
   }
 
-  async readPackage(identity: SemanticReadIdentity, kbIds: string[], query: NeighborhoodQuery, directory=false,exporting=false,transaction?:PoolClient): Promise<KnowledgePackage> {
+  async readPackage(identity: SemanticReadIdentity, kbIds: string[], query: NeighborhoodQuery, directory=false,exporting=false,transaction?:PoolClient,search?:PublishedSearchQuery): Promise<KnowledgePackage> {
     // Capture caller-owned inputs before awaiting either authority or the pool.
     identity = { ...identity, roles: [...identity.roles] };
     kbIds = [...new Set(kbIds.map(id => id.toLowerCase()))];
     query = { ...query, seedIds: [...query.seedIds], relationTypes: query.relationTypes ? [...query.relationTypes] : undefined };
     validateNeighborhoodQuery(query);
+    if(search){search={...search};validatePublishedSearch(search);if(!directory||query.pageCursor!==undefined)throw new Error("published_search_invalid_request");}
     if (kbIds.length < 1 || kbIds.length > 50 || !kbIds.every(id => UUID.test(id)) ||
         !/^[a-z][a-z0-9_-]{0,31}$/.test(identity.productCode)) throw new Error("semantic_invalid_scope");
     if (await this.admitPlatform(identity) !== true) throw new Error("semantic_read_denied");
@@ -82,7 +85,7 @@ export class PostgresSemanticReader {
       };
       // Local role/owner-anchor evaluation shares the source/release snapshot.
       const access = await readProductAccess(identity, sql);
-      if (!permits(access, "product.enter") || !permits(access, "data.read") || (exporting&&!permits(access,"data.export"))) throw new Error("semantic_read_denied");
+      if (!permits(access, "product.enter") || !permits(access, "data.read") || (exporting&&!permits(access,"data.export")) || (search&&!permits(access,"ai.use"))) throw new Error("semantic_read_denied");
       const visible = (await db.query<{ id: string }>(`
         SELECT k.id FROM karda_kb.knowledge_base k
         JOIN karda_kb.kb_attachment a ON a.kb_id=k.id AND a.workspace_id=k.workspace_id
@@ -112,9 +115,10 @@ export class PostgresSemanticReader {
       });
       const assertions = bounded((await db.query<AssertionRow>(`
         SELECT id,kb_id,CASE WHEN $3::boolean THEN encode(sha256(convert_to(statement,'UTF8')),'hex') END AS statement_hash,
+          CASE WHEN $4::boolean THEN statement END AS search_statement,
           content_state,verification_state,expires_at,valid_until,superseded_by
         FROM karda_kb.assertion WHERE kb_id=ANY($1::uuid[]) AND id=ANY($2::uuid[]) LIMIT 5001`,
-        [visible, assertionIds,query.pageCursor!==undefined])).rows);
+        [visible, assertionIds,query.pageCursor!==undefined,Boolean(search)])).rows);
       const grounds = bounded((await db.query<EvidenceRow>(`
         SELECT e.id,e.assertion_id,a.kb_id,s.document_id,s.document_version,s.start_offset,s.end_offset,s.excerpt,
           d.active_chunk_version,d.content_state,d.mime,d.content_hash,d.storage_ref,d.size_bytes
@@ -179,17 +183,20 @@ export class PostgresSemanticReader {
       const scope={visibleKbIds:visibleSet,now:clock.rows[0].now.toISOString()};
       // Directory selects across the complete eligible snapshot after authority,
       // source and premise checks. Hidden/rejected rows cannot consume its budget.
-      const result = directory?projectDirectory(snapshot,published.schema,scope,query):
+      const result = search?projectPublishedSearch(snapshot,published.schema,scope,search,
+        new Map(assertions.map(a=>[a.id,a.search_statement??""])),new Map(grounds.map(g=>[g.id,g.excerpt])),query.relationTypes):directory?projectDirectory(snapshot,published.schema,scope,query):
         projectNeighborhood(snapshot, published.schema, scope, query);
       // Enrich only the final eligible projection, in the same authorized snapshot.
       const ids=result.assertions.map(a=>a.id);
       const statements=ids.length?(await db.query<{id:string;statement:string}>(`SELECT id,statement FROM karda_kb.assertion
         WHERE kb_id=ANY($1::uuid[]) AND id=ANY($2::uuid[]) ORDER BY id`,[visible,ids])).rows:[];
       const passages=result.evidence.map(e=>({evidenceId:e.id,excerpt:grounds.find(g=>g.id===e.id)!.excerpt}));
-      if(!transaction)await db.query("COMMIT");
-      return { ...result, sourceStatus: incomplete ? "partial" : "complete",format:"karda.knowledge-package.v1",statements,passages,
+      const response:KnowledgePackage={ ...result, sourceStatus: incomplete ? "partial" : "complete",format:"karda.knowledge-package.v1",statements,passages,
         gaps:[...(result.edges.length?[]:["no_published_support"]),...(incomplete?["source_support_unavailable"]:[]),
           ...(result.truncated?["neighborhood_truncated"]:[])] };
+      if(search&&Buffer.byteLength(JSON.stringify(response))>2*1024*1024)throw new Error("published_search_budget");
+      if(!transaction)await db.query("COMMIT");
+      return response;
     } catch (error) {
       if(!transaction)await db.query("ROLLBACK"); throw error;
     } finally { if(!transaction)db.release(); }
