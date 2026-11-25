@@ -105,7 +105,7 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
       <p className="text-body-sm text-muted-foreground">{m.sourceCheckHint}</p>
       {sources&&<section className="flex min-w-0 flex-col gap-sm" aria-label={m.checkSources}>
         <p role="status" className="break-words text-body-sm">{m.sourceCheckCounts}: {sources.readable}/{sources.total} &middot; {m.sourceBlocked}: {sources.blocked}</p>
-        <p className="break-words text-body-sm">{m.sourceCheckedAt}: {sources.checkedAt}</p>
+        <p className="break-words text-body-sm">{m.maintenanceChecked}: {sources.checkedAt}</p>
         {!sources.total&&<p className="text-body-sm">{m.sourceCheckEmpty}</p>}
         {sources.items.map(row=><div key={row.id} className="flex min-w-0 flex-col gap-xs rounded-md border border-border p-sm">
           <span className="break-words font-medium">{row.title}</span>

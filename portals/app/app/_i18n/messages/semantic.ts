@@ -11,7 +11,6 @@ export const semantic = {
   sourceCheckHint:{"zh-CN": "\u9010\u4efd\u6838\u9a8c\u5f53\u524d\u539f\u4ef6\u4e0e\u89c4\u8303\u5feb\u7167\uff0c\u6700\u591a100\u4efd\u3001\u5408\u8ba132MiB\u539f\u4ef6\u3002\u4ec5\u663e\u793a\u68c0\u67e5\u7ed3\u679c\uff0c\u4e0d\u4ee3\u8868\u5b9e\u4f53\u3001\u65ad\u8a00\u6216\u6a21\u578b\u5df2\u5c31\u7eea\uff1b\u521b\u5efa\u4efb\u52a1\u65f6\u4ecd\u4f1a\u91cd\u65b0\u6838\u9a8c\u3002\u4e0d\u8c03\u7528\u6a21\u578b\u6216\u81ea\u52a8\u5904\u7406\u8d44\u6599\uff0c\u5237\u65b0\u3001\u64cd\u4f5c\u6216\u9519\u8bef\u540e\u6e05\u7a7a\u7ed3\u679c\u3002", "en-US": "Recheck current originals and normalized snapshots, up to100 sources/32MiB raw bytes. This diagnostic does not approve entities, assertions or model readiness. Task creation rechecks inputs. No model calls or automatic processing; results clear on refresh, actions or errors."},
   sourceCheckCounts:{"zh-CN": "\u53ef\u8bfb\u6765\u6e90/\u68c0\u67e5\u603b\u6570", "en-US": "Readable sources / checked total"},
   sourceBlocked:{"zh-CN": "\u5b58\u5728\u95ee\u9898", "en-US": "With issues"},
-  sourceCheckedAt:{"zh-CN": "\u68c0\u67e5\u65f6\u95f4", "en-US": "Checked at"},
   sourceCheckEmpty:{"zh-CN": "\u5f53\u524d\u5e93\u6ca1\u6709\u8d44\u6599\u3002", "en-US": "This library has no sources."},
   sourceUnknown:{"zh-CN": "\u672a\u786e\u8ba4", "en-US": "Unconfirmed"},
   sourceCharacters:{"zh-CN": "\u6b63\u6587\u5b57\u7b26\u6570", "en-US": "Text characters"},
