@@ -15,16 +15,17 @@ export function GraphClient({kbId}:{kbId:string}){
   const [search,setSearch]=useState(""),[zoom,setZoom]=useState(1),[offset,setOffset]=useState({x:0,y:0}),[wide,setWide]=useState(false);
   const [entityType,setEntityType]=useState(""),[groupId,setGroupId]=useState(""),[grouped,setGrouped]=useState(true);
   const [communities,setCommunities]=useState(false);
+  const [pages,setPages]=useState<string[]>([""]),[neighborhood,setNeighborhood]=useState(false);
   const [nodeFocus,setNodeFocus]=useState(""),[edgeFocus,setEdgeFocus]=useState("");
   const focusRefs=useRef(new Map<string,SVGElement>());
   const sequence=useRef(0),drag=useRef<{x:number;y:number;ox:number;oy:number}|null>(null);
-  async function load(seed=""){
+  async function load(seed="",cursor="",history=[""]){
     const ticket=++sequence.current;setBusy(true);setError(0);setData(null);setSelected("");setEdgeId("");setFrom("");setTo("");setFilter("");setSearch("");setEntityType("");setGroupId("");
     try{
-      const response=await fetch(`/api/kb/${encodeURIComponent(kbId)}/knowledge-package?nodes=500&edges=1000&hops=2${seed?`&entity=${encodeURIComponent(seed)}`:""}`,{cache:"no-store",credentials:"same-origin"});
+      const response=await fetch(`/api/kb/${encodeURIComponent(kbId)}/knowledge-package?nodes=500&edges=1000&hops=2${seed?`&entity=${encodeURIComponent(seed)}`:`&cursor=${encodeURIComponent(cursor)}`}`,{cache:"no-store",credentials:"same-origin"});
       if(!response.ok){if(ticket===sequence.current)setError(response.status);return;}
       const result=await response.json() as KnowledgePackage;
-      if(ticket===sequence.current){setData(result);setSelected(seed);setZoom(1);setOffset({x:0,y:0});}
+      if(ticket===sequence.current){setData(result);setSelected(seed);setZoom(1);setOffset({x:0,y:0});setPages(history);setNeighborhood(Boolean(seed));setNodeFocus("");setEdgeFocus("");}
     }catch{if(ticket===sequence.current)setError(503);}finally{if(ticket===sequence.current)setBusy(false);}
   }
   useEffect(()=>{void load();return()=>{sequence.current++;};
@@ -69,9 +70,16 @@ export function GraphClient({kbId}:{kbId:string}){
     </div>
     <p className="text-body-sm text-muted-foreground">{m.graphHint}</p>
     <p id="graph-keyboard-help" className="text-body-sm text-muted-foreground">{m.graphKeyboard}</p>
-    {!!error&&<div role="alert"><Banner tone="danger" title={error===403?m.packageDenied:m.unavailable}/></div>}
+    {!!error&&<div role="alert"><Banner tone="danger" title={error===403?m.packageDenied:error===409?m.directoryChanged:m.unavailable}/></div>}
     {busy&&<p role="status">{m.loading}</p>}
     {data&&<>
+      {!neighborhood&&data.directoryPage&&<section aria-label={m.directoryPage} className="flex min-w-0 flex-col gap-sm">
+        <p className="text-body-sm text-muted-foreground">{m.graphPageHint}</p>
+        <div className="flex flex-wrap items-center gap-sm"><p role="status">{m.directoryPage} {pages.length}</p>
+          <Button variant="outline" disabled={busy||pages.length<2} onClick={()=>{const previous=pages.slice(0,-1);void load("",previous.at(-1)??"",previous);}}>{m.directoryPrevious}</Button>
+          <Button variant="outline" disabled={busy||!data.directoryPage.nextCursor} onClick={()=>{const next=data.directoryPage!.nextCursor!;void load("",next,[...pages,next]);}}>{m.directoryNext}</Button>
+        </div>
+      </section>}
       {data.gaps.map(g=><Banner key={g} tone="warning" title={g==="no_published_support"?m.noPublished:g==="neighborhood_truncated"?m.packageTruncated:m.partialSources}/>)}
       <p className="font-mono text-code-sm">{data.schema.namespace}/{data.schema.schemaId}/{data.schema.version} &middot; {nodes.length} {m.graphNodes} / {edges.length} {m.relations}</p>
       <div className="flex flex-wrap items-center gap-sm">
