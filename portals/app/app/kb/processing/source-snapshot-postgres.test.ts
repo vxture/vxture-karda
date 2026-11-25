@@ -11,7 +11,7 @@ import {runPipeline,type CommittedChunk} from "./orchestrator";
 import {PDF_MIME,DOCX_MIME,XLSX_MIME,PPTX_MIME,readSourceSnapshot,sourceHash} from "./source-snapshot";
 import {normalizeSource} from "./source-normalizer";
 import {verifiedSourceText} from "../semantic/source-text";
-import {syntheticPdf,syntheticXlsx,syntheticPptx,syntheticDocxStories} from "./source-fixtures";
+import {syntheticPdf,syntheticXlsx,syntheticPptx,syntheticDocxGrid} from "./source-fixtures";
 import {ContentService} from "../lib/content-service";
 import {InMemoryContentStore} from "../lib/content-store";
 import {InMemoryObjectStore} from "../storage/objectstore";
@@ -45,7 +45,7 @@ test("DOCX current table output commits and reloads under service-role CHECK, pr
   const admin=new Pool({connectionString:endpoint});url.username="karda_svc";process.env.DATABASE_URL=url.toString();
   const service=new Pool({connectionString:url.toString()}),kb=randomUUID(),ws=randomUUID(),doc=randomUUID();
   const python=process.env.KARDA_KNOWLEDGE_PYTHON||(process.platform==="win32"?"python":"python3");
-  const xml='<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:tbl><w:tr><w:tc><w:p><w:r><w:t>Proof</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Required</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:body></w:document>';
+  const xml='<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:tbl><w:tblGrid><w:gridCol/><w:gridCol/></w:tblGrid><w:tr><w:tc><w:tcPr><w:gridSpan w:val="2"/><w:vMerge w:val="restart"/></w:tcPr><w:p><w:r><w:t>Proof</w:t></w:r></w:p></w:tc></w:tr><w:tr><w:tc><w:tcPr><w:gridSpan w:val="2"/><w:vMerge/></w:tcPr><w:p/></w:tc></w:tr></w:tbl></w:body></w:document>';
   const bytes=execFileSync(python,["-I","-c",'import io,sys,zipfile; b=io.BytesIO(); z=zipfile.ZipFile(b,"w"); z.writestr("word/document.xml",sys.stdin.buffer.read()); z.close(); sys.stdout.buffer.write(b.getvalue())'],{input:Buffer.from(xml),timeout:10000,windowsHide:true});
   try{
     await admin.query("INSERT INTO karda_kb.knowledge_base(id,workspace_id,owner_type,owner_sub,name) VALUES($1,$2,'user','synthetic','table')",[kb,ws]);
@@ -53,7 +53,7 @@ test("DOCX current table output commits and reloads under service-role CHECK, pr
     const normalized=await normalizeSource(DOCX_MIME,bytes),target=new PrismaCommitTarget(doc);
     await target.commit([],null,normalized);
     const loaded=await readSourceSnapshot(async(sql,...values)=>(await service.query(sql,values)).rows,doc,1);
-    assert.equal(loaded?.parserVersion,"docx-referenced-stories-v3");assert.equal(loaded?.text,"Proof\tRequired");
+    assert.equal(loaded?.parserVersion,"docx-cell-grid-v4");assert.equal(loaded?.text,'Table 1 grid rows=2 columns=2\n\nTable 1 R1C1 rows=2 columns=2: "Proof"');
     const insert="INSERT INTO karda_kb.document_text_snapshot(document_id,document_version,content_hash,mime,parser_version,canonical_text,text_hash,locators) VALUES($1,$2,$3,$4,$5,$6,$7,$8)";
     const args=[doc,2,normalized.contentHash,DOCX_MIME,"docx-main-body-v1",normalized.text,normalized.textHash,JSON.stringify(normalized.locators)];
     await service.query(insert,args);
@@ -70,7 +70,7 @@ for(const mime of [PDF_MIME,DOCX_MIME,XLSX_MIME,PPTX_MIME])test(`real ${mime} pr
   const admin=new Pool({connectionString:endpoint,statement_timeout:10000});url.username="karda_svc";
   process.env.DATABASE_URL=url.toString();
   const service=new Pool({connectionString:url.toString(),statement_timeout:10000});
-  const kb=randomUUID(),ws=randomUUID(),sub=`usr_${randomUUID()}`,bytes=mime===PDF_MIME?syntheticPdf(["Proof first","Proof last"]):mime===XLSX_MIME?syntheticXlsx():mime===DOCX_MIME?syntheticDocxStories():syntheticPptx(),objects=new InMemoryObjectStore();
+  const kb=randomUUID(),ws=randomUUID(),sub=`usr_${randomUUID()}`,bytes=mime===PDF_MIME?syntheticPdf(["Proof first","Proof last"]):mime===XLSX_MIME?syntheticXlsx():mime===DOCX_MIME?syntheticDocxGrid():syntheticPptx(),objects=new InMemoryObjectStore();
   const identity={workspaceId:ws,sub,roles:[],productCode:"karda"};let member:string|undefined;
   const object=await objects.put(ws,kb,bytes),content=new ContentService(new InMemoryContentStore());
   const result=await content.createDocument({kbId:kb,title:"synthetic source",source:"upload",mime,
@@ -86,7 +86,8 @@ for(const mime of [PDF_MIME,DOCX_MIME,XLSX_MIME,PPTX_MIME])test(`real ${mime} pr
     assert.ok("done" in outcome);assert.equal(target.activeVersion(),1);
     const load=(version:number)=>readSourceSnapshot(async(sql,...values)=>(await service.query(sql,values)).rows,doc.id,version);
     const snapshot=(await load(1))!;assert.ok(snapshot);assert.equal(snapshot.text,(await normalizeSource(mime,bytes)).text);
-    const excerptStart=mime===DOCX_MIME?snapshot.text.indexOf("Required note"):0,excerptEnd=excerptStart+5;
+    if(mime===DOCX_MIME){assert.equal(snapshot.parserVersion,"docx-cell-grid-v4");assert.match(snapshot.text,/R1C1 rows=2 columns=2/);assert.match(snapshot.text,/table1.*Nested support/);}
+    const excerptStart=mime===DOCX_MIME?snapshot.text.indexOf("Required merged proof"):0,excerptEnd=excerptStart+5;
     assert.ok(excerptStart>=0);const excerpt=snapshot.text.slice(excerptStart,excerptEnd);
     assert.ok(chunks.every(c=>snapshot.text.slice(c.sourceRange.start,c.sourceRange.end).trim().length>0));
     assert.equal(verifiedSourceText({activeVersion:1,contentState:"indexed",contentHash:sourceHash(bytes),mime,normalized:snapshot},bytes),snapshot.text);
@@ -108,7 +109,7 @@ for(const mime of [PDF_MIME,DOCX_MIME,XLSX_MIME,PPTX_MIME])test(`real ${mime} pr
     const loaded=await store.loadCompilerSnapshot(identity,kb,payload);assert.equal(loaded.assertions[0].evidence[0].excerpt,excerpt);
     assert.equal((await store.createCompileTask(identity,kb,randomUUID())).duplicate,false,"binary sources enter the user compilation flow");
     const compile=await store.recordCompile(identity,kb,{taskKey:"a".repeat(64),configHash:"b".repeat(64),payload});
-    await store.reviewRelation(identity,kb,{runId:compile.runId,relationId:relation,expectedRevision:0,decision:"accept",note:"Synthetic PDF proof checked"});
+    await store.reviewRelation(identity,kb,{runId:compile.runId,relationId:relation,expectedRevision:0,decision:"accept",note:"Synthetic source proof checked"});
     await store.publish(identity,await store.plan(identity,kb,compile.runId,randomUUID(),0));
     const loader=new PostgresFormalSemanticLoader({schema,entityTypes:new Map([["thing","entity"]])});
     const reader=new PostgresSemanticReader(service,objects,async()=>true,(db,ids)=>loader.load(db,ids));

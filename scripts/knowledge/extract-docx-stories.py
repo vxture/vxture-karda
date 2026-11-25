@@ -13,7 +13,7 @@ R = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
 P = "{http://schemas.openxmlformats.org/package/2006/relationships}"
 
 
-def extract(path):
+def extract(path, table_reader=None, version="docx-referenced-stories-v3"):
     with Path(path).open("rb") as handle:
         data = handle.read(2 * 1024 * 1024 + 1)
     if len(data) > 2 * 1024 * 1024:
@@ -60,6 +60,8 @@ def extract(path):
 
         def paragraphs(tree):
             validate_tree(tree)
+            if table_reader is not None:
+                tree = table_reader(copy.deepcopy(tree))
             document = ET.Element(W + "document")
             body = ET.SubElement(document, W + "body")
             for child in tree:
@@ -163,4 +165,4 @@ def extract(path):
             raise ValueError("docx_note_part_refused")
         if not output or len(output) > 20000 or sum(len(t) for t in output) > 5000000:
             raise ValueError("docx_story_text_limit")
-    return {"binarySha256": hashlib.sha256(data).hexdigest(), "extractor": {"version": "docx-referenced-stories-v3"}, "paragraphs": output}
+    return {"binarySha256": hashlib.sha256(data).hexdigest(), "extractor": {"version": version}, "paragraphs": output}

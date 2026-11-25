@@ -324,3 +324,5 @@ baseline/0020/Prisma/98锁步，新旧库重复演练；生产通过db-init审�
 2026-11-25 0023为document_text_snapshot增加PPTX/pptx-slide-text-v1格式CHECK；baseline同步，0022加保护避免全重放收窄新约束。模型字段/权限不变、55表，见170§37。
 
 2026-11-25 0024扩展document_text_snapshot格式CHECK允许docx-referenced-stories-v3，保留旧DOCX v1/v2、PDF、XLSX和PPTX；0023增加向后重放保护，已有v3行全套重复迁移不收窄约束。无字段/Prisma/权限变更、55表，见170§43。
+
+2026-11-26 0025扩展document_text_snapshot格式CHECK允许docx-cell-grid-v4，保留旧版本；0024增加前向保护避免重放收窄。仅约束扩展，无字段、Prisma模型或98权限变更，保持55表。见170§46。

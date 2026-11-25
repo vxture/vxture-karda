@@ -17,7 +17,7 @@ if mime == "application/pdf":
         raise ValueError("source_parser_version_mismatch")
     script = "extract-pdf.py"
 elif mime == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-    script = "extract-docx-stories.py"
+    script = "extract-docx-grid.py"
 elif mime == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
     script = "extract-xlsx.py"
 elif mime == "application/vnd.openxmlformats-officedocument.presentationml.presentation":
