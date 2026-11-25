@@ -87,7 +87,17 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-25): v0.12.19 / 1fbdf09c, deploy45633337049
+Current production (2026-11-25): v0.12.20 / e4ffcda9, deploy45645219718
+succeeded at2026-11-25T15:33:44Z through normal production review. PR344
+consolidates referenced DOCX headers/footers/footnotes/endnotes, versioned
+source normalization and persistence compatibility. Stage CI1077pass/zero skips;
+main CI45644097375/scan45644097521pass. Migration0024 run45644527356 succeeded,
+55tables. Health/ready and anonymous compile/package/source-search refusal pass.
+No local full-suite repetition or automatic customer reprocessing. Fixed17items
+remain7complete/10unfinished; real external/business/complex-source gates open.
+See docs/50-deployment/220-docx-stories-release-20261125.md.
+
+Historical production (2026-11-25): v0.12.19 / 1fbdf09c, deploy45633337049
 succeeded at2026-11-25T14:30:13Z through normal production review. PR342
 consolidates maintenance audit JSON/Markdown, summaries/human suggestions,
 content digests and offline integrity/comparison tools. Stage CI1074pass/zero
