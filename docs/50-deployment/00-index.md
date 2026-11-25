@@ -21,6 +21,8 @@ Deployment and bootstrap material for this repo.
 | `140-compile-operations-release-20261125.md` | v0.12.12 compile task history, current-source details and recovery stage |
 | `150-impact-operations-release-20261125.md` | v0.12.13 source impact inspection, human action suggestions and authorized diagnostics export |
 
+| `160-office-source-release-20261125.md` | v0.12.14 PPTX source chain, unified format contract and migration/rollout evidence |
+
 The tag-to-env CD pipeline (deploy/build/rollback/db-init workflows and the
 `tailnet-ssh-connect` composite action) is inherited from the template and lives
 in `.github/`. Both checklists above are done and the production chain is

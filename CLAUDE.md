@@ -87,7 +87,16 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-25): v0.12.13 / a2fdf7cb, deploy45596889070
+Current production (2026-11-25): v0.12.14 / 52d538ad, deploy45601558941
+succeeded at2026-11-25T11:27:45Z through normal production review. PR332
+consolidates PPTX authored text/tables and PDF/DOCX/XLSX/PPTX format contracts.
+Stage CI1056pass/zero skips; main CI45600733220/scan45600733050pass.
+Migration0023/db-init45601170149 succeeded,55tables. Health/ready and
+anonymous compile-tasks/package/source-search refusal pass. No local full-suite
+repetition. Fixed17items remain7complete/10unfinished; external/business gates
+remain open. See docs/50-deployment/160-office-source-release-20261125.md.
+
+Historical production (2026-11-25): v0.12.13 / a2fdf7cb, deploy45596889070
 succeeded at2026-11-25T10:45:41Z through normal production review. PR330
 consolidates source issue summary/filtering, bounded related inspection,
 human action suggestions, paging and authorized diagnostic JSON export.
