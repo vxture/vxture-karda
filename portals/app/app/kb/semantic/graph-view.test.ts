@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {performance} from "node:perf_hooks";
-import {layoutGraph,graphPath} from "./graph-view";
+import {layoutGraph,layoutGroupedGraph,graphGroups,graphPath} from "./graph-view";
 import {packageMarkdown} from "./package-markdown";
 import type {GraphEntity,SemanticRelation} from "./contracts";
 import type {KnowledgePackage} from "./read-postgres";
@@ -28,6 +28,30 @@ test("graph scale budget: 500 nodes/1000 edges layout and path remain bounded",(
   }
   assert.ok(performance.now()-start<5000,"30 full-budget layout/path cycles must complete within five seconds");
   assert.throws(()=>layoutGraph([...nodes,node("overflow")],edges),/semantic_graph_budget/);
+});
+test("component groups are stable, retain isolates and self loops, and cannot bridge through hidden nodes",()=>{
+  const nodes=[node("a"),node("b"),node("c"),node("d"),node("e")];
+  const edges=[edge("ab","a","b"),edge("self","a","a"),edge("cd","c","d"),edge("hidden-a","b","hidden"),edge("hidden-b","hidden","c")];
+  const groups=graphGroups(nodes,edges);
+  assert.deepEqual(groups,[{id:"a",nodeIds:["a","b"],edgeIds:["ab","self"]},{id:"c",nodeIds:["c","d"],edgeIds:["cd"]},{id:"e",nodeIds:["e"],edgeIds:[]}]);
+  assert.deepEqual(graphGroups([...nodes].reverse(),[...edges].reverse()),groups);
+  const layout=layoutGroupedGraph(nodes,edges);
+  assert.deepEqual(layout.points,layoutGroupedGraph([...nodes].reverse(),[...edges].reverse()).points);
+  assert.equal(layout.edges.length,3);
+  assert.equal(new Set(layout.points.map(p=>`${p.x}:${p.y}`)).size,5);
+  assert.ok(layout.points.every(p=>p.x>=0&&p.y>=0&&p.x<=layout.size&&p.y<=layout.size));
+  assert.deepEqual(graphGroups(nodes,edges.filter(e=>e.id!=="ab"))[0].nodeIds,["c","d"]);
+  assert.equal(layoutGroupedGraph([],[]).points.length,0);
+  assert.throws(()=>graphGroups(Array.from({length:501},(_,i)=>node(String(i))),[]),/semantic_graph_budget/);
+});
+test("grouped layout stays bounded for 500 isolated and one fully connected component",()=>{
+  const nodes=Array.from({length:500},(_,i)=>node(String(i)));
+  const chain=Array.from({length:499},(_,i)=>edge(String(i),String(i),String(i+1)));
+  for(const edges of [[],chain]){
+    const layout=layoutGroupedGraph(nodes,edges);
+    assert.equal(layout.points.length,500);
+    assert.ok(layout.points.every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=0&&p.y>=0&&p.x<=layout.size&&p.y<=layout.size));
+  }
 });
 test("Markdown export includes only package facts and exact evidence, escapes executable source markup",()=>{
   const pack:KnowledgePackage={format:"karda.knowledge-package.v1",schema:{namespace:"local",schemaId:"objects",version:"1"},

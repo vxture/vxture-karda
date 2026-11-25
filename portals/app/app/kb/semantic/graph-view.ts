@@ -1,5 +1,45 @@
 import type {GraphEntity,SemanticRelation} from "./contracts";
 
+export interface GraphGroup {id:string;nodeIds:string[];edgeIds:string[]}
+
+/** Connected components of this authorized projection, never a whole-corpus claim. */
+export function graphGroups(nodes:GraphEntity[],edges:SemanticRelation[]):GraphGroup[]{
+  const ids=new Set(nodes.map(n=>n.id));
+  if(nodes.length>500||edges.length>1000||ids.size!==nodes.length)throw new Error("semantic_graph_budget");
+  const adjacent=new Map(nodes.map(n=>[n.id,[] as string[]]));
+  const eligible=edges.filter(e=>ids.has(e.sourceId)&&ids.has(e.targetId));
+  for(const e of eligible){adjacent.get(e.sourceId)!.push(e.targetId);adjacent.get(e.targetId)!.push(e.sourceId);}
+  const seen=new Set<string>(),groups:GraphGroup[]=[],membership=new Map<string,GraphGroup>();
+  for(const id of [...ids].sort()){
+    if(seen.has(id))continue;
+    const queue=[id];seen.add(id);
+    for(let i=0;i<queue.length;i++)for(const next of adjacent.get(queue[i])!){
+      if(!seen.has(next)){seen.add(next);queue.push(next);}
+    }
+    const group={id,nodeIds:queue.sort(),edgeIds:[] as string[]};groups.push(group);
+    for(const member of queue)membership.set(member,group);
+  }
+  for(const edge of eligible)membership.get(edge.sourceId)!.edgeIds.push(edge.id);
+  for(const group of groups)group.edgeIds.sort();
+  return groups.sort((a,b)=>b.nodeIds.length-a.nodeIds.length||a.id.localeCompare(b.id));
+}
+
+/** Pack component circles in separate cells; bounded and independent of input order. */
+export function layoutGroupedGraph(nodes:GraphEntity[],edges:SemanticRelation[]){
+  const groups=graphGroups(nodes,edges),byId=new Map(nodes.map(n=>[n.id,n]));
+  const columns=Math.max(1,Math.ceil(Math.sqrt(groups.length)));
+  const cell=Math.max(400,...groups.map(g=>Math.max(100,g.nodeIds.length*4)*2+160));
+  const rows=Math.max(1,Math.ceil(groups.length/columns)),size=Math.max(columns,rows)*cell;
+  const centers=groups.map((group,i)=>({...group,x:(i%columns+.5)*cell,y:(Math.floor(i/columns)+.5)*cell}));
+  const points=centers.flatMap(group=>{
+    const radius=group.nodeIds.length===1?0:Math.max(100,group.nodeIds.length*4);
+    return group.nodeIds.map((id,i)=>({...byId.get(id)!,x:group.x+radius*Math.cos(i*2*Math.PI/group.nodeIds.length),
+      y:group.y+radius*Math.sin(i*2*Math.PI/group.nodeIds.length)}));
+  });
+  const ids=new Set(nodes.map(n=>n.id));
+  return {size,points,edges:edges.filter(e=>ids.has(e.sourceId)&&ids.has(e.targetId)),groups:centers};
+}
+
 /** Linear-time deterministic circular layout; caller supplies only authorized nodes. */
 export function layoutGraph(nodes:GraphEntity[],edges:SemanticRelation[]) {
   const ids=new Set(nodes.map(n=>n.id));

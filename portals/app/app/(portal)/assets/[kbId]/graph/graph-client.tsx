@@ -6,16 +6,17 @@ import {PageHead} from "../../../../_shell/PageHead";
 import {useMessages} from "../../../../_i18n/useMessages";
 import {semantic} from "../../../../_i18n/messages/semantic";
 import {SignInGate} from "../../../../_lib/ui";
-import {layoutGraph,graphPath} from "../../../../kb/semantic/graph-view";
+import {layoutGraph,layoutGroupedGraph,graphGroups,graphPath} from "../../../../kb/semantic/graph-view";
 import type {KnowledgePackage} from "../../../../kb/semantic/read-postgres";
 
 export function GraphClient({kbId}:{kbId:string}){
   const m=useMessages(semantic),[data,setData]=useState<KnowledgePackage|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(0);
   const [selected,setSelected]=useState(""),[edgeId,setEdgeId]=useState(""),[filter,setFilter]=useState(""),[from,setFrom]=useState(""),[to,setTo]=useState("");
   const [search,setSearch]=useState(""),[zoom,setZoom]=useState(1),[offset,setOffset]=useState({x:0,y:0}),[wide,setWide]=useState(false);
+  const [entityType,setEntityType]=useState(""),[groupId,setGroupId]=useState(""),[grouped,setGrouped]=useState(true);
   const sequence=useRef(0),drag=useRef<{x:number;y:number;ox:number;oy:number}|null>(null);
   async function load(seed=""){
-    const ticket=++sequence.current;setBusy(true);setError(0);setData(null);setSelected("");setEdgeId("");setFrom("");setTo("");setFilter("");setSearch("");
+    const ticket=++sequence.current;setBusy(true);setError(0);setData(null);setSelected("");setEdgeId("");setFrom("");setTo("");setFilter("");setSearch("");setEntityType("");setGroupId("");
     try{
       const response=await fetch(`/api/kb/${encodeURIComponent(kbId)}/knowledge-package?nodes=500&edges=1000&hops=2${seed?`&entity=${encodeURIComponent(seed)}`:""}`,{cache:"no-store",credentials:"same-origin"});
       if(!response.ok){if(ticket===sequence.current)setError(response.status);return;}
@@ -27,9 +28,13 @@ export function GraphClient({kbId}:{kbId:string}){
     // The server keys the component by library, invalidating previous responses.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
-  const edges=useMemo(()=>data?.edges.filter(e=>!filter||e.type===filter)??[],[data,filter]);
-  const nodes=useMemo(()=>data?.nodes.filter(n=>edges.some(e=>e.sourceId===n.id||e.targetId===n.id))??[],[data,edges]);
-  const layout=useMemo(()=>layoutGraph(nodes,edges),[nodes,edges]),points=new Map(layout.points.map(p=>[p.id,p]));
+  const typedNodes=useMemo(()=>data?.nodes.filter(n=>!entityType||n.type===entityType)??[],[data,entityType]);
+  const typedEdges=useMemo(()=>{const ids=new Set(typedNodes.map(n=>n.id));return data?.edges.filter(e=>(!filter||e.type===filter)&&ids.has(e.sourceId)&&ids.has(e.targetId))??[];},[data,filter,typedNodes]);
+  const groups=useMemo(()=>graphGroups(typedNodes,typedEdges),[typedNodes,typedEdges]);
+  const nodes=useMemo(()=>{const ids=groups.find(g=>g.id===groupId)?.nodeIds;return groupId?typedNodes.filter(n=>ids?.includes(n.id)):typedNodes;},[typedNodes,groups,groupId]);
+  const edges=useMemo(()=>{const ids=new Set(nodes.map(n=>n.id));return typedEdges.filter(e=>ids.has(e.sourceId)&&ids.has(e.targetId));},[nodes,typedEdges]);
+  const layout=useMemo(()=>grouped?layoutGroupedGraph(nodes,edges):layoutGraph(nodes,edges),[nodes,edges,grouped]),points=new Map(layout.points.map(p=>[p.id,p]));
+  function resetSelection(){setSelected("");setEdgeId("");setFrom("");setTo("");setZoom(1);setOffset({x:0,y:0});}
   const path=useMemo(()=>from&&to?graphPath(nodes,edges,from,to):null,[nodes,edges,from,to]);
   const label=(id:string)=>data?.nodes.find(n=>n.id===id)?.label??id;
   const chosen=data?.edges.find(e=>e.id===edgeId);
@@ -51,11 +56,24 @@ export function GraphClient({kbId}:{kbId:string}){
       {data.gaps.map(g=><Banner key={g} tone="warning" title={g==="no_published_support"?m.noPublished:g==="neighborhood_truncated"?m.packageTruncated:m.partialSources}/>)}
       <p className="font-mono text-code-sm">{data.schema.namespace}/{data.schema.schemaId}/{data.schema.version} &middot; {nodes.length} {m.graphNodes} / {edges.length} {m.relations}</p>
       <div className="flex flex-wrap items-center gap-sm">
-        <label htmlFor="relation-filter">{m.relationFilter}</label><select id="relation-filter" value={filter} onChange={e=>{setFilter(e.target.value);setEdgeId("");setFrom("");setTo("");}} className="min-w-0 rounded-md border border-border bg-background p-sm">
+        <label htmlFor="relation-filter">{m.relationFilter}</label><select id="relation-filter" value={filter} onChange={e=>{setFilter(e.target.value);setGroupId("");resetSelection();}} className="min-w-0 rounded-md border border-border bg-background p-sm">
           <option value="">{m.allTypes}</option>{[...new Set(data.edges.map(e=>e.type))].sort().map(type=><option key={type}>{type}</option>)}
         </select>
+        <label htmlFor="entity-type-filter">{m.entityTypeFilter}</label><select id="entity-type-filter" value={entityType} onChange={e=>{setEntityType(e.target.value);setGroupId("");resetSelection();}} className="min-w-0 rounded-md border border-border bg-background p-sm">
+          <option value="">{m.allTypes}</option>{[...new Set(data.nodes.map(n=>n.type))].sort().map(type=><option key={type}>{type}</option>)}
+        </select>
+        <Button variant="outline" aria-pressed={grouped} onClick={()=>{setGrouped(!grouped);resetSelection();}}>{grouped?m.groupedLayout:m.circularLayout}</Button>
         <label htmlFor="node-search">{m.findNode}</label><input id="node-search" value={search} onChange={e=>setSearch(e.target.value)} className="min-w-0 rounded-md border border-border bg-background p-sm"/>
       </div>
+      <section aria-label={m.graphGroups} className="flex min-w-0 flex-col gap-sm">
+        <h2 className="text-title-sm">{m.graphGroups} ({groups.length})</h2><p className="text-body-sm text-muted-foreground">{m.groupHint}</p>
+        <div className="flex max-h-40 flex-wrap gap-sm overflow-auto">
+          <Button variant={groupId?"outline":"default"} onClick={()=>{setGroupId("");resetSelection();}}>{m.allGroups}</Button>
+          {groups.map((group,i)=><Button key={group.id} variant={groupId===group.id?"default":"outline"} onClick={()=>{setGroupId(group.id);resetSelection();}}>
+            {i+1}. {label(group.id)} ({group.nodeIds.length} / {group.edgeIds.length})
+          </Button>)}
+        </div>
+      </section>
       <div className="grid min-w-0 gap-md xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="min-w-0 overflow-hidden rounded-md border border-border bg-background">
           <svg viewBox={`0 0 ${layout.size} ${layout.size}`} role="group" aria-label={m.graphTitle} className="h-[65vh] min-h-96 w-full touch-none"
