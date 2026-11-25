@@ -5,30 +5,33 @@ import {Banner,Button,Card,CardContent} from "@vxture/design-system";
 import {PageHead} from "../../../../_shell/PageHead";
 import {useMessages} from "../../../../_i18n/useMessages";
 import {semantic} from "../../../../_i18n/messages/semantic";
+import {KnowledgeWindowClient,KnowledgeWindowError} from "../../../../_lib/knowledge-window";
 import {SignInGate} from "../../../../_lib/ui";
 import type {KnowledgePackage} from "../../../../kb/semantic/read-postgres";
 import {knowledgeTopics,searchPublishedPassages} from "../../../../kb/semantic/knowledge-explorer";
 
-export function PublishedKnowledgeClient({kbId}:{kbId:string}){
+export function PublishedKnowledgeClient({kbId,initialEntity=""}:{kbId:string;initialEntity?:string}){
   const m=useMessages(semantic),[entity,setEntity]=useState(""),[focus,setFocus]=useState("");
   const [value,setValue]=useState<KnowledgePackage|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(0);
   const sequence=useRef(0);
+  const windowClient=useRef<KnowledgeWindowClient|null>(null);if(!windowClient.current)windowClient.current=new KnowledgeWindowClient();
+  const [observedAt,setObservedAt]=useState(""),[syncAction,setSyncAction]=useState("");
+  const activeWindow=useRef({entity:initialEntity,cursor:"",history:[""]});
   const [pages,setPages]=useState<string[]>([""]);
   const [topic,setTopic]=useState(""),[query,setQuery]=useState("");
   const topics=useMemo(()=>value?knowledgeTopics(value):[],[value]);
   const found=useMemo(()=>value?searchPublishedPassages(value,query):{matches:[],total:0},[value,query]);
-  useEffect(()=>{void load("");return()=>{sequence.current++;};
+  useEffect(()=>{void load(initialEntity);return()=>{sequence.current++;windowClient.current?.clear();};
     // The server keys this component by library, discarding prior request state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
   async function load(id:string,cursor="",history=[""]){
-    const ticket=++sequence.current;setBusy(true);setError(0);setValue(null);setTopic("");setQuery("");
+    const ticket=++sequence.current;setBusy(true);setError(0);setObservedAt("");setSyncAction("");setValue(null);setTopic("");setQuery("");
     try{
-      const response=await fetch(`/api/kb/${encodeURIComponent(kbId)}/knowledge-package${id?`?entity=${encodeURIComponent(id)}`:`?cursor=${encodeURIComponent(cursor)}`}`,{cache:"no-store",credentials:"same-origin"});
-      if(!response.ok){if(ticket===sequence.current)setError(response.status);return;}
-      const data=await response.json() as KnowledgePackage;
-      if(ticket===sequence.current){setValue(data);setFocus(id);setEntity(id);setPages(history);}
-    }catch{if(ticket===sequence.current)setError(503);}
+      const params=new URLSearchParams();params.set(id?"entity":"cursor",id||cursor);
+      const result=await windowClient.current!.read(kbId,params);
+      if(ticket===sequence.current&&result){setValue(result.knowledge);setObservedAt(result.observedAt);setSyncAction(result.action);setFocus(id);setEntity(id);setPages(history);activeWindow.current={entity:id,cursor,history};}
+    }catch(error){if(ticket===sequence.current)setError(error instanceof KnowledgeWindowError?error.status:503);}
     finally{if(ticket===sequence.current)setBusy(false);}
   }
   if(error===401)return <SignInGate from={`/assets/${kbId}/published`}/>;
@@ -38,6 +41,8 @@ export function PublishedKnowledgeClient({kbId}:{kbId:string}){
     <Link href={`/assets/${kbId}/knowledge`}>{m.back}</Link>
     <div className="flex flex-wrap gap-sm"><Button variant="outline" asChild><Link href={`/assets/${kbId}/graph`}>{m.graphTitle}</Link></Button>
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/sources`}>{m.sourceSearchTitle}</Link></Button>
+      <Button variant="outline" disabled={busy} onClick={()=>{const current=activeWindow.current;void load(current.entity,current.cursor,current.history);}}>{m.recheckKnowledge}</Button>
+      {focus&&value?.nodes.some(n=>n.id===focus)&&<Button variant="outline" asChild><Link href={`/assets/${kbId}/graph?entity=${encodeURIComponent(focus)}`}>{m.entityGraph}</Link></Button>}
       {value&&<Button variant="outline" asChild><a href={`/api/kb/${kbId}/knowledge-package?format=markdown${focus?`&entity=${encodeURIComponent(focus)}`:`&cursor=${encodeURIComponent(pages.at(-1)??"")}`}`}>{m.exportKnowledge}</a></Button>}</div>
     <p className="text-body-sm text-muted-foreground">{m.knowledgeHint}</p>
     <Button disabled={busy} variant="outline" onClick={()=>void load("")}>{m.linkedEntities}</Button>
@@ -47,6 +52,7 @@ export function PublishedKnowledgeClient({kbId}:{kbId:string}){
         pattern="[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}" className="min-w-0 flex-1 rounded-md border border-border bg-background p-sm"/>
       <Button disabled={busy} type="submit">{m.openKnowledge}</Button>
     </form>
+    {!!observedAt&&<p role="status" className="break-all text-body-sm text-muted-foreground">{m.knowledgeObserved}: <time dateTime={observedAt}>{observedAt}</time> / {syncAction==="unchanged"?m.knowledgeUnchanged:m.knowledgeReplaced}</p>}
     {busy&&<p role="status">{m.loading}</p>}
     {!!error&&<Banner tone="danger" title={error===403?m.packageDenied:error===400?m.invalidEntity:error===409?m.directoryChanged:m.unavailable}/>}
     {value&&<>
