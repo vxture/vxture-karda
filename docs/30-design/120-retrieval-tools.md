@@ -143,7 +143,7 @@ scope 语义执行:token 侧 grant scope=retrieve 的库,其内容仅经带 ref 
 2026-11-25 增量工具：`karda.source_search`，OBO only，输入kb_ids/query/top_k/verification_filter，
 返回仅原文的版本/hash/坐标/物理页和有效性状态，网页使用相同后端。采用既有karda.search计量，
 不改变默认混合检索search/ask或Runos service登记。参数、权限、预算和失败语义见[170 §21](170-semantic-persistence-adapter.md)。
-当前工具目录共14项；source_search与knowledge_package均限于初期同空间user库的调用产品attachment范围，外部联调另验。
+当前工具目录共15项；新增knowledge_sync用于当前知识窗口条件同步，见170§39。source_search、knowledge_package与knowledge_sync均限于初期同空间user库的调用产品attachment范围，外部联调另验。
 
 - 100-kb-model §5.3/§6:verification_filter 与召回过滤维度在本文 §1/§6 落地,双向一致已核;
 - product_210 实现:§6 工具清单即 Karda 的 `/.well-known/vxture-tools` 初版内容;

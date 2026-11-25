@@ -695,3 +695,22 @@ graph-viewport以SVG默认xMidYMid meet的同一等比缩放换算两轴，修�
 自动标签根据当前绘制节点数及实际像素字号隐藏密集不可读标签；可切换全部或仅选中/聚焦标签，完整名称仍保留aria-label、title及目录。当前布局与社区算法保留有界同步实现：本阶段优化已确认的交互重复渲染及DOM绘制，不增加Worker序列化与双份状态；真实业务分布仍需测量决定后续布局/Worker选型。
 
 开发期仅类型/i18n与4项视口定向检查，没有本地全量。一次集中Playwright合成HTTP场景验证500节点/1000边、标签模式、放大后绘制50节点而目录仍有500项、屏外节点/关系Home/End/选择、指针锚定缩放、矩形画布50px双轴拖动、缩略图/键盘、390px、翻页与409/403清空。12次实体选择P95/max193ms为本机开发服务合成观测；样本/状态不同，不将其与历史测量作严格性能对照，也不接受为生产SLO或真实业务验收。阶段CI统一全量；无新API、DDL、依赖或客户数据操作。
+
+## 39. Agent当前知识窗口同步阶段（2026-11-25）
+
+新增RP GET /api/kb/{id}/knowledge-sync和OBO only工具karda.knowledge_sync，共用readKnowledgeSync与正式readKnowledgePackage。参数沿用knowledge_package的显式单库/最多20库、实体邻域或目录窗口、关系类型、预算与游标，追加可选known_revision（严格64位小写hex）。身份仍来自会话/委托上下文，不接受客户端身份、语义版本或历史正文。服务模式拒绝，不扩大Runos service通道或tenant/platform库契约；工具目录从14→15，既有工具语义保留。
+
+每次调用包括known_revision命中，都执行正式读取器的当前平台准入、本地角色/所有权、调用产品attachment交集、发布/审核、原件hash/版本/精确证据及有效期检查。指纹以SHA-256绑定协议、工作空间/用户/调用产品、显式库集合、完整窗口查询和实际交付知识包。对象键规范排序，集合式范围排序去重，正文/证据数组顺序保留；时间戳不参与指纹。不以HTTP ETag/304或客户端指纹跳过鉴权/对象存储校验。它减少重复正文传输，不减少来源检查成本。
+
+响应format=karda.knowledge-sync.v1，revision、observedAt（本次读完成后的观测时间）和reuse=revalidate；action=replace时携带完整knowledge，必须原子替换该请求窗口，包含空知识包；action=unchanged时knowledge=null，只允许在同一身份/请求范围和对应revision的本地基线存在时复用。没有基线则省略known_revision重新获取。请求和响应正文合计指纹输入上限2MiB；超预算或内部错误503，不退回旧结果。无模型、写库或新计量，沿用knowledge_package免费核验语义。
+
+消费者接入顺序：
+
+1. 固定已认证身份、库、查询与预算；首次不传known_revision，保存replace的完整窗口及revision。
+2. 下次实际消费前用完全相同参数及known_revision重新核验；按action替换或复用本窗口。刷新期间不把旧结果作为已重新授权知识；不设置离线授权有效期。
+3. 任何401/403/409/503、网络失败或响应不完整，先清空该窗口，停止消费旧正文；409须丢弃旧分页链并从page_cursor=""重新开始。退出、换用户/工作空间/调用产品、过滤或预算变化均使用新缓存键并清空旧状态。
+4. 同一缓存键只应用最新请求的响应，取消或忽略迟到结果。该协议不提供跨请求串行化、跨页原子快照、历史事件ID、推送、持久订阅或外部消费者ACK。目录继续使用原nextCursor并逐页核验，不能把不同窗口拼成同一原子快照。
+
+RP示例：GET /api/kb/{id}/knowledge-sync?nodes=100&edges=200&cursor=；再次追加known_revision={revision}。OBO示例：karda.knowledge_sync({kb_id,entity_ids:[],max_nodes:100,max_edges:200,page_cursor:"",known_revision})；首次省略known_revision。RP响应直接为协议对象，OBO按既有工具面包在result中。不要将revision作为权限凭据，或将observedAt解释为授权租约。客户端代码不自动发起轮询、发布或模型调用。
+
+开发期仅4项同步契约定向检查及17项工具目录守卫、类型与文档检查，不跑本地全量。覆盖身份/范围/正文/来源状态指纹变化、无时间抖动、命中仍重新读取、空窗口替换、预算、服务/无权限拒绝及安全错误映射。阶段CI扩展真实SOP数据库链：首次replace→unchanged→来源版本变化清空→新审核发布替换→attachment撤回清空/恢复→当前平台拒绝即失败→原件归档清空。该证据验证本仓同步协议，不接受为真实Agent接入/外部事件投递或业务质量验收。无新DDL、55表保持。

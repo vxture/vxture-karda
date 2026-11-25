@@ -31,6 +31,7 @@ import { writeDocument } from "./write";
 import { createEntry } from "./entry";
 import { createKb, attachKb, detachKb } from "../attachments/tools";
 import {knowledgePackageTool} from "../semantic/package-tool";
+import {knowledgeSyncTool} from "../semantic/sync-tool";
 import {sourceSearchTool} from "../retrieval/source-search-tool";
 
 export function buildToolBackends(): ToolBackends {
@@ -40,6 +41,7 @@ export function buildToolBackends(): ToolBackends {
   const runtime = getProcessingRuntime();
   const generation = getGenerationClient();
   return {
+    knowledgeSync:knowledgeSyncTool,
     sourceSearch:sourceSearchTool,
     knowledgePackage:knowledgePackageTool,
     async listKbs(workspaceId) {

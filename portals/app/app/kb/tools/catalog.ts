@@ -25,6 +25,14 @@ export const PROTOCOL_VERSION = "1.0.0";
 
 export const TOOLS: ToolDescriptor[] = [
   {
+    name:"karda.knowledge_sync",
+    summary:"Revalidate one published knowledge window. Use knowledge_package inputs plus optional known_revision. replace atomically replaces the window (including empty); unchanged omits the payload. Revisions grant no access or offline lease. Revalidate before reuse; discard cached knowledge on any error, 401/403, or 409 and restart paging on 409. No event feed or cross-page snapshot guarantee.",
+    mode:"obo_only",
+    metering:{kind:"none"},
+    input:["kb_id","kb_ids","entity_ids","relation_types","max_hops","max_nodes","max_edges","page_cursor","known_revision"],
+    authz:{asset_types:["knowledge_base"]},
+  },
+  {
     name:"karda.source_search",
     summary:"Search exact current source passages with version, hash, UTF-16 offsets and PDF pages; no generated knowledge or summaries. Initial adapter supports same-workspace user libraries in the caller product's attachments.",
     mode:"obo_only",
