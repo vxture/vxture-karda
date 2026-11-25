@@ -22,8 +22,8 @@ export function snapshotFromExtraction(mime:string,bytes:Buffer,value:unknown):S
   }else{
     const format=SOURCE_FORMATS.find(f=>f.mime===mime);
     if(!format)throw new Error("source_format_unsupported");
-    if(data.extractor?.version!==format.parser||!Array.isArray(data.paragraphs)||data.paragraphs.some(p=>typeof p!=="string"))throw new Error(mime.includes("spreadsheetml")?"source_xlsx_contract":"source_pptx_contract");
-    parts=data.paragraphs.map(text=>({text}));parserVersion=format.parser;
+    if(!(format.accepted as readonly string[]).includes(String(data.extractor?.version))||!Array.isArray(data.paragraphs)||data.paragraphs.some(p=>typeof p!=="string"))throw new Error(mime.includes("spreadsheetml")?"source_xlsx_contract":"source_pptx_contract");
+    parts=data.paragraphs.map(text=>({text}));parserVersion=String(data.extractor!.version);
   }
   let text="";
   const locators=parts.map((part,ordinal)=>{if(ordinal)text+="\n\n";const start=text.length;text+=part.text;

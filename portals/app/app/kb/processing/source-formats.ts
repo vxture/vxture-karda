@@ -6,6 +6,6 @@ export const PPTX_MIME="application/vnd.openxmlformats-officedocument.presentati
 export const SOURCE_FORMATS=[
   {mime:PDF_MIME,parser:"pypdf-6.21.4-v1",accepted:["pypdf-6.21.4-v1"],script:"extract-pdf.py"},
   {mime:DOCX_MIME,parser:"docx-cell-grid-v4",accepted:["docx-main-body-v1","docx-body-tables-v2","docx-referenced-stories-v3","docx-cell-grid-v4"],script:"extract-docx-grid.py"},
-  {mime:XLSX_MIME,parser:"xlsx-literal-cells-v1",accepted:["xlsx-literal-cells-v1"],script:"extract-xlsx.py"},
+  {mime:XLSX_MIME,parser:"xlsx-cell-ranges-v2",accepted:["xlsx-literal-cells-v1","xlsx-cell-ranges-v2"],script:"extract-xlsx-ranges.py"},
   {mime:PPTX_MIME,parser:"pptx-slide-text-v1",accepted:["pptx-slide-text-v1"],script:"extract-pptx.py"},
 ] as const;

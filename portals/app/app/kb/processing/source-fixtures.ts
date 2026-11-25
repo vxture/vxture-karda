@@ -45,6 +45,9 @@ export function syntheticXlsx(overrides:Record<string,string>={}):Buffer {
   return execFileSync(python,["-I","-c",'import io,json,sys,zipfile; b=io.BytesIO(); z=zipfile.ZipFile(b,"w"); parts=json.loads(sys.stdin.buffer.read().decode("utf-8")); [z.writestr(k,v) for k,v in parts.items()]; z.close(); sys.stdout.buffer.write(b.getvalue())'],
     {input:JSON.stringify(parts),timeout:10000,windowsHide:true});
 }
+export function syntheticXlsxRanges():Buffer{
+  return syntheticXlsx({"xl/worksheets/sheet1.xml":'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1" t="s"><v>0</v></c><c r="C1"><v>42</v></c><c r="D1" t="b"><v>1</v></c></row><row r="3"><c r="B3" t="inlineStr"><is><t>Proof second</t></is></c></row></sheetData><mergeCells count="1"><mergeCell ref="A1:B2"/></mergeCells></worksheet>'});
+}
 export function syntheticPdf(texts:string[]):Buffer {
   const objects=["<< /Type /Catalog /Pages 2 0 R >>",`<< /Type /Pages /Count ${texts.length} /Kids [${texts.map((_,i)=>`${4+i*2} 0 R`).join(" ")}] >>`,
     "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"];

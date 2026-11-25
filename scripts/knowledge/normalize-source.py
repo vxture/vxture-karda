@@ -19,7 +19,7 @@ if mime == "application/pdf":
 elif mime == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
     script = "extract-docx-grid.py"
 elif mime == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-    script = "extract-xlsx.py"
+    script = "extract-xlsx-ranges.py"
 elif mime == "application/vnd.openxmlformats-officedocument.presentationml.presentation":
     script = "extract-pptx.py"
 else:
