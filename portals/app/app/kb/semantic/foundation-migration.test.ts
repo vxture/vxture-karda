@@ -87,6 +87,11 @@ test("semantic foundation PostgreSQL: fresh and old-41 upgrade twice, immutable 
     const parserChecks=async(admin:Pool)=>(await admin.query("SELECT conname,pg_get_constraintdef(oid) AS definition FROM pg_constraint WHERE conrelid='karda_kb.document_text_snapshot'::regclass AND contype='c' ORDER BY conname")).rows;
     assert.deepEqual(await parserChecks(upgraded.admin),await parserChecks(fresh.admin));
     assert.equal((await upgraded.admin.query("SELECT parser_version FROM karda_kb.document_text_snapshot WHERE document_id=$1",[doc])).rows[0].parser_version,"docx-main-body-v1");
+    await upgraded.admin.query(`INSERT INTO karda_kb.document_text_snapshot
+      (document_id,document_version,content_hash,mime,parser_version,canonical_text,text_hash,locators)
+      VALUES($1,2,$2,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','xlsx-literal-cells-v1','literal',$2,'[{"start":0,"end":7,"ordinal":0}]')`,[doc,hash]);
+    await apply(upgraded.admin);
+    assert.equal((await upgraded.admin.query("SELECT parser_version FROM karda_kb.document_text_snapshot WHERE document_id=$1 AND document_version=2",[doc])).rows[0].parser_version,"xlsx-literal-cells-v1","full replay must not narrow the earlier DOCX CHECK over XLSX rows");
     assert.deepEqual((await upgraded.admin.query("SELECT * FROM karda_kb.entity WHERE id=$1", [oldEntity])).rows[0], original);
     for (const { admin, service } of [fresh, upgraded]) {
       if (admin === fresh.admin) await seed(admin);

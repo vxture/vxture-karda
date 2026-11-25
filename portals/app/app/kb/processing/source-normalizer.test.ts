@@ -2,9 +2,9 @@ import {test} from "node:test";
 import assert from "node:assert/strict";
 import {execFileSync} from "node:child_process";
 import {normalizeSource,snapshotFromExtraction} from "./source-normalizer";
-import {DOCX_MIME,PDF_MIME,readSourceSnapshot,sourceHash,snapshotIR,snapshotValid} from "./source-snapshot";
+import {DOCX_MIME,PDF_MIME,XLSX_MIME,readSourceSnapshot,sourceHash,snapshotIR,snapshotValid} from "./source-snapshot";
 import {verifiedSourceText} from "../semantic/source-text";
-import {syntheticPdf} from "./source-fixtures";
+import {syntheticPdf,syntheticXlsx} from "./source-fixtures";
 import {runExtraction} from "../assertions/extract-run";
 import {mkdtemp,mkdir,copyFile,rm} from "node:fs/promises";
 import {tmpdir} from "node:os";
@@ -77,9 +77,44 @@ test("standalone image finds pinned extractors after Next changes the runtime wo
   const cwd=process.cwd(),folder=await mkdtemp(join(tmpdir(),"karda-runtime-layout-"));
   try{
     await mkdir(join(folder,"source-tools"));await mkdir(join(folder,"portals/app"),{recursive:true});
-    for(const name of ["normalize-source.py","extract-pdf.py","extract-docx.py"])
+    for(const name of ["normalize-source.py","extract-pdf.py","extract-docx.py","extract-xlsx.py"])
       await copyFile(resolve(cwd,"../../scripts/knowledge",name),join(folder,"source-tools",name));
     process.chdir(join(folder,"portals/app"));
     assert.equal((await normalizeSource(PDF_MIME,syntheticPdf(["Runtime proof"]))).text,"Runtime proof");
+    assert.equal((await normalizeSource(XLSX_MIME,syntheticXlsx())).parserVersion,"xlsx-literal-cells-v1");
   }finally{process.chdir(cwd);await rm(folder,{recursive:true,force:true});}
+});
+
+test("XLSX literal snapshots preserve sheet/cell identity, sparse coordinates, types and UTF-16 without interpreting formulas",async()=>{
+  const bytes=syntheticXlsx(),snapshot=await normalizeSource(XLSX_MIME,bytes);
+  assert.equal(snapshot.parserVersion,"xlsx-literal-cells-v1");
+  assert.equal(snapshot.text,'Sheet "Proof" row 1: A1 (text)="Required \u4e2d\ud83d\ude00" | C1 (number(raw))="42" | D1 (boolean)=true\n\nSheet "Proof" row 3: B3 (text)="Proof second"');
+  assert.ok(snapshot.locators.every(l=>l.page===undefined));assert.equal(snapshot.locators.length,2);
+  assert.equal(verifiedSourceText({activeVersion:1,contentState:"indexed",contentHash:sourceHash(bytes),mime:XLSX_MIME,normalized:snapshot},bytes),snapshot.text);
+  assert.ok(snapshotIR(snapshot).elements.every(e=>snapshot.text.slice(e.range.start,e.range.end).length>0));
+  const xml=(body:string)=>`<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${body}</worksheet>`;
+  const row=(cell:string)=>`<sheetData><row r="1">${cell}</row></sheetData>`;
+  const badSheets=[row('<c r="A1"><f>SUM(A2:A3)</f><v>99</v></c>'),row('<c r="A1" t="s"><v>9</v></c>'),
+    row('<c r="A1" t="e"><v>#REF!</v></c>'),row('<c r="A2"><v>1</v></c>'),row('<c r="A1"><v>1</v></c><c r="A1"><v>2</v></c>'),
+    row('<c r="A1"><v>NaN</v></c>'),row('<c r="XFE1"><v>1</v></c>'),
+    '<sheetData><row r="1" hidden="1"><c r="A1"><v>1</v></c></row></sheetData>',
+    '<sheetData><row r="1" s="1"><c r="A1"><v>1</v></c></row></sheetData>',
+    '<cols><col min="1" max="1" style="1"/></cols>'+row('<c r="A1"><v>1</v></c>'),
+    row('<c r="A1"><v>1</v></c>')+'<mergeCells><mergeCell ref="A1:B1"/></mergeCells>'];
+  for(const sheet of badSheets)await assert.rejects(normalizeSource(XLSX_MIME,syntheticXlsx({"xl/worksheets/sheet1.xml":xml(sheet)})),/source_extraction_refused/);
+  const rejectedParts:Record<string,string>[]=[
+    {"xl/vbaProject.bin":"macro"},
+    {"xl/_rels/workbook.xml.rels":'<Relationships><Relationship TargetMode="External" Target="https://example.invalid/"/></Relationships>'},
+    {"xl/styles.xml":'<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cellXfs><xf numFmtId="14"/></cellXfs></styleSheet>'},
+    {"xl/sharedStrings.xml":'<!DOCTYPE s [<!ENTITY x "hidden">]><sst/>'},
+  ];
+  for(const extra of rejectedParts)await assert.rejects(normalizeSource(XLSX_MIME,syntheticXlsx(extra)),/source_extraction_refused/);
+  const multi={
+    "xl/workbook.xml":'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="First" sheetId="1" r:id="r1"/><sheet name="Second" sheetId="2" r:id="r2"/></sheets></workbook>',
+    "xl/_rels/workbook.xml.rels":'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="r1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="/xl/worksheets/sheet1.xml"/><Relationship Id="r2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/></Relationships>',
+    "xl/worksheets/sheet2.xml":xml(row('<c r="A1" t="inlineStr"><is><t>Second sheet</t></is></c>')),
+  };
+  const multiple=await normalizeSource(XLSX_MIME,syntheticXlsx(multi));assert.equal(multiple.locators.length,3);assert.match(multiple.text,/Sheet "Second" row 1: A1/);
+  await assert.rejects(normalizeSource(XLSX_MIME,syntheticXlsx({...multi,"xl/workbook.xml":multi["xl/workbook.xml"].replace('name="Second"','name="Second" state="hidden"')})),/source_extraction_refused/);
+  assert.throws(()=>snapshotFromExtraction(XLSX_MIME,bytes,{binarySha256:sourceHash(bytes),extractor:{version:"future"},paragraphs:["x"]}),/source_xlsx_contract/);
 });
