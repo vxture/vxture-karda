@@ -21,7 +21,7 @@ test("directory pages traverse a stable eligible projection without gaps or hidd
     assert.throws(()=>projectDirectory(snapshot,tenderSchema,scope,{...limits,pageCursor}),/invalid_graph_query|semantic_directory_changed/);
   const token=first.directoryPage!.nextCursor!;
   for(const changed of [(()=>{const s=tenderSnapshot();s.entities[0].label="renamed";return s;})(),
-    (()=>{const s=tenderSnapshot();s.assertions[0].statement="amended";return s;})(),
+    (()=>{const s=tenderSnapshot();s.assertions[0].statementFingerprint="amended";return s;})(),
     (()=>{const s=tenderSnapshot();s.sources.find(s=>s.current)!.withdrawn=true;return s;})()])
     assert.throws(()=>projectDirectory(changed,tenderSchema,scope,{...limits,pageCursor:token}),/semantic_directory_changed/);
   assert.throws(()=>projectDirectory(snapshot,tenderSchema,{...scope,visibleKbIds:new Set()}, {...limits,pageCursor:token}),/semantic_directory_changed/);

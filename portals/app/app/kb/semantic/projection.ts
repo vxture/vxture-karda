@@ -165,7 +165,7 @@ function projectCurrentKnowledge(snapshot:KnowledgeSnapshot,schema:OntologySchem
       hash=directoryFingerprint([schema.namespace,schema.schemaId,schema.version,query.maxNodes,query.maxEdges,
         [...new Set(query.relationTypes??[])].sort(),eligible.map(e=>[e.id,e.kbId,e.type,e.sourceId,e.targetId,[...e.assertionIds].sort()]),
         nodeIds.map(id=>{const n=entities.get(id)!;return [id,n.type,n.label];}),
-        assertionIds.map(id=>{const a=assertions.get(id)!;return [id,a.contentState,a.verificationState,a.statement??null,
+        assertionIds.map(id=>{const a=assertions.get(id)!;return [id,a.contentState,a.verificationState,a.statementFingerprint??null,
           a.verificationExpiresAt,a.validFrom,a.validUntil,a.supersededById,supported.get(id)!.map(g=>g.id).sort()];}),
         [...grounds.values()].sort((a,b)=>a.id.localeCompare(b.id)).map(g=>[g.id,g.documentId,g.documentVersion,g.start,g.end,g.pages??[],g.sourceFingerprint??null])]);
     }

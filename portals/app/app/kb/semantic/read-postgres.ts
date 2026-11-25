@@ -28,7 +28,7 @@ export type KnowledgePackage = SemanticReadResult & {
   gaps:string[];
 };
 interface AssertionRow {
-  statement:string;
+  statement_hash:string|null;
   id: string; kb_id: string; content_state: string; verification_state: string;
   expires_at: Date | null; valid_until: Date | null; superseded_by: string | null;
 }
@@ -111,9 +111,10 @@ export class PostgresSemanticReader {
         return type && published.schema.entityTypes.includes(type) ? [{ id: row.id, kbId: row.kb_id, type, label: row.name }] : [];
       });
       const assertions = bounded((await db.query<AssertionRow>(`
-        SELECT id,kb_id,statement,content_state,verification_state,expires_at,valid_until,superseded_by
+        SELECT id,kb_id,CASE WHEN $3::boolean THEN encode(sha256(convert_to(statement,'UTF8')),'hex') END AS statement_hash,
+          content_state,verification_state,expires_at,valid_until,superseded_by
         FROM karda_kb.assertion WHERE kb_id=ANY($1::uuid[]) AND id=ANY($2::uuid[]) LIMIT 5001`,
-        [visible, assertionIds])).rows);
+        [visible, assertionIds,query.pageCursor!==undefined])).rows);
       const grounds = bounded((await db.query<EvidenceRow>(`
         SELECT e.id,e.assertion_id,a.kb_id,s.document_id,s.document_version,s.start_offset,s.end_offset,s.excerpt,
           d.active_chunk_version,d.content_state,d.mime,d.content_hash,d.storage_ref,d.size_bytes
@@ -170,7 +171,7 @@ export class PostgresSemanticReader {
         const ids = evidenceIds.get(row.assertion_id) ?? []; ids.push(row.id); evidenceIds.set(row.assertion_id, ids);
       }
       snapshot.assertions = assertions.map(row => ({ id: row.id, kbId: row.kb_id,
-        statement:row.statement,
+        statementFingerprint:row.statement_hash??undefined,
         contentState: row.content_state, verificationState: row.verification_state,
         verificationExpiresAt: row.expires_at?.toISOString() ?? null, validUntil: row.valid_until?.toISOString() ?? null,
         validFrom: null, supersededById: row.superseded_by, evidenceIds: evidenceIds.get(row.id) ?? [] }));
