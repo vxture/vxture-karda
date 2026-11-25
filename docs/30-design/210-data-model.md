@@ -316,3 +316,5 @@ baseline/0019/Prisma/98同步，正式DDL只走db-init；无客户内容/权限�
 审核沿用追加式semantic_review，subject_key为topic-summary/摘要ID，subject_hash绑定摘要payload_hash，revision作CAS，独立于关系裁决，不影响正式release。
 摘要正文只在当前主题证据hash匹配时显示，旧来源或裁决失效后正文/审核理由隐藏；认可仅为该草稿的人工裁决，不自动发布或提升为事实。
 baseline/0020/Prisma/98锁步，新旧库重复演练；生产通过db-init审核迁移。
+
+2026-11-25 0021仅扩展document_text_snapshot的格式/解析器CHECK，允许docx-body-tables-v2并保留PDF/v1；baseline同名约束同步，55表及Prisma字段不变。见170§31。

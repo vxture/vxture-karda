@@ -1,13 +1,15 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
 import {randomUUID} from "node:crypto";
+import {execFileSync} from "node:child_process";
 import {Pool} from "pg";
 import {readFileSync} from "node:fs";
 import {fileURLToPath} from "node:url";
 import {PrismaCommitTarget} from "./commit";
 import {rawSourceFor} from "./runtime";
 import {runPipeline,type CommittedChunk} from "./orchestrator";
-import {PDF_MIME,readSourceSnapshot,sourceHash} from "./source-snapshot";
+import {PDF_MIME,DOCX_MIME,readSourceSnapshot,sourceHash} from "./source-snapshot";
+import {normalizeSource} from "./source-normalizer";
 import {verifiedSourceText} from "../semantic/source-text";
 import {syntheticPdf} from "./source-fixtures";
 import {ContentService} from "../lib/content-service";
@@ -24,11 +26,42 @@ test("source snapshots have identical fresh/upgrade DDL and immutable grants",()
   const increment=read("incr/0018_document_text_snapshot.sql");
   for(const [section,file] of [["DOCUMENT TEXT SNAPSHOT","00_baseline.sql"],["DOCUMENT TEXT LOCKS","98_column_locks.sql"]]){
     const part=(text:string)=>text.slice(text.indexOf(`-- BEGIN ${section}`),text.indexOf(`-- END ${section}`)+`-- END ${section}`.length);
-    assert.ok(part(increment).length>100);assert.equal(part(increment),part(read(file)));
+    const current=part(read(file)),old=part(increment);
+    assert.ok(old.length>100);
+    if(section==="DOCUMENT TEXT SNAPSHOT"){
+      const withoutParser=(s:string)=>s.slice(0,s.indexOf("  CHECK ((mime=")>=0?s.indexOf("  CHECK ((mime="):s.indexOf("  CONSTRAINT document_text_snapshot_parser_check"));
+      assert.equal(withoutParser(current),withoutParser(old));
+      assert.match(read("incr/0021_docx_table_snapshot.sql"),/docx-body-tables-v2/);
+    }else assert.equal(old,current);
   }
 });
 
 const endpoint=process.env.KARDA_PROVISION_TEST_DATABASE_URL;
+test("DOCX v2 table output commits and reloads under service-role CHECK, preserving v1 rows and rejecting unknown parsers",{skip:!endpoint,timeout:30000},async()=>{
+  const url=new URL(endpoint!);assert.ok(["localhost","127.0.0.1","[::1]"].includes(url.hostname));assert.equal(url.pathname,"/karda_p3_test");
+  const admin=new Pool({connectionString:endpoint});url.username="karda_svc";process.env.DATABASE_URL=url.toString();
+  const service=new Pool({connectionString:url.toString()}),kb=randomUUID(),ws=randomUUID(),doc=randomUUID();
+  const python=process.env.KARDA_KNOWLEDGE_PYTHON||(process.platform==="win32"?"python":"python3");
+  const xml='<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:tbl><w:tr><w:tc><w:p><w:r><w:t>Proof</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Required</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:body></w:document>';
+  const bytes=execFileSync(python,["-I","-c",'import io,sys,zipfile; b=io.BytesIO(); z=zipfile.ZipFile(b,"w"); z.writestr("word/document.xml",sys.stdin.buffer.read()); z.close(); sys.stdout.buffer.write(b.getvalue())'],{input:Buffer.from(xml),timeout:10000,windowsHide:true});
+  try{
+    await admin.query("INSERT INTO karda_kb.knowledge_base(id,workspace_id,owner_type,owner_sub,name) VALUES($1,$2,'user','synthetic','table')",[kb,ws]);
+    await admin.query("INSERT INTO karda_kb.document(id,kb_id,title,source,mime,content_hash,size_bytes) VALUES($1,$2,'table','upload',$3,$4,$5)",[doc,kb,DOCX_MIME,sourceHash(bytes),bytes.length]);
+    const normalized=await normalizeSource(DOCX_MIME,bytes),target=new PrismaCommitTarget(doc);
+    await target.commit([],null,normalized);
+    const loaded=await readSourceSnapshot(async(sql,...values)=>(await service.query(sql,values)).rows,doc,1);
+    assert.equal(loaded?.parserVersion,"docx-body-tables-v2");assert.equal(loaded?.text,"Proof\tRequired");
+    const insert="INSERT INTO karda_kb.document_text_snapshot(document_id,document_version,content_hash,mime,parser_version,canonical_text,text_hash,locators) VALUES($1,$2,$3,$4,$5,$6,$7,$8)";
+    const args=[doc,2,normalized.contentHash,DOCX_MIME,"docx-main-body-v1",normalized.text,normalized.textHash,JSON.stringify(normalized.locators)];
+    await service.query(insert,args);
+    await assert.rejects(service.query(insert,[...args.slice(0,1),3,...args.slice(2,4),"unknown",...args.slice(5)]),/check constraint/);
+    await assert.rejects(service.query("DELETE FROM karda_kb.document_text_snapshot WHERE document_id=$1",[doc]),/permission denied/);
+  }finally{
+    await admin.query("DELETE FROM karda_kb.document_text_snapshot WHERE document_id=$1",[doc]);
+    await admin.query("DELETE FROM karda_kb.document WHERE id=$1",[doc]);await admin.query("DELETE FROM karda_kb.knowledge_base WHERE id=$1",[kb]);
+    await (await getPrismaClient()).$disconnect();await service.end();await admin.end();
+  }
+});
 test("real PDF processing atomically binds chunks and immutable canonical text; stale input and late failure roll back",{skip:!endpoint,timeout:60000},async()=>{
   const url=new URL(endpoint!);assert.ok(["localhost","127.0.0.1","[::1]"].includes(url.hostname));assert.equal(url.pathname,"/karda_p3_test");
   const admin=new Pool({connectionString:endpoint,statement_timeout:10000});url.username="karda_svc";
