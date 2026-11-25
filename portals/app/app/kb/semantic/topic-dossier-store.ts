@@ -12,12 +12,12 @@ import type {ModelSelection} from "../atlas/selection";
 
 interface DossierRow {id:string;relation_type:string;input_hash:string;payload_hash:string;payload:TopicDossier;created_by:string;created_at:Date}
 interface SummaryRow {id:string;dossier_id:string;input_hash:string;payload_hash:string;payload:TopicSummary;selection:ModelSelection;created_at:Date}
-export type TopicRequest={action:"list";before?:string;dossierId?:string;summaryBefore?:string}|{action:"compose";id:string;relationType:string}|
+export type TopicRequest={action:"list";before?:string;dossierId?:string;summaryBefore?:string;summaryId?:string}|{action:"compose";id:string;relationType:string}|
   {action:"summary_prepare";id:string;dossierId:string}|{action:"summary_save";id:string;dossierId:string;payload:TopicSummary;selection:ModelSelection}|
   {action:"summary_review";id:string;dossierId:string;expectedRevision:number;decision:"accept"|"reject"|"revise";note:string};
 export class PostgresTopicDossiers {
   constructor(private pool:Pool,private objects:Pick<ObjectStore,"get">,private admit:(identity:SemanticReadIdentity)=>Promise<boolean>){}
-  async handle(identity:SemanticReadIdentity,kbId:string,request:TopicRequest){
+  async handle(identity:SemanticReadIdentity,kbId:string,request:TopicRequest,exporting=false){
     identity={...identity,roles:[...identity.roles]};request=structuredClone(request);
     const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
     if(!uuid.test(kbId)||!uuid.test(identity.workspaceId)||identity.productCode!=="karda"||
@@ -29,6 +29,8 @@ export class PostgresTopicDossiers {
     if(request.action==="list"&&((request.before!==undefined&&!uuid.test(request.before))||
       (request.dossierId!==undefined&&!uuid.test(request.dossierId))||(request.summaryBefore!==undefined&&!uuid.test(request.summaryBefore))||
       (request.before&&request.dossierId)||(request.summaryBefore&&!request.dossierId)))throw new Error("semantic_topic_invalid");
+    if(exporting&&(request.action!=="list"||!request.dossierId||request.before||request.summaryBefore))throw new Error("semantic_topic_invalid");
+    if(request.action==="list"&&request.summaryId!==undefined&&(!uuid.test(request.summaryId)||!request.dossierId||request.before||request.summaryBefore))throw new Error("semantic_topic_invalid");
     if(await this.admit(identity)!==true)throw new Error("semantic_topic_denied");
     const db=await this.pool.connect();
     try{
@@ -37,6 +39,7 @@ export class PostgresTopicDossiers {
       const sql:RoleSql={$queryRawUnsafe:async<T>(s:string,...v:unknown[])=>(await db.query(s,v)).rows as T,$executeRawUnsafe:async()=>{throw new Error("semantic_topic_denied");}};
       const access=await readProductAccess(identity,sql);
       if(!permits(access,"product.enter")||!permits(access,"service.publish")||!permits(access,"data.read"))throw new Error("semantic_topic_denied");
+      if(exporting&&!permits(access,"data.export"))throw new Error("semantic_topic_denied");
       if((request.action==="summary_prepare"||request.action==="summary_save")&&!permits(access,"ai.use"))throw new Error("semantic_topic_denied");
       const owner=await db.query(`SELECT id FROM karda_kb.knowledge_base WHERE id=$1 AND workspace_id=$2 AND owner_type='user' AND owner_sub=$3 AND deleted_at IS NULL`,[kbId,identity.workspaceId,identity.sub]);
       if(owner.rowCount!==1)throw new Error("semantic_topic_denied");
@@ -102,7 +105,8 @@ export class PostgresTopicDossiers {
       const more=rows.length>20;if(more)rows.pop();
       if(rows.reduce((n,r)=>n+Buffer.byteLength(JSON.stringify(r.payload)),0)>2*1024*1024)throw new Error("semantic_topic_budget");
       const summaryLimit=focusedId?20:5;
-      const selectedSummary=request.action!=="list"&&request.action!=="compose"?request.id:null;
+      const selectedSummary=request.action==="list"?request.summaryId??null:request.action!=="compose"?request.id:null;
+      if(request.action==="list"&&selectedSummary&&(await db.query("SELECT id FROM karda_kb.topic_summary WHERE kb_id=$1 AND dossier_id=$2 AND id=$3",[kbId,focusedId,selectedSummary])).rowCount!==1)throw new Error("semantic_topic_conflict");
       const summaryRows=(await db.query<SummaryRow>(`SELECT s.* FROM unnest($2::uuid[]) AS d(id)
         CROSS JOIN LATERAL (SELECT * FROM karda_kb.topic_summary WHERE kb_id=$1 AND dossier_id=d.id
           AND ($5::uuid IS NULL OR id=$5)
@@ -127,16 +131,17 @@ export class PostgresTopicDossiers {
             if(review&&review.subject_hash!==s.payload_hash)throw new Error("semantic_topic_corrupt");
             const active=Boolean(current&&s.input_hash===current.inputHash);
             if(active)validateTopicSummary({paragraphs:s.payload.paragraphs},current!);
-            return {id:s.id,state:active?(review?.decision??"pending"):"stale",revision:review?.revision??0,note:active?review?.note??null:null,
+            return {id:s.id,state:active?(review?.decision??"pending"):"stale",revision:review?.revision??0,note:active?review?.note??null:null,reviewedBy:active?review?.reviewer_sub??null:null,
               payload:active?s.payload:null,selection:s.selection};
           })};
       });
-      await db.query("COMMIT");return {items,more,nextCursor:more?rows.at(-1)!.id:null,focusedId:focusedId??null,savedId,duplicate,modelInput,availableTypes:[...new Set(pack.edges.map(e=>e.type))].sort(),truncated:pack.truncated};
+      const checkedAt=(await db.query<{now:Date}>("SELECT statement_timestamp() AS now")).rows[0].now.toISOString();
+      await db.query("COMMIT");return {items,checkedAt,more,nextCursor:more?rows.at(-1)!.id:null,focusedId:focusedId??null,savedId,duplicate,modelInput,availableTypes:[...new Set(pack.edges.map(e=>e.type))].sort(),truncated:pack.truncated};
     }catch(error){await db.query("ROLLBACK");throw error;}finally{db.release();}
   }
 }
-export async function topicDossiers(identity:SemanticReadIdentity,kbId:string,request:Parameters<PostgresTopicDossiers["handle"]>[2],admit:()=>Promise<boolean>){
+export async function topicDossiers(identity:SemanticReadIdentity,kbId:string,request:Parameters<PostgresTopicDossiers["handle"]>[2],admit:()=>Promise<boolean>,exporting=false){
   if(!process.env.DATABASE_URL)throw new Error("semantic_topic_unavailable");
   const pool=new Pool({connectionString:process.env.DATABASE_URL,max:1,connectionTimeoutMillis:5000,statement_timeout:15000,allowExitOnIdle:true});
-  try{return await new PostgresTopicDossiers(pool,getObjectStore(),admit).handle(identity,kbId,request);}finally{await pool.end();}
+  try{return await new PostgresTopicDossiers(pool,getObjectStore(),admit).handle(identity,kbId,request,exporting);}finally{await pool.end();}
 }
