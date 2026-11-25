@@ -9,6 +9,17 @@ authorizes additive product rollout, not fabricated business quality acceptance,
 platform changes, customer privilege changes or automatic acceptance of drafts.
 External Ontos/Agent contracts and owner quality review remain evidence gates.
 
+## Owner delivery cadence - 2026-11-25
+
+Owner requests larger functional stages and fewer repeated tests. Develop related
+features together in one reviewable feature PR and one release per stage. During
+implementation run only type checks and focused tests justified by the changed
+behavior. At the stage boundary use required CI for the full regression,
+PostgreSQL/migration checks and grouped end-to-end acceptance; do not duplicate
+that full run locally without a failure or unresolved risk. Keep mandatory PR
+and exact-main checks, production review and post-release health/auth probes.
+Do not close business/external gates from implementation evidence.
+
 ## Reconstruction scope - 2026-11-24
 
 Read docs/90-memory/20-platform-integration-handoff.md first for platform ownership, post-delivery verification and the user-paused I1 scope.
