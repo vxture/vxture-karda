@@ -87,7 +87,16 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-26): v0.12.26 / 32d73ac7, deploy45679953790
+Current production (2026-11-26): v0.12.27 / 5e7ddd78, deploy45685631186
+succeeded at2026-11-25T19:35:12Z through normal production review. PR358
+adds current authorized source diagnostics before compilation and workbench guidance.
+Final stage CI45684616473:1101pass/zero skips after reusing a duplicate time label;
+main CI45685086450/scan45685086326pass. No DDL,55tables; health/ready and
+anonymous source-check/compile/package refusal pass. No local full-suite
+repetition or automatic processing. Fixed17items:7complete/10unfinished.
+See docs/50-deployment/290-source-readiness-release-20261126.md.
+
+Historical production (2026-11-26): v0.12.26 / 32d73ac7, deploy45679953790
 succeeded at2026-11-25T19:01:46Z through normal production review. PR356
 adds bounded authored PPTX groups and uniquely linked speaker-note provenance.
 Stage CI45678859179:1098pass/zero skips; main CI45679344725/scan45679345381pass.
