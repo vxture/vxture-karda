@@ -17,6 +17,7 @@ import {readSourceSnapshot,PDF_MIME,DOCX_MIME,XLSX_MIME} from "../processing/sou
 import { maintenanceReport, type MaintenanceReport, type MaintenanceDocument, type MaintenanceAssertion, type MaintenanceGround } from "./maintenance";
 import {verifyAuditWindow,type AuditHistory,type AuditRelease} from "./audit-history";
 import {parseCompileTaskQuery,type CompileTaskQuery} from "./task-query";
+import {retrySemanticTransaction} from "./transaction-retry";
 
 export interface CompileTaskRow {
   created_at?:Date;updated_at?:Date;lease_until?:Date|null;canRetry?:boolean;sourceState?:"current"|"changed"|"not_loaded";
@@ -434,6 +435,12 @@ export class PostgresSemanticStore {
 
   private async write<T>(identity: SemanticReadIdentity, kbId: string, permission: ProductPermission,
     work: (db: PoolClient) => Promise<T>, snapshot = false): Promise<T> {
+    const actor={...identity,roles:[...identity.roles]};
+    return retrySemanticTransaction(()=>this.writeAttempt(actor,kbId,permission,work,snapshot));
+  }
+
+  private async writeAttempt<T>(identity:SemanticReadIdentity,kbId:string,permission:ProductPermission,
+    work:(db:PoolClient)=>Promise<T>,snapshot:boolean):Promise<T>{
     identity = { ...identity, roles: [...identity.roles] };
     if (!UUID.test(kbId) || !UUID.test(identity.workspaceId) ||
       !/^usr_[a-f0-9-]{36}$/i.test(identity.sub) || !/^[a-z][a-z0-9_-]{0,31}$/.test(identity.productCode))
