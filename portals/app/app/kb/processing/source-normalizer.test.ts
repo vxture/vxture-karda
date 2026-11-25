@@ -97,6 +97,7 @@ test("XLSX literal snapshots preserve sheet/cell identity, sparse coordinates, t
   const badSheets=[row('<c r="A1"><f>SUM(A2:A3)</f><v>99</v></c>'),row('<c r="A1" t="s"><v>9</v></c>'),
     row('<c r="A1" t="e"><v>#REF!</v></c>'),row('<c r="A2"><v>1</v></c>'),row('<c r="A1"><v>1</v></c><c r="A1"><v>2</v></c>'),
     row('<c r="A1"><v>NaN</v></c>'),row('<c r="XFE1"><v>1</v></c>'),
+    row('<c r="A1"><v>1</v><v>2</v></c>'),row('<c r="A1" cm="1"><v>1</v></c>'),
     '<sheetData><row r="1" hidden="1"><c r="A1"><v>1</v></c></row></sheetData>',
     '<sheetData><row r="1" s="1"><c r="A1"><v>1</v></c></row></sheetData>',
     '<cols><col min="1" max="1" style="1"/></cols>'+row('<c r="A1"><v>1</v></c>'),
