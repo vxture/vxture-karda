@@ -34,10 +34,10 @@ export const TOOLS: ToolDescriptor[] = [
   },
   {
     name:"karda.knowledge_package",
-    summary:"Read reviewed and published typed relations, statements and exact source passages for an entity neighborhood.",
+    summary:"Read reviewed published relations and exact evidence across up to 20 explicitly named, visible attached user libraries. Supply either kb_id or kb_ids; library identities stay distinct and no cross-library facts are invented.",
     mode:"obo_only",
     metering:{kind:"none"},
-    input:["kb_id","entity_ids","relation_types","max_hops","max_nodes","max_edges"],
+    input:["kb_id","kb_ids","entity_ids","relation_types","max_hops","max_nodes","max_edges"],
     authz:{asset_types:["knowledge_base"]},
   },
   {

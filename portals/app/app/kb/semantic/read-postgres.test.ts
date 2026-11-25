@@ -19,7 +19,7 @@ test("semantic native-text adapter: live roles, attachment/tenant scope, source 
   const service = new Pool({ connectionString: url.toString(), statement_timeout: 5000 });
   const ws = randomUUID(), otherWs = randomUUID(), sub = `usr_${randomUUID()}`;
   const namespace = `semantic_protocol_test_${randomUUID().replaceAll("-", "")}`;
-  const kb = randomUUID(), hiddenKb = randomUUID(), otherKb = randomUUID();
+  const kb = randomUUID(), hiddenKb = randomUUID(), otherKb = randomUUID(), secondKb=randomUUID();
   const doc = randomUUID(), assertion = randomUUID(), span = randomUUID(), evidence = randomUUID();
   const left = randomUUID(), right = randomUUID();
   const raw = Buffer.from("One\r\n\u4e2d\ud83d\ude00 proof.");
@@ -159,10 +159,29 @@ test("semantic native-text adapter: live roles, attachment/tenant scope, source 
     await admin.query("UPDATE karda_kb.document SET content_state='deleted' WHERE id=$1", [doc]);
     assert.equal((await durableReader.read(identity, [kb], query)).edges.length, 0,
       "persisted release cannot restore a withdrawn live source");
+    const secondDoc=randomUUID(),secondAssertion=randomUUID(),secondSpan=randomUUID(),secondLeft=randomUUID(),secondRight=randomUUID();
+    await admin.query("UPDATE karda_kb.document SET content_state='indexed' WHERE id=$1",[doc]);
+    await admin.query("INSERT INTO karda_kb.knowledge_base(id,workspace_id,owner_type,owner_sub,name) VALUES($1,$2,'user',$3,'second knowledge library')",[secondKb,ws,sub]);
+    await admin.query("INSERT INTO karda_kb.kb_attachment(workspace_id,user_sub,product_code,kb_id) VALUES($1,$2,'karda',$3)",[ws,sub,secondKb]);
+    await admin.query(`INSERT INTO karda_kb.document(id,kb_id,title,source,content_state,active_chunk_version,storage_ref,content_hash,mime,size_bytes)
+      VALUES($1,$2,'second source','upload','indexed',2,'test-object',$3,'text/plain',$4)`,[secondDoc,secondKb,hash,raw.length]);
+    await admin.query("INSERT INTO karda_kb.entity(id,kb_id,kind,name) VALUES($1,$3,'legacy','left'),($2,$3,'legacy','right')",[secondLeft,secondRight,secondKb]);
+    await admin.query("INSERT INTO karda_kb.assertion(id,kb_id,kind,statement,content_state,verification_state) VALUES($1,$2,'fact','second supported','indexed','verified')",[secondAssertion,secondKb]);
+    await admin.query("INSERT INTO karda_kb.span(id,document_id,document_version,start_offset,end_offset,excerpt) VALUES($1,$2,2,4,7,$3)",[secondSpan,secondDoc,"\u4e2d\ud83d\ude00"]);
+    await admin.query("INSERT INTO karda_kb.evidence(id,assertion_id,span_id,stance) VALUES($1,$2,$3,'supports')",[randomUUID(),secondAssertion,secondSpan]);
+    published.sources.push({kbId:secondKb,documentId:secondDoc,version:2,contentHash:hash});
+    published.relations.push({...published.relations[0],id:randomUUID(),kbId:secondKb,sourceId:secondLeft,targetId:secondRight,assertionIds:[secondAssertion]});
+    const cross=await reader.readPackage(identity,[secondKb,kb,hiddenKb,otherKb],{...query,maxNodes:20,maxEdges:20},true);
+    assert.equal(cross.edges.length,2);assert.equal(cross.nodes.length,4,"same-name entities retain distinct library identities");
+    assert.deepEqual(new Set(cross.nodes.map(n=>n.kbId)),new Set([kb,secondKb]));
+    assert.equal(cross.passages.length,2);
+    await admin.query("DELETE FROM karda_kb.kb_attachment WHERE kb_id=$1",[secondKb]);
+    const narrowed=await reader.readPackage(identity,[kb,secondKb],query,true);
+    assert.equal(narrowed.edges.length,1);assert.ok(narrowed.nodes.every(n=>n.kbId===kb));
   } finally {
     assert.match(namespace, /^semantic_protocol_test_[a-f0-9]{32}$/);
     await admin.query(`DROP SCHEMA IF EXISTS "${namespace}" CASCADE`);
-    await admin.query("DELETE FROM karda_kb.knowledge_base WHERE id=ANY($1::uuid[])", [[kb, hiddenKb, otherKb]]);
+    await admin.query("DELETE FROM karda_kb.knowledge_base WHERE id=ANY($1::uuid[])", [[kb, hiddenKb, otherKb,secondKb]]);
     if (member) await admin.query("DELETE FROM local_authz.member WHERE id=$1", [member]);
     await service.end(); await admin.end();
   }
