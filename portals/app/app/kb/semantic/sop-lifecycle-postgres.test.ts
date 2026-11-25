@@ -124,7 +124,9 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     await restarted.submitPreview(identity,kb,preview);
     const knowledge=await read();assert.equal(knowledge.edges[0].targetId,revisedStep);assert.match(knowledge.passages[0].excerpt,/two-person approval/);
     const newDraft=await topics.handle(identity,kb,{action:"compose",id:randomUUID(),relationType:"requires"});
-    assert.equal(newDraft.items.filter(d=>d.state==="current_draft").length,1);assert.equal(newDraft.items.filter(d=>d.state==="stale_draft").length,1);
+    assert.equal(newDraft.items.length,1);assert.equal(newDraft.items[0].state,"current_draft");assert.equal(newDraft.focusedId,newDraft.savedId);
+    const historyAfterRevision=await topics.handle(identity,kb,{action:"list"});
+    assert.equal(historyAfterRevision.items.filter(d=>d.state==="current_draft").length,1);assert.equal(historyAfterRevision.items.filter(d=>d.state==="stale_draft").length,1);
     await assert.rejects(topics.handle(identity,kb,{action:"compose",id:draftId,relationType:"requires"}),/semantic_topic_conflict/);
     const directory=await reader().readPackage(identity,[kb],{seedIds:[procedure],maxHops:2,maxNodes:20,maxEdges:20},true);
     assert.deepEqual(directory.edges,knowledge.edges);assert.deepEqual(directory.passages,knowledge.passages);
