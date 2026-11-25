@@ -10,6 +10,7 @@ import {compareAuditReleases} from "./audit-history";
 import {sourceHash} from "../processing/source-snapshot";
 import {PostgresSourceSearch} from "../retrieval/source-search-postgres";
 import {parseSourceSearch} from "../retrieval/source-search";
+import {PostgresTopicDossiers} from "./topic-dossier-store";
 
 const endpoint=process.env.KARDA_PROVISION_TEST_DATABASE_URL;
 /** Synthetic authored SOP; no customer documents, model verdict or business gold. */
@@ -54,11 +55,17 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     await store.reviewRelation(identity,kb,{runId:first.runId,relationId:first.relationId,expectedRevision:0,decision:"accept",note:"Synthetic SOP v1 verified"});
     await store.publish(identity,await store.plan(identity,kb,first.runId,randomUUID(),0));
     const oldKnowledge=await read();assert.equal(oldKnowledge.edges[0].targetId,legacyStep);assert.match(oldKnowledge.passages[0].excerpt,/operator approval/);
+    const topics=new PostgresTopicDossiers(service,objects,async()=>true),draftId=randomUUID();
+    const draft=await topics.handle(identity,kb,{action:"compose",id:draftId,relationType:"requires"});
+    assert.equal(draft.items[0].state,"current_draft");assert.match(draft.items[0].payload!.sections[0].statements[0].evidence[0].excerpt,/operator approval/);
+    assert.equal((await topics.handle(identity,kb,{action:"compose",id:randomUUID(),relationType:"requires"})).duplicate,true);
+    await assert.rejects(service.query("UPDATE karda_kb.topic_dossier SET payload='{}' WHERE id=$1",[draftId]),{code:"42501"});
 
     // A revision updates raw bytes/version before any new semantic publication.
     bytes=Buffer.from("Recovery SOP requires two-person approval before restart.");
     await admin.query("UPDATE karda_kb.document SET active_chunk_version=2,content_hash=$2,size_bytes=$3 WHERE id=$1",[doc,sourceHash(bytes),bytes.length]);
     const invalidated=await read();assert.deepEqual(invalidated.edges,[]);assert.deepEqual(invalidated.passages,[]);
+    const invalidDraft=await topics.handle(identity,kb,{action:"list"});assert.equal(invalidDraft.items[0].state,"stale_draft");assert.equal(invalidDraft.items[0].payload,null);
     assert.ok((await store.maintenance(identity,kb)).sources[0].issues.includes("source_changed"));
     const raw=await new PostgresSourceSearch(service,objects,async()=>true).read(identity,parseSourceSearch({kb_ids:[kb],query:"two-person"}));
     assert.equal(raw.items[0].documentVersion,2,"source-only retrieval is independent of semantic publication");
@@ -74,6 +81,9 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     assert.deepEqual(preview.changes.removed,[first.relationId]);assert.deepEqual(preview.changes.added,[second.relationId]);
     await restarted.submitPreview(identity,kb,preview);
     const knowledge=await read();assert.equal(knowledge.edges[0].targetId,revisedStep);assert.match(knowledge.passages[0].excerpt,/two-person approval/);
+    const newDraft=await topics.handle(identity,kb,{action:"compose",id:randomUUID(),relationType:"requires"});
+    assert.equal(newDraft.items.filter(d=>d.state==="current_draft").length,1);assert.equal(newDraft.items.filter(d=>d.state==="stale_draft").length,1);
+    await assert.rejects(topics.handle(identity,kb,{action:"compose",id:draftId,relationType:"requires"}),/semantic_topic_conflict/);
     const directory=await reader().readPackage(identity,[kb],{seedIds:[procedure],maxHops:2,maxNodes:20,maxEdges:20},true);
     assert.deepEqual(directory.edges,knowledge.edges);assert.deepEqual(directory.passages,knowledge.passages);
     assert.equal(knowledge.nodes.some(n=>n.id===legacyStep),false,"old step is absent from the current shared projection");
@@ -83,7 +93,12 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     assert.deepEqual((await restarted.maintenance(identity,kb)).relations[0].issues,[]);
     await admin.query("UPDATE karda_kb.document SET content_state='archived' WHERE id=$1",[doc]);
     assert.deepEqual((await read()).edges,[]);assert.equal((await restarted.auditHistory(identity,kb)).replay,"complete","audit history does not reactivate withdrawn sources");
+    assert.ok((await topics.handle(identity,kb,{action:"list"})).items.every(d=>d.payload===null));
+    await admin.query("DELETE FROM local_authz.member_role WHERE member_id=$1",[member]);
+    await admin.query("INSERT INTO local_authz.member_role(member_id,role_id) SELECT $1,id FROM local_authz.role WHERE role_code='readonly'",[member]);
+    await assert.rejects(topics.handle(identity,kb,{action:"list"}),/semantic_topic_denied/);
   }finally{
+    await admin.query("DELETE FROM karda_kb.topic_dossier WHERE kb_id=$1",[kb]);
     for(const table of ["semantic_compile_task","semantic_event_receipt","semantic_release_head","semantic_release_review","semantic_relation_assertion",
       "semantic_relation","semantic_release_source","semantic_release","semantic_compile_run","semantic_review","semantic_schema_version"])
       await admin.query(`DELETE FROM karda_kb.${table} WHERE kb_id=$1`,[kb]);

@@ -293,3 +293,8 @@ GRANT UPDATE (state,attempt,lease_id,lease_until,run_id,result,error_code,update
 GRANT SELECT, INSERT ON karda_kb.document_text_snapshot TO karda_svc;
 REVOKE UPDATE, DELETE ON karda_kb.document_text_snapshot FROM karda_svc;
 -- END DOCUMENT TEXT LOCKS
+
+-- BEGIN TOPIC DOSSIER LOCKS
+GRANT SELECT, INSERT ON karda_kb.topic_dossier TO karda_svc;
+REVOKE UPDATE, DELETE ON karda_kb.topic_dossier FROM karda_svc;
+-- END TOPIC DOSSIER LOCKS

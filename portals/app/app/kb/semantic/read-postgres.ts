@@ -63,7 +63,7 @@ export class PostgresSemanticReader {
       truncated:value.truncated,sourceStatus:value.sourceStatus};
   }
 
-  async readPackage(identity: SemanticReadIdentity, kbIds: string[], query: NeighborhoodQuery, directory=false,exporting=false): Promise<KnowledgePackage> {
+  async readPackage(identity: SemanticReadIdentity, kbIds: string[], query: NeighborhoodQuery, directory=false,exporting=false,transaction?:PoolClient): Promise<KnowledgePackage> {
     // Capture caller-owned inputs before awaiting either authority or the pool.
     identity = { ...identity, roles: [...identity.roles] };
     kbIds = [...new Set(kbIds.map(id => id.toLowerCase()))];
@@ -72,9 +72,9 @@ export class PostgresSemanticReader {
     if (kbIds.length < 1 || kbIds.length > 50 || !kbIds.every(id => UUID.test(id)) ||
         !/^[a-z][a-z0-9_-]{0,31}$/.test(identity.productCode)) throw new Error("semantic_invalid_scope");
     if (await this.admitPlatform(identity) !== true) throw new Error("semantic_read_denied");
-    const db = await this.pool.connect();
+    const db = transaction??await this.pool.connect();
     try {
-      await db.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
+      if(!transaction)await db.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
       const sql: RoleSql = {
         $queryRawUnsafe: async <T>(statement: string, ...values: unknown[]) => (await db.query(statement, values)).rows as T,
         $executeRawUnsafe: async () => { throw new Error("semantic_read_only"); },
@@ -182,12 +182,12 @@ export class PostgresSemanticReader {
       const statements=ids.length?(await db.query<{id:string;statement:string}>(`SELECT id,statement FROM karda_kb.assertion
         WHERE kb_id=ANY($1::uuid[]) AND id=ANY($2::uuid[]) ORDER BY id`,[visible,ids])).rows:[];
       const passages=result.evidence.map(e=>({evidenceId:e.id,excerpt:grounds.find(g=>g.id===e.id)!.excerpt}));
-      await db.query("COMMIT");
+      if(!transaction)await db.query("COMMIT");
       return { ...result, sourceStatus: incomplete ? "partial" : "complete",format:"karda.knowledge-package.v1",statements,passages,
         gaps:[...(result.edges.length?[]:["no_published_support"]),...(incomplete?["source_support_unavailable"]:[]),
           ...(result.truncated?["neighborhood_truncated"]:[])] };
     } catch (error) {
-      await db.query("ROLLBACK"); throw error;
-    } finally { db.release(); }
+      if(!transaction)await db.query("ROLLBACK"); throw error;
+    } finally { if(!transaction)db.release(); }
   }
 }
