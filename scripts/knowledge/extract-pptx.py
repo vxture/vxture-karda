@@ -13,7 +13,63 @@ R = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
 REL = "{http://schemas.openxmlformats.org/package/2006/relationships}"
 
 
-def extract(path):
+def merged_table(table, text_paragraph):
+    grids = table.findall(A + "tblGrid")
+    rows = table.findall(A + "tr")
+    if len(grids) != 1 or not 1 <= len(grids[0]) <= 50 or any(e.tag != A + "gridCol" for e in grids[0]) or not 1 <= len(rows) <= 2000:
+        raise ValueError("pptx_table_limit")
+    if any(e.tag not in (A + "tblPr", A + "tblGrid", A + "tr") for e in table):
+        raise ValueError("pptx_table_refused")
+    width = len(grids[0])
+    if len(rows) * width > 20000:
+        raise ValueError("pptx_table_limit")
+    covered, anchors = {}, []
+    for r, row in enumerate(rows):
+        if len(row) != width or any(c.tag != A + "tc" for c in row):
+            raise ValueError("pptx_table_refused")
+        for c, cell in enumerate(row):
+            if len(cell.findall(A + "txBody")) != 1 or any(e.tag not in (A + "txBody", A + "tcPr") for e in cell):
+                raise ValueError("pptx_cell_refused")
+            if any(e.tag in (A + "tbl", A + "graphic", A + "blip", A + "extLst") for e in cell.iter()):
+                raise ValueError("pptx_cell_refused")
+            body = cell.find(A + "txBody")
+            if any(e.tag not in (A + "bodyPr", A + "lstStyle", A + "p") for e in body):
+                raise ValueError("pptx_cell_refused")
+            text = "\n".join(text_paragraph(p) for p in body.findall(A + "p"))
+            spans = []
+            for key in ("rowSpan", "gridSpan"):
+                value = cell.get(key, "1")
+                if not re.fullmatch(r"[1-9][0-9]{0,3}", value):
+                    raise ValueError("pptx_table_span_refused")
+                spans.append(int(value))
+            down, across = spans
+            flags = []
+            for key in ("hMerge", "vMerge"):
+                flag = cell.get(key, "0")
+                if flag not in ("0", "1", "false", "true"):
+                    raise ValueError("pptx_table_merge_refused")
+                flags.append(flag in ("1", "true"))
+            prior = covered.get((r, c))
+            if prior is not None:
+                ar, ac, height, length = prior
+                # PowerPoint repeats remaining dimensions on covered cells;
+                # absent/one-valued dimensions are accepted as placeholders.
+                if flags != [c > ac, r > ar] or text.strip() or down not in (1, height-(r-ar)) or across not in (1, length-(c-ac)):
+                    raise ValueError("pptx_table_continuation_refused")
+                continue
+            if any(flags) or r + down > len(rows) or c + across > width:
+                raise ValueError("pptx_table_span_refused")
+            anchor = (r, c, down, across)
+            for rr in range(r, r + down):
+                for cc in range(c, c + across):
+                    if (rr, cc) in covered:
+                        raise ValueError("pptx_table_overlap_refused")
+                    covered[(rr, cc)] = anchor
+            anchors.append((r + 1, c + 1, down, across, text))
+    return width, len(rows), anchors
+
+
+def extract(path, merged=False):
     with Path(path).open("rb") as handle:
         data = handle.read(8 * 1024 * 1024 + 1)
     if len(data) > 8 * 1024 * 1024:
@@ -105,6 +161,15 @@ def extract(path):
                     grid = table.find(A + "tblGrid")
                     width = len(grid) if grid is not None else 0
                     rows = table.findall(A + "tr")
+                    if merged:
+                        width, height, anchors = merged_table(table, text_paragraph)
+                        cells += width * height
+                        if cells > 20000:
+                            raise ValueError("pptx_table_limit")
+                        append(f"Slide {number} table {shape_number} grid rows={height} columns={width}")
+                        for row, column, down, across, text in anchors:
+                            append(f"Slide {number} table {shape_number} R{row}C{column} rows={down} columns={across}: {json.dumps(text, ensure_ascii=False)}")
+                        continue
                     if not 1 <= width <= 50 or not rows or len(rows) > 2000:
                         raise ValueError("pptx_table_limit")
                     for row_number, row in enumerate(rows, 1):
@@ -125,4 +190,4 @@ def extract(path):
                     raise ValueError("pptx_shape_refused")
         if not paragraphs:
             raise ValueError("pptx_text_missing")
-    return {"binarySha256": hashlib.sha256(data).hexdigest(), "extractor": {"version": "pptx-slide-text-v1"}, "paragraphs": paragraphs}
+    return {"binarySha256": hashlib.sha256(data).hexdigest(), "extractor": {"version": "pptx-cell-grid-v2" if merged else "pptx-slide-text-v1"}, "paragraphs": paragraphs}

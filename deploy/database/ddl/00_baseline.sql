@@ -1350,7 +1350,7 @@ CREATE TABLE IF NOT EXISTS karda_kb.document_text_snapshot (
     (mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       AND parser_version IN ('docx-main-body-v1','docx-body-tables-v2','docx-referenced-stories-v3','docx-cell-grid-v4')) OR
     (mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' AND parser_version IN ('xlsx-literal-cells-v1','xlsx-cell-ranges-v2')) OR
-    (mime='application/vnd.openxmlformats-officedocument.presentationml.presentation' AND parser_version='pptx-slide-text-v1'))
+    (mime='application/vnd.openxmlformats-officedocument.presentationml.presentation' AND parser_version IN ('pptx-slide-text-v1','pptx-cell-grid-v2')))
 );
 -- END DOCUMENT TEXT SNAPSHOT
 

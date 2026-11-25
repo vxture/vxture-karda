@@ -112,6 +112,11 @@ test("semantic foundation PostgreSQL: fresh and old-41 upgrade twice, immutable 
       VALUES($1,6,$2,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','xlsx-cell-ranges-v2','ranges',$2,'[{"start":0,"end":6,"ordinal":0}]')`,[doc,hash]);
     await apply(upgraded.admin);await apply(upgraded.admin);
     assert.equal((await upgraded.admin.query("SELECT parser_version FROM karda_kb.document_text_snapshot WHERE document_id=$1 AND document_version=6",[doc])).rows[0].parser_version,"xlsx-cell-ranges-v2","complete replay preserves XLSX merge ranges");
+    await upgraded.admin.query(`INSERT INTO karda_kb.document_text_snapshot
+      (document_id,document_version,content_hash,mime,parser_version,canonical_text,text_hash,locators)
+      VALUES($1,7,$2,'application/vnd.openxmlformats-officedocument.presentationml.presentation','pptx-cell-grid-v2','grid',$2,'[{"start":0,"end":4,"ordinal":0}]')`,[doc,hash]);
+    await apply(upgraded.admin);await apply(upgraded.admin);
+    assert.equal((await upgraded.admin.query("SELECT parser_version FROM karda_kb.document_text_snapshot WHERE document_id=$1 AND document_version=7",[doc])).rows[0].parser_version,"pptx-cell-grid-v2","complete replay preserves PPTX merge grids");
     assert.deepEqual((await upgraded.admin.query("SELECT * FROM karda_kb.entity WHERE id=$1", [oldEntity])).rows[0], original);
     for (const { admin, service } of [fresh, upgraded]) {
       if (admin === fresh.admin) await seed(admin);
