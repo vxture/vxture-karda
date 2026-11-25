@@ -76,7 +76,18 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-25): v0.12.3 / 3ae8bd79, owner-authorized deploy
+Current production (2026-11-25): v0.12.4 / 683b9c08, owner-authorized deploy
+45546957842 succeeded at2026-11-25T04:34:57Z via normal production review.
+PR311 adds explicit up-to20-library OBO knowledge packages under the same
+authority/attachment snapshot; PR313 adds bounded structural-community graph
+navigation. Main CI45546463062 and secret scan45546463075 pass; PR CI45545741776
+ran1039 tests, all passed, zero skips. No DDL;54 tables retained. Canonical
+health/ready confirm version/dependencies; anonymous package/topics/history
+GET and source-search POST refuse401. Fixed17 items:7complete/6inprogress/
+4pending,10unfinished. External and business gates remain open. See
+docs/50-deployment/90-cross-library-community-release-20261125.md.
+
+Historical production (2026-11-25): v0.12.3 / 3ae8bd79, owner-authorized deploy
 45543274150 succeeded at2026-11-25T04:07:26Z via the existing production gate.
 PR310 adds immutable extractive topic drafts, deduplication and live source/
 review invalidation hiding. Main CI45542575859 and secret scan45542575866
