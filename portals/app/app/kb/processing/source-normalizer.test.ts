@@ -2,9 +2,11 @@ import {test} from "node:test";
 import assert from "node:assert/strict";
 import {execFileSync} from "node:child_process";
 import {normalizeSource,snapshotFromExtraction} from "./source-normalizer";
-import {DOCX_MIME,PDF_MIME,XLSX_MIME,readSourceSnapshot,sourceHash,snapshotIR,snapshotValid} from "./source-snapshot";
+import {DOCX_MIME,PDF_MIME,XLSX_MIME,PPTX_MIME,readSourceSnapshot,sourceHash,snapshotIR,snapshotValid} from "./source-snapshot";
 import {verifiedSourceText} from "../semantic/source-text";
-import {syntheticPdf,syntheticXlsx} from "./source-fixtures";
+import {syntheticPdf,syntheticXlsx,syntheticPptx} from "./source-fixtures";
+import {SOURCE_FORMATS} from "./source-formats";
+import {readFileSync} from "node:fs";
 import {runExtraction} from "../assertions/extract-run";
 import {mkdtemp,mkdir,copyFile,rm} from "node:fs/promises";
 import {tmpdir} from "node:os";
@@ -77,12 +79,48 @@ test("standalone image finds pinned extractors after Next changes the runtime wo
   const cwd=process.cwd(),folder=await mkdtemp(join(tmpdir(),"karda-runtime-layout-"));
   try{
     await mkdir(join(folder,"source-tools"));await mkdir(join(folder,"portals/app"),{recursive:true});
-    for(const name of ["normalize-source.py","extract-pdf.py","extract-docx.py","extract-xlsx.py"])
+    for(const name of ["normalize-source.py",...SOURCE_FORMATS.map(f=>f.script)])
       await copyFile(resolve(cwd,"../../scripts/knowledge",name),join(folder,"source-tools",name));
     process.chdir(join(folder,"portals/app"));
     assert.equal((await normalizeSource(PDF_MIME,syntheticPdf(["Runtime proof"]))).text,"Runtime proof");
     assert.equal((await normalizeSource(XLSX_MIME,syntheticXlsx())).parserVersion,"xlsx-literal-cells-v1");
+    assert.equal((await normalizeSource(PPTX_MIME,syntheticPptx())).parserVersion,"pptx-slide-text-v1");
   }finally{process.chdir(cwd);await rm(folder,{recursive:true,force:true});}
+});
+
+test("Office registry agrees with parser dispatch, image bundle and fresh database versions",()=>{
+  const root=resolve(import.meta.dirname,"../../../../../"),dispatch=readFileSync(join(root,"scripts/knowledge/normalize-source.py"),"utf8"),docker=readFileSync(join(root,"portals/app/Dockerfile"),"utf8"),ddl=readFileSync(join(root,"deploy/database/ddl/00_baseline.sql"),"utf8");
+  for(const f of SOURCE_FORMATS){assert.ok(dispatch.includes(f.mime));assert.ok(dispatch.includes(f.script));assert.ok(docker.includes(f.script));
+    for(const parser of f.accepted)assert.ok(ddl.includes(parser));}
+});
+
+test("PPTX text/table provenance follows slide ordering, rejects active/ambiguous content and preserves Unicode coordinates",async()=>{
+  const bytes=syntheticPptx(),snapshot=await normalizeSource(PPTX_MIME,bytes);
+  assert.equal(snapshot.parserVersion,"pptx-slide-text-v1");
+  assert.equal(snapshot.text,'Slide 1 shape 3 paragraph 1: Proof \u4e2d\ud83d\ude00 first\nSecond line\n\nSlide 2 table 3 row 1: C1="Required" | C2=""');
+  assert.ok(snapshot.locators.every(l=>l.page===undefined));assert.equal(snapshot.locators.length,2);
+  const pos=snapshot.text.indexOf("\ud83d\ude00");assert.equal(snapshot.text.slice(pos,pos+2),"\ud83d\ude00");
+  assert.equal(verifiedSourceText({activeVersion:1,contentState:"indexed",contentHash:sourceHash(bytes),mime:PPTX_MIME,normalized:snapshot},bytes),snapshot.text);
+  assert.ok(snapshotIR(snapshot).elements.length>0);
+  const a='http://schemas.openxmlformats.org/drawingml/2006/main',p='http://schemas.openxmlformats.org/presentationml/2006/main';
+  const slide=(shape:string,attrs="")=>`<p:sld xmlns:p="${p}" xmlns:a="${a}" ${attrs}><p:cSld><p:spTree>${shape}</p:spTree></p:cSld></p:sld>`;
+  const textShape=(content:string)=>`<p:sp><p:txBody><a:p>${content}</a:p></p:txBody></p:sp>`;
+  const refused:Record<string,string>[]=[
+    ...['<p:pic/>','<p:grpSp/>','<p:cxnSp/>',textShape('<a:fld><a:t>dynamic</a:t></a:fld>'),textShape('<a:r><a:rPr><a:hlinkClick/></a:rPr><a:t>link</a:t></a:r>')].map(shape=>({"ppt/slides/slide2.xml":slide(shape)})),
+    {"ppt/slides/slide2.xml":slide(textShape('<a:r><a:t>hidden</a:t></a:r>'),'show="0"')},
+    {"ppt/_rels/presentation.xml.rels":'<Relationships><Relationship TargetMode="External" Target="https://example.invalid"/></Relationships>'},
+    {"ppt/notesSlides/notesSlide1.xml":`<p:notes xmlns:p="${p}" xmlns:a="${a}"><a:t>Unincluded note</a:t></p:notes>`},
+    {"ppt/vbaProject.bin":"macro"},{"ppt/charts/chart1.xml":"<chart/>"},
+    {"ppt/slides/slide2.xml":'<!DOCTYPE x [<!ENTITY e "bad">]><x/>'},
+  ];
+  for(const parts of refused)await assert.rejects(normalizeSource(PPTX_MIME,syntheticPptx(parts)),/source_extraction_refused/);
+  const cell=(value:string,attrs="")=>`<a:tc ${attrs}><a:txBody><a:p><a:r><a:t>${value}</a:t></a:r></a:p></a:txBody></a:tc>`;
+  const table=(cells:string)=>`<p:graphicFrame><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblGrid><a:gridCol/><a:gridCol/></a:tblGrid><a:tr>${cells}</a:tr></a:tbl></a:graphicData></a:graphic></p:graphicFrame>`;
+  for(const shape of [table(cell("merged",'gridSpan="2"')),table(cell("one")),table(cell("one")+cell("two",'vMerge="1"'))])
+    await assert.rejects(normalizeSource(PPTX_MIME,syntheticPptx({"ppt/slides/slide2.xml":slide(shape)})),/source_extraction_refused/);
+  const reordered=syntheticPptx({"ppt/presentation.xml":`<p:presentation xmlns:p="${p}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><p:sldIdLst><p:sldId id="256" r:id="s1"/><p:sldId id="257" r:id="s2"/></p:sldIdLst></p:presentation>`});
+  assert.match((await normalizeSource(PPTX_MIME,reordered)).text,/^Slide 1 table/);
+  assert.throws(()=>snapshotFromExtraction(PPTX_MIME,bytes,{binarySha256:sourceHash(bytes),extractor:{version:"future"},paragraphs:["bad"]}),/source_pptx_contract/);
 });
 
 test("XLSX literal snapshots preserve sheet/cell identity, sparse coordinates, types and UTF-16 without interpreting formulas",async()=>{

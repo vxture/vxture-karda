@@ -320,3 +320,5 @@ baseline/0020/Prisma/98锁步，新旧库重复演练；生产通过db-init审�
 2026-11-25 0021仅扩展document_text_snapshot的格式/解析器CHECK，允许docx-body-tables-v2并保留PDF/v1；baseline同名约束同步，55表及Prisma字段不变。见170§31。
 
 2026-11-25 0022为document_text_snapshot增加XLSX/xlsx-literal-cells-v1格式CHECK，baseline同步；0021避免全增量重放时收窄已升级约束。没有字段/Prisma模型/权限变更，保持55表，见170§33。
+
+2026-11-25 0023为document_text_snapshot增加PPTX/pptx-slide-text-v1格式CHECK；baseline同步，0022加保护避免全重放收窄新约束。模型字段/权限不变、55表，见170§37。

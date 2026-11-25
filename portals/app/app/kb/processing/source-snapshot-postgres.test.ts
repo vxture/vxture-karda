@@ -8,10 +8,10 @@ import {fileURLToPath} from "node:url";
 import {PrismaCommitTarget} from "./commit";
 import {rawSourceFor} from "./runtime";
 import {runPipeline,type CommittedChunk} from "./orchestrator";
-import {PDF_MIME,DOCX_MIME,XLSX_MIME,readSourceSnapshot,sourceHash} from "./source-snapshot";
+import {PDF_MIME,DOCX_MIME,XLSX_MIME,PPTX_MIME,readSourceSnapshot,sourceHash} from "./source-snapshot";
 import {normalizeSource} from "./source-normalizer";
 import {verifiedSourceText} from "../semantic/source-text";
-import {syntheticPdf,syntheticXlsx} from "./source-fixtures";
+import {syntheticPdf,syntheticXlsx,syntheticPptx} from "./source-fixtures";
 import {ContentService} from "../lib/content-service";
 import {InMemoryContentStore} from "../lib/content-store";
 import {InMemoryObjectStore} from "../storage/objectstore";
@@ -65,12 +65,12 @@ test("DOCX v2 table output commits and reloads under service-role CHECK, preserv
     await (await getPrismaClient()).$disconnect();await service.end();await admin.end();
   }
 });
-for(const mime of [PDF_MIME,XLSX_MIME])test(`real ${mime} processing binds chunks, publication and exact evidence; stale input and late failure roll back`,{skip:!endpoint,timeout:60000},async()=>{
+for(const mime of [PDF_MIME,XLSX_MIME,PPTX_MIME])test(`real ${mime} processing binds chunks, publication and exact evidence; stale input and late failure roll back`,{skip:!endpoint,timeout:60000},async()=>{
   const url=new URL(endpoint!);assert.ok(["localhost","127.0.0.1","[::1]"].includes(url.hostname));assert.equal(url.pathname,"/karda_p3_test");
   const admin=new Pool({connectionString:endpoint,statement_timeout:10000});url.username="karda_svc";
   process.env.DATABASE_URL=url.toString();
   const service=new Pool({connectionString:url.toString(),statement_timeout:10000});
-  const kb=randomUUID(),ws=randomUUID(),sub=`usr_${randomUUID()}`,bytes=mime===PDF_MIME?syntheticPdf(["Proof first","Proof last"]):syntheticXlsx(),objects=new InMemoryObjectStore();
+  const kb=randomUUID(),ws=randomUUID(),sub=`usr_${randomUUID()}`,bytes=mime===PDF_MIME?syntheticPdf(["Proof first","Proof last"]):mime===XLSX_MIME?syntheticXlsx():syntheticPptx(),objects=new InMemoryObjectStore();
   const identity={workspaceId:ws,sub,roles:[],productCode:"karda"};let member:string|undefined;
   const object=await objects.put(ws,kb,bytes),content=new ContentService(new InMemoryContentStore());
   const result=await content.createDocument({kbId:kb,title:"synthetic source",source:"upload",mime,

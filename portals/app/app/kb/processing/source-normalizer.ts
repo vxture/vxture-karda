@@ -2,7 +2,8 @@ import {execFile} from "node:child_process";
 import {mkdtemp,writeFile,rm,access} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join,resolve} from "node:path";
-import {PDF_MIME,DOCX_MIME,XLSX_MIME,SOURCE_BYTE_LIMIT,sourceHash,snapshotValid,type SourceSnapshot} from "./source-snapshot";
+import {PDF_MIME,DOCX_MIME,SOURCE_BYTE_LIMIT,sourceHash,snapshotValid,type SourceSnapshot} from "./source-snapshot";
+import {SOURCE_FORMATS} from "./source-formats";
 let activeNormalizers=0;
 
 export function snapshotFromExtraction(mime:string,bytes:Buffer,value:unknown):SourceSnapshot {
@@ -18,10 +19,12 @@ export function snapshotFromExtraction(mime:string,bytes:Buffer,value:unknown):S
     if(!Array.isArray(data.paragraphs)||data.paragraphs.some(p=>typeof p!=="string")||
       (data.extractor!==undefined&&data.extractor.version!=="docx-body-tables-v2"))throw new Error("source_docx_contract");
     parts=data.paragraphs.map(text=>({text}));parserVersion=data.extractor?.version==="docx-body-tables-v2"?"docx-body-tables-v2":"docx-main-body-v1";
-  }else if(mime===XLSX_MIME){
-    if(data.extractor?.version!=="xlsx-literal-cells-v1"||!Array.isArray(data.paragraphs)||data.paragraphs.some(p=>typeof p!=="string"))throw new Error("source_xlsx_contract");
-    parts=data.paragraphs.map(text=>({text}));parserVersion="xlsx-literal-cells-v1";
-  }else throw new Error("source_format_unsupported");
+  }else{
+    const format=SOURCE_FORMATS.find(f=>f.mime===mime);
+    if(!format)throw new Error("source_format_unsupported");
+    if(data.extractor?.version!==format.parser||!Array.isArray(data.paragraphs)||data.paragraphs.some(p=>typeof p!=="string"))throw new Error(mime.includes("spreadsheetml")?"source_xlsx_contract":"source_pptx_contract");
+    parts=data.paragraphs.map(text=>({text}));parserVersion=format.parser;
+  }
   let text="";
   const locators=parts.map((part,ordinal)=>{if(ordinal)text+="\n\n";const start=text.length;text+=part.text;
     return {start,end:text.length,ordinal,...(part.page===undefined?{}:{page:part.page})};});
@@ -32,7 +35,7 @@ export function snapshotFromExtraction(mime:string,bytes:Buffer,value:unknown):S
 /** Owned, pinned extractors run out of process with bounded input, output and time.
  * No shell interpolation, document names, remote fetches, macros or OCR. */
 export async function normalizeSource(mime:string,bytes:Buffer):Promise<SourceSnapshot>{
-  if(![PDF_MIME,DOCX_MIME,XLSX_MIME].includes(mime)||bytes.length>SOURCE_BYTE_LIMIT||!bytes.length)throw new Error("source_format_unsupported");
+  if(!SOURCE_FORMATS.some(f=>f.mime===mime)||bytes.length>SOURCE_BYTE_LIMIT||!bytes.length)throw new Error("source_format_unsupported");
   let script="";
   for(const path of [resolve(process.cwd(),"source-tools/normalize-source.py"),resolve(process.cwd(),"../../source-tools/normalize-source.py"),
     resolve(process.cwd(),"../../scripts/knowledge/normalize-source.py")]){

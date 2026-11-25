@@ -1,6 +1,19 @@
 // Synthetic fixtures only; never imported by product code.
 import {execFileSync} from "node:child_process";
 
+export function syntheticPptx(overrides:Record<string,string>={}):Buffer{
+  const a='http://schemas.openxmlformats.org/drawingml/2006/main',p='http://schemas.openxmlformats.org/presentationml/2006/main';
+  const parts={
+    "ppt/presentation.xml":`<p:presentation xmlns:p="${p}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><p:sldIdLst><p:sldId id="256" r:id="s2"/><p:sldId id="257" r:id="s1"/></p:sldIdLst></p:presentation>`,
+    "ppt/_rels/presentation.xml.rels":'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="s1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/><Relationship Id="s2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="/ppt/slides/slide2.xml"/></Relationships>',
+    "ppt/slides/slide2.xml":`<p:sld xmlns:p="${p}" xmlns:a="${a}"><p:cSld><p:spTree><p:nvGrpSpPr/><p:grpSpPr/><p:sp><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>Proof \u4e2d\ud83d\ude00 first</a:t></a:r><a:br/><a:r><a:t>Second line</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>`,
+    "ppt/slides/slide1.xml":`<p:sld xmlns:p="${p}" xmlns:a="${a}"><p:cSld><p:spTree><p:nvGrpSpPr/><p:grpSpPr/><p:graphicFrame><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr/><a:tblGrid><a:gridCol/><a:gridCol/></a:tblGrid><a:tr><a:tc><a:txBody><a:p><a:r><a:t>Required</a:t></a:r></a:p></a:txBody></a:tc><a:tc><a:txBody><a:p/></a:txBody></a:tc></a:tr></a:tbl></a:graphicData></a:graphic></p:graphicFrame></p:spTree></p:cSld></p:sld>`,
+    ...overrides,
+  };
+  const python=process.env.KARDA_KNOWLEDGE_PYTHON||(process.platform==="win32"?"python":"python3");
+  return execFileSync(python,["-I","-c",'import io,json,sys,zipfile; b=io.BytesIO(); z=zipfile.ZipFile(b,"w"); parts=json.loads(sys.stdin.buffer.read().decode("utf-8")); [z.writestr(k,v) for k,v in parts.items()]; z.close(); sys.stdout.buffer.write(b.getvalue())'],{input:JSON.stringify(parts),timeout:10000,windowsHide:true});
+}
+
 export function syntheticXlsx(overrides:Record<string,string>={}):Buffer {
   const parts={
     "xl/workbook.xml":'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Proof" sheetId="1" r:id="r1"/></sheets><definedNames/></workbook>',

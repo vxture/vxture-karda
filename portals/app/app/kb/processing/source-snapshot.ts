@@ -1,9 +1,8 @@
 import {createHash} from "node:crypto";
 import {parseFastPath,type DocumentIR} from "./ir";
 
-export const PDF_MIME="application/pdf";
-export const DOCX_MIME="application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-export const XLSX_MIME="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+import {PDF_MIME,SOURCE_FORMATS} from "./source-formats";
+export {PDF_MIME,DOCX_MIME,XLSX_MIME,PPTX_MIME} from "./source-formats";
 export const SOURCE_BYTE_LIMIT=8*1024*1024;
 export interface SourceSnapshot {
   contentHash:string; mime:string; parserVersion:string; textHash:string; text:string;
@@ -13,9 +12,7 @@ export const sourceHash=(value:Buffer|string)=>createHash("sha256").update(value
 export function snapshotValid(snapshot:SourceSnapshot):boolean {
   if(!snapshot||!new RegExp("^[a-f0-9]{64}$").test(snapshot.contentHash)||typeof snapshot.text!=="string"||
     snapshot.text.length>5000000||!snapshot.text.trim()||snapshot.text.includes("\0")||sourceHash(snapshot.text)!==snapshot.textHash||
-    !((snapshot.mime===PDF_MIME&&snapshot.parserVersion==="pypdf-6.21.4-v1")||
-      (snapshot.mime===DOCX_MIME&&["docx-main-body-v1","docx-body-tables-v2"].includes(snapshot.parserVersion))||
-      (snapshot.mime===XLSX_MIME&&snapshot.parserVersion==="xlsx-literal-cells-v1"))||
+    !SOURCE_FORMATS.some(f=>f.mime===snapshot.mime&&(f.accepted as readonly string[]).includes(snapshot.parserVersion))||
     !Array.isArray(snapshot.locators)||!snapshot.locators.length||snapshot.locators.length>20000)return false;
   let end=0;
   return snapshot.locators.every((row,index)=>{
