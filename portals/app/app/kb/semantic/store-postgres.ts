@@ -15,6 +15,7 @@ import { localCompileProfile } from "./compile-profile";
 import {parsePathFor} from "../processing/ir";
 import {readSourceSnapshot,PDF_MIME,DOCX_MIME} from "../processing/source-snapshot";
 import { maintenanceReport, type MaintenanceReport, type MaintenanceDocument, type MaintenanceAssertion, type MaintenanceGround } from "./maintenance";
+import {verifyAuditWindow,type AuditHistory,type AuditRelease} from "./audit-history";
 
 export interface CompileTaskRow {
   id:string; state:string; attempt:number; run_id:string|null; error_code:string|null; result:Record<string,unknown>;
@@ -75,6 +76,51 @@ function acceptedReviews(input: PublishedRelationInput, reviews: ReviewRow[]): v
 export class PostgresSemanticStore {
   constructor(private readonly pool: Pool, private readonly objects: Pick<ObjectStore, "get">,
     private readonly admitPlatform: (identity: SemanticReadIdentity) => Promise<boolean>) {}
+
+  /** Governance-only historical metadata. Never substitutes for current knowledge reads. */
+  async auditHistory(identity:SemanticReadIdentity,kbId:string,before?:number):Promise<AuditHistory>{
+    if(before!==undefined&&(!Number.isInteger(before)||before<1||before>2147483647))throw new Error("semantic_invalid_history");
+    return this.write(identity,kbId,"service.publish",async db=>{
+      const head=(await db.query<{generation:number;release_id:string}>("SELECT generation,release_id FROM karda_kb.semantic_release_head WHERE kb_id=$1",[kbId])).rows[0];
+      const latest=(await db.query<{generation:number;id:string}>("SELECT generation,id FROM karda_kb.semantic_release WHERE kb_id=$1 ORDER BY generation DESC LIMIT 1",[kbId])).rows[0];
+      const headMatches=(!head&&!latest)||Boolean(head&&latest&&head.generation===latest.generation&&head.release_id===latest.id);
+      const rows=(await db.query<{id:string;generation:number;payload:PublicationCommand;fingerprint:string;compile_run_id:string;created_by:string;created_at:Date}>(`
+        SELECT id,generation,payload,fingerprint,compile_run_id,created_by,created_at FROM karda_kb.semantic_release
+        WHERE kb_id=$1 AND ($2::integer IS NULL OR generation<$2) ORDER BY generation DESC LIMIT 21`,[kbId,before??null])).rows;
+      const hasOlder=rows.length>20;if(hasOlder)rows.pop();
+      let bytes=0,relationCount=0,sourceCount=0;const releases:AuditRelease[]=[];
+      for(const row of rows){
+        bytes+=Buffer.byteLength(JSON.stringify(row.payload));if(bytes>2*1024*1024)throw new Error("semantic_history_budget");
+        const entry:AuditRelease={id:row.id,generation:row.generation,createdAt:row.created_at.toISOString(),createdBy:row.created_by,
+          compileRunId:row.compile_run_id,fingerprint:row.fingerprint,verified:false,issues:[],relations:[],sources:[],reviewCount:0};
+        try{
+          const {command,fingerprint}=preparePublication(row.payload),input=decodeSemanticRelease(command);
+          if(command.kbId!==kbId||fingerprint!==row.fingerprint||command.expectedGeneration+1!==row.generation)
+            throw new Error("semantic_corrupt_release");
+          // Historical bindings must be valid as stored; a later rejection does
+          // not rewrite the audit past, and historical facts are not current grants.
+          const verified=await new PostgresFormalSemanticLoader({schema:input.schema,entityTypes:input.entityTypes}).loadHistorical(db,kbId,row.id);
+          const receipts=(await db.query<{event_id:string;generation:number;fingerprint:string}>(`SELECT event_id,generation,fingerprint
+            FROM karda_kb.semantic_event_receipt WHERE kb_id=$1 AND release_id=$2 LIMIT 2`,[kbId,row.id])).rows;
+          const receipt=receipts[0];
+          if(receipts.length!==1||receipt.event_id!==command.eventId||receipt.generation!==row.generation||receipt.fingerprint!==fingerprint)
+            entry.issues.push("receipt_mismatch");
+          entry.verified=entry.issues.length===0;
+          if(entry.verified){entry.relations=verified.relations;entry.sources=verified.sources;entry.reviewCount=verified.relations.length;}
+        }catch(error){
+          const code=error instanceof Error?error.message:"";
+          if(!/^(semantic_(corrupt|invalid|compile_unavailable|review_required|release_schema_mismatch)|publication_)/.test(code))throw error;
+          entry.issues.push("immutable_record_mismatch");
+        }
+        relationCount+=entry.relations.length;sourceCount+=entry.sources.length;
+        if(relationCount>5000||sourceCount>1000)throw new Error("semantic_history_budget");
+        releases.push(entry);
+      }
+      const completeHistory=before===undefined&&!hasOlder;
+      return {checkedAt:new Date().toISOString(),headGeneration:head?.generation??0,headReleaseId:head?.release_id??null,headMatches,
+        releases,nextBefore:hasOlder?rows[rows.length-1].generation:null,completeHistory,replay:verifyAuditWindow(releases,headMatches,completeHistory)};
+    },true);
+  }
 
   async maintenance(identity: SemanticReadIdentity, kbId: string): Promise<MaintenanceReport> {
     return this.write(identity, kbId, "service.publish", async db => {
@@ -591,13 +637,23 @@ export class PostgresFormalSemanticLoader {
     this.definition = semanticDefinitionKey(this.empty);
   }
   async load(db: PoolClient, kbIds: string[]): Promise<PublishedRelationInput> {
+    return this.loadVersion(db,kbIds);
+  }
+  /** Immutable audit metadata only: does not establish source eligibility today. */
+  async loadHistorical(db:PoolClient,kbId:string,releaseId:string):Promise<PublishedRelationInput>{
+    if(!UUID.test(releaseId))throw new Error("semantic_invalid_scope");
+    return this.loadVersion(db,[kbId],releaseId);
+  }
+  private async loadVersion(db:PoolClient,kbIds:string[],releaseId?:string):Promise<PublishedRelationInput>{
     if (kbIds.length > 50 || new Set(kbIds).size !== kbIds.length || kbIds.some(id => !UUID.test(id))) throw new Error("semantic_invalid_scope");
     const output = structuredClone(this.empty);
     if (!kbIds.length) return output;
     const rows = (await db.query<{kb_id: string; id: string; generation: number; fingerprint: string; payload: PublicationCommand;
-      compile_run_id: string; schema_version_id: string}>(`SELECT h.kb_id,r.id,h.generation,r.fingerprint,r.payload,r.compile_run_id,r.schema_version_id
+      compile_run_id: string; schema_version_id: string}>(releaseId?`SELECT r.kb_id,r.id,r.generation,r.fingerprint,r.payload,r.compile_run_id,r.schema_version_id
+      FROM karda_kb.semantic_release r WHERE r.kb_id=ANY($1::uuid[]) AND r.id=$2`:`SELECT h.kb_id,r.id,h.generation,r.fingerprint,r.payload,r.compile_run_id,r.schema_version_id
       FROM karda_kb.semantic_release_head h JOIN karda_kb.semantic_release r
-      ON r.kb_id=h.kb_id AND r.id=h.release_id AND r.generation=h.generation WHERE h.kb_id=ANY($1::uuid[]) ORDER BY h.kb_id`, [kbIds])).rows;
+      ON r.kb_id=h.kb_id AND r.id=h.release_id AND r.generation=h.generation WHERE h.kb_id=ANY($1::uuid[]) ORDER BY h.kb_id`, releaseId?[kbIds,releaseId]:[kbIds])).rows;
+    if(releaseId&&rows.length!==1)throw new Error("semantic_corrupt_release");
     for (const row of rows) {
       const {command, fingerprint} = preparePublication(row.payload), input = decodeSemanticRelease(command);
       if (fingerprint !== row.fingerprint || command.kbId !== row.kb_id || command.expectedGeneration + 1 !== row.generation ||
@@ -627,7 +683,7 @@ export class PostgresFormalSemanticLoader {
         JOIN karda_kb.semantic_review v ON v.kb_id=b.kb_id AND v.id=b.review_id WHERE b.kb_id=$1 AND b.release_id=$2 ORDER BY v.subject_key`, [row.kb_id, row.id])).rows;
       acceptedReviews(input, bound);
       if (semanticValueHash(bound) !== command.reviewRevision) throw new Error("semantic_corrupt_release");
-      const latest = await latestReviews(db, row.kb_id, input);
+      const latest = releaseId?bound:await latestReviews(db, row.kb_id, input);
       output.relations.push(...input.relations.filter(relation => latest.some(review => review.subject_key === `relation/${relation.id}` &&
         review.id === bound.find(b => b.subject_key === review.subject_key)?.id && review.decision === "accept" &&
         review.subject_hash === subjectHash(input, relation.id))));

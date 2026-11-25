@@ -172,6 +172,7 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
     assert.equal((await reader().read(identity,[other],query)).edges.length,0);
     platform = false; const readsBefore = reads;
     await assert.rejects(store.maintenance(identity,kb),/semantic_write_denied/);
+    await assert.rejects(store.auditHistory(identity,kb),/semantic_write_denied/);
     await assert.rejects(store.publish(identity,firstPlan), /semantic_write_denied/);
     await assert.rejects(read(), /semantic_read_denied/); assert.equal(reads,readsBefore); platform = true;
     await role("readonly");
@@ -196,6 +197,7 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
     } finally { await snapshot.query("ROLLBACK"); snapshot.release(); }
     assert.equal((await read()).edges.length,0, "next snapshot observes changed human decision without cache expiry");
     assert.deepEqual((await store.maintenance(identity,kb)).relations[0].issues,["review_changed"]);
+    assert.equal((await store.auditHistory(identity,kb)).releases[0].verified,true,"a later rejection does not rewrite immutable audit history");
     assert.equal((await store.publish(identity,firstPlan)).releaseId,first.releaseId, "historical receipt is not a current read grant");
     await review("accept",3);
     assert.equal((await read()).edges.length,0, "a newer acceptance requires a new release binding");
@@ -225,13 +227,28 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
     const finalReceipt = await store.submitPreview(identity,kb,finalPreview);
     assert.equal(finalReceipt.generation,3);
     assert.equal((await store.submitPreview(identity,kb,finalPreview)).duplicate,true);
+    const readsBeforeAudit=reads;
+    const history=await store.auditHistory(identity,kb);
+    assert.equal(history.replay,"complete");assert.equal(history.headGeneration,3);assert.equal(history.releases.length,3);
+    assert.ok(history.releases.every(r=>r.verified&&r.relations.length===1&&r.reviewCount===1));
+    assert.equal(reads,readsBeforeAudit,"historical audit must not return or fetch source text");
+    const older=await store.auditHistory(identity,kb,3);assert.equal(older.replay,"window");assert.deepEqual(older.releases.map(r=>r.generation),[2,1]);
+    await assert.rejects(store.auditHistory(identity,kb,0),/semantic_invalid_history/);
     assert.equal((await read()).edges.length,1, "reconstruction retains decisions and uses a new durable release");
     assert.equal((await store.publish(identity,firstPlan)).generation,1);
     assert.equal((await admin.query("SELECT generation FROM karda_kb.semantic_release_head WHERE kb_id=$1",[kb])).rows[0].generation,3);
     const current = (await admin.query("SELECT release_id FROM karda_kb.semantic_release_head WHERE kb_id=$1",[kb])).rows[0].release_id;
     await admin.query("UPDATE karda_kb.semantic_relation SET type='corrupt' WHERE kb_id=$1 AND release_id=$2",[kb,current]);
     await assert.rejects(read(),/semantic_corrupt_release/);
+    const corruptHistory=await store.auditHistory(identity,kb);
+    assert.equal(corruptHistory.replay,"failed");assert.equal(corruptHistory.releases[0].verified,false);
+    assert.deepEqual(corruptHistory.releases[0].relations,[]);
     await admin.query("UPDATE karda_kb.semantic_relation SET type='requires' WHERE kb_id=$1 AND release_id=$2",[kb,current]);
+    await admin.query("UPDATE karda_kb.semantic_event_receipt SET fingerprint=$3 WHERE kb_id=$1 AND release_id=$2",[kb,current,"f".repeat(64)]);
+    assert.equal((await store.auditHistory(identity,kb)).replay,"failed","receipts are part of the replay integrity chain");
+    await admin.query(`UPDATE karda_kb.semantic_event_receipt e SET fingerprint=r.fingerprint FROM karda_kb.semantic_release r
+      WHERE e.kb_id=$1 AND e.release_id=$2 AND r.kb_id=e.kb_id AND r.id=e.release_id`,[kb,current]);
+    assert.equal((await store.auditHistory(identity,kb)).replay,"complete");
     assert.equal((await read()).edges.length,1);
     await admin.query("DELETE FROM karda_kb.kb_attachment WHERE kb_id=$1",[kb]);
     assert.equal((await read()).edges.length,0);
