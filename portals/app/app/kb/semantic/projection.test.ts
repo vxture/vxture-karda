@@ -35,6 +35,16 @@ const read = (snapshot = tenderSnapshot(), patch: Partial<NeighborhoodQuery> = {
   projectNeighborhood(snapshot, tenderSchema, { visibleKbIds, now: CLOCK }, { ...query, ...patch });
 const ids = (items: {id: string}[]) => items.map(i => i.id);
 
+test("directory fingerprint stays bounded when 5000 relations share an assertion with 5000 proofs",()=>{
+  const snapshot=tenderSnapshot(),edge=snapshot.relations[0],proof=snapshot.evidence[0],assertion=snapshot.assertions.find(a=>a.id===edge.assertionIds[0])!;
+  snapshot.evidence=Array.from({length:5000},(_,i)=>({...proof,id:`proof-${i}`}));
+  snapshot.assertions=[{...assertion,evidenceIds:snapshot.evidence.map(e=>e.id)}];
+  snapshot.relations=Array.from({length:5000},(_,i)=>({...edge,id:`relation-${String(i).padStart(4,"0")}`}));
+  const start=performance.now(),result=projectDirectory(snapshot,tenderSchema,{visibleKbIds:new Set([KB]),now:CLOCK},{maxNodes:2,maxEdges:1,pageCursor:""});
+  assert.equal(result.edges.length,1);assert.equal(result.evidence.length,5000);assert.ok(result.directoryPage?.nextCursor);
+  assert.ok(performance.now()-start<2000,"shared proofs must not be expanded once per relation for hashing");
+});
+
 test("a project reaches the applicable qualification and supporting material, with exact source anchors", () => {
   const result = read();
   assert.deepEqual(ids(result.edges), ["r1", "r2", "r3"]);
