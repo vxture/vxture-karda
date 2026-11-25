@@ -28,6 +28,7 @@ export type KnowledgePackage = SemanticReadResult & {
   gaps:string[];
 };
 interface AssertionRow {
+  statement:string;
   id: string; kb_id: string; content_state: string; verification_state: string;
   expires_at: Date | null; valid_until: Date | null; superseded_by: string | null;
 }
@@ -110,7 +111,7 @@ export class PostgresSemanticReader {
         return type && published.schema.entityTypes.includes(type) ? [{ id: row.id, kbId: row.kb_id, type, label: row.name }] : [];
       });
       const assertions = bounded((await db.query<AssertionRow>(`
-        SELECT id,kb_id,content_state,verification_state,expires_at,valid_until,superseded_by
+        SELECT id,kb_id,statement,content_state,verification_state,expires_at,valid_until,superseded_by
         FROM karda_kb.assertion WHERE kb_id=ANY($1::uuid[]) AND id=ANY($2::uuid[]) LIMIT 5001`,
         [visible, assertionIds])).rows);
       const grounds = bounded((await db.query<EvidenceRow>(`
@@ -160,6 +161,7 @@ export class PostgresSemanticReader {
         }
         const pages=[...new Set(normalizedSources.get(row.document_id)?.locators.filter(l=>l.page!==undefined&&l.start<row.end_offset&&l.end>row.start_offset).map(l=>l.page!)??[])];
         snapshot.evidence.push({ id: row.id, kbId: row.kb_id, documentId: row.document_id,
+          sourceFingerprint:source.contentHash,
           documentVersion: row.document_version, stance: "supports", start: row.start_offset, end: row.end_offset,...(pages.length?{pages}:{}) });
       }
       const eligibleEvidence = new Set(snapshot.evidence.map(row => row.id));
@@ -168,6 +170,7 @@ export class PostgresSemanticReader {
         const ids = evidenceIds.get(row.assertion_id) ?? []; ids.push(row.id); evidenceIds.set(row.assertion_id, ids);
       }
       snapshot.assertions = assertions.map(row => ({ id: row.id, kbId: row.kb_id,
+        statement:row.statement,
         contentState: row.content_state, verificationState: row.verification_state,
         verificationExpiresAt: row.expires_at?.toISOString() ?? null, validUntil: row.valid_until?.toISOString() ?? null,
         validFrom: null, supersededById: row.superseded_by, evidenceIds: evidenceIds.get(row.id) ?? [] }));

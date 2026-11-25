@@ -15,7 +15,7 @@ export async function knowledgePackageTool(caller:CallerContext,args:Record<stri
     return {status:200,body:{result}};
   }catch(error){
     const code=error instanceof Error?error.message:"";
-    return {status:code==="semantic_invalid_package_request"?400:code==="semantic_read_denied"?403:503,
-      body:{error:code==="semantic_invalid_package_request"?code:code==="semantic_read_denied"?code:"semantic_package_unavailable"}};
+    return {status:code==="semantic_invalid_package_request"?400:code==="semantic_read_denied"?403:code==="semantic_directory_changed"?409:503,
+      body:{error:["semantic_invalid_package_request","semantic_read_denied","semantic_directory_changed"].includes(code)?code:"semantic_package_unavailable"}};
   }
 }

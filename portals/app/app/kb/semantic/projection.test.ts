@@ -3,6 +3,32 @@ import assert from "node:assert/strict";
 import { projectNeighborhood, projectDirectory, validateOntology } from "./projection";
 import { CLOCK, KB, PRIVATE_KB, tenderSchema, tenderSnapshot } from "./tender-fixture";
 import type { KnowledgeSnapshot, NeighborhoodQuery } from "./contracts";
+import {encodeDirectoryCursor} from "./directory-cursor";
+
+test("directory pages traverse a stable eligible projection without gaps or hidden-budget effects",()=>{
+  const snapshot=tenderSnapshot(),scope={visibleKbIds:new Set([KB]),now:CLOCK};
+  const limits={maxNodes:2,maxEdges:1,pageCursor:""};
+  const first=projectDirectory(snapshot,tenderSchema,scope,limits),seen=[...first.edges.map(e=>e.id)];
+  let cursor=first.directoryPage!.nextCursor;
+  while(cursor){const next=projectDirectory(snapshot,tenderSchema,scope,{...limits,pageCursor:cursor});seen.push(...next.edges.map(e=>e.id));cursor=next.directoryPage!.nextCursor;}
+  assert.deepEqual(seen,["r1","r2","r3"]);
+  const hidden=tenderSnapshot();hidden.relations.push({...hidden.relations[0],id:"hidden",kbId:PRIVATE_KB});
+  hidden.entities.push({id:"hidden",kbId:PRIVATE_KB,type:"project",label:"private"});
+  assert.deepEqual(projectDirectory(hidden,tenderSchema,scope,limits),first);
+  assert.deepEqual(projectDirectory({...snapshot,relations:[...snapshot.relations].reverse(),evidence:[...snapshot.evidence].reverse()},tenderSchema,scope,limits),first);
+  assert.throws(()=>read(snapshot,{pageCursor:""}),/invalid_graph_query/);
+  for(const pageCursor of ["bad",encodeDirectoryCursor("0".repeat(64),"r1")])
+    assert.throws(()=>projectDirectory(snapshot,tenderSchema,scope,{...limits,pageCursor}),/invalid_graph_query|semantic_directory_changed/);
+  const token=first.directoryPage!.nextCursor!;
+  for(const changed of [(()=>{const s=tenderSnapshot();s.entities[0].label="renamed";return s;})(),
+    (()=>{const s=tenderSnapshot();s.assertions[0].statement="amended";return s;})(),
+    (()=>{const s=tenderSnapshot();s.sources.find(s=>s.current)!.withdrawn=true;return s;})()])
+    assert.throws(()=>projectDirectory(changed,tenderSchema,scope,{...limits,pageCursor:token}),/semantic_directory_changed/);
+  assert.throws(()=>projectDirectory(snapshot,tenderSchema,{...scope,visibleKbIds:new Set()}, {...limits,pageCursor:token}),/semantic_directory_changed/);
+  assert.throws(()=>projectDirectory(snapshot,tenderSchema,scope,{...limits,maxEdges:2,pageCursor:token}),/semantic_directory_changed/);
+  const end=projectDirectory(snapshot,tenderSchema,scope,{maxNodes:50,maxEdges:50,pageCursor:""});
+  assert.equal(end.directoryPage!.nextCursor,null);
+});
 
 const query: NeighborhoodQuery = { seedIds: ["project"], maxHops: 3, maxNodes: 50, maxEdges: 50 };
 const read = (snapshot = tenderSnapshot(), patch: Partial<NeighborhoodQuery> = {}, visibleKbIds = new Set([KB])) =>

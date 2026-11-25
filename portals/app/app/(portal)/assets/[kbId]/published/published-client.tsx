@@ -13,6 +13,7 @@ export function PublishedKnowledgeClient({kbId}:{kbId:string}){
   const m=useMessages(semantic),[entity,setEntity]=useState(""),[focus,setFocus]=useState("");
   const [value,setValue]=useState<KnowledgePackage|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(0);
   const sequence=useRef(0);
+  const [pages,setPages]=useState<string[]>([""]);
   const [topic,setTopic]=useState(""),[query,setQuery]=useState("");
   const topics=useMemo(()=>value?knowledgeTopics(value):[],[value]);
   const found=useMemo(()=>value?searchPublishedPassages(value,query):{matches:[],total:0},[value,query]);
@@ -20,13 +21,13 @@ export function PublishedKnowledgeClient({kbId}:{kbId:string}){
     // The server keys this component by library, discarding prior request state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
-  async function load(id:string){
+  async function load(id:string,cursor="",history=[""]){
     const ticket=++sequence.current;setBusy(true);setError(0);setValue(null);setTopic("");setQuery("");
     try{
-      const response=await fetch(`/api/kb/${encodeURIComponent(kbId)}/knowledge-package${id?`?entity=${encodeURIComponent(id)}`:""}`,{cache:"no-store",credentials:"same-origin"});
+      const response=await fetch(`/api/kb/${encodeURIComponent(kbId)}/knowledge-package${id?`?entity=${encodeURIComponent(id)}`:`?cursor=${encodeURIComponent(cursor)}`}`,{cache:"no-store",credentials:"same-origin"});
       if(!response.ok){if(ticket===sequence.current)setError(response.status);return;}
       const data=await response.json() as KnowledgePackage;
-      if(ticket===sequence.current){setValue(data);setFocus(id);setEntity(id);}
+      if(ticket===sequence.current){setValue(data);setFocus(id);setEntity(id);setPages(history);}
     }catch{if(ticket===sequence.current)setError(503);}
     finally{if(ticket===sequence.current)setBusy(false);}
   }
@@ -37,7 +38,7 @@ export function PublishedKnowledgeClient({kbId}:{kbId:string}){
     <Link href={`/assets/${kbId}/knowledge`}>{m.back}</Link>
     <div className="flex flex-wrap gap-sm"><Button variant="outline" asChild><Link href={`/assets/${kbId}/graph`}>{m.graphTitle}</Link></Button>
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/sources`}>{m.sourceSearchTitle}</Link></Button>
-      <Button variant="outline" asChild><a href={`/api/kb/${kbId}/knowledge-package?format=markdown${focus?`&entity=${encodeURIComponent(focus)}`:""}`}>{m.exportKnowledge}</a></Button></div>
+      {value&&<Button variant="outline" asChild><a href={`/api/kb/${kbId}/knowledge-package?format=markdown${focus?`&entity=${encodeURIComponent(focus)}`:`&cursor=${encodeURIComponent(pages.at(-1)??"")}`}`}>{m.exportKnowledge}</a></Button>}</div>
     <p className="text-body-sm text-muted-foreground">{m.knowledgeHint}</p>
     <Button disabled={busy} variant="outline" onClick={()=>void load("")}>{m.linkedEntities}</Button>
     <form onSubmit={e=>{e.preventDefault();void load(entity.trim());}} className="flex flex-wrap gap-sm">
@@ -47,9 +48,14 @@ export function PublishedKnowledgeClient({kbId}:{kbId:string}){
       <Button disabled={busy} type="submit">{m.openKnowledge}</Button>
     </form>
     {busy&&<p role="status">{m.loading}</p>}
-    {!!error&&<Banner tone="danger" title={error===403?m.packageDenied:error===400?m.invalidEntity:m.unavailable}/>}
+    {!!error&&<Banner tone="danger" title={error===403?m.packageDenied:error===400?m.invalidEntity:error===409?m.directoryChanged:m.unavailable}/>}
     {value&&<>
       <p className="break-all font-mono text-code-sm">{value.schema.namespace} / {value.schema.schemaId} / {value.schema.version}</p>
+      {!focus&&value.directoryPage&&<><p className="text-body-sm text-muted-foreground">{m.directoryHint}</p><div className="flex flex-wrap items-center gap-sm">
+        <p role="status">{m.directoryPage} {pages.length}</p>
+        <Button variant="outline" disabled={busy||pages.length<2} onClick={()=>{const previous=pages.slice(0,-1);void load("",previous.at(-1)??"",previous);}}>{m.directoryPrevious}</Button>
+        <Button variant="outline" disabled={busy||!value.directoryPage.nextCursor} onClick={()=>{const next=value.directoryPage!.nextCursor!;void load("",next,[...pages,next]);}}>{m.directoryNext}</Button>
+      </div></>}
       {value.gaps.map(gap=><Banner key={gap} tone="warning" title={gap==="no_published_support"?m.noPublished:gap==="neighborhood_truncated"?m.packageTruncated:m.partialSources}/>)}
       <h2 className="break-words text-title-md">{focus?label(focus):m.linkedEntities}</h2>
       <nav aria-label={m.linkedEntities} className="flex flex-wrap gap-sm">{value.nodes.filter(n=>n.id!==focus).map(n=>

@@ -7,6 +7,8 @@ export function packageMarkdown(input:KnowledgePackage):string {
   const lines=["# Published knowledge",`Schema: ${text(input.schema.namespace)} / ${text(input.schema.schemaId)} / ${text(input.schema.version)}`,"",
     "This is an exported snapshot. Recheck current authorization, sources and publication before reuse.",""];
   if(input.gaps.length)lines.push(`Gaps: ${input.gaps.map(text).join(", ")}`,"");
+  if(input.directoryPage)lines.push("Directory page only; earlier pages are not included. Recheck the live API for continued traversal.",
+    input.directoryPage.nextCursor?"More directory pages are available.":"This page has no following directory page.","");
   lines.push("## Entities",...input.nodes.map(n=>`- ${text(n.label)} (${n.id})`),"");
   for(const edge of input.edges){
     lines.push(`## ${text(label(edge.sourceId))} -> ${text(edge.type)} -> ${text(label(edge.targetId))}`,`Relation: ${edge.id}`,"");
