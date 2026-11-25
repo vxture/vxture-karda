@@ -166,4 +166,5 @@ export const semantic = {
   summaryGenerate:{"zh-CN":"\u751f\u6210\u6216\u91cd\u8bd5\u5f15\u7528\u6458\u8981","en-US":"Generate or retry cited summary"},
   summaryTitle:{"zh-CN":"\u6a21\u578b\u4e3b\u9898\u6458\u8981","en-US":"Model topic summary"},
   summaryCitation:{"zh-CN":"\u6838\u5bf9\u652f\u6301\u539f\u6587","en-US":"Inspect supporting source"},
+  graphKeyboard:{"zh-CN":"\u952e\u76d8\uff1aTab\u8fdb\u5165\u753b\u5e03\u3001\u5173\u7cfb\u6216\u5b9e\u4f53\uff1b\u753b\u5e03\u65b9\u5411\u952e\u5e73\u79fb\uff0c+/-\u7f29\u653e\uff0cHome\u590d\u4f4d\uff1b\u5b9e\u4f53\u548c\u5173\u7cfb\u7528\u65b9\u5411\u952e\u3001Home/End\u79fb\u52a8\uff0cEnter/\u7a7a\u683c\u9009\u62e9\uff1bEsc\u5173\u95ed\u5927\u753b\u5e03\u3002","en-US":"Keyboard: Tab into canvas, relations or entities. Canvas arrows pan, +/- zoom, Home resets. Entity/relation arrows and Home/End move focus; Enter/Space selects. Esc closes the large canvas."},
 } satisfies Catalog;
