@@ -1,5 +1,5 @@
 "use client";
-import {useEffect,useRef,useState} from "react";
+import {useEffect,useMemo,useRef,useState} from "react";
 import Link from "next/link";
 import {Banner,Button,Card,CardContent} from "@vxture/design-system";
 import {PageHead} from "../../../../_shell/PageHead";
@@ -7,17 +7,21 @@ import {useMessages} from "../../../../_i18n/useMessages";
 import {semantic} from "../../../../_i18n/messages/semantic";
 import {SignInGate} from "../../../../_lib/ui";
 import type {KnowledgePackage} from "../../../../kb/semantic/read-postgres";
+import {knowledgeTopics,searchPublishedPassages} from "../../../../kb/semantic/knowledge-explorer";
 
 export function PublishedKnowledgeClient({kbId}:{kbId:string}){
   const m=useMessages(semantic),[entity,setEntity]=useState(""),[focus,setFocus]=useState("");
   const [value,setValue]=useState<KnowledgePackage|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(0);
   const sequence=useRef(0);
+  const [topic,setTopic]=useState(""),[query,setQuery]=useState("");
+  const topics=useMemo(()=>value?knowledgeTopics(value):[],[value]);
+  const found=useMemo(()=>value?searchPublishedPassages(value,query):{matches:[],total:0},[value,query]);
   useEffect(()=>{void load("");return()=>{sequence.current++;};
     // The server keys this component by library, discarding prior request state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
   async function load(id:string){
-    const ticket=++sequence.current;setBusy(true);setError(0);setValue(null);
+    const ticket=++sequence.current;setBusy(true);setError(0);setValue(null);setTopic("");setQuery("");
     try{
       const response=await fetch(`/api/kb/${encodeURIComponent(kbId)}/knowledge-package${id?`?entity=${encodeURIComponent(id)}`:""}`,{cache:"no-store",credentials:"same-origin"});
       if(!response.ok){if(ticket===sequence.current)setError(response.status);return;}
@@ -49,6 +53,27 @@ export function PublishedKnowledgeClient({kbId}:{kbId:string}){
       <h2 className="break-words text-title-md">{focus?label(focus):m.linkedEntities}</h2>
       <nav aria-label={m.linkedEntities} className="flex flex-wrap gap-sm">{value.nodes.filter(n=>n.id!==focus).map(n=>
         <Button key={n.id} variant="outline" disabled={busy} onClick={()=>void load(n.id)}>{n.label}</Button>)}</nav>
+      <section className="flex min-w-0 flex-col gap-sm" aria-label={m.topicTitle}>
+        <h2 className="text-title-md">{m.topicTitle}</h2><p className="text-body-sm text-muted-foreground">{m.topicHint}</p>
+        <div className="flex flex-wrap gap-sm">{topics.map(t=><Button key={t.type} variant={topic===t.type?"default":"outline"} aria-pressed={topic===t.type} onClick={()=>setTopic(topic===t.type?"":t.type)}>
+          {t.type} ({t.relationIds.length} {m.relations} / {t.entityIds.length} {m.graphNodes})
+        </Button>)}</div>
+        {topic&&value.edges.filter(e=>e.type===topic).map(edge=><Card key={edge.id}><CardContent className="flex min-w-0 flex-col gap-sm p-md">
+          <p className="break-words">{label(edge.sourceId)} &rarr; {edge.type} &rarr; {label(edge.targetId)}</p>
+          <div className="flex flex-wrap gap-sm">{[...new Set([edge.sourceId,edge.targetId])].map(id=><Button key={id} variant="outline" onClick={()=>void load(id)}>{label(id)}</Button>)}</div>
+          {edge.assertionIds.map(id=><p key={id} className="break-words text-body-sm">{value.statements.find(s=>s.id===id)?.statement}</p>)}
+        </CardContent></Card>)}
+      </section>
+      <section className="flex min-w-0 flex-col gap-sm" aria-label={m.passageSearch}>
+        <h2 className="text-title-md">{m.passageSearch}</h2><p className="text-body-sm text-muted-foreground">{m.passageSearchHint}</p>
+        <label htmlFor="passage-query">{m.passageQuery}</label><input id="passage-query" value={query} maxLength={200} onChange={e=>setQuery(e.target.value)} className="min-w-0 rounded-md border border-border bg-background p-sm"/>
+        {!!query.trim()&&<p role="status">{found.matches.length} / {found.total} {m.passageMatches}</p>}
+        {found.matches.map(match=>{const evidence=value.evidence.find(e=>e.id===match.evidenceId)!;return <Card key={match.evidenceId}><CardContent className="flex min-w-0 flex-col gap-sm p-md">
+          <blockquote className="break-words text-body-sm">{match.excerpt.slice(0,match.start)}<mark>{match.excerpt.slice(match.start,match.end)}</mark>{match.excerpt.slice(match.end)}</blockquote>
+          <p className="break-all font-mono text-code-sm">{evidence.documentId} / v{evidence.documentVersion} / {evidence.start}:{evidence.end}{evidence.pages?.length?` / ${m.sourcePages} ${evidence.pages.join(", ")}`:""}</p>
+          {value.edges.filter(e=>match.relationIds.includes(e.id)).map(e=><p key={e.id} className="break-words text-body-sm">{label(e.sourceId)} &rarr; {e.type} &rarr; {label(e.targetId)}</p>)}
+        </CardContent></Card>;})}
+      </section>
       {!!focus&&(["outgoing","incoming"] as const).map(direction=><section key={direction} className="flex min-w-0 flex-col gap-sm">
         <h3 className="text-title-sm">{m[direction]}</h3>
         {value.edges.filter(e=>direction==="outgoing"?e.sourceId===focus:e.targetId===focus).map(edge=><Card key={edge.id}>
