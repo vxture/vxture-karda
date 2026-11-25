@@ -146,6 +146,7 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
     assert.equal(receipts.filter(r=>r.duplicate).length,1);
     const first = receipts[0];
     const health=await store.maintenance(identity,kb);
+    assert.deepEqual((await store.maintenance(identity,kb,true)).relations,health.relations,"diagnostic export reuses the current authorized read");
     assert.equal(health.generation,1);assert.equal(health.releaseId,first.releaseId);
     assert.deepEqual(health.relations[0].issues,[]);assert.deepEqual(health.sources[0].relationIds,[relation]);
     bytes=null;
