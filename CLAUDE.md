@@ -76,7 +76,18 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-25): v0.12.1 / 9bfa2d3e, owner-authorized run
+Current production (2026-11-25): v0.12.2 / 7cca363f, owner-authorized deploy
+45540152162 succeeded at2026-11-25T03:34:02Z via the normal production gate.
+PR306/307/308 deliver exact source-only RP/OBO search, immutable publication
+audit/version comparison and real PostgreSQL SOP revision lifecycle coverage.
+Main CI45539806154 and secret scan45539806140 pass; final PR CI45539531251
+ran1034 tests, all passed, zero skips. Canonical health/ready confirm this
+version and db/redis/storageConfig ok; anonymous source-search POST/history/
+package reads refuse401. No DDL;53 tables retained. Fixed checklist remains
+7complete/10unfinished; external and business acceptance are open. See
+docs/50-deployment/70-sources-audit-release-20261125.md.
+
+Historical production (2026-11-25): v0.12.1 / 9bfa2d3e, owner-authorized run
 45532514296 succeeded at 2026-11-25T02:28:19Z through the normal production
 review gate. PR303/304 provide grouped graph navigation, published relation
 topics/evidence search and complete authorized overviews within existing
