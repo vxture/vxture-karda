@@ -35,6 +35,7 @@ export function MaintenanceClient({kbId}:{kbId:string}){
     <div className="flex flex-wrap gap-sm">
       <Button variant="outline" disabled={busy} onClick={()=>void load()}>{m.refresh}</Button>
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/history`}>{m.historyTitle}</Link></Button>
+      <Button variant="outline" asChild><Link href={`/assets/${kbId}/topics`}>{m.dossierTitle}</Link></Button>
       <Button asChild><Link href={`/assets/${kbId}/semantic`}>{m.maintenanceRebuild}</Link></Button>
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/published`}>{m.knowledgeTitle}</Link></Button>
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/graph`}>{m.graphTitle}</Link></Button>

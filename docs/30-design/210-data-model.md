@@ -302,3 +302,10 @@ baseline/0017/Prisma/98锁步，生产结构仍须db-init，不在应用请求�
 服务角色只可 SELECT/INSERT，不可 UPDATE/DELETE；文档物理删除可由 FK 级联清理。分块提交在锁定文档并核验当前原始哈希后，与规范化快照及 active_chunk_version 同事务提交。
 PDF 文本层固定 pypdf6.21.4-v1，DOCX 为有限的正文段落合同；拒绝扫描件、加密 PDF、复杂 DOCX 而不假装已解析。读取端必须再次核验同版本快照、原始字节哈希及文本哈希，不实时重跑解析器。
 baseline/0018/Prisma/98 锁步；生产通过 db-init 增量执行，容器不自动迁移。
+
+## 13. 不可变主题知识草稿（0019）
+
+新增topic_dossier，声明54表。id为请求幂等键，kb_id限定同库，relation_type/input_hash唯一，payload/hash冻结当时汇编，created_by/created_at留存创建身份。
+服务角色只可SELECT/INSERT，不可UPDATE/DELETE；当前版本由正式知识包重算指纹判定，不原地改历史，不自动发布或加入检索。
+读取失效草稿仅返回身份/状态，旧payload不回显；来源、裁决及权限继续由同一权威快照核验。
+baseline/0019/Prisma/98同步，正式DDL只走db-init；无客户内容/权限迁移。

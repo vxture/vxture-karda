@@ -1033,3 +1033,18 @@ model DocumentTextSnapshot {
   @@map("document_text_snapshot")
   @@schema("karda_kb")
 }
+
+model TopicDossier {
+  id String @id @db.Uuid
+  kbId String @map("kb_id") @db.Uuid
+  relationType String @map("relation_type") @db.VarChar(128)
+  inputHash String @map("input_hash") @db.VarChar(64)
+  payloadHash String @map("payload_hash") @db.VarChar(64)
+  payload Json
+  createdBy String @map("created_by") @db.VarChar(128)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  @@unique([kbId, id])
+  @@unique([kbId, relationType, inputHash])
+  @@map("topic_dossier")
+  @@schema("karda_kb")
+}
