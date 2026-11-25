@@ -15,6 +15,7 @@ import { localCompileProfile } from "./compile-profile";
 import {parsePathFor} from "../processing/ir";
 import {readSourceSnapshot} from "../processing/source-snapshot";
 import {SOURCE_FORMATS} from "../processing/source-formats";
+import {inspectSources,type SourceCandidate} from "./source-readiness";
 import { maintenanceReport, type MaintenanceReport, type MaintenanceDocument, type MaintenanceAssertion, type MaintenanceGround } from "./maintenance";
 import {verifyAuditWindow,type AuditHistory,type AuditRelease} from "./audit-history";
 import {parseCompileTaskQuery,type CompileTaskQuery} from "./task-query";
@@ -173,6 +174,23 @@ export class PostgresSemanticStore {
         entityTypes:new Map(entities.map(row=>[row.id,input.entityTypes.get(row.kind)??""])),
         reviewedIds:new Set(loaded.relations.map(row=>row.id))});
     }, true);
+  }
+
+  async sourceReadiness(identity:SemanticReadIdentity,kbId:string){
+    return this.write(identity,kbId,"data.write",async db=>{
+      const access=await readProductAccess(identity,{$queryRawUnsafe:async<R>(s:string,...v:unknown[])=>(await db.query(s,v)).rows as R,
+        $executeRawUnsafe:async()=>{throw new Error("semantic_write_denied");}});
+      if(!permits(access,"data.read")||!permits(access,"service.publish"))throw new Error("semantic_write_denied");
+      const documents=(await db.query<SourceCandidate>(`SELECT id,title,mime,content_state,active_chunk_version,content_hash,storage_ref,size_bytes
+        FROM karda_kb.document WHERE kb_id=$1 ORDER BY id LIMIT 101`,[kbId])).rows;
+      return inspectSources(documents,async doc=>{
+        const native=doc.mime==="text/plain"||doc.mime==="text/markdown";
+        const normalized=native?null:await readSourceSnapshot(async(sql,...values)=>(await db.query(sql,values)).rows,doc.id,doc.active_chunk_version!);
+        const bytes=await this.objects.get(doc.storage_ref!);
+        const text=verifiedSourceText({activeVersion:doc.active_chunk_version,contentState:doc.content_state,contentHash:doc.content_hash,mime:doc.mime,normalized},bytes?.length===Number(doc.size_bytes)?bytes:null);
+        return {text,parserVersion:text===null?null:native?"native_text":normalized?.parserVersion??null};
+      },async()=>(await db.query<{now:Date}>("SELECT statement_timestamp() AS now")).rows[0].now.toISOString());
+    },true);
   }
 
   async createCompileTask(identity:SemanticReadIdentity,kbId:string,taskId:string) {

@@ -391,3 +391,8 @@ O(租户);业务模式是 O(模式),三个就够。更要紧的是——**标签
 | 任一「待对端」的 issue 关闭 | 本册对应行状态 + §11 |
 | 向对端提出新需求 | 本册 §11——**先开 issue 再登记**,没有编号就不算提出来了 |
 | **本册任何一节有实质变化** | Artifact `Karda 接口文档`(§1 给出链接)——它是本册面向人的投影,漂了就等于没有 |
+
+
+### 当前来源检查（2026-11-26）
+
+GET /api/kb/{id}/semantic?view=sources，RP人类审核面，只接受唯一view参数；当前平台准入与同空间user库所有者、product.enter/data.write/data.read/service.publish同事务复核。返回karda.source-readiness.v1/current_authorized_sources的有界来源元数据/问题/计数/检查时间，无正文/存储键/凭证/哈希。100份/32MiB原件/16Mi字符/2MiB响应超预算失败，拒绝不完整成功。不是编译或发布准入凭据、不调用模型/自动处理，任务创建另行复核。无service/OBO新增面，见170§50。

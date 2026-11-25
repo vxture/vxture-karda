@@ -52,6 +52,10 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
       VALUES($1,$2,'Recovery SOP','upload','text/plain','sop',$3,$4,'indexed',1)`,[doc,kb,bytes.length,sourceHash(bytes)]);
     for(const [id,kind,name] of [[procedure,"procedure","Recovery SOP"],[legacyStep,"requirement","Operator approval"],[revisedStep,"requirement","Two-person approval"]])
       await admin.query("INSERT INTO karda_kb.entity(id,kb_id,kind,name) VALUES($1,$2,$3,$4)",[id,kb,kind,name]);
+    const sourceCheck=await store.sourceReadiness(identity,kb);
+    assert.equal(sourceCheck.readable,1);assert.equal(sourceCheck.total,1);assert.equal(sourceCheck.items[0].parserVersion,"native_text");
+    assert.equal(JSON.stringify(sourceCheck).includes(bytes.toString()),false);assert.equal(JSON.stringify(sourceCheck).includes('"storage_ref"'),false);
+    await assert.rejects(new PostgresSemanticStore(service,objects,async()=>false).sourceReadiness(identity,kb),/semantic_write_denied/);
     await addEvidence(oldAssertion,bytes.toString(),1);
     const first=await compile(1,"Operator approval",oldAssertion,"1".repeat(64));
     assert.equal((await read()).edges.length,0,"persisted candidates remain unapproved drafts");
@@ -122,6 +126,8 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     // A revision updates raw bytes/version before any new semantic publication.
     bytes=Buffer.from("Recovery SOP requires two-person approval before restart.");
     await admin.query("UPDATE karda_kb.document SET active_chunk_version=2,content_hash=$2,size_bytes=$3 WHERE id=$1",[doc,sourceHash(bytes),bytes.length]);
+    assert.equal((await new PostgresSemanticStore(service,{get:async()=>Buffer.from("mismatched raw")},async()=>true).sourceReadiness(identity,kb)).blocked,1,"mismatched original is diagnosed");
+    assert.equal((await store.sourceReadiness(identity,kb)).readable,1,"current native text remains readable without semantic publication");
     const sourceSync=await sync(initialSync.revision);assert.equal(sourceSync.action,"replace");
     assert.deepEqual(sourceSync.knowledge?.edges,[]);assert.deepEqual(sourceSync.knowledge?.passages,[]);
     assert.equal((await sync(sourceSync.revision)).action,"unchanged");
@@ -181,6 +187,7 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     await assert.rejects(topics.handle(identity,kb,{action:"list"}),/semantic_topic_denied/);
     await assert.rejects(topics.handle(identity,kb,{action:"list",dossierId:draftId},true),/semantic_topic_denied/);
     await assert.rejects(factSearch("approval"),/semantic_read_denied/);
+    await assert.rejects(store.sourceReadiness(identity,kb),/semantic_write_denied/);
   }finally{
     await admin.query("DELETE FROM karda_kb.topic_summary WHERE kb_id=$1",[kb]);
     await admin.query("DELETE FROM karda_kb.topic_dossier WHERE kb_id=$1",[kb]);

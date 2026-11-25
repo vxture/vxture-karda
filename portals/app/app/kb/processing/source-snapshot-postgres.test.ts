@@ -108,6 +108,8 @@ for(const mime of [PDF_MIME,DOCX_MIME,XLSX_MIME,PPTX_MIME])test(`real ${mime} pr
     const payload:SemanticReleasePayload={format:"karda.semantic.release.v1",schema,entityTypes:[{kind:"thing",type:"entity"}],
       sources:[{kbId:kb,documentId:doc.id,version:1,contentHash:sourceHash(bytes)}],relations:[{id:relation,kbId:kb,schema,type:"requires",origin:"asserted",sourceId:left,targetId:right,assertionIds:[assertion]}]};
     const store=new PostgresSemanticStore(service,objects,async()=>true);
+    const sourceCheck=await store.sourceReadiness(identity,kb);assert.equal(sourceCheck.readable,1);
+    assert.equal(sourceCheck.items[0].parserVersion,snapshot.parserVersion);assert.equal(sourceCheck.items[0].characters,snapshot.text.length);
     const loaded=await store.loadCompilerSnapshot(identity,kb,payload);assert.equal(loaded.assertions[0].evidence[0].excerpt,excerpt);
     assert.equal((await store.createCompileTask(identity,kb,randomUUID())).duplicate,false,"binary sources enter the user compilation flow");
     const compile=await store.recordCompile(identity,kb,{taskKey:"a".repeat(64),configHash:"b".repeat(64),payload});
@@ -133,6 +135,7 @@ for(const mime of [PDF_MIME,DOCX_MIME,XLSX_MIME,PPTX_MIME])test(`real ${mime} pr
     await admin.query("UPDATE karda_kb.document SET content_hash=$2 WHERE id=$1",[doc.id,"f".repeat(64)]);
     await assert.rejects(target.commit(chunks,null,snapshot),/source_content_changed/);assert.equal(await load(2),null);
     assert.equal((await read()).edges.length,0,"changed raw bytes or hash cannot reuse old normalized evidence");
+    assert.equal((await store.sourceReadiness(identity,kb)).blocked,1);
   }finally{
     for(const table of ["semantic_compile_task","semantic_event_receipt","semantic_release_head","semantic_release_review","semantic_relation_assertion",
       "semantic_relation","semantic_release_source","semantic_release","semantic_compile_run","semantic_review","semantic_schema_version"])
