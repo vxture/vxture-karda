@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { projectNeighborhood, validateOntology } from "./projection";
+import { projectNeighborhood, projectDirectory, validateOntology } from "./projection";
 import { CLOCK, KB, PRIVATE_KB, tenderSchema, tenderSnapshot } from "./tender-fixture";
 import type { KnowledgeSnapshot, NeighborhoodQuery } from "./contracts";
 
@@ -189,4 +189,36 @@ test("only contract fields leave the projection, not internal adapter metadata",
   }
   Object.assign(snapshot.relations[0].schema, {privateConfig: "must-not-leave"});
   assert.equal(JSON.stringify(read(snapshot)).includes("must-not-leave"), false);
+});
+
+test("directory covers disjoint authorized components beyond the old 200-edge and 50-seed sampling",()=>{
+  const snapshot=tenderSnapshot();
+  snapshot.entities=[];snapshot.relations=[];
+  for(let i=0;i<250;i++){
+    const id=String(i).padStart(3,"0");
+    snapshot.entities.push({id:`p${id}`,kbId:KB,type:"project",label:`P${id}`},{id:`c${id}`,kbId:KB,type:"clause",label:`C${id}`});
+    snapshot.relations.push({id:`r${id}`,kbId:KB,schema:tenderSchema,type:"has_clause",sourceId:`p${id}`,targetId:`c${id}`,assertionIds:["a1"],origin:"asserted"});
+  }
+  const scope={visibleKbIds:new Set([KB]),now:CLOCK},limits={maxNodes:500,maxEdges:1000};
+  const result=projectDirectory(snapshot,tenderSchema,scope,limits);
+  assert.equal(result.nodes.length,500);assert.equal(result.edges.length,250);assert.equal(result.truncated,false);
+  assert.deepEqual(ids(result.evidence),["e1"]);
+  assert.deepEqual(projectDirectory({...snapshot,entities:[...snapshot.entities].reverse(),relations:[...snapshot.relations].reverse()},tenderSchema,scope,limits),result);
+  const small=projectDirectory(snapshot,tenderSchema,scope,{maxNodes:5,maxEdges:1000});
+  assert.equal(small.nodes.length,4);assert.equal(small.edges.length,2);assert.equal(small.truncated,true);
+  assert.equal(projectDirectory(snapshot,tenderSchema,scope,{maxNodes:500,maxEdges:1}).edges.length,1);
+});
+
+test("directory eligibility precedes selection, budgets and truncation",()=>{
+  const snapshot=tenderSnapshot(),scope={visibleKbIds:new Set([KB]),now:CLOCK},limits={maxNodes:4,maxEdges:3};
+  const expected=projectDirectory(snapshot,tenderSchema,scope,limits);
+  for(let i=0;i<250;i++)snapshot.relations.push({...snapshot.relations[0],id:`a-hidden-${i}`,kbId:PRIVATE_KB});
+  snapshot.relations.push({...snapshot.relations[0],id:"a-inferred",origin:"inferred"});
+  assert.deepEqual(projectDirectory(snapshot,tenderSchema,scope,limits),expected);
+  assert.equal(expected.truncated,false);
+  assert.deepEqual(ids(projectDirectory(snapshot,tenderSchema,scope,{...limits,relationTypes:["requires"]}).edges),["r2"]);
+  snapshot.sources.filter(s=>s.current).forEach(s=>{s.withdrawn=true;});
+  const empty=projectDirectory(snapshot,tenderSchema,scope,limits);
+  assert.equal(empty.nodes.length,0);assert.equal(empty.edges.length,0);assert.equal(empty.truncated,false);
+  assert.throws(()=>projectDirectory(snapshot,tenderSchema,scope,{maxNodes:501,maxEdges:1000}),/invalid_graph_query/);
 });

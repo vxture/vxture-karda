@@ -3,7 +3,7 @@ import { permits } from "../../authz/policy";
 import { readProductAccess, type MemberIdentity, type RoleSql } from "../../authz/store";
 import type { ObjectStore } from "../storage/objectstore";
 import type { GraphProjection, KnowledgeSnapshot, NeighborhoodQuery, OntologySchema, SemanticRelation } from "./contracts";
-import { projectNeighborhood, validateNeighborhoodQuery, validateOntology } from "./projection";
+import { projectNeighborhood, projectDirectory, validateNeighborhoodQuery, validateOntology } from "./projection";
 import { matchesSourceSpan, MAX_SEMANTIC_SOURCE_BYTES, MAX_SEMANTIC_TEXT_CHARS, verifiedSourceText } from "./source-text";
 import {parsePathFor} from "../processing/ir";
 import {readSourceSnapshot,type SourceSnapshot} from "../processing/source-snapshot";
@@ -173,22 +173,10 @@ export class PostgresSemanticReader {
         validFrom: null, supersededById: row.superseded_by, evidenceIds: evidenceIds.get(row.id) ?? [] }));
       const clock = await db.query<{ now: Date }>("SELECT statement_timestamp() AS now");
       const scope={visibleKbIds:visibleSet,now:clock.rows[0].now.toISOString()};
-      // Directory seeds come only from eligible, authorized edges, never raw entity rows.
-      let directoryTruncated=false;
-      if(directory){
-        const eligibleIds=new Set<string>();
-        directoryTruncated=relations.length>200;
-        for(const edge of [...relations].sort((a,b)=>a.id.localeCompare(b.id)).slice(0,200)){
-          const checked=projectNeighborhood({...snapshot,relations:[edge]},published.schema,scope,
-            {seedIds:[edge.sourceId],maxHops:1,maxNodes:2,maxEdges:1});
-          if(checked.edges.length)for(const n of checked.nodes)eligibleIds.add(n.id);
-          if(eligibleIds.size>50){directoryTruncated=true;break;}
-        }
-        query={...query,seedIds:[...eligibleIds].sort().slice(0,50)};
-        if(!query.seedIds.length)query.seedIds=["empty"];
-      }
-      const result = projectNeighborhood(snapshot, published.schema, scope, query);
-      result.truncated ||= directoryTruncated;
+      // Directory selects across the complete eligible snapshot after authority,
+      // source and premise checks. Hidden/rejected rows cannot consume its budget.
+      const result = directory?projectDirectory(snapshot,published.schema,scope,query):
+        projectNeighborhood(snapshot, published.schema, scope, query);
       // Enrich only the final eligible projection, in the same authorized snapshot.
       const ids=result.assertions.map(a=>a.id);
       const statements=ids.length?(await db.query<{id:string;statement:string}>(`SELECT id,statement FROM karda_kb.assertion
