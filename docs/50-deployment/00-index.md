@@ -35,6 +35,8 @@ Deployment and bootstrap material for this repo.
 
 | `220-docx-stories-release-20261125.md` | v0.12.20 referenced DOCX stories, migration0024 and production evidence |
 
+| `230-published-search-release-20261126.md` | v0.12.21 authorized published fact search and production evidence |
+
 The tag-to-env CD pipeline (deploy/build/rollback/db-init workflows and the
 `tailnet-ssh-connect` composite action) is inherited from the template and lives
 in `.github/`. Both checklists above are done and the production chain is
