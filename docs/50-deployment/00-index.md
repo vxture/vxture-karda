@@ -23,6 +23,8 @@ Deployment and bootstrap material for this repo.
 
 | `160-office-source-release-20261125.md` | v0.12.14 PPTX source chain, unified format contract and migration/rollout evidence |
 
+| `170-graph-navigation-release-20261125.md` | v0.12.15 viewport drawing, label density, minimap navigation and production evidence |
+
 The tag-to-env CD pipeline (deploy/build/rollback/db-init workflows and the
 `tailnet-ssh-connect` composite action) is inherited from the template and lives
 in `.github/`. Both checklists above are done and the production chain is
