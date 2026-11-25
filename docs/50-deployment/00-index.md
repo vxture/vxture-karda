@@ -19,6 +19,7 @@ Deployment and bootstrap material for this repo.
 | `120-graph-xlsx-release-20261125.md` | v0.12.10 graph page navigation, XLSX literal-cell source chain and migration/rollout evidence |
 | `130-operations-history-release-20261125.md` | v0.12.11 consolidated topic/summary history operations and stage-level verification |
 | `140-compile-operations-release-20261125.md` | v0.12.12 compile task history, current-source details and recovery stage |
+| `150-impact-operations-release-20261125.md` | v0.12.13 source impact inspection, human action suggestions and authorized diagnostics export |
 
 The tag-to-env CD pipeline (deploy/build/rollback/db-init workflows and the
 `tailnet-ssh-connect` composite action) is inherited from the template and lives
