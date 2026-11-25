@@ -1,5 +1,5 @@
 "use client";
-import {useEffect,useMemo,useRef,useState,type KeyboardEvent} from "react";
+import {useEffect,useMemo,useRef,useState} from "react";
 import Link from "next/link";
 import {Banner,Button,Card,CardContent} from "@vxture/design-system";
 import {PageHead} from "../../../../_shell/PageHead";
@@ -7,25 +7,24 @@ import {useMessages} from "../../../../_i18n/useMessages";
 import {semantic} from "../../../../_i18n/messages/semantic";
 import {SignInGate} from "../../../../_lib/ui";
 import {layoutGraph,layoutGroupedGraph,graphGroups,graphCommunities,graphPath} from "../../../../kb/semantic/graph-view";
+import {GraphCanvas} from "./graph-canvas";
 import type {KnowledgePackage} from "../../../../kb/semantic/read-postgres";
 
 export function GraphClient({kbId}:{kbId:string}){
   const m=useMessages(semantic),[data,setData]=useState<KnowledgePackage|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(0);
   const [selected,setSelected]=useState(""),[edgeId,setEdgeId]=useState(""),[filter,setFilter]=useState(""),[from,setFrom]=useState(""),[to,setTo]=useState("");
-  const [search,setSearch]=useState(""),[zoom,setZoom]=useState(1),[offset,setOffset]=useState({x:0,y:0}),[wide,setWide]=useState(false);
+  const [search,setSearch]=useState(""),[wide,setWide]=useState(false);
   const [entityType,setEntityType]=useState(""),[groupId,setGroupId]=useState(""),[grouped,setGrouped]=useState(true);
   const [communities,setCommunities]=useState(false);
   const [pages,setPages]=useState<string[]>([""]),[neighborhood,setNeighborhood]=useState(false);
-  const [nodeFocus,setNodeFocus]=useState(""),[edgeFocus,setEdgeFocus]=useState("");
-  const focusRefs=useRef(new Map<string,SVGElement>());
-  const sequence=useRef(0),drag=useRef<{x:number;y:number;ox:number;oy:number}|null>(null);
+  const sequence=useRef(0);
   async function load(seed="",cursor="",history=[""]){
     const ticket=++sequence.current;setBusy(true);setError(0);setData(null);setSelected("");setEdgeId("");setFrom("");setTo("");setFilter("");setSearch("");setEntityType("");setGroupId("");
     try{
       const response=await fetch(`/api/kb/${encodeURIComponent(kbId)}/knowledge-package?nodes=500&edges=1000&hops=2${seed?`&entity=${encodeURIComponent(seed)}`:`&cursor=${encodeURIComponent(cursor)}`}`,{cache:"no-store",credentials:"same-origin"});
       if(!response.ok){if(ticket===sequence.current)setError(response.status);return;}
       const result=await response.json() as KnowledgePackage;
-      if(ticket===sequence.current){setData(result);setSelected(seed);setZoom(1);setOffset({x:0,y:0});setPages(history);setNeighborhood(Boolean(seed));setNodeFocus("");setEdgeFocus("");}
+      if(ticket===sequence.current){setData(result);setSelected(seed);setPages(history);setNeighborhood(Boolean(seed));}
     }catch{if(ticket===sequence.current)setError(503);}finally{if(ticket===sequence.current)setBusy(false);}
   }
   useEffect(()=>{void load();return()=>{sequence.current++;};
@@ -37,25 +36,15 @@ export function GraphClient({kbId}:{kbId:string}){
   const groups=useMemo(()=>communities?graphCommunities(typedNodes,typedEdges):graphGroups(typedNodes,typedEdges),[typedNodes,typedEdges,communities]);
   const nodes=useMemo(()=>{const ids=groups.find(g=>g.id===groupId)?.nodeIds;return groupId?typedNodes.filter(n=>ids?.includes(n.id)):typedNodes;},[typedNodes,groups,groupId]);
   const edges=useMemo(()=>{const ids=new Set(nodes.map(n=>n.id));return typedEdges.filter(e=>ids.has(e.sourceId)&&ids.has(e.targetId));},[nodes,typedEdges]);
-  const layout=useMemo(()=>grouped?layoutGroupedGraph(nodes,edges,communities):layoutGraph(nodes,edges),[nodes,edges,grouped,communities]),points=new Map(layout.points.map(p=>[p.id,p]));
-  function resetSelection(){setSelected("");setEdgeId("");setFrom("");setTo("");setZoom(1);setOffset({x:0,y:0});}
+  const layout=useMemo(()=>grouped?layoutGroupedGraph(nodes,edges,communities):layoutGraph(nodes,edges),[nodes,edges,grouped,communities]);
+  function resetSelection(){setSelected("");setEdgeId("");setFrom("");setTo("");}
   const path=useMemo(()=>from&&to?graphPath(nodes,edges,from,to):null,[nodes,edges,from,to]);
   const nodeIndex=useMemo(()=>new Map(data?.nodes.map(n=>[n.id,n])??[]),[data]);
   const label=(id:string)=>nodeIndex.get(id)?.label??id;
   const chosen=edges.find(e=>e.id===edgeId);
-  const activeNode=points.has(nodeFocus)?nodeFocus:layout.points[0]?.id;
-  const activeEdge=edges.some(e=>e.id===edgeFocus)?edgeFocus:edges[0]?.id;
   const matches=nodes.filter(n=>n.label.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
   const related=edges.filter(e=>!selected||e.sourceId===selected||e.targetId===selected);
-  function centerNode(id:string){const p=points.get(id);if(p)setOffset({x:(layout.size/2-p.x)*zoom,y:(layout.size/2-p.y)*zoom});}
-  function chooseNode(id:string){setSelected(id);setEdgeId("");centerNode(id);}
-  function navigate(e:KeyboardEvent<SVGElement>,kind:"node"|"edge",ids:string[],id:string){
-    const delta=["ArrowRight","ArrowDown"].includes(e.key)?1:["ArrowLeft","ArrowUp"].includes(e.key)?-1:0;
-    if(!delta&&e.key!=="Home"&&e.key!=="End")return;
-    e.preventDefault();e.stopPropagation();
-    const index=e.key==="Home"?0:e.key==="End"?ids.length-1:(ids.indexOf(id)+delta+ids.length)%ids.length;
-    focusRefs.current.get(`${kind}/${ids[index]}`)?.focus();
-  }
+  function chooseNode(id:string){setSelected(id);setEdgeId("");}
   if(error===401)return <SignInGate from={`/assets/${kbId}/graph`}/>;
   return <div className={`flex min-w-0 flex-col gap-md ${wide?"fixed inset-0 z-50 overflow-auto bg-background p-md":""}`} aria-busy={busy} onKeyDown={e=>{if(e.key==="Escape")setWide(false);}}>
     <PageHead title={m.graphTitle}/>
@@ -64,9 +53,6 @@ export function GraphClient({kbId}:{kbId:string}){
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/sources`}>{m.sourceSearchTitle}</Link></Button>
       <Button variant="outline" disabled={busy} onClick={()=>void load()}>{m.graphOverview}</Button>
       <Button variant="outline" onClick={()=>setWide(!wide)}>{wide?m.closeCanvas:m.largeCanvas}</Button>
-      <Button variant="outline" disabled={busy} onClick={()=>{setZoom(1);setOffset({x:0,y:0});}}>{m.resetView}</Button>
-      <Button variant="outline" onClick={()=>setZoom(z=>Math.min(4,z*1.25))} aria-label={m.zoomIn}>+</Button>
-      <Button variant="outline" onClick={()=>setZoom(z=>Math.max(.3,z/1.25))} aria-label={m.zoomOut}>-</Button>
     </div>
     <p className="text-body-sm text-muted-foreground">{m.graphHint}</p>
     <p id="graph-keyboard-help" className="text-body-sm text-muted-foreground">{m.graphKeyboard}</p>
@@ -101,34 +87,7 @@ export function GraphClient({kbId}:{kbId:string}){
       </section>
       <div className="grid min-w-0 gap-md xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="min-w-0 overflow-hidden rounded-md border border-border bg-background">
-          <svg viewBox={`0 0 ${layout.size} ${layout.size}`} role="group" aria-label={m.graphTitle} aria-describedby="graph-keyboard-help" tabIndex={0} className="h-[65vh] min-h-96 w-full touch-none focus-visible:outline focus-visible:outline-2"
-            onKeyDown={e=>{if(e.target!==e.currentTarget)return;const step=layout.size/10;
-              if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Home","+","-","="].includes(e.key)){e.preventDefault();
-                if(e.key==="Home"){setZoom(1);setOffset({x:0,y:0});}
-                else if(e.key==="+"||e.key==="=")setZoom(z=>Math.min(4,z*1.25));
-                else if(e.key==="-")setZoom(z=>Math.max(.3,z/1.25));
-                else setOffset(o=>({x:o.x+(e.key==="ArrowLeft"?step:e.key==="ArrowRight"?-step:0),y:o.y+(e.key==="ArrowUp"?step:e.key==="ArrowDown"?-step:0)}));
-              }}}
-            onPointerDown={e=>{if(e.target!==e.currentTarget)return;drag.current={x:e.clientX,y:e.clientY,ox:offset.x,oy:offset.y};e.currentTarget.setPointerCapture(e.pointerId);}}
-            onPointerMove={e=>{if(drag.current){const rect=e.currentTarget.getBoundingClientRect();setOffset({x:drag.current.ox+(e.clientX-drag.current.x)*layout.size/rect.width,y:drag.current.oy+(e.clientY-drag.current.y)*layout.size/rect.height});}}}
-            onPointerUp={()=>{drag.current=null;}} onPointerCancel={()=>{drag.current=null;}}>
-            <defs><marker id="arrow" viewBox="0 0 10 10" refX="20" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
-            <g transform={`translate(${offset.x+layout.size/2} ${offset.y+layout.size/2}) scale(${zoom}) translate(${-layout.size/2} ${-layout.size/2})`}>
-              {layout.edges.map(edge=>{const a=points.get(edge.sourceId)!,b=points.get(edge.targetId)!,active=edge.id===edgeId||path?.includes(edge.id);return <g key={edge.id}>
-                <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="currentColor" strokeWidth={active?5:2} opacity={active?1:.35} markerEnd="url(#arrow)"/>
-                <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="transparent" strokeWidth="18" role="button" tabIndex={activeEdge===edge.id?0:-1}
-                  ref={el=>{if(el)focusRefs.current.set(`edge/${edge.id}`,el);else focusRefs.current.delete(`edge/${edge.id}`);}} className="focus-visible:stroke-primary focus-visible:opacity-100"
-                  aria-pressed={edge.id===edgeId} onFocus={()=>{setEdgeFocus(edge.id);setOffset({x:(layout.size/2-(a.x+b.x)/2)*zoom,y:(layout.size/2-(a.y+b.y)/2)*zoom});}}
-                  aria-label={`${label(edge.sourceId)} ${edge.type} ${label(edge.targetId)}`} onClick={()=>setEdgeId(edge.id)} onKeyDown={e=>{navigate(e,"edge",edges.map(v=>v.id),edge.id);if(e.key==="Enter"||e.key===" "){e.preventDefault();setEdgeId(edge.id);}}}/>
-              </g>;})}
-              {layout.points.map(node=><g key={node.id} transform={`translate(${node.x} ${node.y})`} role="button" tabIndex={activeNode===node.id?0:-1} aria-label={node.label} aria-pressed={selected===node.id}
-                ref={el=>{if(el)focusRefs.current.set(`node/${node.id}`,el);else focusRefs.current.delete(`node/${node.id}`);}} className="focus-visible:outline focus-visible:outline-2" onFocus={()=>{setNodeFocus(node.id);centerNode(node.id);}}
-                onClick={()=>chooseNode(node.id)} onKeyDown={e=>{navigate(e,"node",layout.points.map(v=>v.id),node.id);if(e.key==="Enter"||e.key===" "){e.preventDefault();chooseNode(node.id);}}}>
-                <circle r={selected===node.id?23:17} fill={selected===node.id?"currentColor":"var(--background, white)"} stroke="currentColor" strokeWidth="3"/>
-                <text y="-30" textAnchor="middle" fill="currentColor" fontSize={Math.min(18,Math.max(12,layout.size/90))}>{node.label.slice(0,26)}</text><title>{node.label} / {node.type}</title>
-              </g>)}
-            </g>
-          </svg>
+          <GraphCanvas key={JSON.stringify([sequence.current,entityType,filter,groupId,grouped,communities])} layout={layout} selected={selected} edgeId={edgeId} path={path} onNode={chooseNode} onEdge={setEdgeId}/>
         </div>
         <aside className="flex min-w-0 flex-col gap-sm" aria-label={m.evidencePanel}>
           <h2 className="text-title-sm">{m.linkedEntities}</h2>
