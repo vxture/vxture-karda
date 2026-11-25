@@ -84,7 +84,7 @@ test("standalone image finds pinned extractors after Next changes the runtime wo
     process.chdir(join(folder,"portals/app"));
     assert.equal((await normalizeSource(PDF_MIME,syntheticPdf(["Runtime proof"]))).text,"Runtime proof");
     assert.equal((await normalizeSource(XLSX_MIME,syntheticXlsx())).parserVersion,"xlsx-cell-ranges-v2");
-    assert.equal((await normalizeSource(PPTX_MIME,syntheticPptx())).parserVersion,"pptx-cell-grid-v2");
+    assert.equal((await normalizeSource(PPTX_MIME,syntheticPptx())).parserVersion,"pptx-authored-stories-v3");
     assert.equal((await normalizeSource(DOCX_MIME,syntheticDocxStories())).parserVersion,"docx-cell-grid-v4");
   }finally{process.chdir(cwd);await rm(folder,{recursive:true,force:true});}
 });
@@ -97,7 +97,7 @@ test("Office registry agrees with parser dispatch, image bundle and fresh databa
 
 test("PPTX text/table provenance follows slide ordering, rejects active/ambiguous content and preserves Unicode coordinates",async()=>{
   const bytes=syntheticPptx(),snapshot=await normalizeSource(PPTX_MIME,bytes);
-  assert.equal(snapshot.parserVersion,"pptx-cell-grid-v2");
+  assert.equal(snapshot.parserVersion,"pptx-authored-stories-v3");
   assert.equal(snapshot.text,'Slide 1 shape 3 paragraph 1: Proof \u4e2d\ud83d\ude00 first\nSecond line\n\nSlide 2 table 3 grid rows=1 columns=2\n\nSlide 2 table 3 R1C1 rows=1 columns=1: "Required"\n\nSlide 2 table 3 R1C2 rows=1 columns=1: ""');
   assert.ok(snapshot.locators.every(l=>l.page===undefined));assert.equal(snapshot.locators.length,4);
   const pos=snapshot.text.indexOf("\ud83d\ude00");assert.equal(snapshot.text.slice(pos,pos+2),"\ud83d\ude00");

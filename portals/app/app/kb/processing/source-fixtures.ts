@@ -37,6 +37,15 @@ export function syntheticPptxGrid():Buffer{
   const cell=(text:string,attrs="")=>`<a:tc ${attrs}><a:txBody><a:p><a:r><a:t>${text}</a:t></a:r></a:p></a:txBody></a:tc>`;
   return syntheticPptx({"ppt/slides/slide1.xml":`<p:sld xmlns:p="${p}" xmlns:a="${a}"><p:cSld><p:spTree><p:nvGrpSpPr/><p:grpSpPr/><p:graphicFrame><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblGrid><a:gridCol/><a:gridCol/></a:tblGrid><a:tr>${cell("Required merged proof \u4e2d\ud83d\ude00",'rowSpan="2" gridSpan="2"')}${cell("",'hMerge="1" rowSpan="2"')}</a:tr><a:tr>${cell("",'vMerge="1" gridSpan="2"')}${cell("",'hMerge="1" vMerge="1"')}</a:tr></a:tbl></a:graphicData></a:graphic></p:graphicFrame></p:spTree></p:cSld></p:sld>`});
 }
+export function syntheticPptxStories(overrides:Record<string,string>={}):Buffer{
+  const a="http://schemas.openxmlformats.org/drawingml/2006/main",p="http://schemas.openxmlformats.org/presentationml/2006/main",r="http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+  return syntheticPptx({
+    "ppt/slides/slide2.xml":`<p:sld xmlns:p="${p}" xmlns:a="${a}"><p:cSld><p:spTree><p:nvGrpSpPr/><p:grpSpPr/><p:grpSp><p:nvGrpSpPr/><p:grpSpPr/><p:sp><p:txBody><a:p><a:r><a:t>Proof grouped \u4e2d\ud83d\ude00</a:t></a:r></a:p></p:txBody></p:sp></p:grpSp></p:spTree></p:cSld></p:sld>`,
+    "ppt/slides/_rels/slide2.xml.rels":`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="n" Type="${r}/notesSlide" Target="../notesSlides/notesSlide7.xml"/></Relationships>`,
+    "ppt/notesSlides/notesSlide7.xml":`<p:notes xmlns:p="${p}" xmlns:a="${a}"><p:cSld><p:spTree><p:nvGrpSpPr/><p:grpSpPr/><p:sp><p:nvSpPr><p:cNvPr id="2" name="Notes"/><p:cNvSpPr/><p:nvPr><p:ph type="body"/></p:nvPr></p:nvSpPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>Required speaker proof \u4e2d\ud83d\ude00</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:notes>`,
+    "ppt/notesSlides/_rels/notesSlide7.xml.rels":`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="s" Type="${r}/slide" Target="../slides/slide2.xml"/></Relationships>`,...overrides,
+  });
+}
 
 export function syntheticXlsx(overrides:Record<string,string>={}):Buffer {
   const parts={

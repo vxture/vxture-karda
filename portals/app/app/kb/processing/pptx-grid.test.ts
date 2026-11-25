@@ -13,7 +13,7 @@ const source=(grid:string)=>syntheticPptx({"ppt/slides/slide1.xml":slide(grid)})
 
 test("PPTX merged grids retain a single anchor, logical spans, slide order and exact Unicode support",async()=>{
   const bytes=syntheticPptxGrid(),snapshot=await normalizeSource(PPTX_MIME,bytes);
-  assert.equal(snapshot.parserVersion,"pptx-cell-grid-v2");
+  assert.equal(snapshot.parserVersion,"pptx-authored-stories-v3");
   assert.ok(snapshot.text.includes('Slide 2 table 3 grid rows=2 columns=2'));
   assert.ok(snapshot.text.includes('Slide 2 table 3 R1C1 rows=2 columns=2: "Required merged proof \u4e2d\ud83d\ude00"'));
   assert.equal(snapshot.text.match(/Required merged proof/g)?.length,1);assert.equal(snapshot.text.includes("R2C2"),false);
