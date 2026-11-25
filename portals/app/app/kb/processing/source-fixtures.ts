@@ -30,7 +30,12 @@ export function syntheticPptx(overrides:Record<string,string>={}):Buffer{
     ...overrides,
   };
   const python=process.env.KARDA_KNOWLEDGE_PYTHON||(process.platform==="win32"?"python":"python3");
-  return execFileSync(python,["-I","-c",'import io,json,sys,zipfile; b=io.BytesIO(); z=zipfile.ZipFile(b,"w"); parts=json.loads(sys.stdin.buffer.read().decode("utf-8")); [z.writestr(k,v) for k,v in parts.items()]; z.close(); sys.stdout.buffer.write(b.getvalue())'],{input:JSON.stringify(parts),timeout:10000,windowsHide:true});
+  return execFileSync(python,["-I","-c",'import io,json,sys,zipfile; b=io.BytesIO(); z=zipfile.ZipFile(b,"w"); parts=json.loads(sys.stdin.buffer.read().decode("utf-8")); [z.writestr(k,v) for k,v in parts.items()]; z.close(); sys.stdout.buffer.write(b.getvalue())'],{input:JSON.stringify(parts),timeout:10000,maxBuffer:16*1024*1024,windowsHide:true});
+}
+export function syntheticPptxGrid():Buffer{
+  const a="http://schemas.openxmlformats.org/drawingml/2006/main",p="http://schemas.openxmlformats.org/presentationml/2006/main";
+  const cell=(text:string,attrs="")=>`<a:tc ${attrs}><a:txBody><a:p><a:r><a:t>${text}</a:t></a:r></a:p></a:txBody></a:tc>`;
+  return syntheticPptx({"ppt/slides/slide1.xml":`<p:sld xmlns:p="${p}" xmlns:a="${a}"><p:cSld><p:spTree><p:nvGrpSpPr/><p:grpSpPr/><p:graphicFrame><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblGrid><a:gridCol/><a:gridCol/></a:tblGrid><a:tr>${cell("Required merged proof \u4e2d\ud83d\ude00",'rowSpan="2" gridSpan="2"')}${cell("",'hMerge="1" rowSpan="2"')}</a:tr><a:tr>${cell("",'vMerge="1" gridSpan="2"')}${cell("",'hMerge="1" vMerge="1"')}</a:tr></a:tbl></a:graphicData></a:graphic></p:graphicFrame></p:spTree></p:cSld></p:sld>`});
 }
 
 export function syntheticXlsx(overrides:Record<string,string>={}):Buffer {

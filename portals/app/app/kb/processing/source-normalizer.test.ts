@@ -79,12 +79,12 @@ test("standalone image finds pinned extractors after Next changes the runtime wo
   const cwd=process.cwd(),folder=await mkdtemp(join(tmpdir(),"karda-runtime-layout-"));
   try{
     await mkdir(join(folder,"source-tools"));await mkdir(join(folder,"portals/app"),{recursive:true});
-    for(const name of ["normalize-source.py","extract-docx.py","extract-docx-stories.py","extract-xlsx.py",...SOURCE_FORMATS.map(f=>f.script)])
+    for(const name of ["normalize-source.py","extract-docx.py","extract-docx-stories.py","extract-xlsx.py","extract-pptx.py",...SOURCE_FORMATS.map(f=>f.script)])
       await copyFile(resolve(cwd,"../../scripts/knowledge",name),join(folder,"source-tools",name));
     process.chdir(join(folder,"portals/app"));
     assert.equal((await normalizeSource(PDF_MIME,syntheticPdf(["Runtime proof"]))).text,"Runtime proof");
     assert.equal((await normalizeSource(XLSX_MIME,syntheticXlsx())).parserVersion,"xlsx-cell-ranges-v2");
-    assert.equal((await normalizeSource(PPTX_MIME,syntheticPptx())).parserVersion,"pptx-slide-text-v1");
+    assert.equal((await normalizeSource(PPTX_MIME,syntheticPptx())).parserVersion,"pptx-cell-grid-v2");
     assert.equal((await normalizeSource(DOCX_MIME,syntheticDocxStories())).parserVersion,"docx-cell-grid-v4");
   }finally{process.chdir(cwd);await rm(folder,{recursive:true,force:true});}
 });
@@ -97,9 +97,9 @@ test("Office registry agrees with parser dispatch, image bundle and fresh databa
 
 test("PPTX text/table provenance follows slide ordering, rejects active/ambiguous content and preserves Unicode coordinates",async()=>{
   const bytes=syntheticPptx(),snapshot=await normalizeSource(PPTX_MIME,bytes);
-  assert.equal(snapshot.parserVersion,"pptx-slide-text-v1");
-  assert.equal(snapshot.text,'Slide 1 shape 3 paragraph 1: Proof \u4e2d\ud83d\ude00 first\nSecond line\n\nSlide 2 table 3 row 1: C1="Required" | C2=""');
-  assert.ok(snapshot.locators.every(l=>l.page===undefined));assert.equal(snapshot.locators.length,2);
+  assert.equal(snapshot.parserVersion,"pptx-cell-grid-v2");
+  assert.equal(snapshot.text,'Slide 1 shape 3 paragraph 1: Proof \u4e2d\ud83d\ude00 first\nSecond line\n\nSlide 2 table 3 grid rows=1 columns=2\n\nSlide 2 table 3 R1C1 rows=1 columns=1: "Required"\n\nSlide 2 table 3 R1C2 rows=1 columns=1: ""');
+  assert.ok(snapshot.locators.every(l=>l.page===undefined));assert.equal(snapshot.locators.length,4);
   const pos=snapshot.text.indexOf("\ud83d\ude00");assert.equal(snapshot.text.slice(pos,pos+2),"\ud83d\ude00");
   assert.equal(verifiedSourceText({activeVersion:1,contentState:"indexed",contentHash:sourceHash(bytes),mime:PPTX_MIME,normalized:snapshot},bytes),snapshot.text);
   assert.ok(snapshotIR(snapshot).elements.length>0);

@@ -11,7 +11,7 @@ import {runPipeline,type CommittedChunk} from "./orchestrator";
 import {PDF_MIME,DOCX_MIME,XLSX_MIME,PPTX_MIME,readSourceSnapshot,sourceHash} from "./source-snapshot";
 import {normalizeSource} from "./source-normalizer";
 import {verifiedSourceText} from "../semantic/source-text";
-import {syntheticPdf,syntheticXlsxRanges,syntheticPptx,syntheticDocxGrid} from "./source-fixtures";
+import {syntheticPdf,syntheticXlsxRanges,syntheticPptxGrid,syntheticDocxGrid} from "./source-fixtures";
 import {ContentService} from "../lib/content-service";
 import {InMemoryContentStore} from "../lib/content-store";
 import {InMemoryObjectStore} from "../storage/objectstore";
@@ -70,7 +70,7 @@ for(const mime of [PDF_MIME,DOCX_MIME,XLSX_MIME,PPTX_MIME])test(`real ${mime} pr
   const admin=new Pool({connectionString:endpoint,statement_timeout:10000});url.username="karda_svc";
   process.env.DATABASE_URL=url.toString();
   const service=new Pool({connectionString:url.toString(),statement_timeout:10000});
-  const kb=randomUUID(),ws=randomUUID(),sub=`usr_${randomUUID()}`,bytes=mime===PDF_MIME?syntheticPdf(["Proof first","Proof last"]):mime===XLSX_MIME?syntheticXlsxRanges():mime===DOCX_MIME?syntheticDocxGrid():syntheticPptx(),objects=new InMemoryObjectStore();
+  const kb=randomUUID(),ws=randomUUID(),sub=`usr_${randomUUID()}`,bytes=mime===PDF_MIME?syntheticPdf(["Proof first","Proof last"]):mime===XLSX_MIME?syntheticXlsxRanges():mime===DOCX_MIME?syntheticDocxGrid():syntheticPptxGrid(),objects=new InMemoryObjectStore();
   const identity={workspaceId:ws,sub,roles:[],productCode:"karda"};let member:string|undefined;
   const object=await objects.put(ws,kb,bytes),content=new ContentService(new InMemoryContentStore());
   const result=await content.createDocument({kbId:kb,title:"synthetic source",source:"upload",mime,
@@ -88,7 +88,8 @@ for(const mime of [PDF_MIME,DOCX_MIME,XLSX_MIME,PPTX_MIME])test(`real ${mime} pr
     const snapshot=(await load(1))!;assert.ok(snapshot);assert.equal(snapshot.text,(await normalizeSource(mime,bytes)).text);
     if(mime===DOCX_MIME){assert.equal(snapshot.parserVersion,"docx-cell-grid-v4");assert.match(snapshot.text,/R1C1 rows=2 columns=2/);assert.match(snapshot.text,/table1.*Nested support/);}
     if(mime===XLSX_MIME){assert.equal(snapshot.parserVersion,"xlsx-cell-ranges-v2");assert.match(snapshot.text,/merged A1:B2 anchor=A1 rows=2 columns=2/);}
-    const excerptStart=mime===DOCX_MIME?snapshot.text.indexOf("Required merged proof"):mime===XLSX_MIME?snapshot.text.indexOf("Required"):0,excerptEnd=excerptStart+5;
+    if(mime===PPTX_MIME){assert.equal(snapshot.parserVersion,"pptx-cell-grid-v2");assert.match(snapshot.text,/R1C1 rows=2 columns=2/);}
+    const excerptStart=mime===DOCX_MIME?snapshot.text.indexOf("Required merged proof"):mime===XLSX_MIME?snapshot.text.indexOf("Required"):mime===PPTX_MIME?snapshot.text.indexOf("Required merged proof"):0,excerptEnd=excerptStart+5;
     assert.ok(excerptStart>=0);const excerpt=snapshot.text.slice(excerptStart,excerptEnd);
     assert.ok(chunks.every(c=>snapshot.text.slice(c.sourceRange.start,c.sourceRange.end).trim().length>0));
     assert.equal(verifiedSourceText({activeVersion:1,contentState:"indexed",contentHash:sourceHash(bytes),mime,normalized:snapshot},bytes),snapshot.text);
