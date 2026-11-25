@@ -4,6 +4,7 @@ import { requireAuth } from "../../../../kb/api/http";
 import { getOidcConfig } from "../../../../auth/lib/config";
 import { userAdmission } from "../../../../platform/admission";
 import { getObjectStore } from "../../../../kb/storage/objectstore";
+import {maintenanceAudit,maintenanceAuditMarkdown} from "../../../../kb/semantic/maintenance-audit";
 import { PostgresSemanticStore } from "../../../../kb/semantic/store-postgres";
 import { parseReviewRequest, reviewOriginAllowed } from "../../../../kb/semantic/review-request";
 
@@ -13,7 +14,7 @@ function jsonError(error: unknown): Response {
   const code = error instanceof Error ? error.message : "semantic_request_failed";
   const known = /^(semantic_|publication_)/.test(code);
   const status = !known ? 503 : /denied/.test(code) ? 403 : /unavailable/.test(code) ? 404
-    : /corrupt/.test(code) ? 503 : /stale|conflict|changed|required/.test(code) ? 409 : 400;
+    : /corrupt|audit_budget/.test(code) ? 503 : /stale|conflict|changed|required/.test(code) ? 409 : 400;
   return NextResponse.json({ error: known ? code : "semantic_unavailable" }, { status, headers: { "Cache-Control": "no-store" } });
 }
 
@@ -35,12 +36,17 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   const { id } = await ctx.params;
   const url = new URL(req.url), runId = url.searchParams.get("runId");
   if (url.searchParams.has("view")) {
-    const exporting=url.searchParams.get("format")==="json";
+    const format=url.searchParams.get("format"),exporting=["json","audit","audit-markdown"].includes(format??"");
     if (url.searchParams.get("view") !== "maintenance" || [...url.searchParams.keys()].some(key=>!["view","format"].includes(key))||
       url.searchParams.getAll("view").length!==1||url.searchParams.getAll("format").length>1||(url.searchParams.has("format")&&!exporting))
       throw new Error("semantic_invalid_query");
     const report = await withStore((store,identity)=>store.maintenance(identity,id,exporting));
     if(!report.ok)return report.response;
+    if(format==="audit"||format==="audit-markdown"){
+      const audit=maintenanceAudit(report.value,id),headers={"Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff",
+        "Content-Disposition":`attachment; filename="knowledge-maintenance-audit.${format==="audit"?"json":"md"}"`};
+      return format==="audit"?NextResponse.json(audit,{headers}):new Response(maintenanceAuditMarkdown(audit),{headers:{...headers,"Content-Type":"text/markdown; charset=utf-8"}});
+    }
     if(exporting)return NextResponse.json({format:"karda.maintenance-report.v1",scope:"current_authorized_diagnostic",report:report.value},
       {headers:{"Cache-Control":"private, no-store","Content-Disposition":'attachment; filename="knowledge-diagnostics.json"',"X-Content-Type-Options":"nosniff"}});
     return NextResponse.json(report.value,{headers:{"Cache-Control":"private, no-store"}});

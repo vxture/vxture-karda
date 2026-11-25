@@ -736,3 +736,15 @@ RP示例：GET /api/kb/{id}/knowledge-sync?nodes=100&edges=200&cursor=；再次�
 两页支持entity单值标准小写UUID深链接，服务器解析并按kbId/initialEntity重建组件；多值/不合法值回目录，不接受身份/版本/任意脚本。图谱选中实体可打开对应知识页，知识页当前有效实体可打开邻域图谱。只为本次返回仍存在的实体展示定位链接；来源撤回为空后不保留旧选择。页面间各自重新读取授权知识，不共享内存或携带正文。
 
 开发期只4项窗口协议/迟到响应/取消/错误与深链接定向检查，类型/i18n守卫，无本地全量。集中Playwright合成HTTP覆盖知识页entity直达→unchanged核验期间旧证据隐藏→图谱互链→图谱核验/撤回清空→409分页重启→知识页撤回/403清空及390px；浏览器发现fetch绑定问题后修复复验。实际服务端数据链由既有同步SOP数据库回归及本阶段CI统一完整回归覆盖；合成页面验收不接受为真实Agent或业务质量。无新API/DDL/依赖，55表保持。
+
+## 42. 维护审计交付与离线对照阶段（2026-11-25）
+
+运营维护新增format=audit JSON及format=audit-markdown可读报告，保留旧format=json原契约；两种新导出均走原store.maintenance(exporting=true)同事务复核当前平台准入、所有者/service.publish及data.export，重新读取当前来源与裁决，不使用浏览器缓存报告。来源上限100、关系5000、JSON正文2MiB；超预算失败，不截断为完整审计。无DDL/依赖/模型调用或自动操作。
+
+JSON固定karda.maintenance-audit.v1/current_authorized_diagnostic，显式投影库、发布代次/ID、检查时间、来源/关系列表、问题计数和人工行动建议；禁止把未来内部报告字段透传。按ID及问题/来源ID排序，不含原文/模型输出。完整报告而非屏幕筛选页，页面明确范围，避免把局部空结果导出成全库健康。Markdown是阅读伴随件，转义标题/ID等不可信字符，包含JSON摘要供关联；不是该Markdown文件本身的校验值。
+
+JSON的digestAlgorithm=sha256-json-body-v1：对去掉digestAlgorithm与digest后的正文按既有字段顺序JSON.stringify编码UTF-8计算SHA-256。固定生成顺序是协议组成，改格式应升版本；checkedAt及kbId属于摘要输入。摘要只校验内容一致性，任何人可重算，绝不是签名、平台背书、处置批准或持续授权。导出留存受业务人员自身资料管理约束，不向外部第三方发送。
+
+独立Node标准库工具：node scripts/knowledge/verify-maintenance-audit.mjs old.json，可离线校验结构、预算与摘要，输出integrity=matched/authenticated=false；追加new.json则要求同库、更晚checkedAt和不倒退代次，列出来源/关系新增、移除、内容及问题出现/消失。对照scope=historical_diagnostics_only，不恢复当前来源访问，不将问题消失判为业务验收或因果修复。旧JSON原件需保留键顺序；格式重排会使摘要不匹配，应使用原导出。
+
+开发期只3项审计/转义/摘要及离线对照定向、类型/i18n守卫，无本地全量；集中Playwright合成HTTP通过两个导出入口、筛选不改变全报告导出URL、390px和403清空。阶段CI扩展真实数据库maintenance导出一致性及平台/角色拒绝，统一完整回归。此包交付留痕与时点对照，不替代真实业务审计、外部事件投递或独立验收。
