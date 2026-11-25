@@ -1,5 +1,5 @@
 "use client";
-import {useEffect,useMemo,useRef,useState} from "react";
+import {useEffect,useMemo,useRef,useState,type KeyboardEvent} from "react";
 import Link from "next/link";
 import {Banner,Button,Card,CardContent} from "@vxture/design-system";
 import {PageHead} from "../../../../_shell/PageHead";
@@ -15,6 +15,8 @@ export function GraphClient({kbId}:{kbId:string}){
   const [search,setSearch]=useState(""),[zoom,setZoom]=useState(1),[offset,setOffset]=useState({x:0,y:0}),[wide,setWide]=useState(false);
   const [entityType,setEntityType]=useState(""),[groupId,setGroupId]=useState(""),[grouped,setGrouped]=useState(true);
   const [communities,setCommunities]=useState(false);
+  const [nodeFocus,setNodeFocus]=useState(""),[edgeFocus,setEdgeFocus]=useState("");
+  const focusRefs=useRef(new Map<string,SVGElement>());
   const sequence=useRef(0),drag=useRef<{x:number;y:number;ox:number;oy:number}|null>(null);
   async function load(seed=""){
     const ticket=++sequence.current;setBusy(true);setError(0);setData(null);setSelected("");setEdgeId("");setFrom("");setTo("");setFilter("");setSearch("");setEntityType("");setGroupId("");
@@ -37,10 +39,24 @@ export function GraphClient({kbId}:{kbId:string}){
   const layout=useMemo(()=>grouped?layoutGroupedGraph(nodes,edges,communities):layoutGraph(nodes,edges),[nodes,edges,grouped,communities]),points=new Map(layout.points.map(p=>[p.id,p]));
   function resetSelection(){setSelected("");setEdgeId("");setFrom("");setTo("");setZoom(1);setOffset({x:0,y:0});}
   const path=useMemo(()=>from&&to?graphPath(nodes,edges,from,to):null,[nodes,edges,from,to]);
-  const label=(id:string)=>data?.nodes.find(n=>n.id===id)?.label??id;
-  const chosen=data?.edges.find(e=>e.id===edgeId);
+  const nodeIndex=useMemo(()=>new Map(data?.nodes.map(n=>[n.id,n])??[]),[data]);
+  const label=(id:string)=>nodeIndex.get(id)?.label??id;
+  const chosen=edges.find(e=>e.id===edgeId);
+  const activeNode=points.has(nodeFocus)?nodeFocus:layout.points[0]?.id;
+  const activeEdge=edges.some(e=>e.id===edgeFocus)?edgeFocus:edges[0]?.id;
+  const matches=nodes.filter(n=>n.label.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
+  const related=edges.filter(e=>!selected||e.sourceId===selected||e.targetId===selected);
+  function centerNode(id:string){const p=points.get(id);if(p)setOffset({x:(layout.size/2-p.x)*zoom,y:(layout.size/2-p.y)*zoom});}
+  function chooseNode(id:string){setSelected(id);setEdgeId("");centerNode(id);}
+  function navigate(e:KeyboardEvent<SVGElement>,kind:"node"|"edge",ids:string[],id:string){
+    const delta=["ArrowRight","ArrowDown"].includes(e.key)?1:["ArrowLeft","ArrowUp"].includes(e.key)?-1:0;
+    if(!delta&&e.key!=="Home"&&e.key!=="End")return;
+    e.preventDefault();e.stopPropagation();
+    const index=e.key==="Home"?0:e.key==="End"?ids.length-1:(ids.indexOf(id)+delta+ids.length)%ids.length;
+    focusRefs.current.get(`${kind}/${ids[index]}`)?.focus();
+  }
   if(error===401)return <SignInGate from={`/assets/${kbId}/graph`}/>;
-  return <div className={`flex min-w-0 flex-col gap-md ${wide?"fixed inset-0 z-50 overflow-auto bg-background p-md":""}`} aria-busy={busy}>
+  return <div className={`flex min-w-0 flex-col gap-md ${wide?"fixed inset-0 z-50 overflow-auto bg-background p-md":""}`} aria-busy={busy} onKeyDown={e=>{if(e.key==="Escape")setWide(false);}}>
     <PageHead title={m.graphTitle}/>
     <div className="flex flex-wrap gap-sm">
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/published`}>{m.knowledgeTitle}</Link></Button>
@@ -52,6 +68,7 @@ export function GraphClient({kbId}:{kbId:string}){
       <Button variant="outline" onClick={()=>setZoom(z=>Math.max(.3,z/1.25))} aria-label={m.zoomOut}>-</Button>
     </div>
     <p className="text-body-sm text-muted-foreground">{m.graphHint}</p>
+    <p id="graph-keyboard-help" className="text-body-sm text-muted-foreground">{m.graphKeyboard}</p>
     {!!error&&<div role="alert"><Banner tone="danger" title={error===403?m.packageDenied:m.unavailable}/></div>}
     {busy&&<p role="status">{m.loading}</p>}
     {data&&<>
@@ -70,16 +87,20 @@ export function GraphClient({kbId}:{kbId:string}){
       </div>
       <section aria-label={m.graphGroups} className="flex min-w-0 flex-col gap-sm">
         <h2 className="text-title-sm">{communities?m.communityGroups:m.graphGroups} ({groups.length})</h2><p className="text-body-sm text-muted-foreground">{communities?m.communityHint:m.groupHint}</p>
-        <div className="flex max-h-40 flex-wrap gap-sm overflow-auto">
-          <Button variant={groupId?"outline":"default"} onClick={()=>{setGroupId("");resetSelection();}}>{m.allGroups}</Button>
-          {groups.map((group,i)=><Button key={group.id} variant={groupId===group.id?"default":"outline"} onClick={()=>{setGroupId(group.id);resetSelection();}}>
-            {i+1}. {label(group.id)} ({group.nodeIds.length} / {group.edgeIds.length})
-          </Button>)}
-        </div>
+        <select aria-label={communities?m.communityGroups:m.graphGroups} value={groupId} className="w-full min-w-0 rounded-md border border-border bg-background p-sm" onChange={e=>{setGroupId(e.target.value);resetSelection();}}>
+          <option value="">{m.allGroups}</option>{groups.map((group,i)=><option key={group.id} value={group.id}>{i+1}. {label(group.id)} ({group.nodeIds.length} / {group.edgeIds.length})</option>)}
+        </select>
       </section>
       <div className="grid min-w-0 gap-md xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="min-w-0 overflow-hidden rounded-md border border-border bg-background">
-          <svg viewBox={`0 0 ${layout.size} ${layout.size}`} role="group" aria-label={m.graphTitle} className="h-[65vh] min-h-96 w-full touch-none"
+          <svg viewBox={`0 0 ${layout.size} ${layout.size}`} role="group" aria-label={m.graphTitle} aria-describedby="graph-keyboard-help" tabIndex={0} className="h-[65vh] min-h-96 w-full touch-none focus-visible:outline focus-visible:outline-2"
+            onKeyDown={e=>{if(e.target!==e.currentTarget)return;const step=layout.size/10;
+              if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Home","+","-","="].includes(e.key)){e.preventDefault();
+                if(e.key==="Home"){setZoom(1);setOffset({x:0,y:0});}
+                else if(e.key==="+"||e.key==="=")setZoom(z=>Math.min(4,z*1.25));
+                else if(e.key==="-")setZoom(z=>Math.max(.3,z/1.25));
+                else setOffset(o=>({x:o.x+(e.key==="ArrowLeft"?step:e.key==="ArrowRight"?-step:0),y:o.y+(e.key==="ArrowUp"?step:e.key==="ArrowDown"?-step:0)}));
+              }}}
             onPointerDown={e=>{if(e.target!==e.currentTarget)return;drag.current={x:e.clientX,y:e.clientY,ox:offset.x,oy:offset.y};e.currentTarget.setPointerCapture(e.pointerId);}}
             onPointerMove={e=>{if(drag.current){const rect=e.currentTarget.getBoundingClientRect();setOffset({x:drag.current.ox+(e.clientX-drag.current.x)*layout.size/rect.width,y:drag.current.oy+(e.clientY-drag.current.y)*layout.size/rect.height});}}}
             onPointerUp={()=>{drag.current=null;}} onPointerCancel={()=>{drag.current=null;}}>
@@ -87,11 +108,14 @@ export function GraphClient({kbId}:{kbId:string}){
             <g transform={`translate(${offset.x+layout.size/2} ${offset.y+layout.size/2}) scale(${zoom}) translate(${-layout.size/2} ${-layout.size/2})`}>
               {layout.edges.map(edge=>{const a=points.get(edge.sourceId)!,b=points.get(edge.targetId)!,active=edge.id===edgeId||path?.includes(edge.id);return <g key={edge.id}>
                 <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="currentColor" strokeWidth={active?5:2} opacity={active?1:.35} markerEnd="url(#arrow)"/>
-                <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="transparent" strokeWidth="18" role="button" tabIndex={0}
-                  aria-label={`${label(edge.sourceId)} ${edge.type} ${label(edge.targetId)}`} onClick={()=>setEdgeId(edge.id)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();setEdgeId(edge.id);}}}/>
+                <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="transparent" strokeWidth="18" role="button" tabIndex={activeEdge===edge.id?0:-1}
+                  ref={el=>{if(el)focusRefs.current.set(`edge/${edge.id}`,el);else focusRefs.current.delete(`edge/${edge.id}`);}} className="focus-visible:stroke-primary focus-visible:opacity-100"
+                  aria-pressed={edge.id===edgeId} onFocus={()=>{setEdgeFocus(edge.id);setOffset({x:(layout.size/2-(a.x+b.x)/2)*zoom,y:(layout.size/2-(a.y+b.y)/2)*zoom});}}
+                  aria-label={`${label(edge.sourceId)} ${edge.type} ${label(edge.targetId)}`} onClick={()=>setEdgeId(edge.id)} onKeyDown={e=>{navigate(e,"edge",edges.map(v=>v.id),edge.id);if(e.key==="Enter"||e.key===" "){e.preventDefault();setEdgeId(edge.id);}}}/>
               </g>;})}
-              {layout.points.map(node=><g key={node.id} transform={`translate(${node.x} ${node.y})`} role="button" tabIndex={0} aria-label={node.label}
-                onClick={()=>{setSelected(node.id);setEdgeId("");}} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();setSelected(node.id);setEdgeId("");}}}>
+              {layout.points.map(node=><g key={node.id} transform={`translate(${node.x} ${node.y})`} role="button" tabIndex={activeNode===node.id?0:-1} aria-label={node.label} aria-pressed={selected===node.id}
+                ref={el=>{if(el)focusRefs.current.set(`node/${node.id}`,el);else focusRefs.current.delete(`node/${node.id}`);}} className="focus-visible:outline focus-visible:outline-2" onFocus={()=>{setNodeFocus(node.id);centerNode(node.id);}}
+                onClick={()=>chooseNode(node.id)} onKeyDown={e=>{navigate(e,"node",layout.points.map(v=>v.id),node.id);if(e.key==="Enter"||e.key===" "){e.preventDefault();chooseNode(node.id);}}}>
                 <circle r={selected===node.id?23:17} fill={selected===node.id?"currentColor":"var(--background, white)"} stroke="currentColor" strokeWidth="3"/>
                 <text y="-30" textAnchor="middle" fill="currentColor" fontSize={Math.min(18,Math.max(12,layout.size/90))}>{node.label.slice(0,26)}</text><title>{node.label} / {node.type}</title>
               </g>)}
@@ -100,7 +124,9 @@ export function GraphClient({kbId}:{kbId:string}){
         </div>
         <aside className="flex min-w-0 flex-col gap-sm" aria-label={m.evidencePanel}>
           <h2 className="text-title-sm">{m.linkedEntities}</h2>
-          <div className="flex max-h-48 flex-wrap gap-sm overflow-auto">{nodes.filter(n=>n.label.toLocaleLowerCase().includes(search.toLocaleLowerCase())).map(n=><Button key={n.id} variant={selected===n.id?"default":"outline"} onClick={()=>{setSelected(n.id);setEdgeId("");}}>{n.label}</Button>)}</div>
+          <select size={8} aria-label={m.linkedEntities} className="w-full min-w-0 rounded-md border border-border bg-background p-sm" value={matches.some(n=>n.id===selected)?selected:""} onChange={e=>chooseNode(e.target.value)}>
+            <option value="" disabled>{m.findNode}</option>{matches.map(n=><option key={n.id} value={n.id}>{n.label}</option>)}
+          </select>
           {selected&&<Card><CardContent className="flex flex-col gap-sm p-md">
             <h3 className="break-words text-title-sm">{label(selected)}</h3>
             <Button disabled={busy} onClick={()=>void load(selected)}>{m.expandNode}</Button>
@@ -109,7 +135,9 @@ export function GraphClient({kbId}:{kbId:string}){
           </CardContent></Card>}
           {from&&to&&<p role="status" className="break-words text-body-sm">{label(from)} &rarr; {label(to)}: {path===null?m.noPath:`${path.length} ${m.relations}`}</p>}
           <h2 className="text-title-sm">{m.evidencePanel}</h2>
-          <div className="flex max-h-48 flex-col gap-sm overflow-auto">{edges.filter(e=>!selected||e.sourceId===selected||e.targetId===selected).map(e=><Button key={e.id} variant={edgeId===e.id?"default":"outline"} className="h-auto whitespace-normal break-words text-left" onClick={()=>setEdgeId(e.id)}>{label(e.sourceId)} &rarr; {e.type} &rarr; {label(e.targetId)}</Button>)}</div>
+          <select size={8} aria-label={m.evidencePanel} className="w-full min-w-0 rounded-md border border-border bg-background p-sm" value={related.some(e=>e.id===edgeId)?edgeId:""} onChange={e=>setEdgeId(e.target.value)}>
+            <option value="" disabled>{m.evidencePanel}</option>{related.map(e=><option key={e.id} value={e.id}>{label(e.sourceId)} &rarr; {e.type} &rarr; {label(e.targetId)}</option>)}
+          </select>
           {chosen&&<Card><CardContent className="flex min-w-0 flex-col gap-sm p-md"><p>{chosen.type}</p>{chosen.assertionIds.map(id=><div key={id}>
             <p className="break-words text-body-sm">{data.statements.find(s=>s.id===id)?.statement}</p>
             {data.evidence.filter(e=>data.assertions.find(a=>a.id===id)?.evidenceIds.includes(e.id)).map(e=><blockquote key={e.id} className="border-l-2 border-border pl-sm text-body-sm">
