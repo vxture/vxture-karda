@@ -11,6 +11,7 @@ import {sourceHash} from "../processing/source-snapshot";
 import {PostgresSourceSearch} from "../retrieval/source-search-postgres";
 import {parseSourceSearch} from "../retrieval/source-search";
 import {PostgresTopicDossiers} from "./topic-dossier-store";
+import {topicDossierHash} from "./topic-dossier";
 
 const endpoint=process.env.KARDA_PROVISION_TEST_DATABASE_URL;
 /** Synthetic authored SOP; no customer documents, model verdict or business gold. */
@@ -70,6 +71,34 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     await assert.rejects(topics.handle(identity,kb,{action:"summary_review",id:summaryId,dossierId:draftId,expectedRevision:0,decision:"reject",note:"conflicting decision"}),/semantic_topic_conflict/);
     await assert.rejects(service.query("DELETE FROM karda_kb.topic_summary WHERE id=$1",[summaryId]),{code:"42501"});
     await assert.rejects(service.query("UPDATE karda_kb.topic_dossier SET payload='{}' WHERE id=$1",[draftId]),{code:"42501"});
+    // History grows beyond former global caps without hiding old review targets.
+    await admin.query(`INSERT INTO karda_kb.topic_summary(id,kb_id,dossier_id,input_hash,payload_hash,payload,selection,created_by)
+      SELECT gen_random_uuid(),kb_id,dossier_id,input_hash,payload_hash,payload,selection,created_by
+      FROM karda_kb.topic_summary CROSS JOIN generate_series(1,104) WHERE id=$1`,[summaryId]);
+    const overviewHistory=await topics.handle(identity,kb,{action:"list"});
+    assert.equal(overviewHistory.items[0].summaries.length,5);assert.ok(overviewHistory.items[0].summaryNext);
+    const focusedHistory=await topics.handle(identity,kb,{action:"list",dossierId:draftId});
+    assert.equal(focusedHistory.items[0].summaries.length,20);assert.ok(focusedHistory.items[0].summaryNext);
+    const summaryIds=focusedHistory.items[0].summaries.map(s=>s.id);let summaryCursor=focusedHistory.items[0].summaryNext;
+    while(summaryCursor){const page=await topics.handle(identity,kb,{action:"list",dossierId:draftId,summaryBefore:summaryCursor});
+      summaryIds.push(...page.items[0].summaries.map(s=>s.id));summaryCursor=page.items[0].summaryNext;}
+    assert.equal(summaryIds.length,105);assert.equal(new Set(summaryIds).size,105);
+    const oldReview=await topics.handle(identity,kb,{action:"summary_review",id:summaryId,dossierId:draftId,expectedRevision:1,decision:"accept",note:"Historical record rechecked"});
+    assert.equal(oldReview.items[0].summaries[0].id,summaryId);assert.equal(oldReview.items[0].summaries[0].revision,2);
+    await assert.rejects(topics.handle(identity,kb,{action:"list",dossierId:draftId,summaryBefore:randomUUID()}),/semantic_topic_conflict/);
+    await assert.rejects(topics.handle(identity,kb,{action:"list",before:draftId,dossierId:draftId}),/semantic_topic_invalid/);
+    const historyIds:string[]=[];
+    for(let i=0;i<22;i++){
+      const id=randomUUID();historyIds.push(id);
+      const payload={...draft.items[0].payload!,inputHash:String(i).padStart(64,"0")};
+      await admin.query(`INSERT INTO karda_kb.topic_dossier(id,kb_id,relation_type,input_hash,payload_hash,payload,created_by)
+        VALUES($1,$2,'requires',$3,$4,$5,$6)`,[id,kb,payload.inputHash,topicDossierHash(payload),payload,identity.sub]);
+    }
+    const firstHistory=await topics.handle(identity,kb,{action:"list"});assert.equal(firstHistory.items.length,20);assert.ok(firstHistory.nextCursor);
+    const lastHistory=await topics.handle(identity,kb,{action:"list",before:firstHistory.nextCursor!});assert.equal(lastHistory.items.length,3);assert.equal(lastHistory.nextCursor,null);
+    assert.equal(new Set([...firstHistory.items,...lastHistory.items].map(d=>d.id)).size,23);
+    assert.equal((await topics.handle(identity,kb,{action:"list",dossierId:draftId})).items[0].id,draftId);
+    await admin.query("DELETE FROM karda_kb.topic_dossier WHERE id=ANY($1::uuid[])",[historyIds]);
 
     // A revision updates raw bytes/version before any new semantic publication.
     bytes=Buffer.from("Recovery SOP requires two-person approval before restart.");
@@ -95,7 +124,9 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     await restarted.submitPreview(identity,kb,preview);
     const knowledge=await read();assert.equal(knowledge.edges[0].targetId,revisedStep);assert.match(knowledge.passages[0].excerpt,/two-person approval/);
     const newDraft=await topics.handle(identity,kb,{action:"compose",id:randomUUID(),relationType:"requires"});
-    assert.equal(newDraft.items.filter(d=>d.state==="current_draft").length,1);assert.equal(newDraft.items.filter(d=>d.state==="stale_draft").length,1);
+    assert.equal(newDraft.items.length,1);assert.equal(newDraft.items[0].state,"current_draft");assert.equal(newDraft.focusedId,newDraft.savedId);
+    const historyAfterRevision=await topics.handle(identity,kb,{action:"list"});
+    assert.equal(historyAfterRevision.items.filter(d=>d.state==="current_draft").length,1);assert.equal(historyAfterRevision.items.filter(d=>d.state==="stale_draft").length,1);
     await assert.rejects(topics.handle(identity,kb,{action:"compose",id:draftId,relationType:"requires"}),/semantic_topic_conflict/);
     const directory=await reader().readPackage(identity,[kb],{seedIds:[procedure],maxHops:2,maxNodes:20,maxEdges:20},true);
     assert.deepEqual(directory.edges,knowledge.edges);assert.deepEqual(directory.passages,knowledge.passages);

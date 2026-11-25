@@ -13,6 +13,11 @@ async function handle(req:Request,ctx:{params:Promise<{id:string}>}){
   try{
     const {id}=await ctx.params;
     let request:Parameters<typeof topicDossiers>[2]={action:"list"};
+    const params=new URL(req.url).searchParams;
+    if([...params.keys()].some(k=>!["before","dossier","summary_before"].includes(k))||
+      [...new Set(params.keys())].some(k=>params.getAll(k).length!==1)|| (req.method==="POST"&&params.size))throw new Error("semantic_topic_invalid");
+    if(req.method==="GET")request={action:"list",...(params.has("before")?{before:params.get("before")!}:{}),
+      ...(params.has("dossier")?{dossierId:params.get("dossier")!}:{}),...(params.has("summary_before")?{summaryBefore:params.get("summary_before")!}:{})};
     if(req.method==="POST"){
       if(!reviewOriginAllowed(req,getOidcConfig().appOrigin)||!req.headers.get("content-type")?.startsWith("application/json"))return NextResponse.json({error:"origin_invalid"},{status:403,headers});
       const text=await req.text();if(Buffer.byteLength(text)>16384)throw new Error("semantic_topic_invalid");

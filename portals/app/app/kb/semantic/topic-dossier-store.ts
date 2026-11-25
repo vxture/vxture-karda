@@ -12,7 +12,7 @@ import type {ModelSelection} from "../atlas/selection";
 
 interface DossierRow {id:string;relation_type:string;input_hash:string;payload_hash:string;payload:TopicDossier;created_by:string;created_at:Date}
 interface SummaryRow {id:string;dossier_id:string;input_hash:string;payload_hash:string;payload:TopicSummary;selection:ModelSelection;created_at:Date}
-export type TopicRequest={action:"list"}|{action:"compose";id:string;relationType:string}|
+export type TopicRequest={action:"list";before?:string;dossierId?:string;summaryBefore?:string}|{action:"compose";id:string;relationType:string}|
   {action:"summary_prepare";id:string;dossierId:string}|{action:"summary_save";id:string;dossierId:string;payload:TopicSummary;selection:ModelSelection}|
   {action:"summary_review";id:string;dossierId:string;expectedRevision:number;decision:"accept"|"reject"|"revise";note:string};
 export class PostgresTopicDossiers {
@@ -22,10 +22,13 @@ export class PostgresTopicDossiers {
     const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
     if(!uuid.test(kbId)||!uuid.test(identity.workspaceId)||identity.productCode!=="karda"||
       (request.action!=="list"&&!uuid.test(request.id))||
-      (request.action.startsWith("summary_")&&(!("dossierId" in request)||!uuid.test(request.dossierId)))||
+      (request.action!=="list"&&request.action!=="compose"&&!uuid.test(request.dossierId))||
       (request.action==="compose"&&(!request.relationType.trim()||request.relationType.length>128)))throw new Error("semantic_topic_invalid");
     if(request.action==="summary_review"&&(!Number.isInteger(request.expectedRevision)||request.expectedRevision<0||request.expectedRevision>=2147483647||
       !["accept","reject","revise"].includes(request.decision)||!request.note.trim()||request.note.length>10000))throw new Error("semantic_topic_invalid");
+    if(request.action==="list"&&((request.before!==undefined&&!uuid.test(request.before))||
+      (request.dossierId!==undefined&&!uuid.test(request.dossierId))||(request.summaryBefore!==undefined&&!uuid.test(request.summaryBefore))||
+      (request.before&&request.dossierId)||(request.summaryBefore&&!request.dossierId)))throw new Error("semantic_topic_invalid");
     if(await this.admit(identity)!==true)throw new Error("semantic_topic_denied");
     const db=await this.pool.connect();
     try{
@@ -43,7 +46,7 @@ export class PostgresTopicDossiers {
       const pack=await reader.readPackage(identity,[kbId],{seedIds:["directory"],maxHops:1,maxNodes:500,maxEdges:1000},true,false,db);
       let savedId:string|null=null,duplicate=false;
       let modelInput:TopicDossier|null=null;
-      if(request.action.startsWith("summary_")&&"dossierId" in request){
+      if(request.action!=="list"&&request.action!=="compose"){
         const draft=(await db.query<DossierRow>("SELECT * FROM karda_kb.topic_dossier WHERE kb_id=$1 AND id=$2",[kbId,request.dossierId])).rows[0];
         if(!draft||topicDossierHash(draft.payload)!==draft.payload_hash)throw new Error("semantic_topic_conflict");
         const current=composeTopicDossier(pack,draft.relation_type);
@@ -86,11 +89,27 @@ export class PostgresTopicDossiers {
             VALUES($1,$2,$3,$4,$5,$6,$7)`,[request.id,kbId,request.relationType,payload.inputHash,payloadHash,payload,identity.sub]);
         }
       }
-      const rows=(await db.query<DossierRow>("SELECT * FROM karda_kb.topic_dossier WHERE kb_id=$1 ORDER BY created_at DESC,id DESC LIMIT 21",[kbId])).rows;
+      const focusedId="dossierId" in request?request.dossierId:request.action==="compose"?savedId:undefined;
+      const before=request.action==="list"?request.before:undefined,summaryBefore=request.action==="list"?request.summaryBefore:undefined;
+      // Resolve cursor anchors only inside this currently authorized library.
+      if(before&&(await db.query("SELECT id FROM karda_kb.topic_dossier WHERE kb_id=$1 AND id=$2",[kbId,before])).rowCount!==1)throw new Error("semantic_topic_conflict");
+      if(summaryBefore&&(await db.query("SELECT id FROM karda_kb.topic_summary WHERE kb_id=$1 AND dossier_id=$2 AND id=$3",[kbId,focusedId,summaryBefore])).rowCount!==1)throw new Error("semantic_topic_conflict");
+      const rows=(await db.query<DossierRow>(`SELECT * FROM karda_kb.topic_dossier WHERE kb_id=$1
+        AND ($2::uuid IS NULL OR id=$2) AND ($3::uuid IS NULL OR (created_at,id)<
+          (SELECT created_at,id FROM karda_kb.topic_dossier WHERE kb_id=$1 AND id=$3))
+        ORDER BY created_at DESC,id DESC LIMIT 21`,[kbId,focusedId??null,before??null])).rows;
+      if(focusedId&&!rows.length)throw new Error("semantic_topic_conflict");
       const more=rows.length>20;if(more)rows.pop();
       if(rows.reduce((n,r)=>n+Buffer.byteLength(JSON.stringify(r.payload)),0)>2*1024*1024)throw new Error("semantic_topic_budget");
-      const summaries=(await db.query<SummaryRow>("SELECT * FROM karda_kb.topic_summary WHERE kb_id=$1 AND dossier_id=ANY($2::uuid[]) ORDER BY created_at DESC,id DESC LIMIT 101",[kbId,rows.map(r=>r.id)])).rows;
-      if(summaries.length>100||summaries.reduce((n,r)=>n+Buffer.byteLength(JSON.stringify(r.payload)),0)>2*1024*1024)throw new Error("semantic_topic_budget");
+      const summaryLimit=focusedId?20:5;
+      const selectedSummary=request.action!=="list"&&request.action!=="compose"?request.id:null;
+      const summaryRows=(await db.query<SummaryRow>(`SELECT s.* FROM unnest($2::uuid[]) AS d(id)
+        CROSS JOIN LATERAL (SELECT * FROM karda_kb.topic_summary WHERE kb_id=$1 AND dossier_id=d.id
+          AND ($5::uuid IS NULL OR id=$5)
+          AND ($3::uuid IS NULL OR (created_at,id)<(SELECT created_at,id FROM karda_kb.topic_summary WHERE kb_id=$1 AND dossier_id=d.id AND id=$3))
+          ORDER BY created_at DESC,id DESC LIMIT $4) s ORDER BY s.created_at DESC,s.id DESC`,[kbId,rows.map(r=>r.id),summaryBefore??null,summaryLimit+1,selectedSummary])).rows;
+      const summaries=rows.flatMap(d=>summaryRows.filter(s=>s.dossier_id===d.id).slice(0,summaryLimit));
+      if(summaries.reduce((n,r)=>n+Buffer.byteLength(JSON.stringify(r.payload)),0)>2*1024*1024)throw new Error("semantic_topic_budget");
       const reviews=(await db.query<{subject_key:string;revision:number;decision:string;note:string;subject_hash:string;reviewer_sub:string}>(`SELECT DISTINCT ON(subject_key) subject_key,revision,decision,note,subject_hash,reviewer_sub
         FROM karda_kb.semantic_review WHERE kb_id=$1 AND subject_key=ANY($2::text[]) ORDER BY subject_key,revision DESC`,[kbId,summaries.map(s=>`topic-summary/${s.id}`)])).rows;
       const items=rows.map(row=>{
@@ -101,6 +120,7 @@ export class PostgresTopicDossiers {
         // Stale history exposes identity only; source text always comes from today's authorized read.
         return {id:row.id,relationType:row.relation_type,inputHash:row.input_hash,createdAt:row.created_at.toISOString(),createdBy:row.created_by,
           state:current?"current_draft":"stale_draft",payload:current,
+          summaryNext:summaryRows.filter(s=>s.dossier_id===row.id).length>summaryLimit?summaries.filter(s=>s.dossier_id===row.id).at(-1)!.id:null,
           summaries:summaries.filter(s=>s.dossier_id===row.id).map(s=>{
             if(semanticValueHash(s.payload)!==s.payload_hash)throw new Error("semantic_topic_corrupt");
             const review=reviews.find(r=>r.subject_key===`topic-summary/${s.id}`);
@@ -111,7 +131,7 @@ export class PostgresTopicDossiers {
               payload:active?s.payload:null,selection:s.selection};
           })};
       });
-      await db.query("COMMIT");return {items,more,savedId,duplicate,modelInput,availableTypes:[...new Set(pack.edges.map(e=>e.type))].sort(),truncated:pack.truncated};
+      await db.query("COMMIT");return {items,more,nextCursor:more?rows.at(-1)!.id:null,focusedId:focusedId??null,savedId,duplicate,modelInput,availableTypes:[...new Set(pack.edges.map(e=>e.type))].sort(),truncated:pack.truncated};
     }catch(error){await db.query("ROLLBACK");throw error;}finally{db.release();}
   }
 }

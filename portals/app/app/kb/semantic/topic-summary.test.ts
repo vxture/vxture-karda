@@ -30,7 +30,7 @@ test("Atlas summary call uses existing extract selector, trusted tenant/workspac
 test("summary execution never calls a model for denied or existing work, and save rechecks authority after model execution",async()=>{
   const identity={workspaceId:randomUUID(),sub:"user",roles:[],productCode:"karda"},kb=randomUUID(),id=randomUUID(),dossierId=randomUUID();
   let generated=0,prepared=0,saved=0;
-  const response={items:[],more:false,savedId:null,duplicate:false,modelInput:input,availableTypes:["requires"],truncated:false};
+  const response={items:[],more:false,nextCursor:null,focusedId:null,savedId:null,duplicate:false,modelInput:input,availableTypes:["requires"],truncated:false};
   const deps:NonNullable<Parameters<typeof executeTopicSummary>[5]>={handle:async(who,library,request)=>{
     assert.equal(who.sub,"user");assert.equal(library,kb);
     if(request.action==="summary_prepare"){prepared++;return response;}
