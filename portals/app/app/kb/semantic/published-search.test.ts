@@ -19,7 +19,7 @@ test("published search spans eligible facts before topK and retains exact linked
   assert.deepEqual(result.assertions.map(a=>a.id),["a2"]);assert.equal(result.evidence[0].start,30);assert.equal(result.evidence[0].end,90);
   assert.equal(search("Certification").edges[0].id,"r2");assert.equal(search("requires").edges[0].id,"r2");
   assert.deepEqual(search("unmatched").edges,[]);assert.equal(search("ISO9001",20,tenderSnapshot(),["has_clause"]).search?.matchedRelations,0);
-  const top=search("certificate",1);assert.equal(top.edges.length,1);assert.ok(top.search!.matchedRelations>1);assert.equal(top.truncated,true);
+  const top=search("Project Certificate",1);assert.equal(top.edges.length,1);assert.ok(top.search!.matchedRelations>1);assert.equal(top.truncated,true);
   const reordered=tenderSnapshot();reordered.relations.reverse();reordered.entities.reverse();
   assert.deepEqual(search("clause",20,reordered),search("clause"));
 });
