@@ -3,6 +3,7 @@ import {parseFastPath,type DocumentIR} from "./ir";
 
 export const PDF_MIME="application/pdf";
 export const DOCX_MIME="application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+export const XLSX_MIME="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 export const SOURCE_BYTE_LIMIT=8*1024*1024;
 export interface SourceSnapshot {
   contentHash:string; mime:string; parserVersion:string; textHash:string; text:string;
@@ -13,14 +14,15 @@ export function snapshotValid(snapshot:SourceSnapshot):boolean {
   if(!snapshot||!new RegExp("^[a-f0-9]{64}$").test(snapshot.contentHash)||typeof snapshot.text!=="string"||
     snapshot.text.length>5000000||!snapshot.text.trim()||snapshot.text.includes("\0")||sourceHash(snapshot.text)!==snapshot.textHash||
     !((snapshot.mime===PDF_MIME&&snapshot.parserVersion==="pypdf-6.21.4-v1")||
-      (snapshot.mime===DOCX_MIME&&["docx-main-body-v1","docx-body-tables-v2"].includes(snapshot.parserVersion)))||
+      (snapshot.mime===DOCX_MIME&&["docx-main-body-v1","docx-body-tables-v2"].includes(snapshot.parserVersion))||
+      (snapshot.mime===XLSX_MIME&&snapshot.parserVersion==="xlsx-literal-cells-v1"))||
     !Array.isArray(snapshot.locators)||!snapshot.locators.length||snapshot.locators.length>20000)return false;
   let end=0;
   return snapshot.locators.every((row,index)=>{
     if(!row||row.ordinal!==index||!Number.isSafeInteger(row.start)||!Number.isSafeInteger(row.end)||
       row.start<end||row.start<0||row.start>=row.end||row.end>snapshot.text.length||
       (snapshot.mime===PDF_MIME&&(!Number.isSafeInteger(row.page)||(row.page??0)<1||(row.page??0)>300))||
-      (snapshot.mime===DOCX_MIME&&row.page!==undefined))return false;
+      (snapshot.mime!==PDF_MIME&&row.page!==undefined))return false;
     end=row.end;return true;
   });
 }

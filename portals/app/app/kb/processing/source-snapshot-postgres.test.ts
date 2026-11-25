@@ -8,10 +8,10 @@ import {fileURLToPath} from "node:url";
 import {PrismaCommitTarget} from "./commit";
 import {rawSourceFor} from "./runtime";
 import {runPipeline,type CommittedChunk} from "./orchestrator";
-import {PDF_MIME,DOCX_MIME,readSourceSnapshot,sourceHash} from "./source-snapshot";
+import {PDF_MIME,DOCX_MIME,XLSX_MIME,readSourceSnapshot,sourceHash} from "./source-snapshot";
 import {normalizeSource} from "./source-normalizer";
 import {verifiedSourceText} from "../semantic/source-text";
-import {syntheticPdf} from "./source-fixtures";
+import {syntheticPdf,syntheticXlsx} from "./source-fixtures";
 import {ContentService} from "../lib/content-service";
 import {InMemoryContentStore} from "../lib/content-store";
 import {InMemoryObjectStore} from "../storage/objectstore";
@@ -19,6 +19,8 @@ import {getPrismaClient} from "../../lib/db";
 import {PostgresSemanticStore,PostgresFormalSemanticLoader} from "../semantic/store-postgres";
 import {PostgresSemanticReader} from "../semantic/read-postgres";
 import type {SemanticReleasePayload} from "../semantic/release-format";
+import {PostgresSourceSearch} from "../retrieval/source-search-postgres";
+import {parseSourceSearch} from "../retrieval/source-search";
 
 test("source snapshots have identical fresh/upgrade DDL and immutable grants",()=>{
   const root=fileURLToPath(new URL("../../../../../deploy/database/ddl/",import.meta.url));
@@ -32,6 +34,7 @@ test("source snapshots have identical fresh/upgrade DDL and immutable grants",()
       const withoutParser=(s:string)=>s.slice(0,s.indexOf("  CHECK ((mime=")>=0?s.indexOf("  CHECK ((mime="):s.indexOf("  CONSTRAINT document_text_snapshot_parser_check"));
       assert.equal(withoutParser(current),withoutParser(old));
       assert.match(read("incr/0021_docx_table_snapshot.sql"),/docx-body-tables-v2/);
+      assert.match(read("incr/0022_xlsx_source_snapshot.sql"),/xlsx-literal-cells-v1/);
     }else assert.equal(old,current);
   }
 });
@@ -62,29 +65,30 @@ test("DOCX v2 table output commits and reloads under service-role CHECK, preserv
     await (await getPrismaClient()).$disconnect();await service.end();await admin.end();
   }
 });
-test("real PDF processing atomically binds chunks and immutable canonical text; stale input and late failure roll back",{skip:!endpoint,timeout:60000},async()=>{
+for(const mime of [PDF_MIME,XLSX_MIME])test(`real ${mime} processing binds chunks, publication and exact evidence; stale input and late failure roll back`,{skip:!endpoint,timeout:60000},async()=>{
   const url=new URL(endpoint!);assert.ok(["localhost","127.0.0.1","[::1]"].includes(url.hostname));assert.equal(url.pathname,"/karda_p3_test");
   const admin=new Pool({connectionString:endpoint,statement_timeout:10000});url.username="karda_svc";
   process.env.DATABASE_URL=url.toString();
   const service=new Pool({connectionString:url.toString(),statement_timeout:10000});
-  const kb=randomUUID(),ws=randomUUID(),sub=`usr_${randomUUID()}`,bytes=syntheticPdf(["Proof first","Proof last"]),objects=new InMemoryObjectStore();
+  const kb=randomUUID(),ws=randomUUID(),sub=`usr_${randomUUID()}`,bytes=mime===PDF_MIME?syntheticPdf(["Proof first","Proof last"]):syntheticXlsx(),objects=new InMemoryObjectStore();
   const identity={workspaceId:ws,sub,roles:[],productCode:"karda"};let member:string|undefined;
   const object=await objects.put(ws,kb,bytes),content=new ContentService(new InMemoryContentStore());
-  const result=await content.createDocument({kbId:kb,title:"synthetic PDF",source:"upload",mime:PDF_MIME,
+  const result=await content.createDocument({kbId:kb,title:"synthetic source",source:"upload",mime,
     contentHash:object.contentHash,storageRef:object.key,sizeBytes:bytes.length});
   assert.ok(result.ok);const doc={...result.value,id:randomUUID()},target=new PrismaCommitTarget(doc.id);let chunks:CommittedChunk[]=[];
   try{
     await admin.query("INSERT INTO karda_kb.knowledge_base(id,workspace_id,owner_type,owner_sub,name) VALUES($1,$2,'user',$3,'synthetic')",[kb,ws,sub]);
     await admin.query(`INSERT INTO karda_kb.document(id,kb_id,title,source,mime,content_hash,storage_ref,size_bytes)
-      VALUES($1,$2,'synthetic','upload',$3,$4,$5,$6)`,[doc.id,kb,PDF_MIME,sourceHash(bytes),object.key,bytes.length]);
+      VALUES($1,$2,'synthetic','upload',$3,$4,$5,$6)`,[doc.id,kb,mime,sourceHash(bytes),object.key,bytes.length]);
     const source=rawSourceFor(doc,objects);
     const outcome=await runPipeline({source,embeddingModel:null,embedder:{embed:async texts=>({vectors:texts.map(()=>[]),modelCode:"synthetic"})},
       target:{commit:async(rows,_model,snapshot)=>{chunks=rows;await target.commit(rows,null,snapshot);}}});
     assert.ok("done" in outcome);assert.equal(target.activeVersion(),1);
     const load=(version:number)=>readSourceSnapshot(async(sql,...values)=>(await service.query(sql,values)).rows,doc.id,version);
-    const snapshot=(await load(1))!;assert.ok(snapshot);assert.equal(snapshot.text,"Proof first\n\nProof last");
+    const snapshot=(await load(1))!;assert.ok(snapshot);assert.equal(snapshot.text,(await normalizeSource(mime,bytes)).text);
+    const excerpt=snapshot.text.slice(0,5);
     assert.ok(chunks.every(c=>snapshot.text.slice(c.sourceRange.start,c.sourceRange.end).trim().length>0));
-    assert.equal(verifiedSourceText({activeVersion:1,contentState:"indexed",contentHash:sourceHash(bytes),mime:PDF_MIME,normalized:snapshot},bytes),snapshot.text);
+    assert.equal(verifiedSourceText({activeVersion:1,contentState:"indexed",contentHash:sourceHash(bytes),mime,normalized:snapshot},bytes),snapshot.text);
     // The identical normalized coordinates feed compiler input, publication and
     // the reader shared by Agent packages, knowledge pages and the graph.
     await admin.query("UPDATE karda_kb.document SET content_state='indexed' WHERE id=$1",[doc.id]);
@@ -94,13 +98,13 @@ test("real PDF processing atomically binds chunks and immutable canonical text; 
     const left=randomUUID(),right=randomUUID(),assertion=randomUUID(),span=randomUUID(),evidence=randomUUID(),relation=randomUUID();
     await admin.query("INSERT INTO karda_kb.entity(id,kb_id,kind,name) VALUES($1,$3,'thing','left'),($2,$3,'thing','right')",[left,right,kb]);
     await admin.query("INSERT INTO karda_kb.assertion(id,kb_id,kind,statement,content_state,verification_state) VALUES($1,$2,'fact','Proof','indexed','verified')",[assertion,kb]);
-    await admin.query("INSERT INTO karda_kb.span(id,document_id,document_version,start_offset,end_offset,excerpt) VALUES($1,$2,1,0,5,'Proof')",[span,doc.id]);
+    await admin.query("INSERT INTO karda_kb.span(id,document_id,document_version,start_offset,end_offset,excerpt) VALUES($1,$2,1,0,5,$3)",[span,doc.id,excerpt]);
     await admin.query("INSERT INTO karda_kb.evidence(id,assertion_id,span_id,stance) VALUES($1,$2,$3,'supports')",[evidence,assertion,span]);
     const schema={namespace:"snapshot",schemaId:"proof",version:"1",entityTypes:["entity"],relationTypes:[{id:"requires",sourceTypes:["entity"],targetTypes:["entity"]}]};
     const payload:SemanticReleasePayload={format:"karda.semantic.release.v1",schema,entityTypes:[{kind:"thing",type:"entity"}],
       sources:[{kbId:kb,documentId:doc.id,version:1,contentHash:sourceHash(bytes)}],relations:[{id:relation,kbId:kb,schema,type:"requires",origin:"asserted",sourceId:left,targetId:right,assertionIds:[assertion]}]};
     const store=new PostgresSemanticStore(service,objects,async()=>true);
-    const loaded=await store.loadCompilerSnapshot(identity,kb,payload);assert.equal(loaded.assertions[0].evidence[0].excerpt,"Proof");
+    const loaded=await store.loadCompilerSnapshot(identity,kb,payload);assert.equal(loaded.assertions[0].evidence[0].excerpt,excerpt);
     assert.equal((await store.createCompileTask(identity,kb,randomUUID())).duplicate,false,"binary sources enter the user compilation flow");
     const compile=await store.recordCompile(identity,kb,{taskKey:"a".repeat(64),configHash:"b".repeat(64),payload});
     await store.reviewRelation(identity,kb,{runId:compile.runId,relationId:relation,expectedRevision:0,decision:"accept",note:"Synthetic PDF proof checked"});
@@ -108,7 +112,11 @@ test("real PDF processing atomically binds chunks and immutable canonical text; 
     const loader=new PostgresFormalSemanticLoader({schema,entityTypes:new Map([["thing","entity"]])});
     const reader=new PostgresSemanticReader(service,objects,async()=>true,(db,ids)=>loader.load(db,ids));
     const read=()=>reader.readPackage(identity,[kb],{seedIds:[left],maxHops:1,maxNodes:10,maxEdges:10});
-    const pack=await read();assert.equal(pack.passages[0].excerpt,"Proof");assert.deepEqual(pack.evidence[0].pages,[1]);
+    const pack=await read();assert.equal(pack.passages[0].excerpt,excerpt);assert.deepEqual(pack.evidence[0].pages,mime===PDF_MIME?[1]:undefined);
+    const sourceSearch=new PostgresSourceSearch(service,objects,async()=>true);
+    const searched=await sourceSearch.read(identity,parseSourceSearch({kb_ids:[kb],query:"Proof"}));
+    assert.equal(searched.items.length,1);const hit=searched.items[0];
+    assert.equal(hit.text,snapshot.text.slice(hit.start,hit.end));assert.deepEqual(hit.pages,mime===PDF_MIME?[1,2]:[]);
     assert.deepEqual((await store.maintenance(identity,kb)).relations[0].issues,[]);
     await admin.query("UPDATE karda_kb.document SET content_state='archived' WHERE id=$1",[doc.id]);
     assert.equal((await read()).edges.length,0);await admin.query("UPDATE karda_kb.document SET content_state='indexed' WHERE id=$1",[doc.id]);

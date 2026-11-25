@@ -18,6 +18,8 @@ if mime == "application/pdf":
     script = "extract-pdf.py"
 elif mime == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
     script = "extract-docx.py"
+elif mime == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+    script = "extract-xlsx.py"
 else:
     raise ValueError("source_format_unsupported")
 module = runpy.run_path(str(Path(__file__).with_name(script)))

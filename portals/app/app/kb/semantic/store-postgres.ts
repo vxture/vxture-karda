@@ -13,7 +13,7 @@ import type { CompilerSnapshot, Compilation } from "./compiler";
 import { freezeCompilerSnapshot } from "./compiler";
 import { localCompileProfile } from "./compile-profile";
 import {parsePathFor} from "../processing/ir";
-import {readSourceSnapshot,PDF_MIME,DOCX_MIME} from "../processing/source-snapshot";
+import {readSourceSnapshot,PDF_MIME,DOCX_MIME,XLSX_MIME} from "../processing/source-snapshot";
 import { maintenanceReport, type MaintenanceReport, type MaintenanceDocument, type MaintenanceAssertion, type MaintenanceGround } from "./maintenance";
 import {verifyAuditWindow,type AuditHistory,type AuditRelease} from "./audit-history";
 
@@ -173,7 +173,7 @@ export class PostgresSemanticStore {
       const row=(await db.query<{id:string}>("SELECT id FROM karda_kb.semantic_compile_task WHERE kb_id=$1 AND id=$2 AND created_by=$3",[kbId,taskId,identity.sub])).rows[0];
       if(row)return {existing:row.id,sources:[]};
       const sources=(await db.query<{id:string;active_chunk_version:number;content_hash:string}>(`SELECT id,active_chunk_version,content_hash
-        FROM karda_kb.document WHERE kb_id=$1 AND content_state='indexed' AND mime IN ('text/plain','text/markdown',$2,$3) ORDER BY id LIMIT 101`,[kbId,PDF_MIME,DOCX_MIME])).rows;
+        FROM karda_kb.document WHERE kb_id=$1 AND content_state='indexed' AND mime IN ('text/plain','text/markdown',$2,$3,$4) ORDER BY id LIMIT 101`,[kbId,PDF_MIME,DOCX_MIME,XLSX_MIME])).rows;
       if(!sources.length)throw new Error("semantic_compile_inputs_required");
       if(sources.length>100)throw new Error("semantic_source_budget");
       return {existing:null,sources:sources.map(s=>({kbId,documentId:s.id,version:s.active_chunk_version,contentHash:s.content_hash}))};
