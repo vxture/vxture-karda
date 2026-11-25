@@ -14,6 +14,7 @@ Deployment and bootstrap material for this repo.
 | `70-sources-audit-release-20261125.md` | v0.12.2 exact source search, publication replay audit and SOP revision lifecycle evidence |
 | `80-topic-dossiers-release-20261125.md` | v0.12.3 immutable evidence-bound topic drafts, 0019 migration and rollout evidence |
 | `90-cross-library-community-release-20261125.md` | v0.12.4 explicit cross-library knowledge packages and structural-community navigation |
+| `100-model-graph-source-release-20261125.md` | cited model summaries, keyboard graph navigation, DOCX tables and production release evidence |
 
 The tag-to-env CD pipeline (deploy/build/rollback/db-init workflows and the
 `tailnet-ssh-connect` composite action) is inherited from the template and lives

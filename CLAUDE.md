@@ -76,7 +76,18 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-25): v0.12.4 / 683b9c08, owner-authorized deploy
+Current production (2026-11-25): v0.12.7 / daa1a244, owner-authorized deploy
+45553159505 succeeded at2026-11-25T05:29:58Z via normal production review.
+PR315 adds cited Atlas topic summaries with immutable storage/review/source
+invalidation; PR316 adds graph keyboard/list navigation and bounded synthetic
+browser measurements; PR317 adds versioned rectangular DOCX table sources.
+Main CI45552916335 and secret scan45552916496 pass; final PR1044 tests pass,
+zero skips. Migration0020/run45550827446 verified55 tables. Health/ready and
+anonymous protected API refusal pass. Fixed17 items remain7complete/10unfinished;
+real Atlas billing, Agent/Ontos/platform and business/scale gates stay open.
+See docs/50-deployment/100-model-graph-source-release-20261125.md.
+
+Historical production (2026-11-25): v0.12.4 / 683b9c08, owner-authorized deploy
 45546957842 succeeded at2026-11-25T04:34:57Z via normal production review.
 PR311 adds explicit up-to20-library OBO knowledge packages under the same
 authority/attachment snapshot; PR313 adds bounded structural-community graph
