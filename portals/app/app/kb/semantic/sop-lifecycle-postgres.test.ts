@@ -11,6 +11,7 @@ import {sourceHash} from "../processing/source-snapshot";
 import {PostgresSourceSearch} from "../retrieval/source-search-postgres";
 import {parseSourceSearch} from "../retrieval/source-search";
 import {PostgresTopicDossiers} from "./topic-dossier-store";
+import {readKnowledgeSync,parseKnowledgeSync} from "./knowledge-sync";
 import {topicDossierHash} from "./topic-dossier";
 
 const endpoint=process.env.KARDA_PROVISION_TEST_DATABASE_URL;
@@ -55,6 +56,10 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     await assert.rejects(store.preview(identity,kb,first.runId,randomUUID()),/semantic_review_required/);
     await store.reviewRelation(identity,kb,{runId:first.runId,relationId:first.relationId,expectedRevision:0,decision:"accept",note:"Synthetic SOP v1 verified"});
     await store.publish(identity,await store.plan(identity,kb,first.runId,randomUUID(),0));
+    const syncRequest=parseKnowledgeSync({kb_id:kb,entity_ids:[procedure],max_hops:2,max_nodes:20,max_edges:20});
+    const sync=(knownRevision?:string)=>readKnowledgeSync(identity,{...syncRequest,knownRevision},async()=>true,async()=>read());
+    const initialSync=await sync();assert.equal(initialSync.action,"replace");
+    assert.equal((await sync(initialSync.revision)).action,"unchanged");
     const oldKnowledge=await read();assert.equal(oldKnowledge.edges[0].targetId,legacyStep);assert.match(oldKnowledge.passages[0].excerpt,/operator approval/);
     const topics=new PostgresTopicDossiers(service,objects,async()=>true),draftId=randomUUID();
     const draft=await topics.handle(identity,kb,{action:"compose",id:draftId,relationType:"requires"});
@@ -103,6 +108,9 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     // A revision updates raw bytes/version before any new semantic publication.
     bytes=Buffer.from("Recovery SOP requires two-person approval before restart.");
     await admin.query("UPDATE karda_kb.document SET active_chunk_version=2,content_hash=$2,size_bytes=$3 WHERE id=$1",[doc,sourceHash(bytes),bytes.length]);
+    const sourceSync=await sync(initialSync.revision);assert.equal(sourceSync.action,"replace");
+    assert.deepEqual(sourceSync.knowledge?.edges,[]);assert.deepEqual(sourceSync.knowledge?.passages,[]);
+    assert.equal((await sync(sourceSync.revision)).action,"unchanged");
     const invalidated=await read();assert.deepEqual(invalidated.edges,[]);assert.deepEqual(invalidated.passages,[]);
     const invalidDraft=await topics.handle(identity,kb,{action:"list"});assert.equal(invalidDraft.items[0].state,"stale_draft");assert.equal(invalidDraft.items[0].payload,null);
     assert.equal(invalidDraft.items[0].summaries[0].payload,null);assert.equal(invalidDraft.items[0].summaries[0].state,"stale");
@@ -122,6 +130,8 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     const preview=await restarted.preview(identity,kb,second.runId,randomUUID());
     assert.deepEqual(preview.changes.removed,[first.relationId]);assert.deepEqual(preview.changes.added,[second.relationId]);
     await restarted.submitPreview(identity,kb,preview);
+    const publishedSync=await sync(sourceSync.revision);assert.equal(publishedSync.action,"replace");
+    assert.equal(publishedSync.knowledge?.edges[0]?.targetId,revisedStep);
     const knowledge=await read();assert.equal(knowledge.edges[0].targetId,revisedStep);assert.match(knowledge.passages[0].excerpt,/two-person approval/);
     const newDraft=await topics.handle(identity,kb,{action:"compose",id:randomUUID(),relationType:"requires"});
     assert.equal(newDraft.items.length,1);assert.equal(newDraft.items[0].state,"current_draft");assert.equal(newDraft.focusedId,newDraft.savedId);
@@ -135,7 +145,15 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     const diff=compareAuditReleases(audit.releases[1],audit.releases[0]);
     assert.deepEqual(diff.added,[second.relationId]);assert.deepEqual(diff.removed,[first.relationId]);assert.equal(diff.sourceChanges[0].after?.version,2);
     assert.deepEqual((await restarted.maintenance(identity,kb)).relations[0].issues,[]);
+    await admin.query("DELETE FROM karda_kb.kb_attachment WHERE kb_id=$1 AND product_code='karda'",[kb]);
+    const detachedSync=await sync(publishedSync.revision);assert.equal(detachedSync.action,"replace");assert.deepEqual(detachedSync.knowledge?.edges,[]);
+    await admin.query("INSERT INTO karda_kb.kb_attachment(workspace_id,user_sub,product_code,kb_id) VALUES($1,$2,'karda',$3)",[ws,sub,kb]);
+    assert.equal((await sync(detachedSync.revision)).action,"replace");
+    await assert.rejects(readKnowledgeSync(identity,{...syncRequest,knownRevision:publishedSync.revision},async()=>true,
+      async()=>new PostgresSemanticReader(service,objects,async()=>false,(db,ids)=>new PostgresFormalSemanticLoader({schema:profile.schema,entityTypes:new Map(profile.entityTypes.map(t=>[t.kind,t.type]))}).load(db,ids))
+        .readPackage(identity,[kb],syncRequest.input.query)),/semantic_read_denied/);
     await admin.query("UPDATE karda_kb.document SET content_state='archived' WHERE id=$1",[doc]);
+    const withdrawnSync=await sync(publishedSync.revision);assert.equal(withdrawnSync.action,"replace");assert.deepEqual(withdrawnSync.knowledge?.passages,[]);
     assert.deepEqual((await read()).edges,[]);assert.equal((await restarted.auditHistory(identity,kb)).replay,"complete","audit history does not reactivate withdrawn sources");
     assert.ok((await topics.handle(identity,kb,{action:"list"})).items.every(d=>d.payload===null));
     await admin.query("DELETE FROM local_authz.member_role WHERE member_id=$1",[member]);
