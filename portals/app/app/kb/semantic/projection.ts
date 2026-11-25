@@ -1,4 +1,5 @@
 import { isRecallable } from "../assertions/kinds";
+import {directoryFingerprint,decodeDirectoryCursor,encodeDirectoryCursor} from "./directory-cursor";
 import type {
   AuthorizedReadScope, GraphAssertion, GraphEvidence, GraphProjection,
   KnowledgeSnapshot, NeighborhoodQuery, OntologySchema, SchemaRef, SemanticRelation,
@@ -47,6 +48,10 @@ function activeAt(a: GraphAssertion, now: number): boolean {
 }
 
 export function validateNeighborhoodQuery(query: NeighborhoodQuery): void {
+  if(query.pageCursor!==undefined){
+    if(typeof query.pageCursor!=="string"||query.maxNodes<2)throw new Error("invalid_graph_query");
+    if(query.pageCursor)decodeDirectoryCursor(query.pageCursor);
+  }
   const bounded = (n: number, min: number, max: number): boolean =>
     Number.isInteger(n) && n >= min && n <= max;
   if (!bounded(query.maxHops, 0, 4) || !bounded(query.maxNodes, 1, 500) ||
@@ -69,12 +74,13 @@ export function projectNeighborhood(
   scope: AuthorizedReadScope,
   query: NeighborhoodQuery,
 ): GraphProjection {
+  if(query.pageCursor!==undefined)throw new Error("invalid_graph_query");
   return projectCurrentKnowledge(snapshot,schema,scope,query,false);
 }
 
 /** Bounded directory across every eligible component, without caller-chosen seeds. */
 export function projectDirectory(snapshot:KnowledgeSnapshot,schema:OntologySchema,scope:AuthorizedReadScope,
-  limits:Pick<NeighborhoodQuery,"maxNodes"|"maxEdges"|"relationTypes">):GraphProjection{
+  limits:Pick<NeighborhoodQuery,"maxNodes"|"maxEdges"|"relationTypes"|"pageCursor">):GraphProjection{
   return projectCurrentKnowledge(snapshot,schema,scope,{...limits,seedIds:["directory"],maxHops:1},true);
 }
 
@@ -146,12 +152,27 @@ function projectCurrentKnowledge(snapshot:KnowledgeSnapshot,schema:OntologySchem
   const queue: { id: string; depth: number }[] = [];
   let truncated = false;
   const chosen = new Map<string, SemanticRelation>();
+  let directoryPage:{nextCursor:string|null}|undefined;
   if(directory){
-    for(const edge of eligible){
+    const paged=query.pageCursor!==undefined;
+    const hash=paged?directoryFingerprint([schema.namespace,schema.schemaId,schema.version,query.maxNodes,query.maxEdges,
+      [...new Set(query.relationTypes??[])].sort(),eligible.map(e=>[e.id,e.kbId,e.type,e.sourceId,e.targetId,
+        ...[e.sourceId,e.targetId].map(id=>{const n=entities.get(id)!;return [n.type,n.label];}),
+        [...e.assertionIds].sort().map(id=>{const a=assertions.get(id)!;return [a.id,a.contentState,a.verificationState,a.statement??null,
+          a.verificationExpiresAt,a.validFrom,a.validUntil,a.supersededById,
+          [...supported.get(id)!].sort((a,b)=>a.id.localeCompare(b.id)).map(g=>[g.id,g.documentId,g.documentVersion,g.start,g.end,g.pages??[],g.sourceFingerprint??null])];})])]):"";
+    let start=0;
+    if(query.pageCursor){const cursor=decodeDirectoryCursor(query.pageCursor),index=eligible.findIndex(e=>e.id===cursor.last);
+      if(cursor.hash!==hash||index<0)throw new Error("semantic_directory_changed");start=index+1;}
+    for(const edge of eligible.slice(start)){
       const additional=[...new Set([edge.sourceId,edge.targetId])].filter(id=>!reached.has(id));
-      if(chosen.size>=query.maxEdges||reached.size+additional.length>query.maxNodes){truncated=true;continue;}
+      if(chosen.size>=query.maxEdges||reached.size+additional.length>query.maxNodes){truncated=true;if(paged)break;continue;}
       for(const id of additional)reached.add(id);
       chosen.set(edge.id,edge);
+    }
+    if(paged){
+      if(truncated&&!chosen.size)throw new Error("invalid_graph_query");
+      directoryPage={nextCursor:truncated?encodeDirectoryCursor(hash,[...chosen.keys()].at(-1)!):null};
     }
   }
   for (const id of directory?[]:[...new Set(query.seedIds)].sort()) {
@@ -182,6 +203,7 @@ function projectCurrentKnowledge(snapshot:KnowledgeSnapshot,schema:OntologySchem
   for (const id of assertionIds) for (const ground of supported.get(id) ?? []) chosenEvidence.set(ground.id, ground);
   const compareIds = <T extends {id: string}>(a: T, b: T): number => a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
   return {
+    ...(directoryPage?{directoryPage}:{}),
     schema: { namespace: schema.namespace, schemaId: schema.schemaId, version: schema.version },
     nodes: [...reached].map(id => {
       const node = entities.get(id)!;

@@ -18,6 +18,8 @@ export interface SourceVersion {
   textLength: number;
 }
 export interface GraphEvidence {
+  /** Internal source identity, excluded from explicit public evidence projection. */
+  sourceFingerprint?:string;
   id: string;
   kbId: string;
   documentId: string;
@@ -28,6 +30,8 @@ export interface GraphEvidence {
   pages?:number[];
 }
 export interface GraphAssertion {
+  /** Internal cursor invalidation input; public projections use explicit fields. */
+  statement?:string;
   id: string;
   kbId: string;
   contentState: string;
@@ -69,6 +73,8 @@ export interface AuthorizedReadScope {
   now: string;
 }
 export interface NeighborhoodQuery {
+  /** Empty string starts an explicitly paged directory; absent keeps legacy projection. */
+  pageCursor?:string;
   seedIds: string[];
   relationTypes?: string[];
   maxHops: number;
@@ -76,6 +82,7 @@ export interface NeighborhoodQuery {
   maxEdges: number;
 }
 export interface GraphProjection {
+  directoryPage?:{nextCursor:string|null};
   schema: SchemaRef;
   nodes: GraphEntity[];
   edges: SemanticRelation[];

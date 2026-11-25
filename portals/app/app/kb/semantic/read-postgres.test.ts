@@ -155,6 +155,16 @@ test("semantic native-text adapter: live roles, attachment/tenant scope, source 
     assert.equal(overview.passages.length,1,"shared source evidence is projected only once");
     const boundedOverview=await reader.readPackage(identity,[kb],{...query,maxNodes:10,maxEdges:1000},true);
     assert.equal(boundedOverview.nodes.length,10);assert.equal(boundedOverview.edges.length,5);assert.equal(boundedOverview.truncated,true);
+    const pageQuery={...query,maxNodes:10,maxEdges:5,pageCursor:""};
+    const firstPage=await reader.readPackage(identity,[kb],pageQuery,true);
+    const pageIds=firstPage.edges.map(e=>e.id);let cursor=firstPage.directoryPage!.nextCursor;
+    while(cursor){const next=await reader.readPackage(identity,[kb],{...pageQuery,pageCursor:cursor},true);pageIds.push(...next.edges.map(e=>e.id));cursor=next.directoryPage!.nextCursor;}
+    assert.deepEqual(pageIds,overview.edges.map(e=>e.id),"all 31 disconnected relations can be paged with no omissions or repeats");
+    await admin.query("UPDATE karda_kb.assertion SET statement=statement||' amended' WHERE id=$1",[assertion]);
+    await assert.rejects(reader.readPackage(identity,[kb],{...pageQuery,pageCursor:firstPage.directoryPage!.nextCursor!},true),/semantic_directory_changed/);
+    await admin.query("DELETE FROM karda_kb.kb_attachment WHERE kb_id=$1 AND user_sub=$2",[kb,sub]);
+    await assert.rejects(reader.readPackage(identity,[kb],{...pageQuery,pageCursor:firstPage.directoryPage!.nextCursor!},true),/semantic_directory_changed/);
+    await admin.query("INSERT INTO karda_kb.kb_attachment(workspace_id,user_sub,product_code,kb_id) VALUES($1,$2,'karda',$3)",[ws,sub,kb]);
     published.relations=originalRelations;
     await admin.query("UPDATE karda_kb.document SET content_state='deleted' WHERE id=$1", [doc]);
     assert.equal((await durableReader.read(identity, [kb], query)).edges.length, 0,

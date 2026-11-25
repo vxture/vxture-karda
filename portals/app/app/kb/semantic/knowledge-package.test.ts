@@ -10,8 +10,9 @@ test("knowledge package requests are bounded and cannot choose identity, schema 
   const value={kb_id:randomUUID(),entity_ids:[randomUUID()]};
   assert.equal(parsePackageRequest(value).query.maxHops,1);
   assert.equal(parsePackageRequest({...value,entity_ids:[]}).directory,true);
+  assert.equal(parsePackageRequest({...value,entity_ids:[],page_cursor:""}).query.pageCursor,"");
   for(const extra of [{kb_id:"bad"},{entity_ids:["bad"]},{max_hops:5},{max_nodes:501},{max_edges:1001},
-    {schema:{}},{user:"other"},{relations:[]},{source_revision:"old"},{relation_types:[1]}])
+    {schema:{}},{user:"other"},{relations:[]},{source_revision:"old"},{relation_types:[1]},{page_cursor:""},{page_cursor:null}])
     assert.throws(()=>parsePackageRequest({...value,...extra}),/semantic_invalid_package_request/);
 });
 test("cross-library package input is explicit, bounded, deduplicated and mutually exclusive with the legacy single library",()=>{
@@ -37,4 +38,6 @@ test("published package tool uses authenticated calling product and read permiss
   assert.equal((await dispatchTool("karda.knowledge_package",args,{...caller,productAccess:undefined},backends)).status,403);assert.equal(calls,1);
   const denied=await knowledgePackageTool(caller,args,async()=>{throw new Error("private SQL error");});
   assert.deepEqual(denied,{status:503,body:{error:"semantic_package_unavailable"}});
+  assert.deepEqual(await knowledgePackageTool(caller,{...args,entity_ids:[],page_cursor:""},async()=>{throw new Error("semantic_directory_changed");}),
+    {status:409,body:{error:"semantic_directory_changed"}});
 });

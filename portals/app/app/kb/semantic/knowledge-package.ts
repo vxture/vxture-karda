@@ -12,13 +12,15 @@ export function parsePackageRequest(value:unknown):PackageRequest {
   if(!value||typeof value!=="object"||Array.isArray(value))throw new Error("semantic_invalid_package_request");
   const v=value as Record<string,unknown>;
   const single=typeof v.kb_id==="string"&&uuid.test(v.kb_id),multi=Array.isArray(v.kb_ids)&&v.kb_ids.length>0&&v.kb_ids.length<=20&&v.kb_ids.every(id=>typeof id==="string"&&uuid.test(id));
-  if(Object.keys(v).some(k=>!["kb_id","kb_ids","entity_ids","relation_types","max_hops","max_nodes","max_edges"].includes(k))||
+  if(Object.keys(v).some(k=>!["kb_id","kb_ids","entity_ids","relation_types","max_hops","max_nodes","max_edges","page_cursor"].includes(k))||
     (Object.hasOwn(v,"kb_id")===Object.hasOwn(v,"kb_ids"))||(!single&&!multi)||!Array.isArray(v.entity_ids)||v.entity_ids.some(id=>typeof id!=="string"||!uuid.test(id))||
     (v.relation_types!==undefined&&(!Array.isArray(v.relation_types)||v.relation_types.some(t=>typeof t!=="string"||t.length>128))))
     throw new Error("semantic_invalid_package_request");
   const directory=v.entity_ids.length===0;
+  if(Object.hasOwn(v,"page_cursor")&&(!directory||typeof v.page_cursor!=="string"))throw new Error("semantic_invalid_package_request");
   const query:NeighborhoodQuery={seedIds:directory?["directory"]:[...v.entity_ids] as string[],maxHops:(v.max_hops??1) as number,
     maxNodes:(v.max_nodes??50) as number,maxEdges:(v.max_edges??100) as number,
+    ...(v.page_cursor!==undefined?{pageCursor:v.page_cursor as string}:{}),
     ...(v.relation_types?{relationTypes:[...v.relation_types as string[]]}:{})};
   try{validateNeighborhoodQuery(query);}catch{throw new Error("semantic_invalid_package_request");}
   const kbIds=single?[v.kb_id as string]:[...new Set(v.kb_ids as string[])];
