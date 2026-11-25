@@ -87,7 +87,17 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-25): v0.12.17 / e9232509, deploy45621971377
+Current production (2026-11-25): v0.12.18 / ebe5cae0, deploy45627063854
+succeeded at2026-11-25T13:54:06Z through normal production review. PR340
+consolidates revalidated knowledge/graph consumers, pending/error clearing,
+late-response cancellation and entity deep links. Stage CI1071pass/zero skips;
+main CI45626466725/scan45626466718pass. No DDL,55tables. Health/ready and
+anonymous entity/directory sync plus Markdown export refusal pass. No local
+full-suite repetition. Fixed17items remain7complete/10unfinished; real business,
+Agent/ontology and scale gates remain open. See
+ docs/50-deployment/200-knowledge-consumer-release-20261125.md.
+
+Historical production (2026-11-25): v0.12.17 / e9232509, deploy45621971377
 succeeded at2026-11-25T13:22:48Z through normal production review. PR338
 consolidates structural/grouped/circular layouts, topology-only Worker,
 validated output, cancellation, timeout and safe fallback. Stage CI1067pass/
