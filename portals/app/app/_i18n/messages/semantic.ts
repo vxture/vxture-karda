@@ -158,4 +158,8 @@ export const semantic = {
   dossierStale:{"zh-CN":"\u8349\u7a3f\u5df2\u5931\u6548\uff0c\u6b63\u6587\u5df2\u9690\u85cf","en-US":"Stale draft; content hidden"},
   dossierEmpty:{"zh-CN":"\u5c1a\u65e0\u4e3b\u9898\u8349\u7a3f\uff0c\u53ef\u9009\u62e9\u5173\u7cfb\u7c7b\u578b\u6c47\u7f16\u3002","en-US":"No topic drafts yet. Choose a relation type to compose."},
   dossierMore:{"zh-CN":"\u4ec5\u5c55\u793a\u6700\u8fd120\u4efd\u8349\u7a3f\uff0c\u5386\u53f2\u7248\u672c\u4ecd\u4fdd\u7559\u3002","en-US":"Showing the latest 20 drafts; older versions remain retained."},
+  communityMode:{"zh-CN":"\u7ed3\u6784\u793e\u533a\u6a21\u5f0f","en-US":"Structural communities"},
+  componentMode:{"zh-CN":"\u8fde\u901a\u7247\u533a\u6a21\u5f0f","en-US":"Connected components"},
+  communityGroups:{"zh-CN":"\u7ed3\u6784\u793e\u533a","en-US":"Structural groups"},
+  communityHint:{"zh-CN":"\u6309\u5f53\u524d\u6388\u6743\u56fe\u7684\u8fde\u63a5\u5bc6\u5ea6\u5206\u7ec4\uff0c\u6700\u591a20\u8f6e\u786e\u5b9a\u6027\u4f18\u5316\uff1b\u4ec5\u4f9b\u5bfc\u822a\uff0c\u4e0d\u4ee3\u8868\u4e1a\u52a1\u5206\u7c7b\u6216\u89c4\u5219\u63a8\u7406\u3002\u8ba1\u6570\u4e3a\u793e\u533a\u5185\u90e8\u5173\u7cfb\uff0c\u5168\u90e8\u89c6\u56fe\u4fdd\u7559\u8de8\u793e\u533a\u4e1a\u52a1\u8fb9\u3002","en-US":"Groups the current authorized graph by connection density using at most 20 deterministic passes. Navigation only, not business classification or inference. Counts cover internal edges; the full view retains cross-group business edges."},
 } satisfies Catalog;

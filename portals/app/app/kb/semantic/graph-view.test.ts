@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {performance} from "node:perf_hooks";
-import {layoutGraph,layoutGroupedGraph,graphGroups,graphPath} from "./graph-view";
+import {layoutGraph,layoutGroupedGraph,graphGroups,graphCommunities,graphPath} from "./graph-view";
 import {packageMarkdown} from "./package-markdown";
 import type {GraphEntity,SemanticRelation} from "./contracts";
 import type {KnowledgePackage} from "./read-postgres";
@@ -52,6 +52,23 @@ test("grouped layout stays bounded for 500 isolated and one fully connected comp
     assert.equal(layout.points.length,500);
     assert.ok(layout.points.every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=0&&p.y>=0&&p.x<=layout.size&&p.y<=layout.size));
   }
+});
+test("communities split dense neighborhoods across a weak bridge without changing business edges",()=>{
+  const nodes="abcdef".split("").map(node),edges=[edge("ab","a","b"),edge("ac","a","c"),edge("bc","b","c"),edge("de","d","e"),edge("df","d","f"),edge("ef","e","f"),edge("bridge","c","d")];
+  const before=JSON.stringify(edges),groups=graphCommunities(nodes,edges);
+  assert.deepEqual(groups.map(g=>g.nodeIds),[["a","b","c"],["d","e","f"]]);
+  assert.deepEqual(graphCommunities([...nodes].reverse(),[...edges].reverse()),groups);
+  assert.equal(groups.some(g=>g.edgeIds.includes("bridge")),false);
+  assert.equal(layoutGroupedGraph(nodes,edges,true).edges.length,7,"cross-community edges remain visible");
+  assert.equal(JSON.stringify(edges),before);
+  assert.deepEqual(graphCommunities(nodes,[...edges,edge("hidden","a","secret")]),groups);
+});
+test("community algorithm bounds full-size work and handles duplicates, self loops and isolates",()=>{
+  const nodes=Array.from({length:500},(_,i)=>node(String(i))),edges=Array.from({length:1000},(_,i)=>edge(String(i),String(i%500),String((i+1)%500)));
+  const start=performance.now(),groups=graphCommunities(nodes,edges);
+  assert.equal(new Set(groups.flatMap(g=>g.nodeIds)).size,500);
+  assert.ok(performance.now()-start<1000,"full-budget navigation grouping finishes in one second");
+  assert.deepEqual(graphCommunities([node("a"),node("b")],[edge("self","a","a")]).map(g=>g.nodeIds),[["a"],["b"]]);
 });
 test("Markdown export includes only package facts and exact evidence, escapes executable source markup",()=>{
   const pack:KnowledgePackage={format:"karda.knowledge-package.v1",schema:{namespace:"local",schemaId:"objects",version:"1"},
