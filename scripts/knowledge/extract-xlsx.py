@@ -12,7 +12,57 @@ R = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
 P = "{http://schemas.openxmlformats.org/package/2006/relationships}"
 
 
-def extract(path):
+def position(ref):
+    match = re.fullmatch(r"([A-Z]{1,3})([1-9][0-9]{0,6})", ref)
+    if not match:
+        raise ValueError("xlsx_range_refused")
+    column = 0
+    for letter in match[1]:
+        column = column * 26 + ord(letter) - 64
+    row = int(match[2])
+    if column > 16384 or row > 1048576:
+        raise ValueError("xlsx_range_refused")
+    return row, column
+
+
+def merge_ranges(root):
+    groups = root.findall(W + "mergeCells")
+    if len(groups) > 1 or sum(1 for e in root.iter(W + "mergeCells")) != len(groups):
+        raise ValueError("xlsx_merge_scope_refused")
+    if not groups:
+        if any(e.tag == W + "mergeCell" for e in root.iter()):
+            raise ValueError("xlsx_merge_scope_refused")
+        return [], {}
+    group = groups[0]
+    if len(group) > 1000 or any(e.tag != W + "mergeCell" or len(e) or set(e.attrib) != {"ref"} for e in group):
+        raise ValueError("xlsx_merge_limit")
+    count = group.get("count")
+    if count is not None and (not re.fullmatch(r"[0-9]{1,4}", count) or int(count) != len(group)):
+        raise ValueError("xlsx_merge_count_refused")
+    if sum(1 for e in root.iter(W + "mergeCell")) != len(group):
+        raise ValueError("xlsx_merge_scope_refused")
+    ranges, covered = [], {}
+    for item in group:
+        ref = item.get("ref", "")
+        parts = ref.split(":")
+        if len(parts) != 2:
+            raise ValueError("xlsx_range_refused")
+        start, end = position(parts[0]), position(parts[1])
+        if start[0] > end[0] or start[1] > end[1] or start == end:
+            raise ValueError("xlsx_range_refused")
+        area = (end[0] - start[0] + 1) * (end[1] - start[1] + 1)
+        if len(covered) + area > 20000:
+            raise ValueError("xlsx_merge_area_limit")
+        for row in range(start[0], end[0] + 1):
+            for column in range(start[1], end[1] + 1):
+                if (row, column) in covered:
+                    raise ValueError("xlsx_merge_overlap_refused")
+                covered[(row, column)] = start
+        ranges.append((start, end, ref, parts[0]))
+    return sorted(ranges), covered
+
+
+def extract(path, merged=False):
     with Path(path).open("rb") as handle:
         data = handle.read(8 * 1024 * 1024 + 1)
     if len(data) > 8 * 1024 * 1024:
@@ -70,7 +120,7 @@ def extract(path):
             formats = [e.get("numFmtId", "0") for e in cell_formats]
         paragraphs = []
         seen_names, seen_targets = set(), set()
-        cells_count = rows_count = chars = 0
+        cells_count = rows_count = chars = merged_area = merged_count = literal_rows = 0
         for sheet in sheets:
             name = sheet.get("name", "")
             link = links.get(sheet.get(R + "id"))
@@ -83,12 +133,21 @@ def extract(path):
             seen_names.add(name)
             seen_targets.add(target)
             root = xml(target)
-            if root.tag != W + "worksheet" or any(e.tag in {W + tag for tag in ("f", "mergeCells", "hyperlinks", "drawing", "legacyDrawing", "tableParts", "extLst", "oleObjects", "controls")} or e.get("hidden") in ("1", "true") or
+            if root.tag != W + "worksheet" or any(e.tag in {W + tag for tag in ("f", "hyperlinks", "drawing", "legacyDrawing", "tableParts", "extLst", "oleObjects", "controls")} or (not merged and e.tag in (W + "mergeCells", W + "mergeCell")) or e.get("hidden") in ("1", "true") or
                 (e.tag == W + "col" and "style" in e.attrib) or (e.tag == W + "row" and ("s" in e.attrib or "customFormat" in e.attrib)) for e in root.iter()):
                 raise ValueError("xlsx_content_refused")
             body = root.find(W + "sheetData")
-            if body is None:
+            if body is None or (merged and sum(1 for e in root.iter(W + "sheetData")) != 1):
                 raise ValueError("xlsx_sheet_data_missing")
+            ranges, covered = merge_ranges(root) if merged else ([], {})
+            merged_area += len(covered)
+            merged_count += len(ranges)
+            if merged_area > 20000 or merged_count > 1000:
+                raise ValueError("xlsx_merge_budget")
+            for start, end, ref, anchor in ranges:
+                text = f"Sheet {json.dumps(name, ensure_ascii=False)} merged {ref} anchor={anchor} rows={end[0]-start[0]+1} columns={end[1]-start[1]+1}"
+                chars += len(text)
+                paragraphs.append(text)
             previous_row = 0
             for row in body:
                 row_number = int(row.get("r", "0"))
@@ -135,13 +194,19 @@ def extract(path):
                         raise ValueError("xlsx_value_refused")
                     if isinstance(value, str) and (len(value) > 32767 or "\x00" in value):
                         raise ValueError("xlsx_value_limit")
+                    anchor = covered.get((row_number, column))
+                    if anchor is not None and anchor != (row_number, column):
+                        if value != "":
+                            raise ValueError("xlsx_covered_value_refused")
+                        continue
                     values.append(f"{ref} ({kind})={json.dumps(value, ensure_ascii=False)}")
                 if values:
+                    literal_rows += 1
                     text = f"Sheet {json.dumps(name, ensure_ascii=False)} row {row_number}: " + " | ".join(values)
                     chars += len(text)
                     if chars > 5000000:
                         raise ValueError("xlsx_text_limit")
                     paragraphs.append(text)
-        if not paragraphs:
+        if not paragraphs or (merged and not literal_rows):
             raise ValueError("xlsx_text_missing")
-    return {"binarySha256": hashlib.sha256(data).hexdigest(), "extractor": {"version": "xlsx-literal-cells-v1"}, "paragraphs": paragraphs}
+    return {"binarySha256": hashlib.sha256(data).hexdigest(), "extractor": {"version": "xlsx-cell-ranges-v2" if merged else "xlsx-literal-cells-v1"}, "paragraphs": paragraphs}

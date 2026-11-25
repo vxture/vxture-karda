@@ -79,11 +79,11 @@ test("standalone image finds pinned extractors after Next changes the runtime wo
   const cwd=process.cwd(),folder=await mkdtemp(join(tmpdir(),"karda-runtime-layout-"));
   try{
     await mkdir(join(folder,"source-tools"));await mkdir(join(folder,"portals/app"),{recursive:true});
-    for(const name of ["normalize-source.py","extract-docx.py","extract-docx-stories.py",...SOURCE_FORMATS.map(f=>f.script)])
+    for(const name of ["normalize-source.py","extract-docx.py","extract-docx-stories.py","extract-xlsx.py",...SOURCE_FORMATS.map(f=>f.script)])
       await copyFile(resolve(cwd,"../../scripts/knowledge",name),join(folder,"source-tools",name));
     process.chdir(join(folder,"portals/app"));
     assert.equal((await normalizeSource(PDF_MIME,syntheticPdf(["Runtime proof"]))).text,"Runtime proof");
-    assert.equal((await normalizeSource(XLSX_MIME,syntheticXlsx())).parserVersion,"xlsx-literal-cells-v1");
+    assert.equal((await normalizeSource(XLSX_MIME,syntheticXlsx())).parserVersion,"xlsx-cell-ranges-v2");
     assert.equal((await normalizeSource(PPTX_MIME,syntheticPptx())).parserVersion,"pptx-slide-text-v1");
     assert.equal((await normalizeSource(DOCX_MIME,syntheticDocxStories())).parserVersion,"docx-cell-grid-v4");
   }finally{process.chdir(cwd);await rm(folder,{recursive:true,force:true});}
@@ -126,7 +126,7 @@ test("PPTX text/table provenance follows slide ordering, rejects active/ambiguou
 
 test("XLSX literal snapshots preserve sheet/cell identity, sparse coordinates, types and UTF-16 without interpreting formulas",async()=>{
   const bytes=syntheticXlsx(),snapshot=await normalizeSource(XLSX_MIME,bytes);
-  assert.equal(snapshot.parserVersion,"xlsx-literal-cells-v1");
+  assert.equal(snapshot.parserVersion,"xlsx-cell-ranges-v2");
   assert.equal(snapshot.text,'Sheet "Proof" row 1: A1 (text)="Required \u4e2d\ud83d\ude00" | C1 (number(raw))="42" | D1 (boolean)=true\n\nSheet "Proof" row 3: B3 (text)="Proof second"');
   assert.ok(snapshot.locators.every(l=>l.page===undefined));assert.equal(snapshot.locators.length,2);
   assert.equal(verifiedSourceText({activeVersion:1,contentState:"indexed",contentHash:sourceHash(bytes),mime:XLSX_MIME,normalized:snapshot},bytes),snapshot.text);
@@ -140,7 +140,7 @@ test("XLSX literal snapshots preserve sheet/cell identity, sparse coordinates, t
     '<sheetData><row r="1" hidden="1"><c r="A1"><v>1</v></c></row></sheetData>',
     '<sheetData><row r="1" s="1"><c r="A1"><v>1</v></c></row></sheetData>',
     '<cols><col min="1" max="1" style="1"/></cols>'+row('<c r="A1"><v>1</v></c>'),
-    row('<c r="A1"><v>1</v></c>')+'<mergeCells><mergeCell ref="A1:B1"/></mergeCells>'];
+    row('<c r="A1"><v>1</v></c>')+'<mergeCells><mergeCell ref="A1:B1"/><mergeCell ref="A1:A2"/></mergeCells>'];
   for(const sheet of badSheets)await assert.rejects(normalizeSource(XLSX_MIME,syntheticXlsx({"xl/worksheets/sheet1.xml":xml(sheet)})),/source_extraction_refused/);
   const rejectedParts:Record<string,string>[]=[
     {"xl/vbaProject.bin":"macro"},
