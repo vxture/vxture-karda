@@ -4,7 +4,7 @@ import {execFileSync} from "node:child_process";
 import {normalizeSource,snapshotFromExtraction} from "./source-normalizer";
 import {DOCX_MIME,PDF_MIME,XLSX_MIME,PPTX_MIME,readSourceSnapshot,sourceHash,snapshotIR,snapshotValid} from "./source-snapshot";
 import {verifiedSourceText} from "../semantic/source-text";
-import {syntheticPdf,syntheticXlsx,syntheticPptx} from "./source-fixtures";
+import {syntheticPdf,syntheticXlsx,syntheticPptx,syntheticDocxStories} from "./source-fixtures";
 import {SOURCE_FORMATS} from "./source-formats";
 import {readFileSync} from "node:fs";
 import {runExtraction} from "../assertions/extract-run";
@@ -62,7 +62,7 @@ test("DOCX table snapshots preserve body/cell order and UTF-16 while refusing am
   const make=(body:string)=>execFileSync(python,["-I","-c",'import io,sys,zipfile; b=io.BytesIO(); z=zipfile.ZipFile(b,"w"); z.writestr("word/document.xml",sys.stdin.buffer.read()); z.close(); sys.stdout.buffer.write(b.getvalue())'],
     {input:Buffer.from(`<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}</w:body></w:document>`),timeout:10000,windowsHide:true});
   const bytes=make(p("Before")+table+p("After")),snapshot=await normalizeSource(DOCX_MIME,bytes);
-  assert.equal(snapshot.parserVersion,"docx-body-tables-v2");
+  assert.equal(snapshot.parserVersion,"docx-referenced-stories-v3");
   assert.equal(snapshot.text,"Before\n\nName\tValue\n\n\u4e2d\ud83d\ude00\t\n\nAfter");
   assert.deepEqual(snapshot.locators.map(l=>snapshot.text.slice(l.start,l.end)),["Before","Name\tValue","\u4e2d\ud83d\ude00\t","After"]);
   assert.equal(verifiedSourceText({activeVersion:1,contentState:"indexed",contentHash:sourceHash(bytes),mime:DOCX_MIME,normalized:snapshot},bytes),snapshot.text);
@@ -79,12 +79,13 @@ test("standalone image finds pinned extractors after Next changes the runtime wo
   const cwd=process.cwd(),folder=await mkdtemp(join(tmpdir(),"karda-runtime-layout-"));
   try{
     await mkdir(join(folder,"source-tools"));await mkdir(join(folder,"portals/app"),{recursive:true});
-    for(const name of ["normalize-source.py",...SOURCE_FORMATS.map(f=>f.script)])
+    for(const name of ["normalize-source.py","extract-docx.py",...SOURCE_FORMATS.map(f=>f.script)])
       await copyFile(resolve(cwd,"../../scripts/knowledge",name),join(folder,"source-tools",name));
     process.chdir(join(folder,"portals/app"));
     assert.equal((await normalizeSource(PDF_MIME,syntheticPdf(["Runtime proof"]))).text,"Runtime proof");
     assert.equal((await normalizeSource(XLSX_MIME,syntheticXlsx())).parserVersion,"xlsx-literal-cells-v1");
     assert.equal((await normalizeSource(PPTX_MIME,syntheticPptx())).parserVersion,"pptx-slide-text-v1");
+    assert.equal((await normalizeSource(DOCX_MIME,syntheticDocxStories())).parserVersion,"docx-referenced-stories-v3");
   }finally{process.chdir(cwd);await rm(folder,{recursive:true,force:true});}
 });
 
