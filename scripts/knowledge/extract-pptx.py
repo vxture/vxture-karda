@@ -69,7 +69,7 @@ def merged_table(table, text_paragraph):
     return width, len(rows), anchors
 
 
-def extract(path, merged=False):
+def extract(path, merged=False, stories=None):
     with Path(path).open("rb") as handle:
         data = handle.read(8 * 1024 * 1024 + 1)
     if len(data) > 8 * 1024 * 1024:
@@ -97,7 +97,7 @@ def extract(path, merged=False):
         for name in names:
             if name.endswith(".rels") and any(e.get("TargetMode") == "External" for e in xml(name)):
                 raise ValueError("pptx_external_relationship")
-            if name.startswith("ppt/notesSlides/") and name.endswith(".xml") and any((e.text or "").strip() for e in xml(name).iter(A + "t")):
+            if stories is None and name.startswith("ppt/notesSlides/") and name.endswith(".xml") and any((e.text or "").strip() for e in xml(name).iter(A + "t")):
                 raise ValueError("pptx_notes_refused")
         presentation = xml("ppt/presentation.xml")
         slides = presentation.find(P + "sldIdLst")
@@ -140,7 +140,7 @@ def extract(path, merged=False):
             tree = root.find(P + "cSld/" + P + "spTree")
             if tree is None:
                 raise ValueError("pptx_tree_missing")
-            for shape_number, shape in enumerate(tree, 1):
+            for shape_number, shape in (stories.shapes(tree) if stories is not None else enumerate(tree, 1)):
                 if shape.tag in (P + "nvGrpSpPr", P + "grpSpPr"):
                     continue
                 if any(e.get("hidden") in ("1", "true") for e in shape.iter()):
@@ -188,6 +188,11 @@ def extract(path, merged=False):
                         append(f"Slide {number} table {shape_number} row {row_number}: " + " | ".join(values))
                 else:
                     raise ValueError("pptx_shape_refused")
+            if stories is not None:
+                for value in stories.notes(number, target, names, xml, text_paragraph):
+                    append(value)
+        if stories is not None:
+            stories.finish(names, xml)
         if not paragraphs:
             raise ValueError("pptx_text_missing")
-    return {"binarySha256": hashlib.sha256(data).hexdigest(), "extractor": {"version": "pptx-cell-grid-v2" if merged else "pptx-slide-text-v1"}, "paragraphs": paragraphs}
+    return {"binarySha256": hashlib.sha256(data).hexdigest(), "extractor": {"version": "pptx-authored-stories-v3" if stories is not None else "pptx-cell-grid-v2" if merged else "pptx-slide-text-v1"}, "paragraphs": paragraphs}

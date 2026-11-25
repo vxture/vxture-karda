@@ -330,3 +330,5 @@ baseline/0020/Prisma/98锁步，新旧库重复演练；生产通过db-init审�
 2026-11-26 0026扩展document_text_snapshot解析器CHECK允许xlsx-cell-ranges-v2并保留v1和其他格式；0025增加向前重放保护。无字段/Prisma/98权限变化，55表保持，见170§47。
 
 2026-11-26 0027扩展document_text_snapshot解析器CHECK允许pptx-cell-grid-v2、保留v1及其他格式；0026加向前重放保护。无字段/Prisma/98权限变化，55表保持，见170§48。
+
+2026-11-26 0028扩展document_text_snapshot解析器CHECK允许pptx-authored-stories-v3并保留v1/v2及其他格式；0027加前向重放保护。无字段/Prisma/98权限变化，55表保持，见170§49。
