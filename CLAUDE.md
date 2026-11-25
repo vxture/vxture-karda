@@ -87,7 +87,17 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-25): v0.12.18 / ebe5cae0, deploy45627063854
+Current production (2026-11-25): v0.12.19 / 1fbdf09c, deploy45633337049
+succeeded at2026-11-25T14:30:13Z through normal production review. PR342
+consolidates maintenance audit JSON/Markdown, summaries/human suggestions,
+content digests and offline integrity/comparison tools. Stage CI1074pass/zero
+skips; main CI45632809814/scan45632809829pass. No DDL,55tables. Health/ready
+and anonymous audit/Markdown/legacy JSON refusal pass. No local full-suite
+repetition. Fixed17items remain7complete/10unfinished; real business audit,
+Agent/events and ontology gates remain open. See
+ docs/50-deployment/210-maintenance-audit-release-20261125.md.
+
+Historical production (2026-11-25): v0.12.18 / ebe5cae0, deploy45627063854
 succeeded at2026-11-25T13:54:06Z through normal production review. PR340
 consolidates revalidated knowledge/graph consumers, pending/error clearing,
 late-response cancellation and entity deep links. Stage CI1071pass/zero skips;

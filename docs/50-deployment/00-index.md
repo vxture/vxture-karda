@@ -31,6 +31,8 @@ Deployment and bootstrap material for this repo.
 
 | `200-knowledge-consumer-release-20261125.md` | v0.12.18 knowledge/graph revalidation consumers, entity navigation and production evidence |
 
+| `210-maintenance-audit-release-20261125.md` | v0.12.19 maintenance audit delivery, offline integrity/comparison and production evidence |
+
 The tag-to-env CD pipeline (deploy/build/rollback/db-init workflows and the
 `tailnet-ssh-connect` composite action) is inherited from the template and lives
 in `.github/`. Both checklists above are done and the production chain is
