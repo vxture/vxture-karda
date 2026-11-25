@@ -147,7 +147,7 @@ test("semantic native-text adapter: live roles, attachment/tenant scope, source 
     for(let i=0;i<30;i++){
       const sourceId=randomUUID(),targetId=randomUUID();
       await admin.query(`INSERT INTO karda_kb.entity(id,kb_id,kind,name)
-        VALUES($1,$3,'legacy','component-source'),($2,$3,'legacy','component-target')`,[sourceId,targetId,kb]);
+        VALUES($1,$3,'legacy',$4),($2,$3,'legacy',$5)`,[sourceId,targetId,kb,`component-source-${i}`,`component-target-${i}`]);
       published.relations.push({...originalRelations[0],id:randomUUID(),sourceId,targetId});
     }
     const overview=await reader.readPackage(identity,[kb],{...query,maxNodes:500,maxEdges:1000},true);
