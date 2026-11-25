@@ -36,6 +36,7 @@ export function PublishedKnowledgeClient({kbId}:{kbId:string}){
     <PageHead title={m.knowledgeTitle}/>
     <Link href={`/assets/${kbId}/knowledge`}>{m.back}</Link>
     <div className="flex flex-wrap gap-sm"><Button variant="outline" asChild><Link href={`/assets/${kbId}/graph`}>{m.graphTitle}</Link></Button>
+      <Button variant="outline" asChild><Link href={`/assets/${kbId}/sources`}>{m.sourceSearchTitle}</Link></Button>
       <Button variant="outline" asChild><a href={`/api/kb/${kbId}/knowledge-package?format=markdown${focus?`&entity=${encodeURIComponent(focus)}`:""}`}>{m.exportKnowledge}</a></Button></div>
     <p className="text-body-sm text-muted-foreground">{m.knowledgeHint}</p>
     <Button disabled={busy} variant="outline" onClick={()=>void load("")}>{m.linkedEntities}</Button>

@@ -43,6 +43,7 @@ export function GraphClient({kbId}:{kbId:string}){
     <PageHead title={m.graphTitle}/>
     <div className="flex flex-wrap gap-sm">
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/published`}>{m.knowledgeTitle}</Link></Button>
+      <Button variant="outline" asChild><Link href={`/assets/${kbId}/sources`}>{m.sourceSearchTitle}</Link></Button>
       <Button variant="outline" disabled={busy} onClick={()=>void load()}>{m.graphOverview}</Button>
       <Button variant="outline" onClick={()=>setWide(!wide)}>{wide?m.closeCanvas:m.largeCanvas}</Button>
       <Button variant="outline" disabled={busy} onClick={()=>{setZoom(1);setOffset({x:0,y:0});}}>{m.resetView}</Button>
