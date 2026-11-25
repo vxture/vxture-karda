@@ -21,7 +21,7 @@ test("directory pages traverse a stable eligible projection without gaps or hidd
     assert.throws(()=>projectDirectory(snapshot,tenderSchema,scope,{...limits,pageCursor}),/invalid_graph_query|semantic_directory_changed/);
   const token=first.directoryPage!.nextCursor!;
   for(const changed of [(()=>{const s=tenderSnapshot();s.entities[0].label="renamed";return s;})(),
-    (()=>{const s=tenderSnapshot();s.assertions[0].statement="amended";return s;})(),
+    (()=>{const s=tenderSnapshot();s.assertions[0].statementFingerprint="amended";return s;})(),
     (()=>{const s=tenderSnapshot();s.sources.find(s=>s.current)!.withdrawn=true;return s;})()])
     assert.throws(()=>projectDirectory(changed,tenderSchema,scope,{...limits,pageCursor:token}),/semantic_directory_changed/);
   assert.throws(()=>projectDirectory(snapshot,tenderSchema,{...scope,visibleKbIds:new Set()}, {...limits,pageCursor:token}),/semantic_directory_changed/);
@@ -34,6 +34,16 @@ const query: NeighborhoodQuery = { seedIds: ["project"], maxHops: 3, maxNodes: 5
 const read = (snapshot = tenderSnapshot(), patch: Partial<NeighborhoodQuery> = {}, visibleKbIds = new Set([KB])) =>
   projectNeighborhood(snapshot, tenderSchema, { visibleKbIds, now: CLOCK }, { ...query, ...patch });
 const ids = (items: {id: string}[]) => items.map(i => i.id);
+
+test("directory fingerprint stays bounded when 5000 relations share an assertion with 5000 proofs",()=>{
+  const snapshot=tenderSnapshot(),edge=snapshot.relations[0],proof=snapshot.evidence[0],assertion=snapshot.assertions.find(a=>a.id===edge.assertionIds[0])!;
+  snapshot.evidence=Array.from({length:5000},(_,i)=>({...proof,id:`proof-${i}`}));
+  snapshot.assertions=[{...assertion,evidenceIds:snapshot.evidence.map(e=>e.id)}];
+  snapshot.relations=Array.from({length:5000},(_,i)=>({...edge,id:`relation-${String(i).padStart(4,"0")}`}));
+  const start=performance.now(),result=projectDirectory(snapshot,tenderSchema,{visibleKbIds:new Set([KB]),now:CLOCK},{maxNodes:2,maxEdges:1,pageCursor:""});
+  assert.equal(result.edges.length,1);assert.equal(result.evidence.length,5000);assert.ok(result.directoryPage?.nextCursor);
+  assert.ok(performance.now()-start<2000,"shared proofs must not be expanded once per relation for hashing");
+});
 
 test("a project reaches the applicable qualification and supporting material, with exact source anchors", () => {
   const result = read();

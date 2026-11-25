@@ -155,12 +155,20 @@ function projectCurrentKnowledge(snapshot:KnowledgeSnapshot,schema:OntologySchem
   let directoryPage:{nextCursor:string|null}|undefined;
   if(directory){
     const paged=query.pageCursor!==undefined;
-    const hash=paged?directoryFingerprint([schema.namespace,schema.schemaId,schema.version,query.maxNodes,query.maxEdges,
-      [...new Set(query.relationTypes??[])].sort(),eligible.map(e=>[e.id,e.kbId,e.type,e.sourceId,e.targetId,
-        ...[e.sourceId,e.targetId].map(id=>{const n=entities.get(id)!;return [n.type,n.label];}),
-        [...e.assertionIds].sort().map(id=>{const a=assertions.get(id)!;return [a.id,a.contentState,a.verificationState,a.statement??null,
-          a.verificationExpiresAt,a.validFrom,a.validUntil,a.supersededById,
-          [...supported.get(id)!].sort((a,b)=>a.id.localeCompare(b.id)).map(g=>[g.id,g.documentId,g.documentVersion,g.start,g.end,g.pages??[],g.sourceFingerprint??null])];})])]):"";
+    let hash="";
+    if(paged){
+      // Fingerprint normalized tables once, never a relation x shared-proof product.
+      const nodeIds=[...new Set(eligible.flatMap(e=>[e.sourceId,e.targetId]))].sort();
+      const assertionIds=[...new Set(eligible.flatMap(e=>e.assertionIds))].sort();
+      const grounds=new Map<string,GraphEvidence>();
+      for(const id of assertionIds)for(const g of supported.get(id)!)grounds.set(g.id,g);
+      hash=directoryFingerprint([schema.namespace,schema.schemaId,schema.version,query.maxNodes,query.maxEdges,
+        [...new Set(query.relationTypes??[])].sort(),eligible.map(e=>[e.id,e.kbId,e.type,e.sourceId,e.targetId,[...e.assertionIds].sort()]),
+        nodeIds.map(id=>{const n=entities.get(id)!;return [id,n.type,n.label];}),
+        assertionIds.map(id=>{const a=assertions.get(id)!;return [id,a.contentState,a.verificationState,a.statementFingerprint??null,
+          a.verificationExpiresAt,a.validFrom,a.validUntil,a.supersededById,supported.get(id)!.map(g=>g.id).sort()];}),
+        [...grounds.values()].sort((a,b)=>a.id.localeCompare(b.id)).map(g=>[g.id,g.documentId,g.documentVersion,g.start,g.end,g.pages??[],g.sourceFingerprint??null])]);
+    }
     let start=0;
     if(query.pageCursor){const cursor=decodeDirectoryCursor(query.pageCursor),index=eligible.findIndex(e=>e.id===cursor.last);
       if(cursor.hash!==hash||index<0)throw new Error("semantic_directory_changed");start=index+1;}

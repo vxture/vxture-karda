@@ -31,7 +31,7 @@ export interface GraphEvidence {
 }
 export interface GraphAssertion {
   /** Internal cursor invalidation input; public projections use explicit fields. */
-  statement?:string;
+  statementFingerprint?:string;
   id: string;
   kbId: string;
   contentState: string;
