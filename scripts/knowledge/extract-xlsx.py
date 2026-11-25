@@ -100,7 +100,7 @@ def extract(path):
                 for cell in row:
                     ref = cell.get("r", "")
                     match = re.fullmatch(r"([A-Z]{1,3})([1-9][0-9]{0,6})", ref)
-                    if cell.tag != W + "c" or not match or int(match[2]) != row_number:
+                    if cell.tag != W + "c" or not match or int(match[2]) != row_number or any(k not in ("r", "s", "t") for k in cell.attrib):
                         raise ValueError("xlsx_cell_refused")
                     column = 0
                     for letter in match[1]:
@@ -110,6 +110,8 @@ def extract(path):
                         raise ValueError("xlsx_cell_limit")
                     previous_column = column
                     kind = cell.get("t", "n")
+                    if len(cell.findall(W + "v")) > 1 or len(cell.findall(W + "is")) > 1 or (kind != "inlineStr" and cell.find(W + "is") is not None):
+                        raise ValueError("xlsx_cell_refused")
                     raw = cell.findtext(W + "v")
                     if kind == "inlineStr":
                         inline = cell.find(W + "is")
