@@ -246,3 +246,5 @@ I0 COMPLETE: Arda245/740b368,main45126707329;Karda263/4e59ac1,main45126741617,
 both CI and secret scans pass. Current batch I1 IN PROGRESS/PARTIAL;I2 PARTIAL;
 I3 EXTERNAL BLOCK/PARTIAL;I4 EXTERNAL BLOCK;I5 PARTIAL;I6 NOT COMPLETE.
 Use the explicit checkbox list in70-integration-closure-20261123.md.
+
+2026-11-26 当前主题知识交付阶段 PR348 已上线 v0.12.22/79466f7a，部署 45659213275 成功。主题证据汇编与人工认可摘要分别导出 JSON/Markdown；当前权限、来源、裁决同事务复核，旧摘要可按 ID 精确取回，过期/待审/无效引用拒绝。阶段 CI 45658042998 共 1086 项通过零跳过，主干 CI/扫描 45658684451/45658684126 通过；health/ready 与匿名 401 探针通过。固定 17 项仍 7 完成/10 未完成，真实 Agent、模型质量、业务、本体和规模门槛开放。

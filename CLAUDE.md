@@ -87,7 +87,15 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-26): v0.12.21 / f1bfccba, deploy45653602000
+Current production (2026-11-26): v0.12.22 / 79466f7a, deploy45659213275
+succeeded through normal production review. PR348 delivers current topic
+compilation and human-accepted summary JSON/Markdown with current authority,
+source and review revalidation. Stage CI45658042998:1086pass/zero skips;
+main CI45658684451/scan45658684126pass. No DDL,55tables; health/ready
+and anonymous export/package refusal pass. Fixed17items:7complete/10unfinished.
+See docs/50-deployment/240-topic-delivery-release-20261126.md.
+
+Historical production (2026-11-26): v0.12.21 / f1bfccba, deploy45653602000
 succeeded at2026-11-25T16:31:08Z through normal production review. PR346
 consolidates authorized published fact search for RP/OBO and its consumer page.
 Stage CI1081pass/zero skips; main CI45653033266/scan45653035858pass. No DDL,

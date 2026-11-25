@@ -41,3 +41,5 @@ The tag-to-env CD pipeline (deploy/build/rollback/db-init workflows and the
 `tailnet-ssh-connect` composite action) is inherited from the template and lives
 in `.github/`. Both checklists above are done and the production chain is
 exercised (live since v0.1.0); the beta tier stays a reserved channel (TD-001).
+
+| `240-topic-delivery-release-20261126.md` | v0.12.22 current topic evidence and accepted summary delivery |
