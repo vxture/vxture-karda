@@ -106,11 +106,11 @@ user 库挂载过滤，既有实体/断言/证据适配；详见 [170 §6](../30
 | K0b | IN PROGRESS — DRAFT DATA | [公开原文与评测准备](110-public-evaluation-20261124.md)：法规 79 锚点/60 草案（20 多条款），45 开发/15 保留；PR277 复核工具和多来源计分，PR278 生成保护；新增 3 个真实项目公告族、12 个正文锚点及离线复现。仍缺完整原文件/附件、人工复核和项目族留出冻结，未整批验收 |
 | K1a | LOCAL VERIFIED | 首批 PR272 已合并且 PR/main CI 通过；本轮再补人工验证到期检查，现有投影 21 项测试通过；不含 HTTP/DB 适配，不构成生产安全或端到端验收 |
 | K1b | PARTIAL IMPLEMENTATION | P1/PR274：隔离发布事务，主干 CI 933 项零跳过；P2/PR275：既有表服务角色读取，主干 CI 937 项零跳过；P3/PR276：持久发布到读取器桥接，代码 CI 943 项零跳过。P4/PR290 增量0016、51 表与 210/Prisma/98 锁步，新旧库重复应用及权限/事务回滚实际验证，CI45432097084 为 992 项零跳过；完整 OBO 权威适配及回放/重建未完成，质量验收按 owner 调整后移至 K6；详见[执行清单](120-rebuild-execution-checklist-20261124.md)与[170](../30-design/170-semantic-persistence-adapter.md) |
-| K2 | IN PROGRESS | PR292–297编译/审核/任务/冲突选择及知识包、OBO工具、知识页；PR300–301文字层PDF/基础DOCX固定版本证据链。真实Atlas账单/Agent、原文检索模式、主题合成、跨库与系统验收待完成；见[170 §10–18](../30-design/170-semantic-persistence-adapter.md) |
+| K2 | IN PROGRESS | PR292–297编译/审核/任务/冲突选择及知识包、OBO工具、知识页；PR300–301固定版本PDF/DOCX证据链；PR306独立原文模式RP/OBO/计量。主题合成、真实Atlas账单/Agent、跨库与系统验收待完成；见[170 §10–23](../30-design/170-semantic-persistence-adapter.md) |
 | K3 | K3a FUNCTION DELIVERY COMPLETE; K3b OPEN | PR298/303/304已实现正式知识包驱动大画布、有界全快照总览/片区聚合、实体/关系筛选、局部展开、路径/证据及分组布局；社区发现/版本对照、真实规模及业务验收仍待K3b/K6，不关闭K3主批次 |
 | K4 | WAITING FOR EXTERNAL CONTRACT | 真实Ontos版本/规则与图增强对照未完成；本地类型契约不替代确定性规则引擎 |
-| K5 | IN PROGRESS | PR299来源影响与持续体检已实现；第二场景、草稿回存、差量刷新与完整审计重放待完成 |
-| K6 | ADDITIVE RELEASE LIVE; ACCEPTANCE OPEN | v0.12.1/9bfa2d3e部署45532514296成功，无新DDL，保留53表；正式health/ready及匿名拒绝通过；质量/已登录生产权限/外部联调及业务切换仍需独立证据 |
+| K5 | IN PROGRESS | PR299来源影响/体检，PR307发布链核验/历史结构对照，PR308 SOP新旧版本/候选持久待审/共享读取刷新真实数据库回归；实际SOP/Agent、模型主题草稿/差量物化及外部事件与完整业务审计验收待完成 |
+| K6 | ADDITIVE RELEASE LIVE; ACCEPTANCE OPEN | v0.12.2/7cca363f部署45540152162成功，无新DDL、53表；正式health/ready及匿名原文POST/history/package拒绝通过；质量/已登录生产权限/外部联调及业务切换仍需独立证据 |
 
 当前原文基线为既有 BM25 组件，不含向量、精排或模型应答，报告不证明图增强收益。
 项目公告后续子批：真实语料 PR279 已合并且主干 CI 通过；两开发项目族/一保留项目族按
@@ -162,3 +162,6 @@ K3a功能交付完成，K3b/业务验收继续开放；固定17项现为7完成/
 
 本轮增量版本v0.12.1/9bfa2d3e已上线，部署45532514296经现有审核于北京时间10:28:19成功；正式health/ready与匿名拒绝复验通过。
 见[发布记录](../50-deployment/60-knowledge-exploration-release-20261125.md)。生产运行版本与后续文档合并主干提交分别记录，业务/外部联调门槛不自动关闭。
+
+2026-11-25 三批PR306/307/308已上线v0.12.2/7cca363f，部署45540152162成功，无DDL。最终PR1034项全通过零跳过及主干CI/扫描通过。
+交付独立原文模式、发布链/历史差异和SOP第二场景组件回归；见[本轮证据](../50-deployment/70-sources-audit-release-20261125.md)。固定17项仍7完成/10未完成，持续建设主题草稿及剩余范围，不以子项替代业务验收。
