@@ -102,7 +102,7 @@ export function GraphCanvas({layout,selected,edgeId,path,onNode,onEdge}:{layout:
         <path d={mapPath} fill="none" stroke="currentColor" strokeWidth={layout.size/80} strokeLinecap="round" opacity=".5"/>
         <rect x={mapLeft} y={mapTop} width={mapRight-mapLeft} height={mapBottom-mapTop} fill="currentColor" fillOpacity=".1" stroke="currentColor" strokeWidth={layout.size/120}/>
       </svg>
-      <p id="graph-map-help" className="min-w-0 max-w-sm text-body-sm text-muted-foreground">{m.graphMapHint}</p>
+      <p id="graph-map-help" className="min-w-0 max-w-[28rem] flex-1 basis-[16rem] text-body-sm text-muted-foreground">{m.graphMapHint}</p>
     </div>
   </section>;
 }
