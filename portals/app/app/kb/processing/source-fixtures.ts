@@ -1,6 +1,11 @@
 // Synthetic fixtures only; never imported by product code.
 import {execFileSync} from "node:child_process";
 
+export function syntheticDocxGrid():Buffer{
+  const w="http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+  return syntheticDocxStories({"word/header1.xml":`<w:hdr xmlns:w="${w}"><w:tbl><w:tblGrid><w:gridCol/><w:gridCol/></w:tblGrid><w:tr><w:tc><w:tcPr><w:gridSpan w:val="2"/><w:vMerge w:val="restart"/></w:tcPr><w:p><w:r><w:t>Required merged proof</w:t></w:r></w:p><w:tbl><w:tr><w:tc><w:p><w:r><w:t>Nested support</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:tc></w:tr><w:tr><w:tc><w:tcPr><w:gridSpan w:val="2"/><w:vMerge/></w:tcPr><w:p/></w:tc></w:tr></w:tbl></w:hdr>`});
+}
+
 export function syntheticDocxStories(overrides:Record<string,string>={}):Buffer{
   const w="http://schemas.openxmlformats.org/wordprocessingml/2006/main",r="http://schemas.openxmlformats.org/officeDocument/2006/relationships";
   const p=(text:string)=>`<w:p><w:r><w:t>${text}</w:t></w:r></w:p>`;

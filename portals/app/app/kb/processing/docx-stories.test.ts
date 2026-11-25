@@ -6,7 +6,7 @@ import {syntheticDocxStories} from "./source-fixtures";
 
 test("DOCX stories bind explicit sections, note IDs, Unicode and fixed original bytes without page guesses",async()=>{
   const bytes=syntheticDocxStories(),value=await normalizeSource(DOCX_MIME,bytes);
-  assert.equal(value.parserVersion,"docx-referenced-stories-v3");assert.equal(value.contentHash,sourceHash(bytes));
+  assert.equal(value.parserVersion,"docx-cell-grid-v4");assert.equal(value.contentHash,sourceHash(bytes));
   assert.match(value.text,/Proof body \u4e2d\ud83d\ude00 \[footnote id=7\] \[endnote id=3\]/);
   assert.match(value.text,/Section 1 header default part=word\/header1.xml paragraph 1: Required header/);
   assert.match(value.text,/Section 1 footer first part=word\/footer2.xml paragraph 1: Footer proof/);
