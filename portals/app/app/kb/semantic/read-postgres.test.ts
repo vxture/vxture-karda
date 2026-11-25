@@ -141,6 +141,21 @@ test("semantic native-text adapter: live roles, attachment/tenant scope, source 
     const durableReader = new PostgresSemanticReader(service, { get: async () => raw }, async () => true,
       loader.load.bind(loader));
     assert.deepEqual(await durableReader.read(identity, [kb], query), await read());
+
+    // The actual role/source adapter must not sample away disconnected components.
+    const originalRelations=[...published.relations];
+    for(let i=0;i<30;i++){
+      const sourceId=randomUUID(),targetId=randomUUID();
+      await admin.query(`INSERT INTO karda_kb.entity(id,kb_id,kind,name)
+        VALUES($1,$3,'legacy',$4),($2,$3,'legacy',$5)`,[sourceId,targetId,kb,`component-source-${i}`,`component-target-${i}`]);
+      published.relations.push({...originalRelations[0],id:randomUUID(),sourceId,targetId});
+    }
+    const overview=await reader.readPackage(identity,[kb],{...query,maxNodes:500,maxEdges:1000},true);
+    assert.equal(overview.nodes.length,62);assert.equal(overview.edges.length,31);assert.equal(overview.truncated,false);
+    assert.equal(overview.passages.length,1,"shared source evidence is projected only once");
+    const boundedOverview=await reader.readPackage(identity,[kb],{...query,maxNodes:10,maxEdges:1000},true);
+    assert.equal(boundedOverview.nodes.length,10);assert.equal(boundedOverview.edges.length,5);assert.equal(boundedOverview.truncated,true);
+    published.relations=originalRelations;
     await admin.query("UPDATE karda_kb.document SET content_state='deleted' WHERE id=$1", [doc]);
     assert.equal((await durableReader.read(identity, [kb], query)).edges.length, 0,
       "persisted release cannot restore a withdrawn live source");

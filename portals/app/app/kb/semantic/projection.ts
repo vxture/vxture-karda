@@ -69,6 +69,17 @@ export function projectNeighborhood(
   scope: AuthorizedReadScope,
   query: NeighborhoodQuery,
 ): GraphProjection {
+  return projectCurrentKnowledge(snapshot,schema,scope,query,false);
+}
+
+/** Bounded directory across every eligible component, without caller-chosen seeds. */
+export function projectDirectory(snapshot:KnowledgeSnapshot,schema:OntologySchema,scope:AuthorizedReadScope,
+  limits:Pick<NeighborhoodQuery,"maxNodes"|"maxEdges"|"relationTypes">):GraphProjection{
+  return projectCurrentKnowledge(snapshot,schema,scope,{...limits,seedIds:["directory"],maxHops:1},true);
+}
+
+function projectCurrentKnowledge(snapshot:KnowledgeSnapshot,schema:OntologySchema,scope:AuthorizedReadScope,
+  query:NeighborhoodQuery,directory:boolean):GraphProjection{
   validateOntology(schema);
   validateNeighborhoodQuery(query);
   const now = Date.parse(scope.now);
@@ -134,13 +145,21 @@ export function projectNeighborhood(
   const reached = new Set<string>();
   const queue: { id: string; depth: number }[] = [];
   let truncated = false;
-  for (const id of [...new Set(query.seedIds)].sort()) {
+  const chosen = new Map<string, SemanticRelation>();
+  if(directory){
+    for(const edge of eligible){
+      const additional=[...new Set([edge.sourceId,edge.targetId])].filter(id=>!reached.has(id));
+      if(chosen.size>=query.maxEdges||reached.size+additional.length>query.maxNodes){truncated=true;continue;}
+      for(const id of additional)reached.add(id);
+      chosen.set(edge.id,edge);
+    }
+  }
+  for (const id of directory?[]:[...new Set(query.seedIds)].sort()) {
     if (!neighbors.has(id)) continue;
     if (reached.size >= query.maxNodes) { truncated = true; continue; }
     reached.add(id);
     queue.push({ id, depth: 0 });
   }
-  const chosen = new Map<string, SemanticRelation>();
   for (let i = 0; i < queue.length; i++) {
     const current = queue[i];
     if (current.depth >= query.maxHops) continue;
