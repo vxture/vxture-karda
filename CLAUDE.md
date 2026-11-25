@@ -76,7 +76,18 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-25): v0.12.2 / 7cca363f, owner-authorized deploy
+Current production (2026-11-25): v0.12.3 / 3ae8bd79, owner-authorized deploy
+45543274150 succeeded at2026-11-25T04:07:26Z via the existing production gate.
+PR310 adds immutable extractive topic drafts, deduplication and live source/
+review invalidation hiding. Main CI45542575859 and secret scan45542575866
+passed; PR CI45542337991 ran1036 tests, all passed, zero skips. Reviewed
+db-init45542856873 applied0019 and verified54 declared tables. Canonical
+health/ready confirm the release and dependencies; anonymous topic GET/POST
+refuse401. No model synthesis/approval or business cutover implied. Fixed
+checklist remains7complete/10unfinished. See
+docs/50-deployment/80-topic-dossiers-release-20261125.md.
+
+Historical production (2026-11-25): v0.12.2 / 7cca363f, owner-authorized deploy
 45540152162 succeeded at2026-11-25T03:34:02Z via the normal production gate.
 PR306/307/308 deliver exact source-only RP/OBO search, immutable publication
 audit/version comparison and real PostgreSQL SOP revision lifecycle coverage.
