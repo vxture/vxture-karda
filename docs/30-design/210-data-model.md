@@ -309,3 +309,10 @@ baseline/0018/Prisma/98 锁步；生产通过 db-init 增量执行，容器不�
 服务角色只可SELECT/INSERT，不可UPDATE/DELETE；当前版本由正式知识包重算指纹判定，不原地改历史，不自动发布或加入检索。
 读取失效草稿仅返回身份/状态，旧payload不回显；来源、裁决及权限继续由同一权威快照核验。
 baseline/0019/Prisma/98同步，正式DDL只走db-init；无客户内容/权限迁移。
+
+## 14. 带引用模型主题摘要（0020）
+
+新增topic_summary，声明55表。kb_id/dossier_id复合FK绑定同库不可变主题草稿，冻结输入hash、输出payload/hash、模型selector、创建者与时间；服务仅SELECT/INSERT，不可改写/删除。
+审核沿用追加式semantic_review，subject_key为topic-summary/摘要ID，subject_hash绑定摘要payload_hash，revision作CAS，独立于关系裁决，不影响正式release。
+摘要正文只在当前主题证据hash匹配时显示，旧来源或裁决失效后正文/审核理由隐藏；认可仅为该草稿的人工裁决，不自动发布或提升为事实。
+baseline/0020/Prisma/98锁步，新旧库重复演练；生产通过db-init审核迁移。

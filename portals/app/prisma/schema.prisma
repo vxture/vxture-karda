@@ -1048,3 +1048,18 @@ model TopicDossier {
   @@map("topic_dossier")
   @@schema("karda_kb")
 }
+
+model TopicSummary {
+  id String @id @db.Uuid
+  kbId String @map("kb_id") @db.Uuid
+  dossierId String @map("dossier_id") @db.Uuid
+  inputHash String @map("input_hash") @db.VarChar(64)
+  payloadHash String @map("payload_hash") @db.VarChar(64)
+  payload Json
+  selection Json
+  createdBy String @map("created_by") @db.VarChar(128)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  @@unique([kbId,id])
+  @@map("topic_summary")
+  @@schema("karda_kb")
+}

@@ -298,3 +298,8 @@ REVOKE UPDATE, DELETE ON karda_kb.document_text_snapshot FROM karda_svc;
 GRANT SELECT, INSERT ON karda_kb.topic_dossier TO karda_svc;
 REVOKE UPDATE, DELETE ON karda_kb.topic_dossier FROM karda_svc;
 -- END TOPIC DOSSIER LOCKS
+
+-- BEGIN TOPIC SUMMARY LOCKS
+GRANT SELECT, INSERT ON karda_kb.topic_summary TO karda_svc;
+REVOKE UPDATE, DELETE ON karda_kb.topic_summary FROM karda_svc;
+-- END TOPIC SUMMARY LOCKS
