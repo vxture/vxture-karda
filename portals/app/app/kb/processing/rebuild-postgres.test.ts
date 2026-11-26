@@ -10,7 +10,7 @@ test("shadow rebuild: durable claims, atomic multi-document activation, exact ba
   const url=new URL(endpoint!);assert.ok(["localhost","127.0.0.1","[::1]"].includes(url.hostname));assert.equal(url.pathname,"/karda_p3_test");
   const admin=new Pool({connectionString:url.toString()});url.username="karda_svc";const service=new Pool({connectionString:url.toString(),max:3});
   const ws=randomUUID(),kb=randomUUID(),sub="usr_"+randomUUID(),docs=[randomUUID(),randomUUID()],oldIds=[randomUUID(),randomUUID()],id=randomUUID();
-  const who={workspaceId:ws,sub,roles:[],productCode:"karda"},raw=Buffer.from("Source text for controlled rebuild."),hash=sourceHash(raw),objects={get:async()=>raw};let member:string|undefined;
+  const who={workspaceId:ws,sub,roles:[],productCode:"karda"},raws=docs.map((_,i)=>Buffer.from("Source text for controlled rebuild "+i+".")),hashes=raws.map(sourceHash),objects={get:async(ref:string)=>raws[Number(ref)]??null};let member:string|undefined;
   const store=new PostgresRebuild(service,objects,async()=>true);
   const command={action:"create" as const,id,kbId:kb,documentIds:docs,params:{targetTokens:32,maxTokens:64,overlap:0 as const},note:"Rebuild index"};
   const current=async()=>(await admin.query("SELECT c.id,c.document_id,c.version,c.text,e.vector FROM karda_kb.chunk c JOIN karda_kb.chunk_embedding e ON e.chunk_id=c.id WHERE c.document_id=ANY($1::uuid[]) ORDER BY c.document_id,c.ordinal",[docs])).rows;
@@ -20,7 +20,7 @@ test("shadow rebuild: durable claims, atomic multi-document activation, exact ba
     await admin.query("INSERT INTO local_authz.member_role(member_id,role_id) SELECT $1,id FROM local_authz.role WHERE role_code='member'",[member]);
     await admin.query("INSERT INTO karda_kb.knowledge_base(id,workspace_id,owner_type,owner_sub,name,embedding_model) VALUES($1,$2,'user',$3,'Rebuild','model-a')",[kb,ws,sub]);
     for(let i=0;i<docs.length;i++){
-      await admin.query("INSERT INTO karda_kb.document(id,kb_id,title,source,content_state,active_chunk_version,storage_ref,content_hash,mime,size_bytes) VALUES($1,$2,'Proof','upload','indexed',1,'synthetic',$3,'text/plain',$4)",[docs[i],kb,hash,raw.length]);
+      await admin.query("INSERT INTO karda_kb.document(id,kb_id,title,source,content_state,active_chunk_version,storage_ref,content_hash,mime,size_bytes) VALUES($1,$2,'Proof','upload','indexed',1,$5,$3,'text/plain',$4)",[docs[i],kb,hashes[i],raws[i].length,String(i)]);
       await admin.query("INSERT INTO karda_kb.chunk(id,document_id,version,ordinal,text,token_count,start_offset,end_offset,vector_ref) VALUES($1,$2,1,0,'Old chunk',2,0,9,'db:model-a')",[oldIds[i],docs[i]]);
       await admin.query("INSERT INTO karda_kb.chunk_embedding(chunk_id,model_code,dim,vector) VALUES($1,'model-a',2,'[1,0]')",[oldIds[i]]);
     }
@@ -37,7 +37,7 @@ test("shadow rebuild: durable claims, atomic multi-document activation, exact ba
     assert.deepEqual(await current(),baseline,"candidate construction never changes serving chunks");
     await admin.query("UPDATE karda_kb.document SET content_hash=$2 WHERE id=$1",[docs[1],"f".repeat(64)]);
     await assert.rejects(store.transition(who,transition("activate",0)),/rebuild_source_changed|rebuild_index_changed/);assert.deepEqual(await current(),baseline,"all documents checked before any replacement");
-    await admin.query("UPDATE karda_kb.document SET content_hash=$2 WHERE id=$1",[docs[1],hash]);
+    await admin.query("UPDATE karda_kb.document SET content_hash=$2 WHERE id=$1",[docs[1],hashes[1]]);
     const activation=transition("activate",0);await store.transition(who,activation);assert.equal((await store.transition(who,activation)).duplicate,true);
     const active=await current();assert.ok(active.every(r=>!oldIds.includes(r.id)&&r.version===1));
     await assert.rejects(store.transition(who,transition("revert",0)),/rebuild_conflict/);
