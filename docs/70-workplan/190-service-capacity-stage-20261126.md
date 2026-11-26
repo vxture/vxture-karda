@@ -27,13 +27,6 @@ pnpm exec tsx ../../scripts/knowledge/benchmark-service-capacity.ts <新的报�
 
 | 场景 | 接口 | 并发 | 基线P95 ms | 索引后P95 ms |
 | --- | --- | --- | ---: | ---: |
-
-
-## 4. 验收与剩余
-
-开发仅2项隔离入口/分位统计定向和类型；实际服务角色容量集中执行，完整回归由阶段CI一次承担，无本地重复全量。CI现有正式发布/loader/来源撤回/裁决变化/损坏拒绝继续覆盖。
-
-固定17项仍7完成/10未完成：进行中K0b、K1b-P5、K2a、K2b、K3b、K5；待门槛K4a、K4b、K6a、K6b。本阶段证明指定合成负载下的实现与延迟，真实资料/系统端到端/业务质量仍需后续验收。
 | one-library-100 | directory | 1 | 47.7 | 48.1 |
 | one-library-100 | directory | 4 | 127.5 | 113.3 |
 | one-library-100 | facts | 1 | 48.4 | 46.9 |
@@ -47,6 +40,12 @@ pnpm exec tsx ../../scripts/knowledge/benchmark-service-capacity.ts <新的报�
 | twelve-libraries-4800 | facts | 1 | 6433.0 | 782.3 |
 | twelve-libraries-4800 | facts | 4 | 6735.8 | 9992.7 |
 
+
+## 4. 验收与剩余
+
+开发仅2项隔离入口/分位统计定向和类型；实际服务角色容量集中执行，完整回归由阶段CI一次承担，无本地重复全量。CI现有正式发布/loader/来源撤回/裁决变化/损坏拒绝继续覆盖。
+
+固定17项仍7完成/10未完成：进行中K0b、K1b-P5、K2a、K2b、K3b、K5；待门槛K4a、K4b、K6a、K6b。本阶段证明指定合成负载下的实现与延迟，真实资料/系统端到端/业务质量仍需后续验收。
 
 4800关系目录均完整覆盖、无重复；来源撤回拒绝旧游标、后续读取移除证据、挂载减少后可用关系计数4000。1000条单发布拒绝publication_payload_limit，两轮均通过。
 
