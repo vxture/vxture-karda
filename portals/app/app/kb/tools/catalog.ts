@@ -25,6 +25,11 @@ export const PROTOCOL_VERSION = "1.0.0";
 
 export const TOOLS: ToolDescriptor[] = [
   {
+    name:"karda.topic_knowledge",
+    summary:"Discover current relation topics, then read an evidence compilation and separately human-accepted cited summary. Same current authority, consumer-product attachment, source and latest-review checks as knowledge packages. action=list or read with relation_type; optional summary_id selects an accepted current summary, before pages accepted summaries. Empty results never expose pending/stale summary identities. No model call, approval or writes. Discard old content on errors; revalidate before reuse.",
+    mode:"obo_only",metering:{kind:"none"},input:["kb_id","action","relation_type","summary_id","before"],authz:{asset_types:["knowledge_base"]},
+  },
+  {
     name:"karda.published_search",
     summary:"Lexical search of currently authorized reviewed published relations, entity labels, assertions and exact supporting evidence across up to20 explicit attached user libraries. Returns ranked relation IDs with a bounded knowledge package. Optional page_cursor (empty starts) enables current-authority pagination; retain query, top_k, types and library scope. Replace each page; discard on error and restart on409. Each page request is metered. Excludes drafts/inference/stale sources before ranking. Scores are local ordering only, not confidence. No graph expansion, model answer or service-mode access.",
     mode:"obo_only",metering:{kind:"per_call",metric:"karda.search"},

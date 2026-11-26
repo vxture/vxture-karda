@@ -12,7 +12,7 @@ import { callerFromClaims, rejectsInternalAuthHeader, type S2sClaims } from "./s
 
 // --- catalog -----------------------------------------------------------------
 
-test("the tool surface is exactly these sixteen karda.* tools", () => {
+test("the tool surface is exactly these seventeen karda.* tools", () => {
   // The descriptor list IS the published contract (/.well-known/vxture-tools),
   // so adding to it has to be a deliberate act rather than a side effect. This
   // test is the thing that makes it one.
@@ -30,6 +30,7 @@ test("the tool surface is exactly these sixteen karda.* tools", () => {
       "karda.get_evidence",
       "karda.knowledge_package",
     "karda.knowledge_sync",
+    "karda.topic_knowledge",
     "karda.published_search",
       "karda.list_kbs",
       "karda.search",
@@ -88,6 +89,7 @@ test("writes and the initial published package adapter require OBO", () => {
     "karda.knowledge_sync",
     "karda.published_search",
     "karda.source_search",
+    "karda.topic_knowledge",
     "karda.write_document",
   ]);
   assert.equal(toolByName("karda.search")!.mode, "obo_or_service");

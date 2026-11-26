@@ -33,6 +33,7 @@ import { createKb, attachKb, detachKb } from "../attachments/tools";
 import {knowledgePackageTool} from "../semantic/package-tool";
 import {knowledgeSyncTool} from "../semantic/sync-tool";
 import {publishedSearchTool} from "../semantic/published-search-tool";
+import {topicKnowledgeTool} from "../semantic/topic-knowledge-tool";
 import {sourceSearchTool} from "../retrieval/source-search-tool";
 
 export function buildToolBackends(): ToolBackends {
@@ -42,6 +43,7 @@ export function buildToolBackends(): ToolBackends {
   const runtime = getProcessingRuntime();
   const generation = getGenerationClient();
   return {
+    topicKnowledge:topicKnowledgeTool,
     publishedSearch:publishedSearchTool,
     knowledgeSync:knowledgeSyncTool,
     sourceSearch:sourceSearchTool,
