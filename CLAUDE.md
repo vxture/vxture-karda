@@ -1,5 +1,18 @@
 # vxture-karda Repository Standards
 
+Latest production 2026-11-27: v0.12.41 / 93915e20, deploy45862976272
+succeeded at2026-11-26T17:01:07Z (01:01:07 Asia/Shanghai). PR383 adds durable
+consumer windows, explicit acknowledgement CAS and revision metadata replay.
+Migration0034 run45862443931 succeeded;62tables. PR CI45861782800:1138pass/
+zero skips/scan45861782742; main CI45862326777/scan45862326778passed.
+Health/ready and anonymous subscriptions GET/POST/package401. No local full suite.
+GitHub Release v0.12.41 holds final evidence; local deployment430/checklist/memory
+closeout changes ride NEXT functional PR, no docs-only full-main rerun.
+Ontos is explicitly undeveloped/deferred; avoid visible command windows.
+Next independent software: actual controlled rebuild/pilot tooling; current
+api/pipeline/rebuild still returns DEMO_REBUILD and has no real job trigger.
+S5 pull/checkpoint subitem only; external push/Agent and S4 authority remain pending.
+
 ## Current owner scope - 2026-11-25
 
 Owner explicitly authorized completing the reconstruction and production release

@@ -349,3 +349,6 @@ baseline/0020/Prisma/98锁步，新旧库重复演练；生产通过db-init审�
 2026-11-27 0033新增compile_profile_version和compile_profile_activation（60表），同库schemaId/version唯一及配置id同库复合引用；定义/稳定hash和创建人时间不可变，启用按kb/revision追加、kb/event_id幂等。98只SELECT/INSERT，baseline/Prisma/旧41表夹具锁步。配置启用影响新任务，既有task与发布继续固定原语义；正式读取核验release/compile/schema表链，不跟随启用指针。见170§63。
 
 2026-11-27 0034新增knowledge_subscription及knowledge_subscription_event（62表）。固定workspace/user/product/window/request_hash；只更新启用状态/序号/确认位置/最后revision和时间，修订观测事件追加且无正文。baseline/Prisma/98/旧库升级夹具锁步，见170§64。
+
+
+2026-11-27 0035新增index_rebuild/index_rebuild_item/index_rebuild_event（65表）。计划固定创建人/库/参数/模型/请求hash与说明；item复合PK(run_id,document_id)，不可变来源版本/hash与baseline，状态/3次尝试/租约/候选/hash可更新；event复合PK(run_id,revision)、同run/event_id唯一，追加式不可修改。item不外键关联资料，删除资料后只能浏览历史元数据，不能继续切换。98按列最小授权，baseline/增量/Prisma/旧41表重放锁步，见170§65。

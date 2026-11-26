@@ -1065,3 +1065,22 @@ ack要求subscription id/sequence/revision/expectedAck，当前窗口重核验�
 真实Agent接入和外部主动推送/重试投递仍未完成；本批先交付不依赖外部平台的拉取/确认/恢复软件能力，不提前关闭S5整体或主验收。
 
 后台无界面集中Playwright合成流程通过：建立窗口→当前拉取→勾选后确认→确认清空旧正文→从头修订记录→409清空→取消及390px布局。协议/工具目录定向20项通过（新增工具排序预期修正），类型检查只修测试替身返回形状；真实数据库确认CAS/撤挂载/隔离/恢复留阶段CI。无可见终端/浏览器交互，无本地全量或性能专项。
+
+
+## 65. 真实受控索引重建（2026-11-27）
+
+本批将 /pipeline/rebuild 的 DEMO_REBUILD 和禁用触发替换为持久计划、实际 Atlas 向量构建、候选对照、显式整批切换和原索引回退。仅重建分块/向量，不切换来源版本、不改来源正文、不重做事实裁决和知识发布，不冒充整库知识回滚或 Ontos 引擎。来源内容和原件 hash 必须当前核验；无后台排队/自动模型重试。
+
+RP GET/POST /api/pipeline/rebuild，当前平台准入、product.enter/data.read/data.write、同空间当前 user 库所有者；创建人与库双重隔离。执行 claim/settle 附 ai.use，模型调用离开数据库事务，使用共享 AtlasEmbedClient、平台 tenant/workspace 与 karda:rebuild:<run>:<document> 稳定任务归因；不增加本地模型/平台配置。未配置/配额/提供方错误保存安全代码，无隐式重试或切换模型；Atlas 真实质量/用量另验。
+
+create 固定 1–10 个显式资料 ID、chunk target32–2048/max<=4096/overlap0、库 embedding_model、来源版本/contentHash/textHash、旧 chunk/vector 全部恢复字段与稳定指纹。每份原件<=8MiB、每份旧/候选<=1000块与16MiB JSON，每批旧/候选各<=32MiB；超预算失败不动服务索引。不接受 processing_task queued/running 或非 indexed 来源。不可变 baseline 不返回前端；浏览只给分块数、来源版本、模型、状态/尝试/租约/安全错误与处置历史。
+
+0035 新增 index_rebuild/item/event 三表，62→65；baseline/Prisma/98/旧41表升级夹具锁步。服务仅更新运行状态/修订及 item 输出/租约列，不可更新计划、来源锚点、baseline，事件 SELECT/INSERT、无 UPDATE/DELETE。document_id 无外键：删除来源后仍保留计划元数据，但所有执行/切换/回退须当前同库来源存在并核验；库删除依既有 FK 级联清理。这不是永久不可删除归档。没有后台保留期清理，持久快照占用与计划数量随使用增长，清理策略后续单列。
+
+计划 planned→active→reverted 或 planned→cancelled；创建幂等 request_hash，处置 eventId 幂等与 expectedRevision CAS。每份 planned/failed/过期 running 可显式执行，总<=3次，3分钟租约，ready/live running 不重复调用；迟到结果以租约 ID/到期时间及 run state 拒绝。取消后在途调用可能已经计费，但无法提交候选。角色锁→库语义锁→成员/库→运行/来源行固定顺序，事务前当前准入与事务内当前角色/拥有权复核。
+
+候选持久化不改变现用 chunk。activate 先在同一事务核验全批 ready、全部 baseline/candidate 指纹、当前原件/来源版本/文本、模型配置及现用索引仍等于 baseline，再整批 DELETE/INSERT 原子替换相同来源版本下的 chunk/vector。revert 同样先核验全批现用仍等于 candidate，再恢复原 chunk ID/text/ordinal/范围/vector_ref/embedding；保留 source active_chunk_version/content_state，chunk创建时间重新产生。不提供强制覆盖：任一来源、模型或并发索引变化即409，事务回滚全批。撤权拒绝浏览/执行/切换，不将旧计划当权限凭证。
+
+页面提供当前库选择/资产入口、显式文档ID、分块参数和必填原因保存计划，20条计划分页、逐份执行与到期重试、刷新/详情、真实已就绪份数、旧新分块数/模型/来源版本对照、勾选后批量启用/恢复/取消及历史。新操作清空旧结果和确认，异常清空，未知网络结果保留同一命令供幂等重试。无伪进度/自动切换/假定回退倒计时，不打开可见窗口。
+
+开发阶段仅4项协议/向量/执行/DDL定向与一次类型检查；阶段CI集中验证真实数据库多资料原子切换/回退、租约恢复与迟到拒绝、来源/模型/索引并发冲突、当前权限/不可变授权及新旧迁移。集中页面验收使用无界面Playwright合成响应，不调用真实模型或操作客户资料。完整试点结果对照与业务切换工具、S3 Ontos/S4正式库权威/S5外部推送仍独立未完成；17项主验收维持7完成/6进行中/4待门槛。

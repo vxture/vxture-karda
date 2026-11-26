@@ -8,8 +8,7 @@ export async function generateMetadata() {
   return pageTitle(shell.subRebuild);
 }
 
-// 加工管道 · 受控重建 (design canvas V2 third row). Demo overlay via
-// GET /api/pipeline/rebuild until the 110-processing pipeline lands.
+// Controlled index rebuild uses durable plans and explicit activation.
 export default function PipelineRebuildPage() {
   return <RebuildClient />;
 }
