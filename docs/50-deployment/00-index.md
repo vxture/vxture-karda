@@ -55,3 +55,5 @@ exercised (live since v0.1.0); the beta tier stays a reserved channel (TD-001).
 | `290-source-readiness-release-20261126.md` | v0.12.27 current source diagnostics and production evidence |
 
 | `300-source-window-release-20261126.md` | v0.12.28 current source-batch navigation and production evidence |
+
+| `310-scoped-compile-release-20261126.md` | v0.12.29 explicit compilation source scopes and production evidence |
