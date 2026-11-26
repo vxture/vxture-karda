@@ -22,6 +22,18 @@ functions separately from external/business acceptance gates. Keep necessary
 permission, data-integrity and stage CI checks. Do not invent functionality to
 keep releasing small increments, or call a test/report a product feature.
 
+## Owner software scope correction - 2026-11-26
+
+The deliverable is complete knowledge-platform SOFTWARE, not building a customer
+knowledge corpus. Prioritize usable platform module workflows, configuration and
+operations over source-format minutiae, sample content and quality reports.
+Do not keep expanding OCR as the main development track. Bundle related product
+code and design/checklist updates in the same functional stage. During development
+use only necessary focused checks; full regression belongs at the stage boundary.
+Avoid separate docs-only release PRs that trigger another main full run; carry
+final release evidence in the next functional stage or GitHub release record.
+Never skip required PR/main checks or claim external business acceptance.
+
 ## Owner delivery cadence - 2026-11-25
 
 Owner requests larger functional stages and fewer repeated tests. Develop related

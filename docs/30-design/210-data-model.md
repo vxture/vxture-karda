@@ -341,3 +341,6 @@ baseline/0020/Prisma/98锁步，新旧库重复演练；生产通过db-init审�
 
 
 2026-11-26 0031新增document_ocr_draft（57表）：id、kb_id、document_id、content_hash、base_version、model_code、created_by、state、payload/payload_hash、error_code、committed_version、created_at。来源锚点与创建人不可更新，不授DELETE；98仅授权状态/输出/回执列。先持久运行声明、模型输出草稿、人工确认事务原子创建document_text_snapshot/无向量chunk并切换activeVersion，重复确认回同版本。来源快照CHECK接受atlas-ocr-v1，0030加向前保护；baseline/增量/Prisma/98锁步。见170§60。
+
+
+2026-11-26 0032新增maintenance_task_event（58表），task_id/revision复合主键，workspace_id/event_id唯一，kb_id关联现有库。fingerprint/payload/created_by/created_at保存不可变命令及当次处置状态；98只SELECT/INSERT，无UPDATE/DELETE。事务当前授权/拥有权+CAS追加，不修改知识事实和审核状态。baseline/Prisma/旧41表升级夹具锁步，见170§61。

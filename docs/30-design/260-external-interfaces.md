@@ -411,3 +411,6 @@ GET /api/kb/{id}/semantic?view=sources，RP人类审核面，只接受唯一view
 
 
 OCR草稿（170§60）：RP GET/POST `/api/kb/[id]/ocr-drafts`，当前同空间user库所有者且product.enter/data.read/data.write/ai.use。GET document_id及互斥draft_id/before，20条元数据分页/单详情；POST同源JSON create(action/id/documentId/modelCode)、confirm/reject(action/id/documentId)，拒绝额外正文/身份字段。只通过Atlas `/v1/parse` task=ocr显式模型路由，平台tenant/workspace/stable taskId归因；新调用显式计费，失败不自动重试。模型草稿与来源确认、事实裁决严格分开，当前原件/权限/版本CAS后才写新快照和无向量chunks；无新增OBO工具或平台配置。
+
+
+知识维护任务（170§61）：RP GET/POST `/api/knowledge-operations`，当前工作空间内当前user库所有者且product.enter/data.read/data.write。GET kbId/state/priority/overdue及before收窄、每页50条；taskId详情及historyBefore（20条历史）与列表过滤互斥。POST同源JSON create/update严格白名单，事件幂等/修订CAS、必填人工说明、终态重开；没有知识认可或自动发布副作用，无OBO/外部通知。历史与列表逐次复核当前角色/拥有权，不成为旧授权凭据。

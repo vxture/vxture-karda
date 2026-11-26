@@ -39,6 +39,7 @@ export function MaintenanceClient({kbId}:{kbId:string}){
     <p className="text-body-sm text-muted-foreground">{m.maintenanceHint}</p>
     <div className="flex flex-wrap gap-sm">
       <Button variant="outline" disabled={busy} onClick={()=>void load()}>{m.refresh}</Button>
+      <Button variant="outline" asChild><Link href={`/pipeline/operations?kbId=${kbId}`}>{m.operationsQueue}</Link></Button>
       {report&&<Button variant="outline" asChild><a href={`/api/kb/${kbId}/semantic?view=maintenance&format=json`}>{m.impactExport}</a></Button>}
       {report&&(["audit","audit-markdown"] as const).map(format=><Button key={format} variant="outline" asChild><a href={`/api/kb/${kbId}/semantic?view=maintenance&format=${format}`}>{format==="audit"?m.auditJson:m.auditMarkdown}</a></Button>)}
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/history`}>{m.historyTitle}</Link></Button>
@@ -64,6 +65,7 @@ export function MaintenanceClient({kbId}:{kbId:string}){
               onClick={()=>{setSelected(source.id);setPage(0);}}>{source.title}</Button>
             <p className="break-all font-mono text-code-sm">{source.id} / v{source.publishedVersion} &rarr; v{source.currentVersion??"?"}</p>
             <p>{m.maintenanceAffected}: {source.relationIds.length}</p>
+            <Link className="underline" href={`/pipeline/operations?kbId=${kbId}&targetType=document&targetId=${source.id}`}>{m.operationsTask}</Link>
             <ul>{source.issues.map(issue=><li key={issue}>{m[issue]}</li>)}</ul>
           </CardContent>
         </Card>)}</div>
@@ -79,6 +81,7 @@ export function MaintenanceClient({kbId}:{kbId:string}){
         {rows.slice(page*50,(page+1)*50).map(row=><Card key={row.id}>
           <CardContent className="flex min-w-0 flex-col gap-sm p-md">
             <p className="break-all font-mono text-code-sm">{row.id}</p>
+            <Link className="underline" href={`/pipeline/operations?kbId=${kbId}&targetType=relation&targetId=${row.id}`}>{m.operationsTask}</Link>
             <p className="break-all">{row.sourceId} &rarr; {row.type} &rarr; {row.targetId}</p>
             <p className="text-body-sm">{row.depth===0?m.impactDirect:m.impactRelated} / {row.depth}</p>
             <ul className="text-body-sm">{row.actions.map(action=><li key={action}>{m[action]}</li>)}</ul>
