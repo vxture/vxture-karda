@@ -34,7 +34,7 @@ RUN apk add --no-cache python3 py3-pip && python3 -m venv /opt/karda-source-pyth
 COPY scripts/knowledge/requirements.txt /tmp/source-requirements.txt
 RUN /opt/karda-source-python/bin/pip install --no-cache-dir --require-hashes --only-binary=:all: -r /tmp/source-requirements.txt
 ENV KARDA_KNOWLEDGE_PYTHON=/opt/karda-source-python/bin/python
-COPY scripts/knowledge/normalize-source.py scripts/knowledge/extract-pdf.py scripts/knowledge/extract-docx.py scripts/knowledge/extract-docx-stories.py scripts/knowledge/extract-docx-grid.py scripts/knowledge/extract-xlsx.py scripts/knowledge/extract-xlsx-ranges.py scripts/knowledge/extract-pptx.py scripts/knowledge/extract-pptx-grid.py scripts/knowledge/extract-pptx-stories.py /app/source-tools/
+COPY scripts/knowledge/normalize-source.py scripts/knowledge/extract-pdf.py scripts/knowledge/extract-docx.py scripts/knowledge/extract-docx-stories.py scripts/knowledge/extract-docx-grid.py scripts/knowledge/extract-docx-numbering.py scripts/knowledge/extract-xlsx.py scripts/knowledge/extract-xlsx-ranges.py scripts/knowledge/extract-pptx.py scripts/knowledge/extract-pptx-grid.py scripts/knowledge/extract-pptx-stories.py /app/source-tools/
 # Build provenance (025 section 4.1): honest ARG defaults so an un-injected build
 # still reports truthfully (dev/unknown), never a fabricated version. Read at
 # RUNTIME by the liveness route - server-side env, NOT NEXT_PUBLIC (stays out of

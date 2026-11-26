@@ -62,7 +62,7 @@ test("DOCX table snapshots preserve body/cell order and UTF-16 while refusing am
   const make=(body:string)=>execFileSync(python,["-I","-c",'import io,sys,zipfile; b=io.BytesIO(); z=zipfile.ZipFile(b,"w"); z.writestr("word/document.xml",sys.stdin.buffer.read()); z.close(); sys.stdout.buffer.write(b.getvalue())'],
     {input:Buffer.from(`<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}</w:body></w:document>`),timeout:10000,windowsHide:true});
   const bytes=make(p("Before")+table+p("After")),snapshot=await normalizeSource(DOCX_MIME,bytes);
-  assert.equal(snapshot.parserVersion,"docx-cell-grid-v4");
+  assert.equal(snapshot.parserVersion,"docx-numbered-stories-v5");
   assert.ok(snapshot.text.startsWith("Before\n\nTable 1 grid"));assert.ok(snapshot.text.endsWith("\n\nAfter"));
   assert.deepEqual(snapshot.locators.map(l=>snapshot.text.slice(l.start,l.end)),["Before",'Table 1 grid rows=2 columns=2','Table 1 R1C1 rows=1 columns=1: "Name"','Table 1 R1C2 rows=1 columns=1: "Value"','Table 1 R2C1 rows=1 columns=1: "\u4e2d\ud83d\ude00"','Table 1 R2C2 rows=1 columns=1: ""',"After"]);
   assert.equal(verifiedSourceText({activeVersion:1,contentState:"indexed",contentHash:sourceHash(bytes),mime:DOCX_MIME,normalized:snapshot},bytes),snapshot.text);
@@ -79,13 +79,13 @@ test("standalone image finds pinned extractors after Next changes the runtime wo
   const cwd=process.cwd(),folder=await mkdtemp(join(tmpdir(),"karda-runtime-layout-"));
   try{
     await mkdir(join(folder,"source-tools"));await mkdir(join(folder,"portals/app"),{recursive:true});
-    for(const name of ["normalize-source.py","extract-docx.py","extract-docx-stories.py","extract-xlsx.py","extract-pptx.py",...SOURCE_FORMATS.map(f=>f.script)])
+    for(const name of ["normalize-source.py","extract-docx.py","extract-docx-stories.py","extract-docx-grid.py","extract-xlsx.py","extract-pptx.py",...SOURCE_FORMATS.map(f=>f.script)])
       await copyFile(resolve(cwd,"../../scripts/knowledge",name),join(folder,"source-tools",name));
     process.chdir(join(folder,"portals/app"));
     assert.equal((await normalizeSource(PDF_MIME,syntheticPdf(["Runtime proof"]))).text,"Runtime proof");
     assert.equal((await normalizeSource(XLSX_MIME,syntheticXlsx())).parserVersion,"xlsx-cell-ranges-v2");
     assert.equal((await normalizeSource(PPTX_MIME,syntheticPptx())).parserVersion,"pptx-authored-stories-v3");
-    assert.equal((await normalizeSource(DOCX_MIME,syntheticDocxStories())).parserVersion,"docx-cell-grid-v4");
+    assert.equal((await normalizeSource(DOCX_MIME,syntheticDocxStories())).parserVersion,"docx-numbered-stories-v5");
   }finally{process.chdir(cwd);await rm(folder,{recursive:true,force:true});}
 });
 
