@@ -314,3 +314,8 @@ REVOKE UPDATE, DELETE ON karda_kb.document_ocr_draft FROM karda_svc;
 GRANT SELECT, INSERT ON karda_kb.document_ocr_draft TO karda_svc;
 GRANT UPDATE (state,payload,payload_hash,error_code,committed_version) ON karda_kb.document_ocr_draft TO karda_svc;
 -- END DOCUMENT OCR LOCKS
+
+-- BEGIN MAINTENANCE TASK LOCKS
+REVOKE UPDATE, DELETE ON karda_kb.maintenance_task_event FROM karda_svc;
+GRANT SELECT, INSERT ON karda_kb.maintenance_task_event TO karda_svc;
+-- END MAINTENANCE TASK LOCKS

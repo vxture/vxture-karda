@@ -8,6 +8,7 @@ import type { Catalog, MessageFn } from "../catalog";
 // they are translated here rather than in nav.ts itself - keeping nav.ts a pure
 // structure declaration means it stays readable as an IA document.
 export const shell = {
+  subOperations:{"zh-CN": "\u77e5\u8bc6\u7ef4\u62a4\u4efb\u52a1", "en-US": "Knowledge maintenance tasks"},
   // --- domains ---------------------------------------------------------------
   gateTitle: { "zh-CN": "访问验证", "en-US": "Access check" },
   navGroupOverview: { "zh-CN": "概览", "en-US": "Overview" },

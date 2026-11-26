@@ -1,6 +1,8 @@
 import type { Catalog } from "../catalog";
 
 export const semantic = {
+  operationsTask:{"zh-CN": "\u5efa\u7acb\u5904\u7f6e\u4efb\u52a1", "en-US": "Create remediation task"},
+  operationsQueue:{"zh-CN": "\u7ef4\u62a4\u4efb\u52a1\u4e2d\u5fc3", "en-US": "Maintenance task center"},
   ocrWorkbench:{"zh-CN": "\u626b\u63cf PDF \u8bc6\u522b", "en-US": "Scanned PDF recognition"},
   title:{"zh-CN":"\u5173\u7cfb\u5ba1\u6838\u5de5\u4f5c\u53f0","en-US":"Relation review"},
   description:{"zh-CN":"\u9010\u6761\u68c0\u67e5\u5019\u9009\u5173\u7cfb\u548c\u652f\u6301\u8bc1\u636e\uff0c\u9884\u89c8\u540e\u786e\u8ba4\u53d1\u5e03\u3002","en-US":"Check candidate relations and support, then preview and confirm publication."},

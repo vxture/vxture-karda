@@ -93,6 +93,7 @@ export const NAV_ITEMS = [
       { key: "flow", href: "/pipeline", labelKey: "subFlow" },
       { key: "tasks", href: "/pipeline/tasks", labelKey: "subTasks" },
       { key: "rebuild", href: "/pipeline/rebuild", labelKey: "subRebuild" },
+      { key: "operations", href: "/pipeline/operations", labelKey: "subOperations" },
     ],
   },
   {
@@ -161,6 +162,7 @@ export const NAV_SECTIONS = [
       { key: "pipeline", href: "/pipeline", icon: "workflow", labelKey: "subFlow", subLabel: "Pipeline" },
       { key: "tasks", href: "/pipeline/tasks", icon: "rows", labelKey: "subTasks", subLabel: "Tasks" },
       { key: "rebuild", href: "/pipeline/rebuild", icon: "refresh", labelKey: "subRebuild", subLabel: "Rebuild" },
+      { key: "operations", href: "/pipeline/operations", icon: "list-checks", labelKey: "subOperations", subLabel: "Maintenance" },
     ],
   },
   {
