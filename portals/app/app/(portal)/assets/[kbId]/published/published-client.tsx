@@ -38,6 +38,7 @@ export function PublishedKnowledgeClient({kbId,initialEntity=""}:{kbId:string;in
   const label=(id:string)=>value?.nodes.find(n=>n.id===id)?.label??id;
   return <div className="flex min-w-0 flex-col gap-md" aria-busy={busy}>
     <PageHead title={m.knowledgeTitle}/>
+    <Button variant="outline" asChild><Link href="/knowledge-control">{m.rolloutTitle}</Link></Button>
     <Link href={`/assets/${kbId}/knowledge`}>{m.back}</Link>
     <div className="flex flex-wrap gap-sm"><Button variant="outline" asChild><Link href={`/assets/${kbId}/graph`}>{m.graphTitle}</Link></Button>
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/facts`}>{m.factSearchTitle}</Link></Button>

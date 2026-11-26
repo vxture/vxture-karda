@@ -85,6 +85,20 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     const publishedFacts=await factSearch("operator approval");assert.equal(publishedFacts.search?.items[0]?.relationId,first.relationId);
     assert.equal(publishedFacts.edges.length,1);assert.match(publishedFacts.passages[0].excerpt,/operator approval/);
     assert.equal((await factSearch("operator approval",["supports"])).edges.length,0);
+    const beforePause=await read(),reviewCount=(await admin.query("SELECT count(*) AS n FROM karda_kb.semantic_review WHERE kb_id=$1",[kb])).rows[0].n;
+    await admin.query("INSERT INTO karda_kb.knowledge_rollout_event(workspace_id,revision,event_id,enabled,reason,changed_by) VALUES($1,1,$2,false,'Synthetic isolated pause',$3)",[ws,randomUUID(),sub]);
+    await assert.rejects(read(),/knowledge_rollout_paused/);
+    await assert.rejects(sync(),/knowledge_rollout_paused/);
+    await assert.rejects(factSearch("operator approval"),/knowledge_rollout_paused/);
+    await assert.rejects(new PostgresTopicDossiers(service,objects,async()=>true).handle(identity,kb,{action:"list"}),/knowledge_rollout_paused/);
+    assert.equal((await store.sourceReadiness(identity,kb)).readable,1,"maintenance remains available while consumption is paused");
+    assert.equal((await store.auditHistory(identity,kb)).releases.length,1,"audit is still inspectable");
+    const pauseSource=await new PostgresSourceSearch(service,objects,async()=>true).read(identity,parseSourceSearch({kb_ids:[kb],query:"approval"}));
+    assert.ok(pauseSource.items.length,"source-only fallback remains available");
+    await admin.query("INSERT INTO karda_kb.knowledge_rollout_event(workspace_id,revision,event_id,enabled,reason,changed_by) VALUES($1,2,$2,true,'Synthetic isolated resume',$3)",[ws,randomUUID(),sub]);
+    assert.deepEqual(await read(),beforePause,"resume reads the same publication after current source and review checks");
+    assert.equal((await admin.query("SELECT count(*) AS n FROM karda_kb.semantic_review WHERE kb_id=$1",[kb])).rows[0].n,reviewCount,"human decisions survive pause/resume");
+
     const oldKnowledge=await read();assert.equal(oldKnowledge.edges[0].targetId,legacyStep);assert.match(oldKnowledge.passages[0].excerpt,/operator approval/);
     const topics=new PostgresTopicDossiers(service,objects,async()=>true),draftId=randomUUID();
     const draft=await topics.handle(identity,kb,{action:"compose",id:draftId,relationType:"requires"});
@@ -211,6 +225,7 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     await assert.rejects(factSearch("approval"),/semantic_read_denied/);
     await assert.rejects(store.sourceReadiness(identity,kb),/semantic_write_denied/);
   }finally{
+    await admin.query("DELETE FROM karda_kb.knowledge_rollout_event WHERE workspace_id=$1",[ws]);
     await admin.query("DELETE FROM karda_kb.topic_summary WHERE kb_id=$1",[kb]);
     await admin.query("DELETE FROM karda_kb.topic_dossier WHERE kb_id=$1",[kb]);
     for(const table of ["semantic_compile_task","semantic_event_receipt","semantic_release_head","semantic_release_review","semantic_relation_assertion",
