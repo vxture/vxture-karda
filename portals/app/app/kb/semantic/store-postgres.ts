@@ -4,7 +4,7 @@ import { permits, type ProductPermission } from "../../authz/policy";
 import { readProductAccess, type RoleSql } from "../../authz/store";
 import type { ObjectStore } from "../storage/objectstore";
 import { preparePublication, type PublicationCommand, type PublicationReceipt } from "./publication";
-import { decodeSemanticRelease, semanticDefinitionKey, type SemanticReleasePayload } from "./release-format";
+import { decodeSemanticRelease, decodePreparedSemanticRelease, semanticDefinitionKey, type SemanticReleasePayload } from "./release-format";
 import type { PublishedRelationInput, SemanticReadIdentity } from "./read-postgres";
 import { matchesSourceSpan, verifiedSourceText, MAX_SEMANTIC_SOURCE_BYTES, MAX_SEMANTIC_TEXT_CHARS } from "./source-text";
 import { projectNeighborhood } from "./projection";
@@ -60,6 +60,9 @@ interface ReviewRow { id: string; subject_key: string; subject_hash: string; rev
 async function compiled(db: PoolClient, kbId: string, runId: string): Promise<{ row: CompileRow; input: PublishedRelationInput }> {
   const row = (await db.query<CompileRow>(`SELECT id,kb_id,schema_version_id,candidates,source_manifest,input_hash,config_hash,status
     FROM karda_kb.semantic_compile_run WHERE kb_id=$1 AND id=$2`, [kbId, runId])).rows[0];
+  return checkedCompile(kbId,row);
+}
+function checkedCompile(kbId:string,row:CompileRow|undefined):{row:CompileRow;input:PublishedRelationInput}{
   if (!row || row.status !== "validated") throw new Error("semantic_compile_unavailable");
   const input = decode(kbId, row.candidates);
   if (semanticValueHash(input.sources) !== row.input_hash || semanticValueHash(row.source_manifest) !== row.input_hash)
@@ -752,24 +755,44 @@ export class PostgresFormalSemanticLoader {
       FROM karda_kb.semantic_release_head h JOIN karda_kb.semantic_release r
       ON r.kb_id=h.kb_id AND r.id=h.release_id AND r.generation=h.generation WHERE h.kb_id=ANY($1::uuid[]) ORDER BY h.kb_id`, releaseId?[kbIds,releaseId]:[kbIds])).rows;
     if(releaseId&&rows.length!==1)throw new Error("semantic_corrupt_release");
+    // Fetch each release's bounded authority tables together in the same snapshot.
+    // This removes per-library network round trips without caching any authority.
+    type Tables={kb_id:string;id:string;compile:CompileRow|null;definition:{definition_hash:string;definition:unknown}|null;
+      relations:{relation_id:string;type:string;source_id:string;target_id:string;origin:string}[];
+      supports:{relation_id:string;assertion_id:string}[];sources:{document_id:string;document_version:number;content_hash:string}[];
+      bound:ReviewRow[];latest:ReviewRow[]};
+    const tables=(await db.query<Tables>(`SELECT requested.kb_id,requested.id,
+      (SELECT to_jsonb(c) FROM karda_kb.semantic_compile_run c WHERE c.kb_id=requested.kb_id AND c.id=requested.compile_run_id) AS compile,
+      (SELECT jsonb_build_object('definition_hash',s.definition_hash,'definition',s.definition) FROM karda_kb.semantic_schema_version s
+        WHERE s.kb_id=requested.kb_id AND s.id=requested.schema_version_id) AS definition,
+      COALESCE((SELECT jsonb_agg(t ORDER BY relation_id) FROM (SELECT relation_id,type,source_id,target_id,origin
+        FROM karda_kb.semantic_relation WHERE kb_id=requested.kb_id AND release_id=requested.id ORDER BY relation_id LIMIT 5001) t),'[]'::jsonb) AS relations,
+      COALESCE((SELECT jsonb_agg(t ORDER BY relation_id,assertion_id) FROM (SELECT relation_id,assertion_id
+        FROM karda_kb.semantic_relation_assertion WHERE kb_id=requested.kb_id AND release_id=requested.id ORDER BY relation_id,assertion_id LIMIT 5001) t),'[]'::jsonb) AS supports,
+      COALESCE((SELECT jsonb_agg(t ORDER BY document_id) FROM (SELECT document_id,document_version,content_hash
+        FROM karda_kb.semantic_release_source WHERE kb_id=requested.kb_id AND release_id=requested.id ORDER BY document_id LIMIT 5001) t),'[]'::jsonb) AS sources,
+      COALESCE((SELECT jsonb_agg(t ORDER BY subject_key) FROM (SELECT v.id,v.subject_key,v.subject_hash,v.revision,v.decision
+        FROM karda_kb.semantic_release_review b JOIN karda_kb.semantic_review v ON v.kb_id=b.kb_id AND v.id=b.review_id
+        WHERE b.kb_id=requested.kb_id AND b.release_id=requested.id ORDER BY v.subject_key LIMIT 5001) t),'[]'::jsonb) AS bound,
+      COALESCE((SELECT jsonb_agg(t ORDER BY subject_key) FROM (SELECT DISTINCT ON (subject_key) id,subject_key,subject_hash,revision,decision
+        FROM karda_kb.semantic_review WHERE kb_id=requested.kb_id AND subject_key=ANY(
+          SELECT 'relation/'||relation_id FROM karda_kb.semantic_relation WHERE kb_id=requested.kb_id AND release_id=requested.id)
+        ORDER BY subject_key,revision DESC LIMIT 5001) t),'[]'::jsonb) AS latest
+      FROM jsonb_to_recordset($1::jsonb) AS requested(kb_id uuid,id uuid,compile_run_id uuid,schema_version_id uuid)`,
+      [JSON.stringify(rows.map(r=>({kb_id:r.kb_id,id:r.id,compile_run_id:r.compile_run_id,schema_version_id:r.schema_version_id})))])).rows;
+    const byRelease=new Map(tables.map(t=>[t.id,t]));
     for (const row of rows) {
-      const {command, fingerprint} = preparePublication(row.payload), input = decodeSemanticRelease(command);
+      const prepared=preparePublication(row.payload),{command,fingerprint}=prepared,input=decodePreparedSemanticRelease(prepared);
       if (fingerprint !== row.fingerprint || command.kbId !== row.kb_id || command.expectedGeneration + 1 !== row.generation ||
         (command.payload as {compileRunId: string}).compileRunId !== row.compile_run_id) throw new Error("semantic_corrupt_release");
-      const compile = await compiled(db, row.kb_id, row.compile_run_id);
-      const definition = (await db.query<{definition_hash: string; definition: unknown}>(`SELECT definition_hash,definition
-        FROM karda_kb.semantic_schema_version WHERE kb_id=$1 AND id=$2`, [row.kb_id, row.schema_version_id])).rows[0];
+      const table=byRelease.get(row.id);if(!table||table.kb_id!==row.kb_id)throw new Error("semantic_corrupt_release");
+      const compile=checkedCompile(row.kb_id,table.compile??undefined),definition=table.definition;
       if (compile.row.schema_version_id !== row.schema_version_id || !definition ||
         semanticValueHash(definition.definition) !== definition.definition_hash || definition.definition_hash !== command.schemaRevision ||
-        semanticValueHash({ ...compile.row.candidates, compileRunId: row.compile_run_id }) !== semanticValueHash(command.payload) ||
+        preparePublication({...command,payload:{...compile.row.candidates,compileRunId:row.compile_run_id}}).fingerprint!==fingerprint ||
         command.sourceRevision !== compile.row.input_hash) throw new Error("semantic_corrupt_release");
       if (semanticDefinitionKey(input) !== this.definition) throw new Error("semantic_release_schema_mismatch");
-      const relations = (await db.query<{relation_id: string; type: string; source_id: string; target_id: string; origin: string}>(`SELECT relation_id,type,source_id,target_id,origin
-        FROM karda_kb.semantic_relation WHERE kb_id=$1 AND release_id=$2 ORDER BY relation_id LIMIT 5001`, [row.kb_id, row.id])).rows;
-      const supports = (await db.query<{relation_id: string; assertion_id: string}>(`SELECT relation_id,assertion_id FROM karda_kb.semantic_relation_assertion
-        WHERE kb_id=$1 AND release_id=$2 ORDER BY relation_id,assertion_id LIMIT 5001`, [row.kb_id, row.id])).rows;
-      const sources = (await db.query<{document_id: string; document_version: number; content_hash: string}>(`SELECT document_id,document_version,content_hash
-        FROM karda_kb.semantic_release_source WHERE kb_id=$1 AND release_id=$2 ORDER BY document_id LIMIT 5001`, [row.kb_id, row.id])).rows;
+      const {relations,supports,sources}=table;
       const supportsByRelation=new Map<string,string[]>();
       for(const support of supports){const ids=supportsByRelation.get(support.relation_id)??[];ids.push(support.assertion_id);supportsByRelation.set(support.relation_id,ids);}
       const normalized = relations.map(r => ({id: r.relation_id, type: r.type, sourceId: r.source_id, targetId: r.target_id,
@@ -779,11 +802,10 @@ export class PostgresFormalSemanticLoader {
       if (supports.length > 5000 || semanticValueHash(normalized) !== semanticValueHash(expected) ||
         semanticValueHash(sources.map(s => ({ kbId: row.kb_id, documentId: s.document_id, version: s.document_version, contentHash: s.content_hash }))) !==
         semanticValueHash([...input.sources].sort((a,b) => a.documentId.localeCompare(b.documentId)))) throw new Error("semantic_corrupt_release");
-      const bound = (await db.query<ReviewRow>(`SELECT v.id,v.subject_key,v.subject_hash,v.revision,v.decision FROM karda_kb.semantic_release_review b
-        JOIN karda_kb.semantic_review v ON v.kb_id=b.kb_id AND v.id=b.review_id WHERE b.kb_id=$1 AND b.release_id=$2 ORDER BY v.subject_key`, [row.kb_id, row.id])).rows;
+      const bound=table.bound;
       acceptedReviews(input, bound);
       if (semanticValueHash(bound) !== command.reviewRevision) throw new Error("semantic_corrupt_release");
-      const latest = releaseId?bound:await latestReviews(db, row.kb_id, input);
+      const latest = releaseId?bound:table.latest;
       const boundBySubject=new Map(bound.map(review=>[review.subject_key,review]));
       const latestBySubject=new Map(latest.map(review=>[review.subject_key,review]));
       // acceptedReviews already verified every bound subject hash in this same snapshot.

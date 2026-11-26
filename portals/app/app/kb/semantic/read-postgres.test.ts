@@ -34,6 +34,7 @@ test("semantic native-text adapter: live roles, attachment/tenant scope, source 
       type: "requires", assertionIds: [assertion], origin: "asserted" }] };
   let platformAllowed = true, reads = 0, loadedKbIds: string[] = [], stored: Buffer | null = raw;
   let afterSnapshot: (() => Promise<void>) | undefined;
+  const phases:{name:string;ms:number}[]=[];
   const reader = new PostgresSemanticReader(service, { get: async () => { reads++; return stored; } },
     async () => platformAllowed, async (db, ids) => {
       loadedKbIds = ids;
@@ -41,7 +42,7 @@ test("semantic native-text adapter: live roles, attachment/tenant scope, source 
       assert.equal((await db.query("SHOW transaction_read_only")).rows[0].transaction_read_only, "on");
       if (afterSnapshot) { const effect = afterSnapshot; afterSnapshot = undefined; await effect(); }
       return published;
-    });
+    },(name,ms)=>{phases.push({name,ms});});
   const read = () => reader.read(identity, [kb, hiddenKb, otherKb], query);
   let member: string | undefined;
   try {
@@ -65,6 +66,10 @@ test("semantic native-text adapter: live roles, attachment/tenant scope, source 
       VALUES($1,$2,2,4,7,$3)`, [span, doc, "\u4e2d\ud83d\ude00"]);
     await admin.query(`INSERT INTO karda_kb.evidence(id,assertion_id,span_id,stance) VALUES($1,$2,$3,'supports')`, [evidence, assertion, span]);
     assert.equal((await read()).edges.length, 1, "as_of does not become validFrom");
+    assert.deepEqual(phases.map(p=>p.name),["admission","pool","authority","published","records","sources","projection","enrichment"]);
+    assert.ok(phases.every(p=>Number.isFinite(p.ms)&&p.ms>=0));
+    const observed=await new PostgresSemanticReader(service,{get:async()=>raw},async()=>true,async()=>published,()=>{throw Error("diagnostic_failure");}).readPackage(identity,[kb],query);
+    assert.equal(observed.edges.length,1);assert.equal(Object.hasOwn(observed,"phases"),false,"timings are not delivered knowledge");
     assert.deepEqual(loadedKbIds, [kb]);
     assert.equal(reads, 1, "hidden libraries never cause object reads");
     platformAllowed = false;

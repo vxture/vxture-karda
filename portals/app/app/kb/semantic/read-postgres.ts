@@ -30,6 +30,7 @@ export type KnowledgePackage = SemanticReadResult & {
   passages:{evidenceId:string;excerpt:string}[];
   gaps:string[];
 };
+export type SemanticReadPhase="admission"|"pool"|"authority"|"published"|"records"|"sources"|"projection"|"enrichment";
 interface AssertionRow {
   search_statement:string|null;
   statement_hash:string|null;
@@ -60,6 +61,7 @@ export class PostgresSemanticReader {
     private readonly objects: Pick<ObjectStore, "get">,
     private readonly admitPlatform: (identity: SemanticReadIdentity) => Promise<boolean>,
     private readonly loadPublished: (db: PoolClient, kbIds: string[]) => Promise<PublishedRelationInput>,
+    private readonly observePhase?: (phase:SemanticReadPhase,elapsedMs:number)=>void,
   ) {}
 
   async read(identity: SemanticReadIdentity, kbIds: string[], query: NeighborhoodQuery): Promise<SemanticReadResult> {
@@ -69,6 +71,8 @@ export class PostgresSemanticReader {
   }
 
   async readPackage(identity: SemanticReadIdentity, kbIds: string[], query: NeighborhoodQuery, directory=false,exporting=false,transaction?:PoolClient,search?:PublishedSearchQuery): Promise<KnowledgePackage> {
+    let phaseStart=performance.now();
+    const phase=(name:SemanticReadPhase)=>{const now=performance.now();try{this.observePhase?.(name,now-phaseStart);}catch{/* Diagnostics cannot alter admission or delivery. */}phaseStart=now;};
     // Capture caller-owned inputs before awaiting either authority or the pool.
     identity = { ...identity, roles: [...identity.roles] };
     kbIds = [...new Set(kbIds.map(id => id.toLowerCase()))];
@@ -78,7 +82,9 @@ export class PostgresSemanticReader {
     if (kbIds.length < 1 || kbIds.length > 50 || !kbIds.every(id => UUID.test(id)) ||
         !/^[a-z][a-z0-9_-]{0,31}$/.test(identity.productCode)) throw new Error("semantic_invalid_scope");
     if (await this.admitPlatform(identity) !== true) throw new Error("semantic_read_denied");
+    phase("admission");
     const db = transaction??await this.pool.connect();
+    phase("pool");
     try {
       if(!transaction)await db.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
       const sql: RoleSql = {
@@ -96,7 +102,9 @@ export class PostgresSemanticReader {
           AND k.owner_type='user' AND (k.owner_sub=$3 OR k.publish_state IN ('ws_published','org_published'))
           AND a.user_sub=$3 AND a.product_code=$4 ORDER BY k.id`,
         [kbIds, identity.workspaceId, identity.sub, identity.productCode])).rows.map(row => row.id);
+      phase("authority");
       const published = structuredClone(await this.loadPublished(db, [...visible]));
+      phase("published");
       validateOntology(published.schema);
       const visibleSet = new Set(visible);
       const relations = bounded(published.relations.filter(row => visibleSet.has(row.kbId)));
@@ -132,6 +140,7 @@ export class PostgresSemanticReader {
           AND d.content_state='indexed' ORDER BY e.id LIMIT 5001`,
         [visible, assertionIds])).rows);
       const snapshot: KnowledgeSnapshot = { entities, relations, assertions: [], evidence: [], sources: [] };
+      phase("records");
       const texts = new Map<string, string | null>();
       const normalizedSources=new Map<string,SourceSnapshot>();
       let incomplete = false;
@@ -184,12 +193,14 @@ export class PostgresSemanticReader {
         validFrom: null, supersededById: row.superseded_by, evidenceIds: evidenceIds.get(row.id) ?? [] }));
       const clock = await db.query<{ now: Date }>("SELECT statement_timestamp() AS now");
       const scope={visibleKbIds:visibleSet,now:clock.rows[0].now.toISOString()};
+      phase("sources");
       // Directory selects across the complete eligible snapshot after authority,
       // source and premise checks. Hidden/rejected rows cannot consume its budget.
       const result = search?projectPublishedSearch(snapshot,published.schema,scope,search,
         new Map(assertions.map(a=>[a.id,a.search_statement??""])),new Map(grounds.map(g=>[g.id,g.excerpt])),query.relationTypes,
         directoryFingerprint([identity.workspaceId,identity.sub,identity.productCode,[...kbIds].sort()])):directory?projectDirectory(snapshot,published.schema,scope,query):
         projectNeighborhood(snapshot, published.schema, scope, query);
+      phase("projection");
       // Enrich only the final eligible projection, in the same authorized snapshot.
       const ids=result.assertions.map(a=>a.id);
       const statements=ids.length?(await db.query<{id:string;statement:string}>(`SELECT id,statement FROM karda_kb.assertion
@@ -200,6 +211,7 @@ export class PostgresSemanticReader {
           ...(result.truncated?["neighborhood_truncated"]:[])] };
       if(search&&Buffer.byteLength(JSON.stringify(response))>2*1024*1024)throw new Error("published_search_budget");
       if(!transaction)await db.query("COMMIT");
+      phase("enrichment");
       return response;
     } catch (error) {
       if(!transaction)await db.query("ROLLBACK"); throw error;

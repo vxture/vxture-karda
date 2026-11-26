@@ -1,0 +1,88 @@
+{
+  "format": "karda.capacity-cpu-summary.v1",
+  "scope": "isolated_synthetic_with_profiler",
+  "totalSampledSeconds": 62.887529,
+  "selfTimeTop": [
+    {
+      "function": "(idle)",
+      "module": "",
+      "seconds": 25.765235
+    },
+    {
+      "function": "canonical",
+      "module": "publication.ts",
+      "seconds": 11.053198
+    },
+    {
+      "function": "",
+      "module": "publication.ts",
+      "seconds": 4.935241
+    },
+    {
+      "function": "preparePublication",
+      "module": "publication.ts",
+      "seconds": 3.808267
+    },
+    {
+      "function": "update",
+      "module": "hash",
+      "seconds": 2.710339
+    },
+    {
+      "function": "(garbage collector)",
+      "module": "",
+      "seconds": 1.63729
+    },
+    {
+      "function": "writev",
+      "module": "",
+      "seconds": 1.34022
+    },
+    {
+      "function": "parseRow",
+      "module": "result.js",
+      "seconds": 1.020649
+    },
+    {
+      "function": "",
+      "module": "",
+      "seconds": 0.885594
+    },
+    {
+      "function": "",
+      "module": "store-postgres.ts",
+      "seconds": 0.873791
+    },
+    {
+      "function": "structuredClone",
+      "module": "js_transferable",
+      "seconds": 0.737605
+    },
+    {
+      "function": "(program)",
+      "module": "",
+      "seconds": 0.595376
+    },
+    {
+      "function": "utf8Slice",
+      "module": "",
+      "seconds": 0.459007
+    },
+    {
+      "function": "RegExp: ^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$",
+      "module": "",
+      "seconds": 0.389516
+    },
+    {
+      "function": "projectCurrentKnowledge",
+      "module": "projection.ts",
+      "seconds": 0.381356
+    }
+  ],
+  "limitations": [
+    "Includes setup and idle, not request-exclusive CPU time.",
+    "CPU profiling overhead is present.",
+    "Phase timings are inclusive wall time and include concurrency scheduling.",
+    "Two baseline rounds per lane diagnose phases; do not estimate a stable tail distribution."
+  ]
+}
