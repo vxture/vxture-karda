@@ -337,3 +337,9 @@ GRANT SELECT, INSERT ON karda_kb.index_rebuild, karda_kb.index_rebuild_item, kar
 GRANT UPDATE (state,revision,updated_at) ON karda_kb.index_rebuild TO karda_svc;
 GRANT UPDATE (state,attempt,lease_id,lease_until,candidate,candidate_hash,error_code,updated_at) ON karda_kb.index_rebuild_item TO karda_svc;
 -- END INDEX REBUILD LOCKS
+
+-- BEGIN PILOT WORKFLOW LOCKS
+REVOKE UPDATE, DELETE ON karda_kb.pilot_case, karda_kb.pilot_observation, karda_kb.pilot_event FROM karda_svc;
+GRANT SELECT, INSERT ON karda_kb.pilot_case, karda_kb.pilot_observation, karda_kb.pilot_event TO karda_svc;
+GRANT UPDATE (state,revision,verdict,reviewed_observation,updated_at) ON karda_kb.pilot_case TO karda_svc;
+-- END PILOT WORKFLOW LOCKS

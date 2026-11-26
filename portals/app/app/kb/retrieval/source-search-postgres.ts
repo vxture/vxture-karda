@@ -1,4 +1,4 @@
-import {Pool} from "pg";
+import {Pool,type PoolClient} from "pg";
 import {randomUUID} from "node:crypto";
 import {permits} from "../../authz/policy";
 import {readProductAccess,type RoleSql} from "../../authz/store";
@@ -20,14 +20,14 @@ interface SourceRow {
 export class PostgresSourceSearch {
   constructor(private pool:Pool,private objects:Pick<ObjectStore,"get">,
     private admit:(identity:SemanticReadIdentity)=>Promise<boolean>){}
-  async read(identity:SemanticReadIdentity,input:SourceSearchRequest):Promise<SourceSearchResult>{
+  async read(identity:SemanticReadIdentity,input:SourceSearchRequest,transaction?:PoolClient):Promise<SourceSearchResult>{
     identity={...identity,roles:[...identity.roles]};
     input=parseSourceSearch({kb_ids:[...input.kbIds],query:input.query,top_k:input.topK,verification_filter:input.verificationFilter});
     if(!/^[a-z][a-z0-9_-]{0,31}$/.test(identity.productCode))throw new Error("source_search_invalid_request");
     if(await this.admit(identity)!==true)throw new Error("source_search_denied");
-    const db=await this.pool.connect();
+    const db=transaction??await this.pool.connect();
     try{
-      await db.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
+      if(!transaction)await db.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
       const sql:RoleSql={$queryRawUnsafe:async<T>(statement:string,...values:unknown[])=>(await db.query(statement,values)).rows as T,
         $executeRawUnsafe:async()=>{throw new Error("source_search_read_only");}};
       const access=await readProductAccess(identity,sql);
@@ -63,10 +63,10 @@ export class PostgresSourceSearch {
         searchedDocuments++;
       }
       const ranked=rankSourcePassages(passages,input.query,input.topK);
-      await db.query("COMMIT");
+      if(!transaction)await db.query("COMMIT");
       return {mode:"source_only",...ranked,partial,gaps:[...(partial?["source_unavailable"]:[]),...(ranked.items.length?[]:["no_source_matches"])],
         searchedDocuments,searchedPassages:passages.length};
-    }catch(error){await db.query("ROLLBACK");throw error;}finally{db.release();}
+    }catch(error){if(!transaction)await db.query("ROLLBACK");throw error;}finally{if(!transaction)db.release();}
   }
 }
 

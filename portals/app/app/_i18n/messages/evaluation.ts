@@ -7,6 +7,7 @@ import type { Catalog, MessageFn } from "../catalog";
 // around them carries more weight than usual: "覆盖 82%" means nothing until the
 // reader knows what is in the denominator, and the notes below say so.
 export const evaluation = {
+  pilotComparison:{"zh-CN":"\u68c0\u7d22\u5bf9\u7167\u4e0e\u8bd5\u70b9","en-US":"Comparison and pilots"},
   // --- failures ----------------------------------------------------------------
   errLoad: {
     "zh-CN": "加载验证评测失败，请稍后重试。",

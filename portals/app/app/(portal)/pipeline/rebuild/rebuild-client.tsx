@@ -48,7 +48,7 @@ export function RebuildClient(){
   if(error===401)return <SignInGate from="/pipeline/rebuild"/>;
   const field="block w-full rounded border p-sm";
   return <div className="flex min-w-0 flex-col gap-md" aria-busy={busy}>
-    <PageHead title={m.title}/><p>{m.hint}</p><p className="text-body-sm text-muted-foreground">{m.limits}</p>
+    <PageHead title={m.title}/><Link href="/evaluation/pilots">{m.pilots}</Link><p>{m.hint}</p><p className="text-body-sm text-muted-foreground">{m.limits}</p>
     {error!==0&&<Banner tone="danger" title={error===403?m.denied:error===409?m.changed:error===400?m.invalid:m.unavailable}/>}
     {code&&<p role="alert">{m.errorCode}: <code>{code}</code></p>}{saved&&<Banner tone="success" title={m.saved}/>}
     {error>=500&&pending.current&&<Button disabled={busy} onClick={()=>void execute(pending.current!)}>{m.retry}</Button>}
