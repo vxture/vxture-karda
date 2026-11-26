@@ -13,6 +13,7 @@ import {TaskSelection} from "./task-selection";
 import {COMPILE_TASK_STATES} from "../../../../kb/semantic/task-query";
 import type {SourceIssue} from "../../../../kb/semantic/source-readiness";
 import type {SourceInspectionQuery} from "../../../../kb/semantic/source-query";
+import {compileSourceSelection} from "../../../../kb/semantic/compile-source-selection";
 
 export function SemanticReviewClient({kbId}:{kbId:string}) {
   const m=useMessages(semantic), api=useMemo(()=>new SemanticReviewApi(kbId),[kbId]);
@@ -22,6 +23,8 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
   const [login,setLogin]=useState(false);
   const [tasks,setTasks]=useState<CompileTaskRow[]>([]),[inputMissing,setInputMissing]=useState(false);
   const createId=useRef<string|null>(null);
+  const selectedCreateId=useRef<{key:string;id:string}|null>(null);
+  const [compileSourceText,setCompileSourceText]=useState(""),[sourceSelectionInvalid,setSourceSelectionInvalid]=useState(false);
   const [taskState,setTaskState]=useState(""),[taskLookup,setTaskLookup]=useState(""),[taskNext,setTaskNext]=useState<string|null>(null),[taskTrail,setTaskTrail]=useState<(string|undefined)[]>([undefined]);
   const [taskDetail,setTaskDetail]=useState<CompileTaskRow|null>(null);
   const [sources,setSources]=useState<Awaited<ReturnType<SemanticReviewApi["sources"]>>|null>(null);
@@ -146,6 +149,22 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
         await api.createTask(taskId);createId.current=null;
         const value=await api.tasks();if(current()){setTasks(value.tasks);setTaskNext(value.next??null);setTaskTrail([undefined]);setTaskState("");setTaskDetail(null);}
       })}>{m.createTask}</Button>
+      <form className="flex min-w-0 flex-col gap-sm" onSubmit={e=>{
+        e.preventDefault();let ids:string[];try{ids=compileSourceSelection(compileSourceText.trim().split(/[\s,]+/));}catch{setSourceSelectionInvalid(true);return;}
+        setSourceSelectionInvalid(false);const key=ids.join(",");
+        void run(async current=>{
+          const pending=selectedCreateId.current?.key===key?selectedCreateId.current:{key,id:crypto.randomUUID()};selectedCreateId.current=pending;
+          await api.createTask(pending.id,ids);selectedCreateId.current=null;
+          const value=await api.tasks();if(current()){setTasks(value.tasks);setTaskNext(value.next??null);setTaskTrail([undefined]);setTaskState("");setTaskDetail(null);}
+        });
+      }}>
+        <label htmlFor="compile-source-ids">{m.compileSelectedSources}</label>
+        <p className="text-body-sm text-muted-foreground">{m.compileSelectedHint}</p>
+        <textarea id="compile-source-ids" required disabled={busy} value={compileSourceText} maxLength={4000} rows={3} onChange={e=>{setCompileSourceText(e.target.value);setSourceSelectionInvalid(false);}} className="min-w-0 rounded-md border border-border bg-background p-sm font-mono text-code-sm"/>
+        <Button variant="outline" type="button" disabled={busy||!sources?.readable} onClick={()=>{setCompileSourceText(sources!.items.filter(row=>!row.issues.length).map(row=>row.id).join("\n"));setSourceSelectionInvalid(false);}}>{m.useReadableSourceBatch}</Button>
+        {sourceSelectionInvalid&&<p role="alert" className="text-body-sm">{m.compileSourceSelectionInvalid}</p>}
+        <Button type="submit" disabled={busy||!compileSourceText.trim()}>{m.createSelectedTask}</Button>
+      </form>
       {tasks.map(task=><div key={task.id} className="flex flex-wrap items-center gap-sm rounded-md border border-border p-sm">
         <span className="text-body-sm">{m.batch} {task.id.slice(0,8)} &middot; {task.attempt}/3 &middot;
           {task.state==="failed"?m.taskFailed:({queued:m.queued,running:m.running,completed:m.completed,needs_review:m.needs_review,suspended:m.suspended}[task.state]??task.state)}</span>
@@ -155,6 +174,7 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
         {task.run_id?<Button variant="outline" disabled={busy} onClick={()=>void choose(task.run_id!)}>{m.completed}</Button>:
           task.state!=="needs_review"&&<Button variant="outline" disabled={busy||task.canRetry!==true} onClick={()=>void executeTask(task.id)}>{m.execute}</Button>}
       </div>)}
+      {taskDetail?.sourceIds&&<p className="break-all text-body-sm">{m.compileSelectedSources}: {taskDetail.sourceIds.join(", ")}</p>}
       {taskDetail&&<section className="flex min-w-0 flex-col gap-sm rounded-md border border-border p-md">
         <h3 className="break-all text-title-sm">{m.taskInspect}: {taskDetail.id}</h3><p>{taskDetail.state} / {taskDetail.attempt} / 3</p>
         {taskDetail.error_code&&<p className="break-all font-mono text-code-sm">{taskDetail.error_code}</p>}

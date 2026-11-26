@@ -28,7 +28,7 @@ export class SemanticReviewApi {
     const params=new URLSearchParams(Object.entries(query).filter((e):e is [string,string]=>e[1]!==undefined)).toString();
     return this.request<{tasks:CompileTaskRow[];next?:string|null}>(params?`?${params}`:"",undefined,"compile-tasks");
   }
-  createTask(taskId:string){return this.request<{taskId:string;duplicate:boolean}>("",{action:"create",taskId},"compile-tasks");}
+  createTask(taskId:string,documentIds?:string[]){return this.request<{taskId:string;duplicate:boolean}>("",{action:"create",taskId,...(documentIds===undefined?{}:{documentIds})},"compile-tasks");}
   executeTask(taskId:string){return this.request<{claimed:boolean;runId:string|null}>("",{action:"execute",taskId},"compile-tasks");}
   resolveTask(taskId:string,resultHash:string,relationIds:string[],note:string){
     return this.request<{runId:string;duplicate:boolean}>("",{action:"resolve",taskId,resultHash,relationIds,note},"compile-tasks");

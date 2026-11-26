@@ -398,3 +398,5 @@ O(租户);业务模式是 O(模式),三个就够。更要紧的是——**标签
 GET /api/kb/{id}/semantic?view=sources，RP人类审核面，只接受唯一view参数；当前平台准入与同空间user库所有者、product.enter/data.write/data.read/service.publish同事务复核。返回karda.source-readiness.v1/current_authorized_sources的有界来源元数据/问题/计数/检查时间，无正文/存储键/凭证/哈希。100份/32MiB原件/16Mi字符/2MiB响应超预算失败，拒绝不完整成功。不是编译或发布准入凭据、不调用模型/自动处理，任务创建另行复核。无service/OBO新增面，见170§50。
 
 来源检查导航补充（2026-11-26）：GET semantic?view=sources新增互斥before/documentId参数，20份当前窗口，page标明范围/游标；计数只属于本批。唯一/格式/同库锚点校验，逐次当前权限/原件复核，未知锚点冲突。旧v1字段保留但total只指本批，消费者应读取page范围，不视作全库就绪。编译100份上限不变，见170§51。
+
+显式资料范围编译（2026-11-26）：POST /api/kb/{id}/compile-tasks create可选documentIds（1–100唯一UUID），省略保留旧全库行为；显式空范围拒绝。当前同库来源必须全数合格，既有快照/原件/证据/权限检查保持，快照冻结范围，同taskId改范围冲突。execute/resolve不接受documentIds；无OBO/service新增面，见170§52。
