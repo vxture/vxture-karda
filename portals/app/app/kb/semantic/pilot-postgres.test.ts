@@ -28,6 +28,7 @@ test("pilot workflow: same-snapshot real retrieval, immutable observations, curr
   await admin.query("INSERT INTO karda_kb.evidence(assertion_id,span_id,stance) VALUES($1,$2,'supports')",[a,span]);
   const profile=localCompileProfile(),run=await semantic.recordCompile(who,kb,{taskKey:"a".repeat(64),configHash:"b".repeat(64),payload:{format:"karda.semantic.release.v1",...profile,
    relations:[{id:relation,kbId:kb,schema:{namespace:profile.schema.namespace,schemaId:profile.schema.schemaId,version:profile.schema.version},type:"requires",sourceId:left,targetId:right,assertionIds:[a],origin:"asserted"}],sources:[{kbId:kb,documentId:doc,version:1,contentHash:hash}]}});
+  await semantic.reviewRelation(who,kb,{runId:run.runId,relationId:relation,expectedRevision:0,decision:"accept",note:"Synthetic fixture review"});
   await semantic.publish(who,await semantic.plan(who,kb,run.runId,randomUUID(),0));
   await pilots.mutate(who,create);assert.equal((await pilots.mutate(who,create) as any).duplicate,true);await assert.rejects(pilots.mutate(who,{...create,query:"Different"}),/pilot_conflict/);
   const command=compare(),first:any=await pilots.mutate(who,command);assert.equal(first.baseline.items.length,1);assert.equal(first.published.edges.length,1);assert.equal(first.summary.sharedDocuments,1);
