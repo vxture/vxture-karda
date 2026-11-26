@@ -103,6 +103,7 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
     <div className="flex flex-wrap gap-sm">
       <Button variant="outline" disabled={busy} onClick={()=>void refresh()}>{m.refresh}</Button>
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/knowledge`}>{m.back}</Link></Button>
+      <Button variant="outline" asChild><Link href={`/assets/${kbId}/ocr`}>{m.ocrWorkbench}</Link></Button>
     </div>
     <p className="text-body-sm text-muted-foreground">{m.description}</p>
     {error&&<div role="alert"><Banner tone="danger" title={inputMissing?m.inputsRequired:error===409?m.conflict:error===403?m.denied:error===503?m.unavailable:m.failed}/></div>}

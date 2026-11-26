@@ -50,10 +50,10 @@ test("semantic foundation PostgreSQL: fresh and old-41 upgrade twice, immutable 
     return { admin, service };
   }
   async function apply(admin: Pool, old = false) {
-    await admin.query(old ? baseline.replace(/-- BEGIN KNOWLEDGE ROLLOUT[\s\S]*?-- END KNOWLEDGE ROLLOUT/, "").replace(/-- BEGIN TOPIC SUMMARY[\s\S]*?-- END TOPIC SUMMARY/, "").replace(/-- BEGIN TOPIC DOSSIER[\s\S]*?-- END TOPIC DOSSIER/, "").replace(/-- BEGIN DOCUMENT TEXT SNAPSHOT[\s\S]*?-- END DOCUMENT TEXT SNAPSHOT/, "").replace(structure, "").replace(/-- BEGIN SEMANTIC TASK\r?\n[\s\S]*?-- END SEMANTIC TASK\r?\n/, "") : baseline);
+    await admin.query(old ? baseline.replace(/-- BEGIN DOCUMENT OCR DRAFT[\s\S]*?-- END DOCUMENT OCR DRAFT/, "").replace(/-- BEGIN KNOWLEDGE ROLLOUT[\s\S]*?-- END KNOWLEDGE ROLLOUT/, "").replace(/-- BEGIN TOPIC SUMMARY[\s\S]*?-- END TOPIC SUMMARY/, "").replace(/-- BEGIN TOPIC DOSSIER[\s\S]*?-- END TOPIC DOSSIER/, "").replace(/-- BEGIN DOCUMENT TEXT SNAPSHOT[\s\S]*?-- END DOCUMENT TEXT SNAPSHOT/, "").replace(structure, "").replace(/-- BEGIN SEMANTIC TASK\r?\n[\s\S]*?-- END SEMANTIC TASK\r?\n/, "") : baseline);
     await admin.query(read("97_service_role.sql"));
     for (const name of increments) if (!old || name < "0016") await admin.query(read(`incr/${name}`));
-    await admin.query(old ? locks.replace(/-- BEGIN KNOWLEDGE ROLLOUT LOCKS[\s\S]*?-- END KNOWLEDGE ROLLOUT LOCKS/, "").replace(/-- BEGIN TOPIC SUMMARY LOCKS[\s\S]*?-- END TOPIC SUMMARY LOCKS/, "").replace(/-- BEGIN TOPIC DOSSIER LOCKS[\s\S]*?-- END TOPIC DOSSIER LOCKS/, "").replace(/-- BEGIN DOCUMENT TEXT LOCKS[\s\S]*?-- END DOCUMENT TEXT LOCKS/, "").replace(grants, "").replace(/-- BEGIN SEMANTIC TASK LOCKS\r?\n[\s\S]*?-- END SEMANTIC TASK LOCKS\r?\n/, "") : locks);
+    await admin.query(old ? locks.replace(/-- BEGIN DOCUMENT OCR LOCKS[\s\S]*?-- END DOCUMENT OCR LOCKS/, "").replace(/-- BEGIN KNOWLEDGE ROLLOUT LOCKS[\s\S]*?-- END KNOWLEDGE ROLLOUT LOCKS/, "").replace(/-- BEGIN TOPIC SUMMARY LOCKS[\s\S]*?-- END TOPIC SUMMARY LOCKS/, "").replace(/-- BEGIN TOPIC DOSSIER LOCKS[\s\S]*?-- END TOPIC DOSSIER LOCKS/, "").replace(/-- BEGIN DOCUMENT TEXT LOCKS[\s\S]*?-- END DOCUMENT TEXT LOCKS/, "").replace(grants, "").replace(/-- BEGIN SEMANTIC TASK LOCKS\r?\n[\s\S]*?-- END SEMANTIC TASK LOCKS\r?\n/, "") : locks);
   }
   async function seed(admin: Pool) {
     await admin.query(`INSERT INTO karda_kb.knowledge_base(id,workspace_id,owner_type,owner_sub,name)
@@ -127,11 +127,16 @@ test("semantic foundation PostgreSQL: fresh and old-41 upgrade twice, immutable 
       VALUES($1,9,$2,'application/vnd.openxmlformats-officedocument.wordprocessingml.document','docx-numbered-stories-v5','[list label=1.] proof',$2,'[{"start":0,"end":20,"ordinal":0}]')`,[doc,hash]);
     await apply(upgraded.admin);await apply(upgraded.admin);
     assert.equal((await upgraded.admin.query("SELECT parser_version FROM karda_kb.document_text_snapshot WHERE document_id=$1 AND document_version=9",[doc])).rows[0].parser_version,"docx-numbered-stories-v5","complete replay preserves numbered DOCX source snapshots");
+    await upgraded.admin.query(`INSERT INTO karda_kb.document_text_snapshot
+      (document_id,document_version,content_hash,mime,parser_version,canonical_text,text_hash,locators)
+      VALUES($1,10,$2,'application/pdf','atlas-ocr-v1','OCR proof',$2,'[{"start":0,"end":9,"ordinal":0,"page":1}]')`,[doc,hash]);
+    await apply(upgraded.admin);await apply(upgraded.admin);
+    assert.equal((await upgraded.admin.query("SELECT parser_version FROM karda_kb.document_text_snapshot WHERE document_id=$1 AND document_version=10",[doc])).rows[0].parser_version,"atlas-ocr-v1","complete replay preserves OCR snapshots");
     assert.deepEqual((await upgraded.admin.query("SELECT * FROM karda_kb.entity WHERE id=$1", [oldEntity])).rows[0], original);
     for (const { admin, service } of [fresh, upgraded]) {
       if (admin === fresh.admin) await seed(admin);
       assert.equal(Number((await admin.query(`SELECT count(*) FROM information_schema.tables
-        WHERE table_schema IN ('karda_kb','local_authz','local_usage','vx_provision') AND table_type='BASE TABLE'`)).rows[0].count), 56);
+        WHERE table_schema IN ('karda_kb','local_authz','local_usage','vx_provision') AND table_type='BASE TABLE'`)).rows[0].count), 57);
       await service.query(`INSERT INTO karda_kb.semantic_schema_version(id,kb_id,namespace,schema_id,version,definition_hash,definition)
         VALUES($1,$2,'test','things','1',$3,'{}')`, [schema, kb, hash]);
       await service.query(`INSERT INTO karda_kb.semantic_review(id,kb_id,subject_key,revision,decision,subject_hash,reviewer_sub,note)

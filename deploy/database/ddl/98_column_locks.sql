@@ -308,3 +308,9 @@ REVOKE UPDATE, DELETE ON karda_kb.topic_summary FROM karda_svc;
 GRANT SELECT, INSERT ON karda_kb.knowledge_rollout_event TO karda_svc;
 REVOKE UPDATE, DELETE ON karda_kb.knowledge_rollout_event FROM karda_svc;
 -- END KNOWLEDGE ROLLOUT LOCKS
+
+-- BEGIN DOCUMENT OCR LOCKS
+REVOKE UPDATE, DELETE ON karda_kb.document_ocr_draft FROM karda_svc;
+GRANT SELECT, INSERT ON karda_kb.document_ocr_draft TO karda_svc;
+GRANT UPDATE (state,payload,payload_hash,error_code,committed_version) ON karda_kb.document_ocr_draft TO karda_svc;
+-- END DOCUMENT OCR LOCKS
