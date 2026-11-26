@@ -93,7 +93,16 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-26): v0.12.33 / f8f867d9, deploy45794703777
+Current production (2026-11-26): v0.12.34 / b2b1687c, deploy45805225113
+succeeded at2026-11-26T10:57:31Z through normal production review. PR372
+adds read phase diagnostics, canonical-byte-compatible normalization and batched authority reads.
+Stage CI45804422506:1114pass/zero skips; main CI45804788408/scan45804788346pass.
+No DDL,56tables; health/ready and anonymous package/search-page/control refusal pass.
+Local4800 facts P95~690ms single/~2527ms concurrency4; real scale gate remains open.
+No local full-suite repetition. Fixed17items:7complete/10unfinished.
+See docs/50-deployment/360-read-phases-release-20261126.md.
+
+Historical production (2026-11-26): v0.12.33 / f8f867d9, deploy45794703777
 succeeded at2026-11-26T09:49:58Z through normal production review. PR370
 adds capacity tooling/reports and indexed formal review/support checks.
 Stage CI45793902213:1113pass/zero skips; main CI45794307730/scan45794307466pass.
