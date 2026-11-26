@@ -127,11 +127,16 @@ test("semantic foundation PostgreSQL: fresh and old-41 upgrade twice, immutable 
       VALUES($1,9,$2,'application/vnd.openxmlformats-officedocument.wordprocessingml.document','docx-numbered-stories-v5','[list label=1.] proof',$2,'[{"start":0,"end":20,"ordinal":0}]')`,[doc,hash]);
     await apply(upgraded.admin);await apply(upgraded.admin);
     assert.equal((await upgraded.admin.query("SELECT parser_version FROM karda_kb.document_text_snapshot WHERE document_id=$1 AND document_version=9",[doc])).rows[0].parser_version,"docx-numbered-stories-v5","complete replay preserves numbered DOCX source snapshots");
+    await upgraded.admin.query(`INSERT INTO karda_kb.document_text_snapshot
+      (document_id,document_version,content_hash,mime,parser_version,canonical_text,text_hash,locators)
+      VALUES($1,10,$2,'application/pdf','atlas-ocr-v1','OCR proof',$2,'[{"start":0,"end":9,"ordinal":0,"page":1}]')`,[doc,hash]);
+    await apply(upgraded.admin);await apply(upgraded.admin);
+    assert.equal((await upgraded.admin.query("SELECT parser_version FROM karda_kb.document_text_snapshot WHERE document_id=$1 AND document_version=10",[doc])).rows[0].parser_version,"atlas-ocr-v1","complete replay preserves OCR snapshots");
     assert.deepEqual((await upgraded.admin.query("SELECT * FROM karda_kb.entity WHERE id=$1", [oldEntity])).rows[0], original);
     for (const { admin, service } of [fresh, upgraded]) {
       if (admin === fresh.admin) await seed(admin);
       assert.equal(Number((await admin.query(`SELECT count(*) FROM information_schema.tables
-        WHERE table_schema IN ('karda_kb','local_authz','local_usage','vx_provision') AND table_type='BASE TABLE'`)).rows[0].count), 56);
+        WHERE table_schema IN ('karda_kb','local_authz','local_usage','vx_provision') AND table_type='BASE TABLE'`)).rows[0].count), 57);
       await service.query(`INSERT INTO karda_kb.semantic_schema_version(id,kb_id,namespace,schema_id,version,definition_hash,definition)
         VALUES($1,$2,'test','things','1',$3,'{}')`, [schema, kb, hash]);
       await service.query(`INSERT INTO karda_kb.semantic_review(id,kb_id,subject_key,revision,decision,subject_hash,reviewer_sub,note)
