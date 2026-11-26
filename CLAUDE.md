@@ -106,7 +106,17 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-26): v0.12.36 / 5a03e6eb, deploy45815570553
+Current production (2026-11-26): v0.12.37 / 9f97f340, deploy45831052681
+succeeded at2026-11-26T13:45:32Z through normal production review. PR378
+adds Atlas PDF OCR drafts, full-page preview and human-confirmed versioned source ingestion.
+Stage CI45829676571:1126pass/zero skips; main CI45830293944/scan45830293923pass.
+Migration0031 run45830400022 succeeded;57tables. Health/ready and anonymous
+OCR history/confirmation/package refusal pass. Real vision quality/billing remain pending.
+Functional completeness first; no performance work or local full-suite repetition.
+Fixed17items:7complete/10unfinished;5 functional gap groups in workplan197 section4.
+See deployment390. Next: remaining source/authority/ontology/event/shadow functions.
+
+Historical production (2026-11-26): v0.12.36 / 5a03e6eb, deploy45815570553
 succeeded at2026-11-26T12:24:19Z through normal production review. PR376
 adds DOCX authored numbering, style inheritance/restart and versioned source evidence.
 Stage CI45814356040:1119pass/zero skips; main CI45814761635/scan45814761671pass.
