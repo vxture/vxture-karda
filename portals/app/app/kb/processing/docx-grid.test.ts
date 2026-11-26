@@ -22,7 +22,7 @@ test("DOCX cell grids bind merged anchors, nested cell paths, story provenance a
     row(cell("A")+cell("B")+cell("C")));
   const original=bytes(grid,{"word/header1.xml":`<w:hdr xmlns:w="${w}">${table(row(cell("Header grid")),1)}</w:hdr>`});
   const snapshot=await normalizeSource(DOCX_MIME,original);
-  assert.equal(snapshot.parserVersion,"docx-cell-grid-v4");
+  assert.equal(snapshot.parserVersion,"docx-numbered-stories-v5");
   assert.match(snapshot.text,/Table 1 grid rows=3 columns=3/);
   assert.ok(snapshot.text.includes('Table 1 R1C1 rows=2 columns=2: "Merged \u4e2d\ud83d\ude00"'));
   assert.equal(snapshot.text.match(/Merged/g)?.length,1,"continuation never duplicates anchor text");

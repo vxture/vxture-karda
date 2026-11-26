@@ -13,7 +13,7 @@ R = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
 P = "{http://schemas.openxmlformats.org/package/2006/relationships}"
 
 
-def extract(path, table_reader=None, version="docx-referenced-stories-v3"):
+def extract(path, table_reader=None, version="docx-referenced-stories-v3", story_factory=None):
     with Path(path).open("rb") as handle:
         data = handle.read(2 * 1024 * 1024 + 1)
     if len(data) > 2 * 1024 * 1024:
@@ -52,6 +52,10 @@ def extract(path, table_reader=None, version="docx-referenced-stories-v3"):
                 if link.tag != P + "Relationship" or not link.get("Id") or link.get("Id") in links:
                     raise ValueError("docx_relationship_refused")
                 links[link.get("Id")] = link
+
+        story_reader = story_factory(xml, names, links) if story_factory else None
+        if story_reader:
+            story_reader(root)
 
         def validate_tree(tree):
             forbidden = {W + tag for tag in ("del", "ins", "moveFrom", "moveTo", "altChunk", "drawing", "pict", "object", "fldSimple", "instrText", "fldChar", "hyperlink", "sdt", "customXml", "sym", "vanish", "webHidden", "numPr", "delText", "commentReference", "subDoc")}
@@ -121,6 +125,8 @@ def extract(path, table_reader=None, version="docx-referenced-stories-v3"):
                 raise ValueError("docx_story_text_limit")
         for section_index, kind, mode, target in story_refs:
             story = xml(target)
+            if story_reader:
+                story_reader(story)
             if story.tag != W + ("hdr" if kind == "header" else "ftr") or any(e.tag in (W + "footnoteReference", W + "endnoteReference") for e in story.iter()):
                 raise ValueError("docx_story_root_refused")
             append(f"Section {section_index} {kind} {mode} part={target} paragraph {i}: {text}" for i, text in enumerate(paragraphs(story), 1))
@@ -153,6 +159,8 @@ def extract(path, table_reader=None, version="docx-referenced-stories-v3"):
                 raise ValueError("docx_note_mapping_refused")
             for note_id in ids:
                 note = notes[note_id]
+                if story_reader:
+                    story_reader(note)
                 for marker in list(note.iter()):
                     if marker.tag == W + kind + "Ref":
                         marker.tag, marker.text = W + "t", ""

@@ -1,12 +1,25 @@
 // Synthetic fixtures only; never imported by product code.
 import {execFileSync} from "node:child_process";
 
+export function syntheticNumberedDocx(overrides:Record<string,string>={}):Buffer{
+  const w="http://schemas.openxmlformats.org/wordprocessingml/2006/main",r="http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+  const p=(text:string,level=0)=>`<w:p><w:pPr><w:numPr><w:ilvl w:val="${level}"/><w:numId w:val="1"/></w:numPr></w:pPr><w:r><w:t>${text}</w:t></w:r></w:p>`;
+  const parts={
+    "word/document.xml":`<w:document xmlns:w="${w}"><w:body>${p("Approval required")}${p("Proof \u4e2d\ud83d\ude00",1)}${p("Second proof",1)}${p("Next clause")}${p("Restarted proof",1)}<w:tbl><w:tblGrid><w:gridCol/><w:gridCol/></w:tblGrid><w:tr><w:tc><w:tcPr><w:gridSpan w:val="2"/><w:vMerge w:val="restart"/></w:tcPr><w:p><w:r><w:t>Required merged proof</w:t></w:r></w:p><w:tbl><w:tr><w:tc><w:p><w:r><w:t>Nested support</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:tc></w:tr><w:tr><w:tc><w:tcPr><w:gridSpan w:val="2"/><w:vMerge/></w:tcPr><w:p/></w:tc></w:tr></w:tbl></w:body></w:document>`,
+    "word/_rels/document.xml.rels":`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="n" Type="${r}/numbering" Target="numbering.xml"/></Relationships>`,
+    "word/header1.xml":`<w:hdr xmlns:w="${w}"/>`,"word/footer2.xml":`<w:ftr xmlns:w="${w}"/>`,
+    "word/footnotes.xml":`<w:footnotes xmlns:w="${w}"/>`,"word/endnotes.xml":`<w:endnotes xmlns:w="${w}"/>`,
+    "word/numbering.xml":`<w:numbering xmlns:w="${w}"><w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/></w:lvl><w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1.%2"/></w:lvl></w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>`,...overrides,
+  };
+  return syntheticDocxStories(parts,["word/header1.xml","word/footer2.xml"].filter(name=>!parts["word/document.xml"].includes(name.includes("header")?"headerReference":"footerReference")));
+}
+
 export function syntheticDocxGrid():Buffer{
   const w="http://schemas.openxmlformats.org/wordprocessingml/2006/main";
   return syntheticDocxStories({"word/header1.xml":`<w:hdr xmlns:w="${w}"><w:tbl><w:tblGrid><w:gridCol/><w:gridCol/></w:tblGrid><w:tr><w:tc><w:tcPr><w:gridSpan w:val="2"/><w:vMerge w:val="restart"/></w:tcPr><w:p><w:r><w:t>Required merged proof</w:t></w:r></w:p><w:tbl><w:tr><w:tc><w:p><w:r><w:t>Nested support</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:tc></w:tr><w:tr><w:tc><w:tcPr><w:gridSpan w:val="2"/><w:vMerge/></w:tcPr><w:p/></w:tc></w:tr></w:tbl></w:hdr>`});
 }
 
-export function syntheticDocxStories(overrides:Record<string,string>={}):Buffer{
+export function syntheticDocxStories(overrides:Record<string,string>={},omit:string[]=[]):Buffer{
   const w="http://schemas.openxmlformats.org/wordprocessingml/2006/main",r="http://schemas.openxmlformats.org/officeDocument/2006/relationships";
   const p=(text:string)=>`<w:p><w:r><w:t>${text}</w:t></w:r></w:p>`;
   const parts={
@@ -16,6 +29,7 @@ export function syntheticDocxStories(overrides:Record<string,string>={}):Buffer{
     "word/footer2.xml":`<w:ftr xmlns:w="${w}">${p("Footer proof")}</w:ftr>`,
     "word/footnotes.xml":`<w:footnotes xmlns:w="${w}"><w:footnote w:id="-1" w:type="separator"><w:p><w:r><w:separator/></w:r></w:p></w:footnote><w:footnote w:id="7">${p("Required note \u4e2d\ud83d\ude00")}</w:footnote></w:footnotes>`,
     "word/endnotes.xml":`<w:endnotes xmlns:w="${w}"><w:endnote w:id="3">${p("Endnote proof")}</w:endnote></w:endnotes>`,...overrides};
+  for(const name of omit)delete (parts as Record<string,string>)[name];
   const python=process.env.KARDA_KNOWLEDGE_PYTHON||(process.platform==="win32"?"python":"python3");
   return execFileSync(python,["-I","-c",'import io,json,sys,zipfile; b=io.BytesIO(); z=zipfile.ZipFile(b,"w"); [z.writestr(k,v) for k,v in json.loads(sys.stdin.buffer.read().decode("utf-8")).items()]; z.close(); sys.stdout.buffer.write(b.getvalue())'],{input:JSON.stringify(parts),timeout:10000,windowsHide:true});
 }

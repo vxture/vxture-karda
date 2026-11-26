@@ -122,6 +122,11 @@ test("semantic foundation PostgreSQL: fresh and old-41 upgrade twice, immutable 
       VALUES($1,8,$2,'application/vnd.openxmlformats-officedocument.presentationml.presentation','pptx-authored-stories-v3','notes',$2,'[{"start":0,"end":5,"ordinal":0}]')`,[doc,hash]);
     await apply(upgraded.admin);await apply(upgraded.admin);
     assert.equal((await upgraded.admin.query("SELECT parser_version FROM karda_kb.document_text_snapshot WHERE document_id=$1 AND document_version=8",[doc])).rows[0].parser_version,"pptx-authored-stories-v3","complete replay preserves PPTX authored stories");
+    await upgraded.admin.query(`INSERT INTO karda_kb.document_text_snapshot
+      (document_id,document_version,content_hash,mime,parser_version,canonical_text,text_hash,locators)
+      VALUES($1,9,$2,'application/vnd.openxmlformats-officedocument.wordprocessingml.document','docx-numbered-stories-v5','[list label=1.] proof',$2,'[{"start":0,"end":20,"ordinal":0}]')`,[doc,hash]);
+    await apply(upgraded.admin);await apply(upgraded.admin);
+    assert.equal((await upgraded.admin.query("SELECT parser_version FROM karda_kb.document_text_snapshot WHERE document_id=$1 AND document_version=9",[doc])).rows[0].parser_version,"docx-numbered-stories-v5","complete replay preserves numbered DOCX source snapshots");
     assert.deepEqual((await upgraded.admin.query("SELECT * FROM karda_kb.entity WHERE id=$1", [oldEntity])).rows[0], original);
     for (const { admin, service } of [fresh, upgraded]) {
       if (admin === fresh.admin) await seed(admin);
