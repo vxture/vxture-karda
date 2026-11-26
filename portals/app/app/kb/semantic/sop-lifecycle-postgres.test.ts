@@ -168,6 +168,12 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     await restarted.reviewRelation(identity,kb,{runId:second.runId,relationId:second.relationId,expectedRevision:0,decision:"accept",note:"Synthetic SOP v2 verified"});
     const preview=await restarted.preview(identity,kb,second.runId,randomUUID());
     assert.deepEqual(preview.changes.removed,[first.relationId]);assert.deepEqual(preview.changes.added,[second.relationId]);
+    assert.equal(preview.impact.scope,"proposed_replacement_structure");
+    assert.equal(preview.impact.relations.find(r=>r.kind==="removed")?.before?.targetId,legacyStep);
+    assert.equal(preview.impact.relations.find(r=>r.kind==="added")?.after?.targetId,revisedStep);
+    assert.equal(preview.impact.sources[0].beforeVersion,1);assert.equal(preview.impact.sources[0].afterVersion,2);assert.equal(preview.impact.sources[0].contentChanged,true);
+    assert.equal(JSON.stringify(preview.impact).includes(bytes.toString()),false);
+
     await restarted.submitPreview(identity,kb,preview);
     assert.equal((await factSearch("two-person approval")).edges[0]?.targetId,revisedStep);
     const publishedSync=await sync(sourceSync.revision);assert.equal(publishedSync.action,"replace");

@@ -400,3 +400,5 @@ GET /api/kb/{id}/semantic?view=sources，RP人类审核面，只接受唯一view
 来源检查导航补充（2026-11-26）：GET semantic?view=sources新增互斥before/documentId参数，20份当前窗口，page标明范围/游标；计数只属于本批。唯一/格式/同库锚点校验，逐次当前权限/原件复核，未知锚点冲突。旧v1字段保留但total只指本批，消费者应读取page范围，不视作全库就绪。编译100份上限不变，见170§51。
 
 显式资料范围编译（2026-11-26）：POST /api/kb/{id}/compile-tasks create可选documentIds（1–100唯一UUID），省略保留旧全库行为；显式空范围拒绝。当前同库来源必须全数合格，既有快照/原件/证据/权限检查保持，快照冻结范围，同taskId改范围冲突。execute/resolve不接受documentIds；无OBO/service新增面，见170§52。
+
+发布影响明细（2026-11-26）：semantic POST preview响应新增impact，proposed_replacement_structure关系/来源变更结构，无历史正文/证据/hash。既有changes与令牌保留，publish仍只接受原有完整绑定；筛选/分页仅UI，2MiB影响预算超限拒绝，见170§53。

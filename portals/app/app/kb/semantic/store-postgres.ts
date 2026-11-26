@@ -18,6 +18,7 @@ import {SOURCE_FORMATS} from "../processing/source-formats";
 import {inspectSources,type SourceCandidate} from "./source-readiness";
 import {parseSourceInspectionQuery,type SourceInspectionQuery} from "./source-query";
 import {compileSourceSelection} from "./compile-source-selection";
+import {publicationImpact} from "./publication-impact";
 import { maintenanceReport, type MaintenanceReport, type MaintenanceDocument, type MaintenanceAssertion, type MaintenanceGround } from "./maintenance";
 import {verifyAuditWindow,type AuditHistory,type AuditRelease} from "./audit-history";
 import {parseCompileTaskQuery,type CompileTaskQuery} from "./task-query";
@@ -404,12 +405,14 @@ export class PostgresSemanticStore {
       const head = (await db.query<{generation: number; payload: PublicationCommand}>(`
         SELECT h.generation,r.payload FROM karda_kb.semantic_release_head h JOIN karda_kb.semantic_release r
         ON r.kb_id=h.kb_id AND r.id=h.release_id AND r.generation=h.generation WHERE h.kb_id=$1`, [kbId])).rows[0];
-      const previous = head ? decodeSemanticRelease(head.payload).relations : [];
+      const previousInput=head?decodeSemanticRelease(head.payload):{relations:[],sources:[]};
+      const previous = previousInput.relations;
+      const impact=publicationImpact(previousInput,input);
       const prepared = preparePublication({ kbId, eventId, expectedGeneration: head?.generation ?? 0,
         sourceRevision: row.input_hash, schemaRevision: semanticValueHash({ schema: input.schema, entityTypes: row.candidates.entityTypes }),
         reviewRevision: semanticValueHash(reviews), payload: { ...row.candidates, compileRunId: runId } });
       return { runId, eventId, expectedGeneration: prepared.command.expectedGeneration, fingerprint: prepared.fingerprint,
-        relationCount: input.relations.length, changes: {
+        relationCount: input.relations.length, impact,changes: {
           added: input.relations.filter(r => !previous.some(p => p.id === r.id)).map(r => r.id),
           removed: previous.filter(p => !input.relations.some(r => r.id === p.id)).map(p => p.id),
           changed: input.relations.filter(r => previous.some(p => p.id === r.id && semanticValueHash(p) !== semanticValueHash(r))).map(r => r.id),
