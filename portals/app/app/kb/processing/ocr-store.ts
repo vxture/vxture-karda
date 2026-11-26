@@ -57,7 +57,7 @@ export class PostgresOcrStore{
     if(!bytes||bytes.length!==size||sourceHash(bytes)!==row.content_hash)throw Error("ocr_source_changed");return bytes;
   }
   async browse(identity:SemanticReadIdentity,kbId:string,documentId:string,id?:string,before?:string){
-    if((id&&!UUID.test(id))||(before&&!UUID.test(before))||(id&&before))throw Error("ocr_invalid_request");
+    if((id!==undefined&&!UUID.test(id))||(before!==undefined&&!UUID.test(before))||(id!==undefined&&before!==undefined))throw Error("ocr_invalid_request");
     return this.transaction(identity,kbId,async db=>{
       const doc=await this.document(db,kbId,documentId);
       await this.bytes(doc);

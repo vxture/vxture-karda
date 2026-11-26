@@ -50,10 +50,10 @@ test("semantic foundation PostgreSQL: fresh and old-41 upgrade twice, immutable 
     return { admin, service };
   }
   async function apply(admin: Pool, old = false) {
-    await admin.query(old ? baseline.replace(/-- BEGIN KNOWLEDGE ROLLOUT[\s\S]*?-- END KNOWLEDGE ROLLOUT/, "").replace(/-- BEGIN TOPIC SUMMARY[\s\S]*?-- END TOPIC SUMMARY/, "").replace(/-- BEGIN TOPIC DOSSIER[\s\S]*?-- END TOPIC DOSSIER/, "").replace(/-- BEGIN DOCUMENT TEXT SNAPSHOT[\s\S]*?-- END DOCUMENT TEXT SNAPSHOT/, "").replace(structure, "").replace(/-- BEGIN SEMANTIC TASK\r?\n[\s\S]*?-- END SEMANTIC TASK\r?\n/, "") : baseline);
+    await admin.query(old ? baseline.replace(/-- BEGIN DOCUMENT OCR DRAFT[\s\S]*?-- END DOCUMENT OCR DRAFT/, "").replace(/-- BEGIN KNOWLEDGE ROLLOUT[\s\S]*?-- END KNOWLEDGE ROLLOUT/, "").replace(/-- BEGIN TOPIC SUMMARY[\s\S]*?-- END TOPIC SUMMARY/, "").replace(/-- BEGIN TOPIC DOSSIER[\s\S]*?-- END TOPIC DOSSIER/, "").replace(/-- BEGIN DOCUMENT TEXT SNAPSHOT[\s\S]*?-- END DOCUMENT TEXT SNAPSHOT/, "").replace(structure, "").replace(/-- BEGIN SEMANTIC TASK\r?\n[\s\S]*?-- END SEMANTIC TASK\r?\n/, "") : baseline);
     await admin.query(read("97_service_role.sql"));
     for (const name of increments) if (!old || name < "0016") await admin.query(read(`incr/${name}`));
-    await admin.query(old ? locks.replace(/-- BEGIN KNOWLEDGE ROLLOUT LOCKS[\s\S]*?-- END KNOWLEDGE ROLLOUT LOCKS/, "").replace(/-- BEGIN TOPIC SUMMARY LOCKS[\s\S]*?-- END TOPIC SUMMARY LOCKS/, "").replace(/-- BEGIN TOPIC DOSSIER LOCKS[\s\S]*?-- END TOPIC DOSSIER LOCKS/, "").replace(/-- BEGIN DOCUMENT TEXT LOCKS[\s\S]*?-- END DOCUMENT TEXT LOCKS/, "").replace(grants, "").replace(/-- BEGIN SEMANTIC TASK LOCKS\r?\n[\s\S]*?-- END SEMANTIC TASK LOCKS\r?\n/, "") : locks);
+    await admin.query(old ? locks.replace(/-- BEGIN DOCUMENT OCR LOCKS[\s\S]*?-- END DOCUMENT OCR LOCKS/, "").replace(/-- BEGIN KNOWLEDGE ROLLOUT LOCKS[\s\S]*?-- END KNOWLEDGE ROLLOUT LOCKS/, "").replace(/-- BEGIN TOPIC SUMMARY LOCKS[\s\S]*?-- END TOPIC SUMMARY LOCKS/, "").replace(/-- BEGIN TOPIC DOSSIER LOCKS[\s\S]*?-- END TOPIC DOSSIER LOCKS/, "").replace(/-- BEGIN DOCUMENT TEXT LOCKS[\s\S]*?-- END DOCUMENT TEXT LOCKS/, "").replace(grants, "").replace(/-- BEGIN SEMANTIC TASK LOCKS\r?\n[\s\S]*?-- END SEMANTIC TASK LOCKS\r?\n/, "") : locks);
   }
   async function seed(admin: Pool) {
     await admin.query(`INSERT INTO karda_kb.knowledge_base(id,workspace_id,owner_type,owner_sub,name)
