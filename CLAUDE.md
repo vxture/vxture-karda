@@ -118,7 +118,20 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-26): v0.12.37 / 9f97f340, deploy45831052681
+Current production (2026-11-26): v0.12.38 / c147371b, deploy45840407611
+succeeded at2026-11-26T14:41:21Z through normal production review. PR380
+adds maintenance task lifecycle, cross-library work queue and immutable history.
+Migration0032 run45839871158 succeeded;58tables. PR CI45839284654:1129pass/
+zero skips, exact-main CI45839669841/scan45839669825passed; health/ready and
+anonymous operations GET/POST and knowledge package401. No local full regression.
+Final release evidence published at GitHub Release v0.12.38; local deployment400,
+checklist/memory closeout edits intentionally ride NEXT functional PR, no docs-only
+PR/full-main rerun. Preserve these edits and the owner's unrelated workplan70 edit.
+Next software stage S2: real processing/compilation work center and actionable
+queues, replace legacy authored pipeline narratives. S3-S6 see workplan197 section6.
+Fixed17items:7complete/10unfinished; software completeness first, no performance.
+
+Historical production (2026-11-26): v0.12.37 / 9f97f340, deploy45831052681
 succeeded at2026-11-26T13:45:32Z through normal production review. PR378
 adds Atlas PDF OCR drafts, full-page preview and human-confirmed versioned source ingestion.
 Stage CI45829676571:1126pass/zero skips; main CI45830293944/scan45830293923pass.

@@ -6,7 +6,7 @@ export function taskDetail(row: TaskRow): TaskDetail {
   return {
     id: row.id, title: row.documentTitle,
     meta: [row.kbName, row.tier], badge: row.state, live: true,
-    stages: STAGES.map((stage, i) => {
+    stages: (row.currentStage==="extract"?["extract"]:STAGES).map((stage, i) => {
       const recorded = row.stages.find(s => s.stage === stage);
       return {
         kicker: `${String(i + 1).padStart(2, "0")} ${stage.toUpperCase()}`,

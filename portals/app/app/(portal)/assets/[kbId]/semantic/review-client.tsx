@@ -16,7 +16,7 @@ import type {SourceInspectionQuery} from "../../../../kb/semantic/source-query";
 import {compileSourceSelection} from "../../../../kb/semantic/compile-source-selection";
 import {PublicationImpact} from "./publication-impact";
 
-export function SemanticReviewClient({kbId}:{kbId:string}) {
+export function SemanticReviewClient({kbId,initialTaskId}:{kbId:string;initialTaskId?:string}) {
   const m=useMessages(semantic), api=useMemo(()=>new SemanticReviewApi(kbId),[kbId]);
   const [list,setList]=useState<CompileList|null>(null), [detail,setDetail]=useState<CompileDetail|null>(null);
   const [preview,setPreview]=useState<ReleasePreview|null>(null), [notes,setNotes]=useState<Record<string,string>>({});
@@ -51,7 +51,7 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
     }} finally {if(current()){locked.current=false;setBusy(false);}}
   }
   useEffect(()=>{
-    void run(async current=>{const [page,taskPage]=await Promise.all([api.list(),api.tasks()]);if(current()){setList(page);setTasks(taskPage.tasks);setTaskNext(taskPage.next??null);}});
+    void run(async current=>{const [page,taskPage]=await Promise.all([api.list(),api.tasks()]);if(current()){setList(page);setTasks(taskPage.tasks);setTaskNext(taskPage.next??null);}if(initialTaskId&&/^[a-f0-9-]{36}$/.test(initialTaskId)){const focused=await api.tasks({taskId:initialTaskId});if(current())setTaskDetail(focused.tasks[0]??null);}});
     return()=>{++sequence.current;locked.current=false;};
     // The server page keys this component by library, dropping all prior state.
     // eslint-disable-next-line react-hooks/exhaustive-deps

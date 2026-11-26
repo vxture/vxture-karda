@@ -1,268 +1,69 @@
 "use client";
+import {useEffect,useRef,useState} from "react";
+import Link from "next/link";
+import {Banner,Button} from "@vxture/design-system";
+import {PageHead} from "../../_shell/PageHead";
+import {useMessages} from "../../_i18n/useMessages";
+import {workCenter} from "../../_i18n/messages/work-center";
+import {SignInGate} from "../../_lib/ui";
+import {WORK_KINDS,WORK_STATES,workHref,type WorkCenter} from "../../kb/processing/work-center";
 
-import { useEffect, useState } from "react";
-import {
-  Banner,
-  Button,
-  Card,
-  CardContent,
-  EmptyState,
-  Icon,
-  StatusBadge,
-  type IconName,
-} from "@vxture/design-system";
-import { loginHref } from "../../_lib/api";
-import { PageHead } from "../../_shell/PageHead";
-import type { ReportUnit, ReportRowKey, AgentStageKey, PipelineData, ProposalKind } from "../../kb/demo/pipeline-types";
-import { useMessages } from "../../_i18n/useMessages";
-import { common } from "../../_i18n/messages/common";
-import { pipeline as pipelineMessages } from "../../_i18n/messages/pipeline";
-import { shell } from "../../_i18n/messages/shell";
-import { assets } from "../../_i18n/messages/assets";
-
-// 加工管道 client (design canvas V2 · Agent board, light-theme translation).
-// Three 板块 under the unified PageHead, spaced by the layout's global gap-lg:
-// agent presence (identity + 今日战报) -> 加工流水 five stage cards -> 待你
-// 确认 proposal list. Figures come from GET /api/pipeline (demo overlay until
-// the pipeline schema lands - the strip says so).
-
-const PROPOSAL_META: Record<ProposalKind, { icon: IconName; tone: "warning" | "success" | "brand" }> = {
-  conflict: { icon: "warning", tone: "warning" },
-  preverify: { icon: "check", tone: "success" },
-  fix: { icon: "edit", tone: "brand" },
-};
-
-const REPORT_TONE: Record<string, string> = {
-  warning: "text-warning-text",
-  success: "text-success-text",
-  ai: "text-ai-text",
-};
-
-type PKey = {
-  [K in keyof typeof pipelineMessages]: (typeof pipelineMessages)[K] extends { "zh-CN": string } ? K : never;
-}[keyof typeof pipelineMessages];
-
-/** The five stages: their kicker, name, blurb and unit all hang off the key.
- *  The kicker is a mono design element in English in every locale, so it is a
- *  literal here rather than a catalog entry. */
-const STAGE_META: Record<AgentStageKey, { kicker: string; label: PKey; desc: PKey; unit: PKey }> = {
-  understand: { kicker: "01 UNDERSTAND", label: "stageUnderstand", desc: "stageUnderstandDesc", unit: "unitDocs" },
-  extract: { kicker: "02 EXTRACT", label: "stageExtract", desc: "stageExtractDesc", unit: "unitEntries" },
-  weave: { kicker: "03 WEAVE", label: "stageWeave", desc: "stageWeaveDesc", unit: "unitGroups" },
-  verify: { kicker: "04 VERIFY", label: "stageVerify", desc: "stageVerifyDesc", unit: "unitEntries" },
-  commit: { kicker: "05 COMMIT", label: "stageCommit", desc: "stageCommitDesc", unit: "unitEntries" },
-};
-
-const UNIT_KEY: Record<ReportUnit, PKey> = {
-  docs: "unitDocs",
-  entries: "unitEntries",
-  groups: "unitGroups",
-  occurrences: "unitOccurrences",
-};
-
-const REPORT_KEY: Record<ReportRowKey, PKey> = {
-  parsed: "reportParsed",
-  units: "reportUnits",
-  merged: "reportMerged",
-  conflicts: "reportConflicts",
-  preVerified: "reportPreVerified",
-  reflux: "reportReflux",
-};
-
-export function PipelineClient() {
-  const m = useMessages(pipelineMessages);
-  const sh = useMessages(shell);
-  const c = useMessages(common);
-  const a = useMessages(assets);
-  const [data, setData] = useState<PipelineData | null>(null);
-  const [needsAuth, setNeedsAuth] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/pipeline", { cache: "no-store" })
-      .then(async (res) => {
-        if (res.status === 401) return setNeedsAuth(true);
-        if (!res.ok) throw new Error(String(res.status));
-        setData((await res.json()) as PipelineData);
-      })
-      .catch(() => setError(m.errLoad));
-  }, []);
-
-  if (needsAuth) {
-    return (
-      <div className="mx-auto flex max-w-[28rem] flex-col items-center gap-4 py-24">
-        <EmptyState
-          icon="lock"
-          title={a.needSignIn}
-          description={m.needSignInDesc}
-          action={
-            <Button asChild>
-              <a href={loginHref("/pipeline")}>{c.signIn}</a>
-            </Button>
-          }
-        />
-      </div>
-    );
+export function PipelineClient(){
+  const m=useMessages(workCenter),[value,setValue]=useState<WorkCenter|null>(null),[error,setError]=useState(0),[busy,setBusy]=useState(false),
+    [kb,setKb]=useState(""),[kind,setKind]=useState(""),[state,setState]=useState(""),[trail,setTrail]=useState<(string|undefined)[]>([undefined]);
+  const sequence=useRef(0),controller=useRef<AbortController|null>(null);
+  const [libraries,setLibraries]=useState<WorkCenter["libraries"]>([]);
+  useEffect(()=>{void load();return()=>{sequence.current++;controller.current?.abort();};},[]);
+  async function load(before?:string,nextTrail:(string|undefined)[]=[undefined],filter={kb,kind,state}){
+    const ticket=++sequence.current;controller.current?.abort();const abort=new AbortController();controller.current=abort;
+    setValue(null);setError(0);setBusy(true);
+    const params=new URLSearchParams();if(filter.kb)params.set("kbId",filter.kb);if(filter.kind)params.set("kind",filter.kind);if(filter.state)params.set("state",filter.state);if(before)params.set("before",before);
+    try{
+      const response=await fetch(`/api/pipeline?${params}`,{cache:"no-store",credentials:"same-origin",signal:abort.signal});
+      if(ticket!==sequence.current)return;
+      if(!response.ok){setError(response.status);setLibraries([]);return;}
+      const result=await response.json() as WorkCenter;if(ticket!==sequence.current)return;
+      if(result.format!=="karda.work-center.v1"||!Array.isArray(result.items)||!Array.isArray(result.libraries)||!Array.isArray(result.counts))throw Error("invalid_response");
+      result.items=result.items.map(item=>({...item,href:workHref(item)}));
+      setValue(result);setLibraries(result.libraries);setTrail(nextTrail);
+    }catch{if(ticket===sequence.current){setError(503);setLibraries([]);}}finally{if(ticket===sequence.current)setBusy(false);}
   }
-
-  if (error) {
-    return (
-      <div className="mx-auto max-w-[42rem] py-16">
-        <Banner tone="danger" title={error} />
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div className="flex items-center justify-center py-24 text-body-md text-muted-foreground">
-        <Icon name="spinner" className="mr-2 animate-spin" />
-        {m.loading}
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <PageHead
-        title={sh.navPipeline}
-        description={sh.navPipelineDesc}
-        meta={m.boardMeta(data.docsToday, data.p95Seconds, data.autoRatePct)}
-        actions={
-          <>
-            {/* 二级导航(任务与队列/受控重建)在左侧导航卡下,不在这里重复 */}
-            <Button variant="outline" asChild>
-              <a href="/assets/new">{a.uploadButton}</a>
-            </Button>
-            <Button>{m.batchConfirm}</Button>
-          </>
-        }
-      />
-
-      {/* agent presence: identity left, 今日战报 right - the AI layer's
-          face. AI tone rides the 2px top edge; foreground stays ai-text. */}
-      <Card className="border-t-medium border-t-ai-border py-md">
-        <CardContent className="flex flex-wrap items-center gap-lg px-lg">
-          <div className="flex min-w-[16rem] items-center gap-md">
-            <span className="flex size-media-xs shrink-0 items-center justify-center rounded-lg border border-ai-border/40 bg-ai-muted/40">
-              <Icon name="sparkles" size="lg" className="text-ai-text" />
-            </span>
-            <span className="flex min-w-0 flex-col gap-2xs">
-              <span className="flex items-baseline gap-sm">
-                {/* 名字取自 `shell.agentName` —— 它只该有一份。原来 pipeline 目录里另有一条
-                    `stewardName`,两处说同一件事,迟早只改其中一份。 */}
-                <span className="text-label-lg">{sh.agentName}</span>
-                <span className="font-mono text-code-sm tracking-widest text-ai-text">{m.agentOnDuty}</span>
-              </span>
-              <span className="text-body-sm text-muted-foreground">
-                {m.agentBlurb}
-              </span>
-            </span>
-          </div>
-          <div className="ml-auto flex flex-wrap items-center gap-lg">
-            {data.report.map((r) => (
-              <span key={r.key} className="flex flex-col gap-2xs">
-                <span className="text-body-sm text-muted-foreground">{m[REPORT_KEY[r.key]]}</span>
-                <span className={`font-mono text-body-sm ${r.tone ? REPORT_TONE[r.tone] : "text-foreground"}`}>
-                  {r.value} <span className="text-muted-foreground">{m[UNIT_KEY[r.unit]]}</span>
-                </span>
-              </span>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* stage flow */}
-      <div className="flex flex-col gap-md">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-title-sm">{m.flowTitle}</h2>
-          <span className="text-body-sm text-muted-foreground">
-            {data.demoOps ? m.demoNote : ""}
-          </span>
-        </div>
-        <div className="grid grid-cols-2 gap-lg @min-[44rem]:grid-cols-5">
-          {data.stages.map((s) => (
-            <Card key={s.key} className={`py-md${s.active ? " border-t-medium border-t-ai-border" : ""}`}>
-              <CardContent className="flex h-full flex-col gap-2xs px-lg">
-                <span className={`font-mono text-code-sm tracking-widest ${s.active ? "text-ai-text" : "text-muted-foreground"}`}>
-                  {STAGE_META[s.key].kicker}
-                </span>
-                <span className="text-label-lg">{m[STAGE_META[s.key].label]}</span>
-                <span className="text-body-sm leading-relaxed text-muted-foreground">{m[STAGE_META[s.key].desc]}</span>
-                <span className="mt-auto flex items-baseline gap-sm pt-2xs">
-                  <span className="font-mono text-title-sm">{s.value}</span>
-                  <span className="text-body-sm text-muted-foreground">{m[STAGE_META[s.key].unit]}</span>
-                  {s.aside && (
-                    <span className={`text-body-sm ${s.asideTone === "warning" ? "text-warning-text" : "text-muted-foreground"}`}>
-                      {s.aside.kind === "conflicts" ? m.asideConflicts(s.aside.n) : m.asidePending(s.aside.n)}
-                    </span>
-                  )}
-                </span>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* proposals */}
-      <div className="flex flex-col gap-md">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-title-sm">{m.pendingTitle(data.pendingTotal)}</h2>
-          <span className="text-body-sm text-muted-foreground">{m.pendingHint}</span>
-        </div>
-        <div className="flex flex-col gap-md">
-          {data.proposals.map((p) => {
-            const meta = PROPOSAL_META[p.kind];
-            const warn = meta.tone === "warning";
-            return (
-              <Card key={p.id} className={`py-md${warn ? " border-t-medium border-t-warning-border" : ""}`}>
-                <CardContent className="flex items-start gap-md px-lg">
-                  <span
-                    className={`flex size-media-xs shrink-0 items-center justify-center rounded-lg border ${
-                      warn
-                        ? "border-warning-border/50 bg-warning-muted/40"
-                        : meta.tone === "success"
-                          ? "border-success-border/50 bg-success-muted/40"
-                          : "border-primary-border/50 bg-primary-muted/40"
-                    }`}
-                  >
-                    <Icon
-                      name={meta.icon}
-                      size="sm"
-                      className={warn ? "text-warning-text" : meta.tone === "success" ? "text-success-text" : "text-primary-text"}
-                    />
-                  </span>
-                  <span className="flex min-w-0 flex-1 flex-col gap-2xs">
-                    <span className="flex items-center gap-sm">
-                      <span className="text-label-lg">{p.title}</span>
-                      <StatusBadge tone={meta.tone} dot={false}>
-                        <span className="font-mono text-code-sm tracking-wide">{p.tag}</span>
-                      </StatusBadge>
-                    </span>
-                    <span className="text-body-sm leading-relaxed text-muted-foreground">
-                      {p.body}
-                      <span className="text-foreground">{p.strong}</span>
-                    </span>
-                  </span>
-                  <span className="flex shrink-0 items-center gap-sm">
-                    <Button variant="outline" size="sm">
-                      {p.secondaryAction}
-                    </Button>
-                    <Button size="sm">{p.primaryAction}</Button>
-                  </span>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-        {data.pendingTotal > data.proposals.length && (
-          <div className="flex justify-center">
-            <a href="/pipeline" className="text-body-sm text-primary">
-              {m.restLink(data.pendingTotal - data.proposals.length)}
-            </a>
-          </div>
-        )}
-      </div>
-    </>
-  );
+  function filterChanged(){sequence.current++;controller.current?.abort();setValue(null);setError(0);setBusy(false);setTrail([undefined]);}
+  if(error===401)return <SignInGate from="/pipeline"/>;
+  const rawState=(key:string)=>m[key as keyof typeof m]??key;
+  return <div className="flex min-w-0 flex-col gap-md" aria-busy={busy}>
+    <PageHead title={m.title}/><p>{m.hint}</p><p className="text-body-sm text-muted-foreground">{m.scope}</p>
+    <div className="flex flex-wrap gap-sm"><Button variant="outline" disabled={busy} onClick={()=>void load()}>{m.refresh}</Button>
+      <Button variant="outline" asChild><Link href="/assets">{m.libraries}</Link></Button>
+      <Button variant="outline" asChild><Link href="/pipeline/operations">{m.maintenanceCenter}</Link></Button></div>
+    <form className="flex min-w-0 flex-wrap items-end gap-sm" onSubmit={e=>{e.preventDefault();void load();}}>
+      <label>{m.library}<select aria-label={m.library} className="block max-w-full rounded border p-sm" value={kb} onChange={e=>{filterChanged();setKb(e.target.value);}}>
+        <option value="">{m.all}</option>{libraries.map(lib=><option key={lib.id} value={lib.id}>{lib.name}</option>)}</select></label>
+      <label>{m.kind}<select aria-label={m.kind} className="block rounded border p-sm" value={kind} onChange={e=>{filterChanged();setKind(e.target.value);}}>
+        <option value="">{m.all}</option>{WORK_KINDS.map(k=><option key={k} value={k}>{m[k]}</option>)}</select></label>
+      <label>{m.state}<select aria-label={m.state} className="block rounded border p-sm" value={state} onChange={e=>{filterChanged();setState(e.target.value);}}>
+        <option value="">{m.all}</option>{WORK_STATES.map(s=><option key={s} value={s}>{m[s]}</option>)}</select></label>
+      <Button type="submit" disabled={busy}>{m.apply}</Button></form>
+    {busy&&<p role="status">{m.loading}</p>}
+    {error!==0&&<Banner tone="danger" title={error===403?m.denied:error===409?m.changed:m.unavailable}/>}
+    {value&&<>
+      <p>{m.checked} {value.checkedAt}</p><p>{m.countScope}</p>
+      <div className="grid gap-sm sm:grid-cols-5">{WORK_STATES.map(s=><Button key={s} variant={state===s?"default":"outline"} disabled={busy}
+        onClick={()=>{setState(s);void load(undefined,[undefined],{kb,kind,state:s});}}>{m[s]} ({value.counts.filter(c=>c.state===s).reduce((n,c)=>n+c.count,0)})</Button>)}</div>
+      <p>{m.pageScope} {value.items.length}</p>
+      {!value.items.length&&<p>{m.empty}</p>}
+      <section className="grid min-w-0 gap-sm">{value.items.map(item=><article key={`${item.kind}/${item.id}`} className="grid min-w-0 gap-sm rounded border p-md">
+        <h2 className="break-words text-title-sm">{item.title||m[item.kind]}</h2>
+        <p className="break-words">{item.libraryName} / {m[item.kind]} / {m[item.state]} / {rawState(item.rawState)}</p>
+        <p>{item.stage&&<>{m.stage}: {rawState(item.stage)} / </>}{item.attempt!==null&&<>{m.attempt}: {item.attempt}</>}</p>
+        <small className="break-all">{m.created}: {item.createdAt} / {m.observed}: {item.updatedAt}</small>
+        <small className="break-all">{item.id}</small>
+        <div className="flex flex-wrap gap-sm"><Button variant="outline" asChild><Link href={item.href}>{m.open}</Link></Button>
+          <Link className="underline" href={`/assets/${item.kbId}/maintenance`}>{m.inspect}</Link>
+          <Link className="underline" href={`/pipeline/operations?kbId=${item.kbId}`}>{m.createWork}</Link></div>
+      </article>)}</section>
+      <div className="flex flex-wrap gap-sm"><Button variant="outline" disabled={busy||trail.length<2} onClick={()=>{const prev=trail.slice(0,-1);void load(prev.at(-1),prev);}}>{m.previous}</Button>
+        <Button variant="outline" disabled={busy||!value.nextBefore} onClick={()=>void load(value.nextBefore!,[...trail,value.nextBefore!])}>{m.next}</Button></div>
+    </>}
+  </div>;
 }
