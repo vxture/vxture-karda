@@ -9,6 +9,19 @@ authorizes additive product rollout, not fabricated business quality acceptance,
 platform changes, customer privilege changes or automatic acceptance of drafts.
 External Ontos/Agent contracts and owner quality review remain evidence gates.
 
+## Owner priority correction - 2026-11-26
+
+Owner explicitly stopped the performance-first direction: the current machine is
+old, production hardware is not upgraded, and product functionality takes priority.
+Stop CPU profiling, load benchmarking and performance-only release batches now.
+Existing performance reports are historical diagnostics, not current feature
+blockers. Defer deployment-size performance acceptance until the operating
+hardware/environment is selected; never relabel it passed.
+Prioritize complete user/Agent functional flows and report concrete missing
+functions separately from external/business acceptance gates. Keep necessary
+permission, data-integrity and stage CI checks. Do not invent functionality to
+keep releasing small increments, or call a test/report a product feature.
+
 ## Owner delivery cadence - 2026-11-25
 
 Owner requests larger functional stages and fewer repeated tests. Develop related

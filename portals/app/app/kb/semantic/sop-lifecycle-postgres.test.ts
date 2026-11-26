@@ -14,6 +14,7 @@ import {parseSourceSearch} from "../retrieval/source-search";
 import {PostgresTopicDossiers} from "./topic-dossier-store";
 import {readKnowledgeSync,parseKnowledgeSync} from "./knowledge-sync";
 import {topicDossierHash} from "./topic-dossier";
+import {PostgresTopicKnowledge} from "./topic-knowledge";
 
 const endpoint=process.env.KARDA_PROVISION_TEST_DATABASE_URL;
 /** Synthetic authored SOP; no customer documents, model verdict or business gold. */
@@ -25,6 +26,7 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
   const identity={workspaceId:ws,sub,roles:[],productCode:"karda"},profile=localCompileProfile();
   let bytes=Buffer.from("Recovery SOP requires operator approval before restart.");let member:string|undefined;
   const objects={get:async()=>bytes},store=new PostgresSemanticStore(service,objects,async()=>true);
+  const consumer=new PostgresTopicKnowledge(service,objects,async()=>true);
   const reader=()=>new PostgresSemanticReader(service,objects,async()=>true,(db,ids)=>new PostgresFormalSemanticLoader({schema:profile.schema,
     entityTypes:new Map(profile.entityTypes.map(t=>[t.kind,t.type]))}).load(db,ids));
   const factSearch=(query:string,relationTypes?:string[])=>reader().readPackage(identity,[kb],{seedIds:["directory"],maxHops:0,maxNodes:40,maxEdges:20,relationTypes},true,false,undefined,{query,topK:20});
@@ -90,6 +92,7 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     await assert.rejects(read(),/knowledge_rollout_paused/);
     await assert.rejects(sync(),/knowledge_rollout_paused/);
     await assert.rejects(factSearch("operator approval"),/knowledge_rollout_paused/);
+    await assert.rejects(consumer.read(identity,{kbId:kb,action:"list"}),/knowledge_rollout_paused/);
     await assert.rejects(new PostgresTopicDossiers(service,objects,async()=>true).handle(identity,kb,{action:"list"}),/knowledge_rollout_paused/);
     assert.equal((await store.sourceReadiness(identity,kb)).readable,1,"maintenance remains available while consumption is paused");
     assert.equal((await store.auditHistory(identity,kb)).releases.length,1,"audit is still inspectable");
@@ -109,8 +112,34 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     const summary=await topics.handle(identity,kb,{action:"summary_save",id:summaryId,dossierId:draftId,
       payload:{format:"karda.topic-summary.v1",inputHash:summaryInput.modelInput.inputHash,paragraphs:[{text:"Recovery requires operator approval.",citations:[cited]}]},selection:{endpointCode:"chat/extract"}});
     assert.equal(summary.items[0].summaries[0].state,"pending");
+    assert.equal((await consumer.read(identity,{kbId:kb,action:"read",relationType:"requires"})).summary,null,"pending summary cannot reach the consumer");
     const accepted=await topics.handle(identity,kb,{action:"summary_review",id:summaryId,dossierId:draftId,expectedRevision:0,decision:"accept",note:"Synthetic cited summary checked"});
     assert.equal(accepted.items[0].summaries[0].state,"accept");
+    const consumerTopics=await consumer.read(identity,{kbId:kb,action:"list"});assert.deepEqual(consumerTopics.topics.map(t=>t.relationType),["requires"]);
+    const consumed=await consumer.read(identity,{kbId:kb,action:"read",relationType:"requires",summaryId});
+    assert.equal(consumed.summary?.state,"human_accepted");assert.equal(consumed.summary?.id,summaryId);
+    assert.equal(consumed.dossier?.sections[0].statements[0].evidence[0].id,cited);
+    assert.equal(JSON.stringify(consumed).includes("reviewedBy"),false,"consumer does not expose reviewer identity or notes");
+    const externalConsumer={...identity,productCode:"runos"};
+    assert.equal((await consumer.read(externalConsumer,{kbId:kb,action:"list"})).topics.length,0,"caller-product attachment is mandatory");
+    await admin.query("INSERT INTO karda_kb.kb_attachment(workspace_id,user_sub,product_code,kb_id) VALUES($1,$2,'runos',$3)",[ws,sub,kb]);
+    assert.equal((await consumer.read(externalConsumer,{kbId:kb,action:"read",relationType:"requires"})).summary?.id,summaryId);
+    await admin.query("DELETE FROM karda_kb.kb_attachment WHERE kb_id=$1 AND product_code='runos'",[kb]);
+    assert.equal((await consumer.read(externalConsumer,{kbId:kb,action:"read",relationType:"requires"})).dossier,null);
+    const secondarySummary=randomUUID();
+    await topics.handle(identity,kb,{action:"summary_save",id:secondarySummary,dossierId:draftId,payload:summary.items[0].summaries[0].payload!,selection:{endpointCode:"chat/extract"}});
+    await topics.handle(identity,kb,{action:"summary_review",id:secondarySummary,dossierId:draftId,expectedRevision:0,decision:"accept",note:"Synthetic secondary summary"});
+    assert.equal((await consumer.read(identity,{kbId:kb,action:"read",relationType:"requires",summaryId:secondarySummary})).summary?.id,secondarySummary);
+    await topics.handle(identity,kb,{action:"summary_review",id:secondarySummary,dossierId:draftId,expectedRevision:1,decision:"reject",note:"Synthetic withdrawn verdict"});
+    const rejectedConsumer=await consumer.read(identity,{kbId:kb,action:"read",relationType:"requires",summaryId:secondarySummary});
+    assert.equal(rejectedConsumer.summary,null);assert.equal(rejectedConsumer.summaries.length,0,"revoked verdict identity is hidden");
+    await admin.query("DELETE FROM karda_kb.semantic_review WHERE kb_id=$1 AND subject_key=$2",[kb,`topic-summary/${secondarySummary}`]);
+    await admin.query("DELETE FROM karda_kb.topic_summary WHERE kb_id=$1 AND id=$2",[kb,secondarySummary]);
+    await admin.query("DELETE FROM local_authz.member_role WHERE member_id=$1",[member]);
+    await admin.query("INSERT INTO local_authz.member_role(member_id,role_id) SELECT $1,id FROM local_authz.role WHERE role_code='readonly'",[member]);
+    assert.equal((await consumer.read(identity,{kbId:kb,action:"read",relationType:"requires",summaryId})).summary?.id,summaryId,"readers need no publish or export permission");
+    await admin.query("DELETE FROM local_authz.member_role WHERE member_id=$1",[member]);
+    await admin.query("INSERT INTO local_authz.member_role(member_id,role_id) SELECT $1,id FROM local_authz.role WHERE role_code='member'",[member]);
     const exportRead=await topics.handle(identity,kb,{action:"list",dossierId:draftId,summaryId},true);
     const exported=exportCurrentTopic(kb,exportRead.checkedAt,exportRead.items[0],summaryId);
     assert.equal(exported.summary?.reviewedBy,sub);assert.equal(exported.summary?.state,"human_accepted");
@@ -133,6 +162,16 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     while(summaryCursor){const page=await topics.handle(identity,kb,{action:"list",dossierId:draftId,summaryBefore:summaryCursor});
       summaryIds.push(...page.items[0].summaries.map(s=>s.id));summaryCursor=page.items[0].summaryNext;}
     assert.equal(summaryIds.length,105);assert.equal(new Set(summaryIds).size,105);
+    const pageAccepted=summaryIds.filter(id=>id!==summaryId).slice(0,25);
+    await admin.query(`INSERT INTO karda_kb.semantic_review(kb_id,subject_key,revision,decision,subject_hash,reviewer_sub,note)
+      SELECT kb_id,'topic-summary/'||id,1,'accept',payload_hash,$3,'Synthetic consumer paging' FROM karda_kb.topic_summary WHERE kb_id=$1 AND id=ANY($2::uuid[])`,[kb,pageAccepted,sub]);
+    const topicPage=await consumer.read(identity,{kbId:kb,action:"read",relationType:"requires"});
+    assert.equal(topicPage.summaries.length,20);assert.ok(topicPage.nextBefore);
+    const topicNext=await consumer.read(identity,{kbId:kb,action:"read",relationType:"requires",before:topicPage.nextBefore!});
+    assert.equal(topicNext.summaries.length,6);assert.equal(topicNext.nextBefore,null);
+    assert.equal(new Set([...topicPage.summaries,...topicNext.summaries].map(s=>s.id)).size,26);
+    await admin.query("DELETE FROM karda_kb.semantic_review WHERE kb_id=$1 AND subject_key=ANY($2::text[])",[kb,pageAccepted.map(id=>`topic-summary/${id}`)]);
+
     const oldReview=await topics.handle(identity,kb,{action:"summary_review",id:summaryId,dossierId:draftId,expectedRevision:1,decision:"accept",note:"Historical record rechecked"});
     assert.equal(oldReview.items[0].summaries[0].id,summaryId);assert.equal(oldReview.items[0].summaries[0].revision,2);
     const olderExport=await topics.handle(identity,kb,{action:"list",dossierId:draftId,summaryId},true);
@@ -162,6 +201,7 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     assert.deepEqual(sourceSync.knowledge?.edges,[]);assert.deepEqual(sourceSync.knowledge?.passages,[]);
     assert.equal((await sync(sourceSync.revision)).action,"unchanged");
     assert.equal((await factSearch("operator approval")).search?.matchedRelations,0,"source changes remove facts before ranking");
+    await assert.rejects(consumer.read(identity,{kbId:kb,action:"read",relationType:"requires",summaryId}),/topic_knowledge_incomplete/);
     const staleExport=await topics.handle(identity,kb,{action:"list",dossierId:draftId,summaryId},true);
     assert.throws(()=>exportCurrentTopic(kb,staleExport.checkedAt,staleExport.items[0],summaryId),/semantic_topic_conflict/);
     const invalidated=await read();assert.deepEqual(invalidated.edges,[]);assert.deepEqual(invalidated.passages,[]);
