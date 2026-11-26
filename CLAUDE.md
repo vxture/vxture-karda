@@ -87,7 +87,16 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-26): v0.12.31 / b1343124, deploy45783571743
+Current production (2026-11-26): v0.12.32 / 789feec4, deploy45789138310
+succeeded at2026-11-26T09:17:16Z through normal production review. PR368
+adds workspace rollout controls, immutable audit and shared consumer gating.
+Stage CI45787788754:1111pass/zero skips; main CI45788527036/scan45788526920pass.
+Migration0029 run45788759293 succeeded;56 declared tables verified.
+Health/ready and anonymous control GET/POST/package refusal pass.
+No local full-suite repetition or customer control changes. Fixed17items:7complete/10unfinished.
+See docs/50-deployment/340-rollout-control-release-20261126.md.
+
+Historical production (2026-11-26): v0.12.31 / b1343124, deploy45783571743
 succeeded at2026-11-26T08:36:01Z through normal production review. PR366
 adds bound published fact search pages across RP/OBO and the workbench.
 Stage CI45782789870:1108pass/zero skips; main CI45783205469/scan45783205759pass.
