@@ -87,7 +87,15 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-26): v0.12.27 / 5e7ddd78, deploy45685631186
+Current production (2026-11-26): v0.12.28 / 923d760b, deploy45744991758
+succeeded at2026-11-26T02:57:03Z through normal production review. PR360
+adds current20-source batch navigation, exact ID lookup and current-range recheck.
+Stage CI45744414717:1102pass/zero skips; main CI45744737100/scan45744736918pass.
+No DDL,55tables; health/ready and anonymous batch/cursor/ID/package refusal pass.
+No local full-suite repetition or automatic processing. Fixed17items:7complete/10unfinished.
+See docs/50-deployment/300-source-window-release-20261126.md.
+
+Historical production (2026-11-26): v0.12.27 / 5e7ddd78, deploy45685631186
 succeeded at2026-11-25T19:35:12Z through normal production review. PR358
 adds current authorized source diagnostics before compilation and workbench guidance.
 Final stage CI45684616473:1101pass/zero skips after reusing a duplicate time label;
