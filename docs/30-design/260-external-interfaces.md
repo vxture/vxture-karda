@@ -408,3 +408,6 @@ GET /api/kb/{id}/semantic?view=sources，RP人类审核面，只接受唯一view
 
 
 试点控制（170§55）：RP GET/POST `/api/knowledge-rollout`仅当前空间product.manage，无OBO管理面。POST同源JSON只eventId/expectedRevision/enabled/reason，CAS/幂等和追加审计；知识包/同步/事实/图谱/主题消费均核验同库控制，暂停新请求503且不返回知识正文。原文/维护/审核不受此开关控制，已交付内容不远程收回。
+
+
+OCR草稿（170§60）：RP GET/POST `/api/kb/[id]/ocr-drafts`，当前同空间user库所有者且product.enter/data.read/data.write/ai.use。GET document_id及互斥draft_id/before，20条元数据分页/单详情；POST同源JSON create(action/id/documentId/modelCode)、confirm/reject(action/id/documentId)，拒绝额外正文/身份字段。只通过Atlas `/v1/parse` task=ocr显式模型路由，平台tenant/workspace/stable taskId归因；新调用显式计费，失败不自动重试。模型草稿与来源确认、事实裁决严格分开，当前原件/权限/版本CAS后才写新快照和无向量chunks；无新增OBO工具或平台配置。

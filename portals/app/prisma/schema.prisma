@@ -1077,3 +1077,21 @@ model KnowledgeRolloutEvent {
   @@map("knowledge_rollout_event")
   @@schema("karda_kb")
 }
+
+model DocumentOcrDraft {
+  id String @id @db.Uuid
+  kbId String @map("kb_id") @db.Uuid
+  documentId String @map("document_id") @db.Uuid
+  contentHash String @map("content_hash") @db.VarChar(64)
+  baseVersion Int @map("base_version")
+  modelCode String @map("model_code") @db.VarChar(128)
+  createdBy String @map("created_by") @db.VarChar(128)
+  state String @db.VarChar(16)
+  payload Json?
+  payloadHash String? @map("payload_hash") @db.VarChar(64)
+  errorCode String? @map("error_code") @db.VarChar(64)
+  committedVersion Int? @map("committed_version")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  @@map("document_ocr_draft")
+  @@schema("karda_kb")
+}
