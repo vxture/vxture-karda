@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {randomUUID} from "node:crypto";
 import {projectPublishedSearch} from "./projection";
 import {parsePublishedSearch} from "./published-search";
-import {publishedSearchTool} from "./published-search-tool";
+import {publishedSearchTool,publishedSearchError} from "./published-search-tool";
 import {dispatchTool} from "../tools/dispatch";
 import {CLOCK,KB,PRIVATE_KB,tenderSchema,tenderSnapshot} from "./tender-fixture";
 import type {CallerContext} from "../tools/s2s";
@@ -54,4 +54,33 @@ test("published search OBO dispatch meters after success and never delivers on m
   const noDelivery=await publishedSearchTool(caller,args,async()=>{throw Error("private SQL");},async()=>{meters++;});assert.equal(noDelivery.status,503);assert.equal(noDelivery.body.error,"published_search_unavailable");assert.equal(meters,1);
   const result=await publishedSearchTool(caller,args,async()=>({format:"karda.published-search.v1",mode:"published_facts",knowledge:{...search("ISO"),format:"karda.knowledge-package.v1",sourceStatus:"complete",statements:[],passages:[],gaps:[]}}),async()=>{throw Error("meter failed");});
   assert.equal(result.status,503);assert.equal(Object.hasOwn(result.body,"result"),false);
+});
+
+test("published search pages every ranked match without merging or dropping ties",()=>{
+  const snapshot=tenderSnapshot();
+  snapshot.relations=Array.from({length:45},(_,i)=>({...snapshot.relations[1],id:`match-${String(i).padStart(3,"0")}`}));
+  const page=(pageCursor:string)=>projectPublishedSearch(snapshot,tenderSchema,scope,{query:"ISO9001",topK:20,pageCursor},statements,excerpts);
+  const first=page("");assert.equal(first.search!.items.length,20);assert.equal(first.search!.page!.offset,0);
+  const second=page(first.search!.page!.nextCursor!);assert.equal(second.search!.page!.offset,20);
+  const third=page(second.search!.page!.nextCursor!);assert.equal(third.search!.items.length,5);assert.equal(third.search!.page!.offset,40);
+  assert.equal(third.search!.page!.nextCursor,null);assert.equal(third.truncated,false);
+  assert.deepEqual([...first.search!.items,...second.search!.items,...third.search!.items].map(i=>i.relationId),snapshot.relations.map(r=>r.id));
+  assert.deepEqual(page(""),first);assert.equal(second.evidence.length,1,"shared proof appears once in each bounded page");
+});
+
+test("published search cursors bind current facts, support, query and caller scope",()=>{
+  const snapshot=tenderSnapshot();snapshot.relations.push({...snapshot.relations[1],id:"r4"});
+  const read=(s=snapshot,q={query:"ISO9001",topK:1,pageCursor:""},proof=excerpts,binding="caller")=>
+    projectPublishedSearch(s,tenderSchema,scope,q,statements,proof,undefined,binding);
+  const first=read(),token=first.search!.page!.nextCursor!;assert.ok(token);
+  const next={query:"ISO9001",topK:1,pageCursor:token};assert.equal(read(snapshot,next).search!.page!.offset,1);
+  for(const field of [{query:"Certificate"},{topK:2}])assert.throws(()=>read(snapshot,{...next,...field}),/published_search_changed/);
+  assert.throws(()=>read(snapshot,next,excerpts,"other-caller"),/published_search_changed/);
+  const changed=structuredClone(snapshot);changed.entities[1].label="amended";assert.throws(()=>read(changed,next),/published_search_changed/);
+  const expired=structuredClone(snapshot);expired.assertions[1].verificationExpiresAt=CLOCK;assert.throws(()=>read(expired,next),/published_search_changed/);
+  const withdrawn=structuredClone(snapshot);withdrawn.sources.find(s=>s.current)!.withdrawn=true;assert.throws(()=>read(withdrawn,next),/published_search_changed/);
+  assert.throws(()=>read(snapshot,next,new Map([...excerpts,["e2","ISO9001 changed passage"]])),/published_search_changed/);
+  for(const page_cursor of [null,1,"garbage","x".repeat(513)])assert.throws(()=>parsePublishedSearch({kb_ids:[randomUUID()],query:"ISO",page_cursor}),/published_search_invalid_request/);
+  assert.equal(parsePublishedSearch({kb_ids:[randomUUID()],query:"ISO",page_cursor:""}).pageCursor,"");
+  assert.equal(publishedSearchError(Error("published_search_changed")).status,409);
 });

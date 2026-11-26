@@ -160,9 +160,18 @@ test("semantic native-text adapter: live roles, attachment/tenant scope, source 
     const pageIds=firstPage.edges.map(e=>e.id);let cursor=firstPage.directoryPage!.nextCursor;
     while(cursor){const next=await reader.readPackage(identity,[kb],{...pageQuery,pageCursor:cursor},true);pageIds.push(...next.edges.map(e=>e.id));cursor=next.directoryPage!.nextCursor;}
     assert.deepEqual(pageIds,overview.edges.map(e=>e.id),"all 31 disconnected relations can be paged with no omissions or repeats");
+    await admin.query("INSERT INTO local_authz.member_role(member_id,role_id) SELECT $1,id FROM local_authz.role WHERE role_code='member'",[member]);
+    const searchPage=(pageCursor:string,scope=[kb])=>reader.readPackage(identity,scope,query,true,false,undefined,{query:"requires",topK:20,pageCursor});
+    const rankedFirst=await searchPage("");assert.equal(rankedFirst.search!.items.length,20);assert.ok(rankedFirst.search!.page!.nextCursor);
+    const rankedSecond=await searchPage(rankedFirst.search!.page!.nextCursor!);assert.equal(rankedSecond.search!.items.length,11);
+    assert.equal(rankedSecond.search!.page!.offset,20);assert.equal(rankedSecond.search!.page!.nextCursor,null);
+    assert.equal(new Set([...rankedFirst.search!.items,...rankedSecond.search!.items].map(r=>r.relationId)).size,31);
+    await assert.rejects(searchPage(rankedFirst.search!.page!.nextCursor!,[kb,hiddenKb]),/published_search_changed/,"requested scope stays bound even when hidden library contributes no facts");
     await admin.query("UPDATE karda_kb.assertion SET statement=statement||' amended' WHERE id=$1",[assertion]);
+    await assert.rejects(searchPage(rankedFirst.search!.page!.nextCursor!),/published_search_changed/);
     await assert.rejects(reader.readPackage(identity,[kb],{...pageQuery,pageCursor:firstPage.directoryPage!.nextCursor!},true),/semantic_directory_changed/);
     await admin.query("DELETE FROM karda_kb.kb_attachment WHERE kb_id=$1 AND user_sub=$2",[kb,sub]);
+    await assert.rejects(searchPage(rankedFirst.search!.page!.nextCursor!),/published_search_changed/);
     await assert.rejects(reader.readPackage(identity,[kb],{...pageQuery,pageCursor:firstPage.directoryPage!.nextCursor!},true),/semantic_directory_changed/);
     await admin.query("INSERT INTO karda_kb.kb_attachment(workspace_id,user_sub,product_code,kb_id) VALUES($1,$2,'karda',$3)",[ws,sub,kb]);
     published.relations=originalRelations;

@@ -26,9 +26,9 @@ export const PROTOCOL_VERSION = "1.0.0";
 export const TOOLS: ToolDescriptor[] = [
   {
     name:"karda.published_search",
-    summary:"Lexical search of currently authorized reviewed published relations, entity labels, assertions and exact supporting evidence across up to20 explicit attached user libraries. Returns ranked relation IDs with a bounded knowledge package. Excludes drafts/inference/stale sources before ranking. Scores are local ordering only, not confidence. No graph expansion, model answer or service-mode access.",
+    summary:"Lexical search of currently authorized reviewed published relations, entity labels, assertions and exact supporting evidence across up to20 explicit attached user libraries. Returns ranked relation IDs with a bounded knowledge package. Optional page_cursor (empty starts) enables current-authority pagination; retain query, top_k, types and library scope. Replace each page; discard on error and restart on409. Each page request is metered. Excludes drafts/inference/stale sources before ranking. Scores are local ordering only, not confidence. No graph expansion, model answer or service-mode access.",
     mode:"obo_only",metering:{kind:"per_call",metric:"karda.search"},
-    input:["kb_ids","query","top_k","relation_types"],authz:{asset_types:["knowledge_base"]},
+    input:["kb_ids","query","top_k","relation_types","page_cursor"],authz:{asset_types:["knowledge_base"]},
   },
   {
     name:"karda.knowledge_sync",
