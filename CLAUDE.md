@@ -106,7 +106,16 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-26): v0.12.35 / d4ed8ca7, deploy45810716945
+Current production (2026-11-26): v0.12.36 / 5a03e6eb, deploy45815570553
+succeeded at2026-11-26T12:24:19Z through normal production review. PR376
+adds DOCX authored numbering, style inheritance/restart and versioned source evidence.
+Stage CI45814356040:1119pass/zero skips; main CI45814761635/scan45814761671pass.
+Migration0030 run45815255428 succeeded;56tables unchanged. Health/ready and
+anonymous source inspection/compile-tasks/package refusal pass.
+Functional completeness first; no performance work or local full-suite repetition.
+Fixed17items:7complete/10unfinished. See deployment380 and workplan197.
+
+Historical production (2026-11-26): v0.12.35 / d4ed8ca7, deploy45810716945
 succeeded at2026-11-26T11:34:13Z through normal production review. PR374
 adds agent/user topic discovery, accepted summary consumption and exact evidence.
 Stage CI45809766251:1116pass/zero skips; main CI45810313107/scan45810313240pass.
