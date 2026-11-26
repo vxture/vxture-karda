@@ -414,3 +414,6 @@ OCR草稿（170§60）：RP GET/POST `/api/kb/[id]/ocr-drafts`，当前同空间
 
 
 知识维护任务（170§61）：RP GET/POST `/api/knowledge-operations`，当前工作空间内当前user库所有者且product.enter/data.read/data.write。GET kbId/state/priority/overdue及before收窄、每页50条；taskId详情及historyBefore（20条历史）与列表过滤互斥。POST同源JSON create/update严格白名单，事件幂等/修订CAS、必填人工说明、终态重开；没有知识认可或自动发布副作用，无OBO/外部通知。历史与列表逐次复核当前角色/拥有权，不成为旧授权凭据。
+
+
+真实作业中心（170§62）：RP GET `/api/pipeline`新内部读模型karda.work-center.v1，替换旧演示payload；当前空间当前user库所有者及product.enter/data.read/data.write，编译附service.publish和创建人、OCR附ai.use和创建人。kbId/kind/state/before收窄、30条当前分页与权限过滤后统计，不返回正文/模型/处置说明；无模型执行或重试/审核副作用。目的处理页按任务ID精确定位且独立重新授权，无新增OBO工具。

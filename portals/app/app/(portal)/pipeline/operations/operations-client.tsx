@@ -9,7 +9,7 @@ import {SignInGate} from "../../../_lib/ui";
 import {OPERATION_STATES,OPERATION_PRIORITIES,OPERATION_UUID,type OperationCommand,type OperationRow,type OperationsResult,type OperationState,type OperationPriority} from "../../../kb/semantic/operations";
 
 interface Library {id:string;name:string;ownerType:string}
-export function OperationsClient({initialKb,initialTarget,initialType}:{initialKb:string;initialTarget:string;initialType:string}){
+export function OperationsClient({initialKb,initialTarget,initialType,initialTaskId}:{initialKb:string;initialTarget:string;initialType:string;initialTaskId?:string}){
   const m=useMessages(operations),[libraries,setLibraries]=useState<Library[]>([]),[result,setResult]=useState<OperationsResult|null>(null),
     [detail,setDetail]=useState<OperationsResult|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(0),[saved,setSaved]=useState(false);
   const [kb,setKb]=useState(OPERATION_UUID.test(initialKb)?initialKb:""),[state,setState]=useState(""),[priority,setPriority]=useState(""),[overdue,setOverdue]=useState(false);
@@ -39,7 +39,7 @@ export function OperationsClient({initialKb,initialTarget,initialType}:{initialK
       if([401,403,404,409].includes(status))pending.current=null;}}
     finally{if(ticket===sequence.current){locked.current=false;setBusy(false);}}
   }
-  useEffect(()=>{void refresh();return()=>{sequence.current++;controller.current?.abort();locked.current=false;};},[]);
+  useEffect(()=>{if(initialTaskId&&OPERATION_UUID.test(initialTaskId))void open(initialTaskId);else void refresh();return()=>{sequence.current++;controller.current?.abort();locked.current=false;};},[]);
   async function refresh(){
     setResult(null);setDetail(null);resetForm();setTrail([undefined]);
     await run(async signal=>{const [page,libs]=await Promise.all([json(query(),signal),json("/api/kb",signal)]);setResult(page);setLibraries(libs.knowledgeBases??[]);});

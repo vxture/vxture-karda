@@ -1006,3 +1006,20 @@ create只接受action/eventId/taskId/kbId/targetType/targetId/title/state/priori
 开发阶段一次类型检查及协议定向，阶段末集中交互和既有CI验证当前权限/新旧库重放/CAS/幂等/追加审计；不本地全量重复，不做性能专项。真实外部事件投递/Agent联调和业务质量不因此宣称完成。
 
 集中Playwright合成流程已通过：体检来源入口参数保留、建任务、待依赖、完成、终态重开、修订绑定和锚点不可改、处置历史、403清空及390px无横向溢出。修正选择框可访问名称后通过；替身只证明软件交互，真实数据库当前授权/CAS/追加历史统一阶段CI验证。
+
+
+## 62. 真实作业中心与精确处理入口
+
+软件S2阶段将`/pipeline`及RP GET `/api/pipeline`改为真实作业中心，移除DEMO_PIPELINE战报、虚构提案/自动率与无执行逻辑的批量确认。输出新`karda.work-center.v1`内部RP读模型，不是已登记的OBO工具；旧演示类型保留供尚存的旧页引用，本入口无数据库503，不返回合成成功。无DDL，58表不变。
+
+同一REPEATABLE READ只读事务按当前平台准入、本地product.enter/data.read/data.write、当前工作空间当前拥有user库过滤后联合processing_task、semantic_compile_task、document_ocr_draft、maintenance_task_event最新修订。文档加工含独立extraction种类（stage=extract），不混淆抽取和重嵌；不返回已归档/删除文档作业。编译还需service.publish且created_by=当前用户，OCR还需ai.use且创建人为当前用户。维护只读当次元数据，处置说明/操作者/快照/原文/模型输出/错误私文均不在列表中。
+
+统一queued/running/attention/completed/closed；编译租约已过期显式lease_expired归attention，不在GET更新任务。OCRrunning可能是中断未回写，账本不推测真实模型进度；updatedAt在无该字段的OCR为记录创建时间。维护记录时间为最新处置事件，不假装原始任务建立时间。所有统计按已授权库和作业类型计算，状态筛选只下钻列表；无授权对象不参与计数/库目录。库目录上限500，超预算503而非截断成功。
+
+GET只接受kbId/kind/state/before，唯一参数，用户不可提交workspace/user。每页30条，createdAt（毫秒）、kind和UUID倒序游标；把PostgreSQL微秒统一毫秒后再排序，避免JS时间序列化漏行。游标绑定身份/空间/筛选，下一页重新授权且当前过滤范围须仍有精确锚点；删除/状态变化使锚点失效409。非快照跨页，不声称抵御整个列表新增/变更；页面注明本页和重新核验时间，统计不当作执行许可。
+
+每项进入真实处理工作台：processing按任务ID详情；compilation精确taskId加载当前任务及既有租约恢复/选择/审核链；OCR按资料+草稿ID加载预览确认；maintenance精确任务ID加载现有CAS/历史。查询参数只是定位，目的API各自重新授权和当前来源核验。作业中心GET不调用模型、不重试、不批量批准或发布，不创造新的执行权限。
+
+UI按库/类型/状态筛选、可点击状态汇总、前后页、空/错误/无权限状态和重新核验；筛选/翻页/权限错误立即清空旧行，AbortController/序号拒绝迟到响应，目的链接由有效UUID和作业类型重新生成，拒绝任意服务器href。开发只一次类型和协议定向，阶段末集中Playwright端到端导航及CI真实数据库作用域/计数/分页/撤销验证，无本地全量重复或性能专项。
+
+集中Playwright合成流程通过：真实账本行替身、筛选清空/前后分页、四类精确目的页实际导航及自动任务定位、拒绝任意href、403清空、390px无横向溢出。另修抽取任务详情为单独extract阶段，阶段标签按代码而非序号翻译，避免将抽取显示成fetch。合成响应不代表实际模型/业务联调；真实数据库账本授权/计数/同微秒分页在阶段CI验证。

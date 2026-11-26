@@ -10,12 +10,12 @@ import type {OcrPayload} from "../../../../kb/processing/pdf-ocr";
 
 interface Draft {id:string;state:string;model_code:string;created_at:string;error_code:string|null;payload:OcrPayload|null;committed_version:number|null;stale:boolean}
 interface Result {format:string;documentId:string;drafts:Draft[];nextBefore:string|null}
-export function OcrClient({kbId}:{kbId:string}){
-  const m=useMessages(ocr),[doc,setDoc]=useState(""),[model,setModel]=useState(""),[value,setValue]=useState<Result|null>(null),
+export function OcrClient({kbId,initialDocumentId,initialDraftId}:{kbId:string;initialDocumentId?:string;initialDraftId?:string}){
+  const m=useMessages(ocr),[doc,setDoc]=useState(initialDocumentId&&/^[a-f0-9-]{36}$/.test(initialDocumentId)?initialDocumentId:""),[model,setModel]=useState(""),[value,setValue]=useState<Result|null>(null),
     [draft,setDraft]=useState<Draft|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(0),[code,setCode]=useState(""),
     [confirmed,setConfirmed]=useState(false),[receipt,setReceipt]=useState<number|null>(null);
   const seq=useRef(0),abort=useRef<AbortController|null>(null);
-  useEffect(()=>()=>{seq.current++;abort.current?.abort();},[]);
+  useEffect(()=>{if(initialDocumentId&&initialDraftId&&/^[a-f0-9-]{36}$/.test(initialDocumentId)&&/^[a-f0-9-]{36}$/.test(initialDraftId))void request("detail",initialDraftId);return()=>{seq.current++;abort.current?.abort();};},[]);
   const endpoint=`/api/kb/${encodeURIComponent(kbId)}/ocr-drafts`;
   function clear(){seq.current++;abort.current?.abort();setBusy(false);setValue(null);setDraft(null);setConfirmed(false);setReceipt(null);setError(0);setCode("");}
   async function request(action:"list"|"detail"|"create"|"confirm"|"reject",id?:string,before?:string){

@@ -150,7 +150,7 @@ export function TaskClient({ id }: { id: string }) {
         {/* stage timeline + agent strip */}
         <div className="flex min-w-0 flex-1 flex-col">
           {data.stages.map((s, i) => (
-            <StageNode key={s.kicker} stage={data.live ? { ...s, label: [m.procFetch, m.procParse, m.procChunk, m.procEmbed, m.procCommit][i] ?? s.label } : s} last={i === data.stages.length - 1} />
+            <StageNode key={s.kicker} stage={data.live ? { ...s, label: ({fetch:m.procFetch,parse:m.procParse,chunk:m.procChunk,embed:m.procEmbed,commit:m.procCommit,extract:m.stageExtract} as Record<string,string>)[s.label] ?? s.label } : s} last={i === data.stages.length - 1} />
           ))}
 
           {!data.live && <div className="mt-lg flex items-start gap-md rounded-lg border border-ai-border/40 bg-ai-muted/30 p-md">
