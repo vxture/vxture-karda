@@ -11,7 +11,8 @@ import { SignInGate } from "../../../../_lib/ui";
 import { SemanticReviewApi, type CompileList, type CompileDetail, type ReleasePreview, type ReviewDecision,type CompileTaskRow } from "../../../../_lib/semantic-api";
 import {TaskSelection} from "./task-selection";
 import {COMPILE_TASK_STATES} from "../../../../kb/semantic/task-query";
-import type {SourceReadiness,SourceIssue} from "../../../../kb/semantic/source-readiness";
+import type {SourceIssue} from "../../../../kb/semantic/source-readiness";
+import type {SourceInspectionQuery} from "../../../../kb/semantic/source-query";
 
 export function SemanticReviewClient({kbId}:{kbId:string}) {
   const m=useMessages(semantic), api=useMemo(()=>new SemanticReviewApi(kbId),[kbId]);
@@ -23,7 +24,8 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
   const createId=useRef<string|null>(null);
   const [taskState,setTaskState]=useState(""),[taskLookup,setTaskLookup]=useState(""),[taskNext,setTaskNext]=useState<string|null>(null),[taskTrail,setTaskTrail]=useState<(string|undefined)[]>([undefined]);
   const [taskDetail,setTaskDetail]=useState<CompileTaskRow|null>(null);
-  const [sources,setSources]=useState<SourceReadiness|null>(null);
+  const [sources,setSources]=useState<Awaited<ReturnType<SemanticReviewApi["sources"]>>|null>(null);
+  const [sourceTrail,setSourceTrail]=useState<(string|undefined)[]>([undefined]),[sourceLookup,setSourceLookup]=useState("");
   const sequence=useRef(0), locked=useRef(false);
 
   async function run(work:(current:()=>boolean)=>Promise<void>, preservePreview=false) {
@@ -54,6 +56,9 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
   async function choose(runId:string) {
     setDetail(null);setNotes({});
     await run(async current=>{const loaded=await api.detail(runId);if(current())setDetail(loaded);});
+  }
+  async function checkSources(query:SourceInspectionQuery={},trail:(string|undefined)[]=[undefined]){
+    await run(async current=>{const value=await api.sources(query);if(current()){setSources(value);setSourceTrail(trail);}});
   }
   async function taskPage(before?:string,state=taskState,trail:(string|undefined)[]=[undefined]){
     setTasks([]);setTaskDetail(null);
@@ -101,9 +106,20 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
     {busy&&<p role="status" className="text-body-sm">{m.loading}</p>}
     <Card><CardContent className="flex flex-col gap-sm p-md">
       <h2 className="text-title-sm">{m.tasks}</h2><p className="text-body-sm text-muted-foreground">{m.taskHint}</p>
-      <Button variant="outline" disabled={busy} onClick={()=>void run(async current=>{const value=await api.sources();if(current())setSources(value);})}>{m.checkSources}</Button>
+      <Button variant="outline" disabled={busy} onClick={()=>void checkSources()}>{m.checkSources}</Button>
       <p className="text-body-sm text-muted-foreground">{m.sourceCheckHint}</p>
+      <form className="flex min-w-0 flex-wrap gap-sm" onSubmit={e=>{e.preventDefault();void checkSources({documentId:sourceLookup.trim()});}}>
+        <label htmlFor="source-inspection-id">{m.sourceLookup}</label>
+        <input id="source-inspection-id" required value={sourceLookup} onChange={e=>setSourceLookup(e.target.value)} pattern="[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}" className="min-w-0 rounded-md border border-border bg-background p-sm"/>
+        <Button type="submit" disabled={busy}>{m.sourceInspectOne}</Button>
+      </form>
       {sources&&<section className="flex min-w-0 flex-col gap-sm" aria-label={m.checkSources}>
+        <p className="text-body-sm text-muted-foreground">{m.sourceWindowHint}</p>
+        <div className="flex flex-wrap gap-sm">
+          <Button variant="outline" disabled={busy||sourceTrail.length<2||!!sources.page.documentId} onClick={()=>{const trail=sourceTrail.slice(0,-1);void checkSources({before:trail.at(-1)},trail);}}>{m.sourcePrevious}</Button>
+          <Button variant="outline" disabled={busy||!sources.page.next} onClick={()=>void checkSources({before:sources.page.next!},[...sourceTrail,sources.page.next!])}>{m.sourceNext}</Button>
+          <Button variant="outline" disabled={busy} onClick={()=>void checkSources(sources.page.documentId?{documentId:sources.page.documentId}:{...(sources.page.before?{before:sources.page.before}:{})},sourceTrail)}>{m.sourceRecheckWindow}</Button>
+        </div>
         <p role="status" className="break-words text-body-sm">{m.sourceCheckCounts}: {sources.readable}/{sources.total} &middot; {m.sourceBlocked}: {sources.blocked}</p>
         <p className="break-words text-body-sm">{m.maintenanceChecked}: {sources.checkedAt}</p>
         {!sources.total&&<p className="text-body-sm">{m.sourceCheckEmpty}</p>}

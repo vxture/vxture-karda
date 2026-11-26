@@ -56,6 +56,22 @@ test("SOP revision: raw withdrawal, impact, persisted unapproved candidates, new
     assert.equal(sourceCheck.readable,1);assert.equal(sourceCheck.total,1);assert.equal(sourceCheck.items[0].parserVersion,"native_text");
     assert.equal(JSON.stringify(sourceCheck).includes(bytes.toString()),false);assert.equal(JSON.stringify(sourceCheck).includes('"storage_ref"'),false);
     await assert.rejects(new PostgresSemanticStore(service,objects,async()=>false).sourceReadiness(identity,kb),/semantic_write_denied/);
+    const extraSources=Array.from({length:104},()=>randomUUID());
+    await admin.query(`INSERT INTO karda_kb.document(id,kb_id,title,source,mime,size_bytes)
+      SELECT x,$1,'Synthetic unsupported source','upload','application/unknown',1 FROM unnest($2::uuid[]) AS x`,[kb,extraSources]);
+    const sourceIds:string[]=[];let sourceCursor:string|undefined;
+    do{const page=await store.sourceReadiness(identity,kb,sourceCursor?{before:sourceCursor}:{});
+      assert.ok(page.total<=20);assert.equal(page.page.scope,"current_authorized_source_window");
+      sourceIds.push(...page.items.map(i=>i.id));sourceCursor=page.page.next??undefined;
+    }while(sourceCursor);
+    assert.equal(sourceIds.length,105);assert.equal(new Set(sourceIds).size,105);
+    assert.deepEqual(sourceIds,[doc,...extraSources].sort());
+    const focusedSource=await store.sourceReadiness(identity,kb,{documentId:doc});assert.equal(focusedSource.total,1);assert.equal(focusedSource.readable,1);assert.equal(focusedSource.page.next,null);
+    const deniedSource=await store.sourceReadiness(identity,kb,{documentId:extraSources[0]});assert.ok(deniedSource.items[0].issues.includes("unsupported_format"));assert.equal(deniedSource.readable,0);
+    await assert.rejects(store.sourceReadiness(identity,kb,{before:randomUUID()}),/semantic_source_conflict/);
+    await assert.rejects(store.sourceReadiness(identity,kb,{documentId:randomUUID()}),/semantic_source_conflict/);
+    await admin.query("DELETE FROM karda_kb.document WHERE id=ANY($1::uuid[])",[extraSources]);
+    await assert.rejects(store.sourceReadiness(identity,kb,{before:extraSources[0]}),/semantic_source_conflict/);
     await addEvidence(oldAssertion,bytes.toString(),1);
     const first=await compile(1,"Operator approval",oldAssertion,"1".repeat(64));
     assert.equal((await read()).edges.length,0,"persisted candidates remain unapproved drafts");

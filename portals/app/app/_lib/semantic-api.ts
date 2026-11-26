@@ -9,7 +9,9 @@ export type ReviewDecision = "accept" | "revise" | "reject";
 
 export class SemanticReviewApi {
   constructor(private readonly kbId: string) {}
-  sources(){return this.request<import("../kb/semantic/source-readiness").SourceReadiness>("?view=sources");}
+  sources(query:import("../kb/semantic/source-query").SourceInspectionQuery={}){
+    return this.request<Awaited<ReturnType<PostgresSemanticStore["sourceReadiness"]>>>("?"+new URLSearchParams({view:"sources",...Object.fromEntries(Object.entries(query).filter(([,value])=>value!==undefined))}).toString());
+  }
   private async request<T>(query: string, body?: unknown,endpoint="semantic"): Promise<T> {
     const response = await fetch(`/api/kb/${encodeURIComponent(this.kbId)}/${endpoint}${query}`, {
       cache: "no-store", credentials: "same-origin", ...(body ? {

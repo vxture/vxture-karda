@@ -7,6 +7,7 @@ import { getObjectStore } from "../../../../kb/storage/objectstore";
 import {maintenanceAudit,maintenanceAuditMarkdown} from "../../../../kb/semantic/maintenance-audit";
 import { PostgresSemanticStore } from "../../../../kb/semantic/store-postgres";
 import { parseReviewRequest, reviewOriginAllowed } from "../../../../kb/semantic/review-request";
+import {parseSourceInspectionQuery} from "../../../../kb/semantic/source-query";
 
 export const dynamic = "force-dynamic";
 
@@ -37,8 +38,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   const url = new URL(req.url), runId = url.searchParams.get("runId");
   if (url.searchParams.has("view")) {
     if(url.searchParams.get("view")==="sources"){
-      if([...url.searchParams.keys()].some(k=>k!=="view")||url.searchParams.getAll("view").length!==1)throw new Error("semantic_invalid_query");
-      const result=await withStore((store,identity)=>store.sourceReadiness(identity,id));
+      const query=parseSourceInspectionQuery(url.searchParams);
+      const result=await withStore((store,identity)=>store.sourceReadiness(identity,id,query));
       if(!result.ok)return result.response;
       return NextResponse.json(result.value,{headers:{"Cache-Control":"private, no-store"}});
     }
