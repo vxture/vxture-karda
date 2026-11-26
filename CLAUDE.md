@@ -87,7 +87,15 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-26): v0.12.29 / bb1bedc3, deploy45752103518
+Current production (2026-11-26): v0.12.30 / 3af2a23c, deploy45769493983
+succeeded at2026-11-26T06:44:01Z through normal production review. PR364
+adds complete structural publication impacts with source-version changes and UI navigation.
+Stage CI45768701695:1106pass/zero skips; main CI45769090582/scan45769090543pass.
+No DDL,55tables; health/ready and anonymous preview/semantic/package refusal pass.
+No local full-suite repetition or automatic publication. Fixed17items:7complete/10unfinished.
+See docs/50-deployment/320-publication-impact-release-20261126.md.
+
+Historical production (2026-11-26): v0.12.29 / bb1bedc3, deploy45752103518
 succeeded at2026-11-26T04:02:57Z through normal production review. PR362
 adds explicit1-100 source scopes, exact snapshot binding and workbench selection.
 Final stage CI45751441277:1104pass/zero skips; main CI45751762885/scan45751762891pass.
