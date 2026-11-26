@@ -5,6 +5,7 @@ import type { ObjectStore } from "../storage/objectstore";
 import type { GraphProjection, KnowledgeSnapshot, NeighborhoodQuery, OntologySchema, SemanticRelation } from "./contracts";
 import { projectNeighborhood, projectDirectory, projectPublishedSearch, validateNeighborhoodQuery, validateOntology } from "./projection";
 import {validatePublishedSearch,type PublishedSearchQuery} from "./published-search";
+import {directoryFingerprint} from "./directory-cursor";
 import { matchesSourceSpan, MAX_SEMANTIC_SOURCE_BYTES, MAX_SEMANTIC_TEXT_CHARS, verifiedSourceText } from "./source-text";
 import {parsePathFor} from "../processing/ir";
 import {readSourceSnapshot,type SourceSnapshot} from "../processing/source-snapshot";
@@ -184,7 +185,8 @@ export class PostgresSemanticReader {
       // Directory selects across the complete eligible snapshot after authority,
       // source and premise checks. Hidden/rejected rows cannot consume its budget.
       const result = search?projectPublishedSearch(snapshot,published.schema,scope,search,
-        new Map(assertions.map(a=>[a.id,a.search_statement??""])),new Map(grounds.map(g=>[g.id,g.excerpt])),query.relationTypes):directory?projectDirectory(snapshot,published.schema,scope,query):
+        new Map(assertions.map(a=>[a.id,a.search_statement??""])),new Map(grounds.map(g=>[g.id,g.excerpt])),query.relationTypes,
+        directoryFingerprint([identity.workspaceId,identity.sub,identity.productCode,[...kbIds].sort()])):directory?projectDirectory(snapshot,published.schema,scope,query):
         projectNeighborhood(snapshot, published.schema, scope, query);
       // Enrich only the final eligible projection, in the same authorized snapshot.
       const ids=result.assertions.map(a=>a.id);

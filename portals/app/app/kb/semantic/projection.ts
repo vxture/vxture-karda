@@ -86,13 +86,13 @@ export function projectDirectory(snapshot:KnowledgeSnapshot,schema:OntologySchem
 }
 
 export function projectPublishedSearch(snapshot:KnowledgeSnapshot,schema:OntologySchema,scope:AuthorizedReadScope,
-  request:PublishedSearchQuery,statements:ReadonlyMap<string,string>,excerpts:ReadonlyMap<string,string>,relationTypes?:string[]):GraphProjection{
+  request:PublishedSearchQuery,statements:ReadonlyMap<string,string>,excerpts:ReadonlyMap<string,string>,relationTypes?:string[],searchScope?:string):GraphProjection{
   validatePublishedSearch(request);
-  return projectCurrentKnowledge(snapshot,schema,scope,{seedIds:["directory"],maxHops:0,maxNodes:40,maxEdges:20,relationTypes},true,{request,statements,excerpts});
+  return projectCurrentKnowledge(snapshot,schema,scope,{seedIds:["directory"],maxHops:0,maxNodes:40,maxEdges:20,relationTypes},true,{request,statements,excerpts,searchScope});
 }
 
 function projectCurrentKnowledge(snapshot:KnowledgeSnapshot,schema:OntologySchema,scope:AuthorizedReadScope,
-  query:NeighborhoodQuery,directory:boolean,searchInput?:{request:PublishedSearchQuery;statements:ReadonlyMap<string,string>;excerpts:ReadonlyMap<string,string>}):GraphProjection{
+  query:NeighborhoodQuery,directory:boolean,searchInput?:{request:PublishedSearchQuery;statements:ReadonlyMap<string,string>;excerpts:ReadonlyMap<string,string>;searchScope?:string}):GraphProjection{
   validateOntology(schema);
   validateNeighborhoodQuery(query);
   const now = Date.parse(scope.now);
@@ -162,10 +162,12 @@ function projectCurrentKnowledge(snapshot:KnowledgeSnapshot,schema:OntologySchem
   let directoryPage:{nextCursor:string|null}|undefined;
   let search:GraphProjection["search"];
   if(searchInput){
-    search=rankPublishedRelations(eligible,entities,searchInput.statements,supported,searchInput.excerpts,searchInput.request);
+    search=rankPublishedRelations(eligible,entities,searchInput.statements,supported,searchInput.excerpts,searchInput.request,
+      [searchInput.searchScope??null,[...scope.visibleKbIds].sort(),schema,[...new Set(query.relationTypes??[])].sort(),
+        [...new Set(eligible.flatMap(e=>e.assertionIds))].sort().map(id=>assertions.get(id))]);
     const byId=new Map(eligible.map(e=>[e.id,e]));
     for(const match of search.items){const edge=byId.get(match.relationId)!;chosen.set(edge.id,edge);reached.add(edge.sourceId);reached.add(edge.targetId);}
-    truncated=search.matchedRelations>search.items.length;
+    truncated=search.page?search.page.nextCursor!==null:search.matchedRelations>search.items.length;
   }else if(directory){
     const paged=query.pageCursor!==undefined;
     let hash="";

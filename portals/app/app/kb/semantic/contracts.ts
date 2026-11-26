@@ -82,7 +82,7 @@ export interface NeighborhoodQuery {
   maxEdges: number;
 }
 export interface GraphProjection {
-  search?:{eligibleRelations:number;matchedRelations:number;items:{relationId:string;score:number}[]};
+  search?:{eligibleRelations:number;matchedRelations:number;items:{relationId:string;score:number}[];page?:{offset:number;nextCursor:string|null}};
   directoryPage?:{nextCursor:string|null};
   schema: SchemaRef;
   nodes: GraphEntity[];

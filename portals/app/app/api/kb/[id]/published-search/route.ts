@@ -16,7 +16,7 @@ export async function POST(req:Request,ctx:{params:Promise<{id:string}>}){
   try{
     const text=await req.text();if(Buffer.byteLength(text)>16384)throw new Error("published_search_invalid_request");
     let body:Record<string,unknown>;try{body=JSON.parse(text);}catch{throw new Error("published_search_invalid_request");}
-    if(!body||typeof body!=="object"||Array.isArray(body)||Object.keys(body).some(k=>!["query","top_k","relation_types"].includes(k)))throw new Error("published_search_invalid_request");
+    if(!body||typeof body!=="object"||Array.isArray(body)||Object.keys(body).some(k=>!["query","top_k","relation_types","page_cursor"].includes(k)))throw new Error("published_search_invalid_request");
     const {id}=await ctx.params,input=parsePublishedSearch({...body,kb_ids:[id]});
     const result=await readPublishedSearch({workspaceId:auth.user.activeWorkspace,sub:auth.user.sub,roles:[...auth.user.roles],productCode:"karda"},input,async()=>(await userAdmission(auth.user)).allowed);
     await meterSourceSearch(auth.user.activeWorkspace);return NextResponse.json(result,{headers});
