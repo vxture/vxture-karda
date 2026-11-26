@@ -14,6 +14,7 @@ import {COMPILE_TASK_STATES} from "../../../../kb/semantic/task-query";
 import type {SourceIssue} from "../../../../kb/semantic/source-readiness";
 import type {SourceInspectionQuery} from "../../../../kb/semantic/source-query";
 import {compileSourceSelection} from "../../../../kb/semantic/compile-source-selection";
+import {PublicationImpact} from "./publication-impact";
 
 export function SemanticReviewClient({kbId}:{kbId:string}) {
   const m=useMessages(semantic), api=useMemo(()=>new SemanticReviewApi(kbId),[kbId]);
@@ -236,10 +237,8 @@ export function SemanticReviewClient({kbId}:{kbId:string}) {
         {preview&&<Card><CardContent className="flex flex-col gap-sm p-md">
           <h2 className="text-title-sm">{m.preview}</h2><Banner tone="warning" title={m.replacement}/>
           <p>{m.generation}: {preview.expectedGeneration}</p>
-          {(["added","removed","changed"] as const).map(kind=><details key={kind} open={kind==="removed"}>
-            <summary>{m[kind]}: {preview.changes[kind].length}</summary>
-            <ul>{preview.changes[kind].map(id=><li className="break-all font-mono text-code-sm" key={id}>{id}</li>)}</ul>
-          </details>)}
+          <p className="text-body-sm">{m.added}: {preview.changes.added.length} &middot; {m.removed}: {preview.changes.removed.length} &middot; {m.changed}: {preview.changes.changed.length}</p>
+          <PublicationImpact key={preview.fingerprint} value={preview.impact}/>
           <div className="flex flex-wrap gap-sm">
             <Button disabled={busy} onClick={()=>void run(async current=>{
               await api.publish(preview);if(current()){setPreview(null);setNotice(true);}

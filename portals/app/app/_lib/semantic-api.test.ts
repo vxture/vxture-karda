@@ -12,7 +12,7 @@ test("semantic browser client submits only the preview binding and reuses its ev
   try{
     const api=new SemanticReviewApi("library/id");
     const preview={runId:"run",eventId:"event",expectedGeneration:1,fingerprint:"fingerprint",relationCount:2,
-      changes:{added:[],removed:[],changed:[]},payload:{unsafe:true}} as ReleasePreview;
+      impact:{scope:"proposed_replacement_structure",relations:[],sources:[]},changes:{added:[],removed:[],changed:[]},payload:{unsafe:true}} as ReleasePreview;
     await api.publish(preview);await api.publish(preview);
     assert.deepEqual(requests[0].body,{action:"publish",runId:"run",eventId:"event",expectedGeneration:1,fingerprint:"fingerprint"});
     assert.deepEqual(requests[1].body,requests[0].body);
