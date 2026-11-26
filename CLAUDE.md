@@ -87,7 +87,15 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-26): v0.12.30 / 3af2a23c, deploy45769493983
+Current production (2026-11-26): v0.12.31 / b1343124, deploy45783571743
+succeeded at2026-11-26T08:36:01Z through normal production review. PR366
+adds bound published fact search pages across RP/OBO and the workbench.
+Stage CI45782789870:1108pass/zero skips; main CI45783205469/scan45783205759pass.
+No DDL,55tables; health/ready and anonymous first/next-search/package refusal pass.
+No local full-suite repetition. Fixed17items:7complete/10unfinished.
+See docs/50-deployment/330-fact-pages-release-20261126.md.
+
+Historical production (2026-11-26): v0.12.30 / 3af2a23c, deploy45769493983
 succeeded at2026-11-26T06:44:01Z through normal production review. PR364
 adds complete structural publication impacts with source-version changes and UI navigation.
 Stage CI45768701695:1106pass/zero skips; main CI45769090582/scan45769090543pass.
