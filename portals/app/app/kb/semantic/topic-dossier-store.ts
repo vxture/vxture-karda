@@ -3,7 +3,6 @@ import {permits} from "../../authz/policy";
 import {readProductAccess,type RoleSql} from "../../authz/store";
 import type {ObjectStore} from "../storage/objectstore";
 import {getObjectStore} from "../storage/objectstore";
-import {localCompileProfile} from "./compile-profile";
 import {PostgresFormalSemanticLoader,semanticValueHash} from "./store-postgres";
 import {PostgresSemanticReader,type SemanticReadIdentity} from "./read-postgres";
 import {composeTopicDossier,topicDossierHash,type TopicDossier} from "./topic-dossier";
@@ -43,7 +42,7 @@ export class PostgresTopicDossiers {
       if((request.action==="summary_prepare"||request.action==="summary_save")&&!permits(access,"ai.use"))throw new Error("semantic_topic_denied");
       const owner=await db.query(`SELECT id FROM karda_kb.knowledge_base WHERE id=$1 AND workspace_id=$2 AND owner_type='user' AND owner_sub=$3 AND deleted_at IS NULL`,[kbId,identity.workspaceId,identity.sub]);
       if(owner.rowCount!==1)throw new Error("semantic_topic_denied");
-      const profile=localCompileProfile(),loader=new PostgresFormalSemanticLoader({schema:profile.schema,entityTypes:new Map(profile.entityTypes.map(t=>[t.kind,t.type]))});
+      const loader=new PostgresFormalSemanticLoader();
       // The nested reader uses this very transaction: no second authority/source snapshot.
       const reader=new PostgresSemanticReader(this.pool,this.objects,async()=>true,(client,ids)=>loader.load(client,ids));
       const pack=await reader.readPackage(identity,[kbId],{seedIds:["directory"],maxHops:1,maxNodes:500,maxEdges:1000},true,false,db);

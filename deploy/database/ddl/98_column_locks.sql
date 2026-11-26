@@ -319,3 +319,8 @@ GRANT UPDATE (state,payload,payload_hash,error_code,committed_version) ON karda_
 REVOKE UPDATE, DELETE ON karda_kb.maintenance_task_event FROM karda_svc;
 GRANT SELECT, INSERT ON karda_kb.maintenance_task_event TO karda_svc;
 -- END MAINTENANCE TASK LOCKS
+
+-- BEGIN COMPILE PROFILE LOCKS
+REVOKE UPDATE, DELETE ON karda_kb.compile_profile_version, karda_kb.compile_profile_activation FROM karda_svc;
+GRANT SELECT, INSERT ON karda_kb.compile_profile_version, karda_kb.compile_profile_activation TO karda_svc;
+-- END COMPILE PROFILE LOCKS

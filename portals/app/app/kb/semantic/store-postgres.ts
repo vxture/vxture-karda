@@ -12,6 +12,7 @@ import type { KnowledgeSnapshot } from "./contracts";
 import type { CompilerSnapshot, Compilation } from "./compiler";
 import { freezeCompilerSnapshot } from "./compiler";
 import { localCompileProfile } from "./compile-profile";
+import {activeCompileProfile,profileHash} from "./profile-authority";
 import {parsePathFor} from "../processing/ir";
 import {readSourceSnapshot} from "../processing/source-snapshot";
 import {SOURCE_FORMATS} from "../processing/source-formats";
@@ -25,6 +26,7 @@ import {parseCompileTaskQuery,type CompileTaskQuery} from "./task-query";
 import {retrySemanticTransaction} from "./transaction-retry";
 
 export interface CompileTaskRow {
+  schemaRef?:{namespace:string;schemaId:string;version:string};
   sourceIds?:string[];
   created_at?:Date;updated_at?:Date;lease_until?:Date|null;canRetry?:boolean;sourceState?:"current"|"changed"|"not_loaded";
   id:string; state:string; attempt:number; run_id:string|null; error_code:string|null; result:Record<string,unknown>;
@@ -217,7 +219,7 @@ export class PostgresSemanticStore {
       const row=(await db.query<{id:string;snapshot:CompilerSnapshot}>("SELECT id,snapshot FROM karda_kb.semantic_compile_task WHERE kb_id=$1 AND id=$2 AND created_by=$3",[kbId,taskId,identity.sub])).rows[0];
       if(row){
         if(selected&&semanticValueHash(row.snapshot.sources.map(s=>s.documentId).sort())!==semanticValueHash(selected))throw new Error("semantic_task_conflict");
-        return {existing:row.id,sources:[]};
+        return {existing:row.id,sources:[],profile:localCompileProfile()};
       }
       const sources=(await db.query<{id:string;active_chunk_version:number;content_hash:string}>(`SELECT id,active_chunk_version,content_hash
         FROM karda_kb.document WHERE kb_id=$1 AND content_state='indexed' AND mime=ANY($2::text[])
@@ -225,14 +227,15 @@ export class PostgresSemanticStore {
       if(selected&&sources.length!==selected.length)throw new Error("semantic_source_selection_changed");
       if(!sources.length)throw new Error("semantic_compile_inputs_required");
       if(sources.length>100)throw new Error("semantic_source_budget");
-      return {existing:null,sources:sources.map(s=>({kbId,documentId:s.id,version:s.active_chunk_version,contentHash:s.content_hash}))};
+      return {existing:null,profile:await activeCompileProfile(db,kbId),sources:sources.map(s=>({kbId,documentId:s.id,version:s.active_chunk_version,contentHash:s.content_hash}))};
     });
     if(existing.existing)return {taskId:existing.existing,duplicate:true};
-    const snapshot=await this.loadCompilerSnapshot(identity,kbId,{...localCompileProfile(),sources:existing.sources});
+    const snapshot=await this.loadCompilerSnapshot(identity,kbId,{...existing.profile,sources:existing.sources});
     if(!snapshot.assertions.length||snapshot.entities.length<2)throw new Error("semantic_compile_inputs_required");
     if(snapshot.entities.some(e=>!snapshot.entityTypes.some(t=>t.kind===e.kind)))throw new Error("semantic_entity_kind_unmapped");
     const snapshotHash=semanticValueHash(snapshot);
     return this.write(identity,kbId,"data.write",async db=>{
+      if(profileHash(await activeCompileProfile(db,kbId))!==profileHash(existing.profile))throw new Error("semantic_profile_changed");
       await this.sources(db,decode(kbId,{format:"karda.semantic.release.v1",...snapshot,relations:[]}));
       const inserted=await db.query(`INSERT INTO karda_kb.semantic_compile_task(id,kb_id,created_by,snapshot,snapshot_hash)
         VALUES($1,$2,$3,$4,$5) ON CONFLICT(id) DO NOTHING RETURNING id`,[taskId,kbId,identity.sub,snapshot,snapshotHash]);
@@ -285,7 +288,7 @@ export class PostgresSemanticStore {
         }
         const result=current?row.result:{};
         if(Buffer.byteLength(JSON.stringify([result,current?.entities,current?.assertions]))>2*1024*1024)throw new Error("semantic_snapshot_limit");
-        tasks.push({...metadata,result,sourceState:query.taskId?(current?"current":"changed"):"not_loaded",
+        tasks.push({...metadata,result,schemaRef:{namespace:snapshot.schema.namespace,schemaId:snapshot.schema.schemaId,version:snapshot.schema.version},sourceState:query.taskId?(current?"current":"changed"):"not_loaded",
           ...(current?{sourceIds:current.sources.map(s=>s.documentId).sort()}:{}),
           ...(current?{resultHash:semanticValueHash(result),context:{entities:current.entities,assertions:current.assertions}}:{})});
       }
@@ -732,10 +735,14 @@ async function validateGrounds(db: PoolClient, input: PublishedRelationInput, te
 /** Formal release loader; invoked inside the already-authorized read snapshot. */
 export class PostgresFormalSemanticLoader {
   private readonly empty: PublishedRelationInput;
-  private readonly definition: string;
-  constructor(pinned: Pick<PublishedRelationInput, "schema" | "entityTypes">) {
+  private readonly definition: string|null;
+  constructor(pinned?: Pick<PublishedRelationInput, "schema" | "entityTypes">) {
+    const bootstrap=localCompileProfile();
+    const fallback={schema:bootstrap.schema,entityTypes:new Map(bootstrap.entityTypes.map(m=>[m.kind,m.type]))};
+    const supplied=pinned;
+    pinned=pinned??fallback;
     this.empty = structuredClone({ ...pinned, relations: [], sources: [] });
-    this.definition = semanticDefinitionKey(this.empty);
+    this.definition = supplied?semanticDefinitionKey(this.empty):null;
   }
   async load(db: PoolClient, kbIds: string[]): Promise<PublishedRelationInput> {
     return this.loadVersion(db,kbIds);
@@ -789,9 +796,17 @@ export class PostgresFormalSemanticLoader {
       const compile=checkedCompile(row.kb_id,table.compile??undefined),definition=table.definition;
       if (compile.row.schema_version_id !== row.schema_version_id || !definition ||
         semanticValueHash(definition.definition) !== definition.definition_hash || definition.definition_hash !== command.schemaRevision ||
+        definition.definition_hash!==semanticValueHash({schema:input.schema,entityTypes:compile.row.candidates.entityTypes}) ||
         preparePublication({...command,payload:{...compile.row.candidates,compileRunId:row.compile_run_id}}).fingerprint!==fingerprint ||
         command.sourceRevision !== compile.row.input_hash) throw new Error("semantic_corrupt_release");
-      if (semanticDefinitionKey(input) !== this.definition) throw new Error("semantic_release_schema_mismatch");
+      const definitionKey=semanticDefinitionKey(input);
+      if(this.definition!==null&&definitionKey!==this.definition)throw new Error("semantic_release_schema_mismatch");
+      if(this.definition===null){
+        // Each publication freezes its own schema. Active compiler configuration
+        // affects new tasks only and cannot reinterpret an existing release.
+        if(rows[0].id===row.id){output.schema=structuredClone(input.schema);output.entityTypes=new Map(input.entityTypes);}
+        else if(semanticDefinitionKey(output)!==definitionKey)throw new Error("semantic_release_schema_mismatch");
+      }
       const {relations,supports,sources}=table;
       const supportsByRelation=new Map<string,string[]>();
       for(const support of supports){const ids=supportsByRelation.get(support.relation_id)??[];ids.push(support.assertion_id);supportsByRelation.set(support.relation_id,ids);}

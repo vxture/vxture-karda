@@ -3,7 +3,6 @@ import type {ObjectStore} from "../storage/objectstore";
 import {getObjectStore} from "../storage/objectstore";
 import {PostgresSemanticReader,type SemanticReadIdentity} from "./read-postgres";
 import {PostgresFormalSemanticLoader,semanticValueHash} from "./store-postgres";
-import {localCompileProfile} from "./compile-profile";
 import {composeTopicDossier,topicDossierHash,type TopicDossier} from "./topic-dossier";
 import {validateTopicSummary,type TopicSummary} from "./topic-summary";
 
@@ -42,7 +41,7 @@ export class PostgresTopicKnowledge {
     const db=await this.pool.connect();
     try{
       await db.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
-      const profile=localCompileProfile(),loader=new PostgresFormalSemanticLoader({schema:profile.schema,entityTypes:new Map(profile.entityTypes.map(t=>[t.kind,t.type]))});
+      const loader=new PostgresFormalSemanticLoader();
       const reader=new PostgresSemanticReader(this.pool,this.objects,async()=>true,(client,ids)=>loader.load(client,ids));
       const pack=await reader.readPackage(identity,[input.kbId],{seedIds:["directory"],maxHops:1,maxNodes:500,maxEdges:1000},true,false,db);
       if(pack.truncated||pack.sourceStatus!=="complete")throw Error("topic_knowledge_incomplete");
