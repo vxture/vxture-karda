@@ -118,7 +118,20 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-26): v0.12.38 / c147371b, deploy45840407611
+Current production (2026-11-26): v0.12.39 / 06f67ab4, deploy45850983056
+succeeded at2026-11-26T15:43:48Z through normal production review. PR381
+replaces the demo pipeline board with a real authorized work center and exact
+processing/compile/OCR/maintenance destinations. No DDL;58tables unchanged.
+PR CI45849708892:1131pass/zero skips, scan45849708989; exact-main
+CI45850323884/scan45850323754passed. Health/ready and anonymous work-center,
+filtered list and knowledge-package401. No local full regression or performance.
+Final evidence published at GitHub Release v0.12.39; local deployment410 and
+checklist/memory closeout changes ride NEXT functional PR, no docs-only rerun.
+Next S3: versioned ontology/compiler configuration with actual compile/read use;
+localCompileProfile remains hardcoded. Real Ontos engine/contract is independent.
+Four remaining software directions S3-S6; fixed17items7complete/10unfinished.
+
+Historical production (2026-11-26): v0.12.38 / c147371b, deploy45840407611
 succeeded at2026-11-26T14:41:21Z through normal production review. PR380
 adds maintenance task lifecycle, cross-library work queue and immutable history.
 Migration0032 run45839871158 succeeded;58tables. PR CI45839284654:1129pass/

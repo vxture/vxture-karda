@@ -1023,3 +1023,24 @@ GET只接受kbId/kind/state/before，唯一参数，用户不可提交workspace/
 UI按库/类型/状态筛选、可点击状态汇总、前后页、空/错误/无权限状态和重新核验；筛选/翻页/权限错误立即清空旧行，AbortController/序号拒绝迟到响应，目的链接由有效UUID和作业类型重新生成，拒绝任意服务器href。开发只一次类型和协议定向，阶段末集中Playwright端到端导航及CI真实数据库作用域/计数/分页/撤销验证，无本地全量重复或性能专项。
 
 集中Playwright合成流程通过：真实账本行替身、筛选清空/前后分页、四类精确目的页实际导航及自动任务定位、拒绝任意href、403清空、390px无横向溢出。另修抽取任务详情为单独extract阶段，阶段标签按代码而非序号翻译，避免将抽取显示成fetch。合成响应不代表实际模型/业务联调；真实数据库账本授权/计数/同微秒分页在阶段CI验证。
+
+
+## 63. 本地语义与编译配置版本管理（2026-11-27）
+
+S3软件阶段新增`/assets/[kbId]/configuration`及RP GET/POST `/api/kb/[id]/compile-profiles`，编译工作台可达。支持复制当前/历史配置、编辑实体类型/关系sourceTypes与targetTypes/legacy kind映射，保存不可变版本、明确启用、恢复历史已保存版本或内置通用配置，必填理由/勾选确认和分批历史。命名空间固定karda.config，明确本地配置，不伪装Ontos发布/规则/推理；正式Ontos契约与引擎仍待对接。
+
+profile定义仅schema和entityTypes映射；schemaRef(namespace/schemaId/version)固定。50种实体类型、50关系、100映射，有界ASCII标识，重复/未知端点/未声明映射/额外字段拒绝。版本内正文不可改，同库schemaId/version唯一，复制必须使用新版本。保存不自动启用；启用前检查当前库实体kind全覆盖，缺映射409，不调用模型或伪造类型。用户可编辑本库编译语义，不修改平台服务配置、模型授权或真实客户权限。
+
+0033新增compile_profile_version/compile_profile_activation（58→60表），baseline/Prisma/98及旧41表升级夹具锁步。版本定义与稳定hash绑定，创建人和时间不可变；启用记录按kb/revision追加，kb/eventId幂等，profileId是同库外键（null明确恢复内置）。服务只SELECT/INSERT，不UPDATE/DELETE；同库删除遵循既有FK级联，不宣称跨系统合规档案。GET每页20版本和20启用历史，可按id定位、before或historyBefore继续，当前启用与profile定义单独返回，不以列表第一页猜当前值。
+
+所有配置读写重新检查平台准入、product.enter/data.read/data.write/service.publish及当前空间当前user库拥有权。事务角色锁→语义库锁→成员/库行锁，与编译/发布使用相同库锁，启用revision CAS，事件指纹绑定完整请求，重复事件返回原回执、变更内容409；跨库profileId拒绝。HTTP同源JSON严格字段，客户端不提交身份或空间；403/409/异常隐藏旧配置/历史。网络不确定时保留原命令供显式幂等重试，无自动重试/执行模型。
+
+新建编译任务在已授权事务读取当前启用配置，加载来源后最终入队前重新核对定义hash；中途切换导致semantic_profile_changed拒绝，任务与profile不会错配。任务snapshot冻结完整语义定义与映射，任务详情返回schemaRef供人工核对。启用只影响新任务，既有task执行/候选选择/审核/发布按原快照，不静默改写，不自动重新编译/认可或发布。
+
+正式读取loader新增无构造参数模式：每个发布从immutable release/compile/schema_version及指纹链核验其自带定义，首库确定结果SchemaRef，其余库必须语义定义/映射完全相容，否则semantic_release_schema_mismatch，拒绝混合。显式pinned构造仍保留旧严格匹配以支持指定权威/测试。无发布保持内置空图兼容。读取配置不追随当前启用指针，防止配置回退使旧已发布自定义知识不可读；发布支持/原件/裁决/暂停仍照常核验。
+
+知识包/图谱/知识页/同步、事实检索、主题摘要消费和治理统一使用发布自身固定定义，不再在各入口硬编码localCompileProfile。原发布版本及旧格式可读，跨多个不兼容本体库不自动合并。不引入推理边、模型规则或自动事实批准。
+
+开发仅一次类型、2项定义/DDL定向与集中页面验收；阶段CI验证真实数据库配置CAS/不可变授权、新任务固定版本、旧任务保留、配置回退后自定义发布仍可消费及新旧迁移重放。无本地全量重复或性能专项，软件功能和真实Ontos/Agent/业务验收分开。
+
+集中Playwright合成验收通过：复制当前、保存不启用、理由/勾选后启用、版本复制保存、恢复内置和历史、403清空、390px无横向溢出。2项协议/DDL定向和一次类型通过，真实数据库与发布消费链留到阶段CI。

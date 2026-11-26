@@ -417,3 +417,6 @@ OCR草稿（170§60）：RP GET/POST `/api/kb/[id]/ocr-drafts`，当前同空间
 
 
 真实作业中心（170§62）：RP GET `/api/pipeline`新内部读模型karda.work-center.v1，替换旧演示payload；当前空间当前user库所有者及product.enter/data.read/data.write，编译附service.publish和创建人、OCR附ai.use和创建人。kbId/kind/state/before收窄、30条当前分页与权限过滤后统计，不返回正文/模型/处置说明；无模型执行或重试/审核副作用。目的处理页按任务ID精确定位且独立重新授权，无新增OBO工具。
+
+
+语义配置管理（170§63，2026-11-27）：RP GET/POST `/api/kb/[id]/compile-profiles`，当前同空间user库所有者及product.enter/data.read/data.write/service.publish。GET id/before/historyBefore有界20条版本和20条历史，返回独立当前启用；POST save仅action/id/title/definition，activate仅action/eventId/profileId/expectedRevision/note（profileId=null恢复内置）。同源JSON、不可变版本、CAS/事件幂等；不调用模型、不批准事实，不自称Ontos契约。既有compile-tasks详情附schemaRef，编译/读取固定版本，跨不兼容语义多库读取拒绝。

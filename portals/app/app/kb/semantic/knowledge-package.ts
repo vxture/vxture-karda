@@ -2,7 +2,6 @@ import {Pool} from "pg";
 import {getObjectStore} from "../storage/objectstore";
 import {PostgresSemanticReader,type SemanticReadIdentity} from "./read-postgres";
 import {PostgresFormalSemanticLoader} from "./store-postgres";
-import {localCompileProfile} from "./compile-profile";
 import type {NeighborhoodQuery} from "./contracts";
 import {validateNeighborhoodQuery} from "./projection";
 
@@ -30,10 +29,9 @@ export function parsePackageRequest(value:unknown):PackageRequest {
 /** Shared by RP knowledge pages and authenticated OBO tools. No model or draft reads. */
 export async function readKnowledgePackage(identity:SemanticReadIdentity,input:PackageRequest,admit:()=>Promise<boolean>,exporting=false) {
   if(!process.env.DATABASE_URL)throw new Error("semantic_store_unavailable");
-  const profile=localCompileProfile();
   const pool=new Pool({connectionString:process.env.DATABASE_URL,max:1,connectionTimeoutMillis:5000,statement_timeout:15000,allowExitOnIdle:true});
   try{
-    const loader=new PostgresFormalSemanticLoader({schema:profile.schema,entityTypes:new Map(profile.entityTypes.map(t=>[t.kind,t.type]))});
+    const loader=new PostgresFormalSemanticLoader();
     const reader=new PostgresSemanticReader(pool,getObjectStore(),admit,(db,ids)=>loader.load(db,ids));
     return await reader.readPackage(identity,input.kbIds??[input.kbId],input.query,input.directory,exporting);
   }finally{await pool.end();}

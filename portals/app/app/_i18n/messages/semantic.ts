@@ -1,6 +1,7 @@
 import type { Catalog } from "../catalog";
 
 export const semantic = {
+  configuration:{"zh-CN": "\u8bed\u4e49\u4e0e\u7f16\u8bd1\u914d\u7f6e", "en-US": "Semantic and compiler configuration"},
   operationsTask:{"zh-CN": "\u5efa\u7acb\u5904\u7f6e\u4efb\u52a1", "en-US": "Create remediation task"},
   operationsQueue:{"zh-CN": "\u7ef4\u62a4\u4efb\u52a1\u4e2d\u5fc3", "en-US": "Maintenance task center"},
   ocrWorkbench:{"zh-CN": "\u626b\u63cf PDF \u8bc6\u522b", "en-US": "Scanned PDF recognition"},

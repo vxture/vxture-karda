@@ -104,6 +104,7 @@ export function SemanticReviewClient({kbId,initialTaskId}:{kbId:string;initialTa
       <Button variant="outline" disabled={busy} onClick={()=>void refresh()}>{m.refresh}</Button>
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/knowledge`}>{m.back}</Link></Button>
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/ocr`}>{m.ocrWorkbench}</Link></Button>
+      <Button variant="outline" asChild><Link href={`/assets/${kbId}/configuration`}>{m.configuration}</Link></Button>
     </div>
     <p className="text-body-sm text-muted-foreground">{m.description}</p>
     {error&&<div role="alert"><Banner tone="danger" title={inputMissing?m.inputsRequired:error===409?m.conflict:error===403?m.denied:error===503?m.unavailable:m.failed}/></div>}
@@ -177,6 +178,7 @@ export function SemanticReviewClient({kbId,initialTaskId}:{kbId:string;initialTa
           task.state!=="needs_review"&&<Button variant="outline" disabled={busy||task.canRetry!==true} onClick={()=>void executeTask(task.id)}>{m.execute}</Button>}
       </div>)}
       {taskDetail?.sourceIds&&<p className="break-all text-body-sm">{m.compileSelectedSources}: {taskDetail.sourceIds.join(", ")}</p>}
+      {taskDetail?.schemaRef&&<p className="break-all text-body-sm">{m.configuration}: {taskDetail.schemaRef.namespace} / {taskDetail.schemaRef.schemaId} / {taskDetail.schemaRef.version}</p>}
       {taskDetail&&<section className="flex min-w-0 flex-col gap-sm rounded-md border border-border p-md">
         <h3 className="break-all text-title-sm">{m.taskInspect}: {taskDetail.id}</h3><p>{taskDetail.state} / {taskDetail.attempt} / 3</p>
         {taskDetail.error_code&&<p className="break-all font-mono text-code-sm">{taskDetail.error_code}</p>}
