@@ -35,6 +35,7 @@ const APP = "portals/app/app";
  * directory cannot be claimed while one file in it can.
  */
 const SCOPE = [
+  `${APP}/(portal)/knowledge-control`,
   `${APP}/(portal)/assets`,
   // 首页与知识资产分开之后(KD-214):`page.tsx` 是首页,资产总览搬进 `(portal)/assets`。
   // 两个都在扫描面内——分家不是放松,是把同一条纪律铺到两处。

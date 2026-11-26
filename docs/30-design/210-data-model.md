@@ -332,3 +332,6 @@ baseline/0020/Prisma/98锁步，新旧库重复演练；生产通过db-init审�
 2026-11-26 0027扩展document_text_snapshot解析器CHECK允许pptx-cell-grid-v2、保留v1及其他格式；0026加向前重放保护。无字段/Prisma/98权限变化，55表保持，见170§48。
 
 2026-11-26 0028扩展document_text_snapshot解析器CHECK允许pptx-authored-stories-v3并保留v1/v2及其他格式；0027加前向重放保护。无字段/Prisma/98权限变化，55表保持，见170§49。
+
+
+2026-11-26 0029新增knowledge_rollout_event，共56表。workspace_id/revision复合主键及workspace_id/event_id唯一键，enabled、必填reason、changed_by、created_at保留追加式控制记录；服务只SELECT/INSERT，不可UPDATE/DELETE。按工作空间事务锁及CAS追加，缺省沿用现有启用基线；主体和空间由认证生成，见170§55。baseline/Prisma/98与增量锁步。

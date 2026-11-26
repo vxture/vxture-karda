@@ -404,3 +404,6 @@ GET /api/kb/{id}/semantic?view=sources，RP人类审核面，只接受唯一view
 发布影响明细（2026-11-26）：semantic POST preview响应新增impact，proposed_replacement_structure关系/来源变更结构，无历史正文/证据/hash。既有changes与令牌保留，publish仍只接受原有完整绑定；筛选/分页仅UI，2MiB影响预算超限拒绝，见170§53。
 
 事实检索连续页（170§54）：RP `POST /api/kb/[id]/published-search` 与 OBO `karda.published_search` 接受可选 `page_cursor`；空串开始，后续使用 `knowledge.search.page.nextCursor`。查询、条数、类型、请求库、身份及当前可见支持绑定；每页重新读取并单独计量，变化409须清空旧结果重新开始。不传游标保留原top-k行为。
+
+
+试点控制（170§55）：RP GET/POST `/api/knowledge-rollout`仅当前空间product.manage，无OBO管理面。POST同源JSON只eventId/expectedRevision/enabled/reason，CAS/幂等和追加审计；知识包/同步/事实/图谱/主题消费均核验同库控制，暂停新请求503且不返回知识正文。原文/维护/审核不受此开关控制，已交付内容不远程收回。

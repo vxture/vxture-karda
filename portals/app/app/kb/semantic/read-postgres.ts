@@ -6,6 +6,7 @@ import type { GraphProjection, KnowledgeSnapshot, NeighborhoodQuery, OntologySch
 import { projectNeighborhood, projectDirectory, projectPublishedSearch, validateNeighborhoodQuery, validateOntology } from "./projection";
 import {validatePublishedSearch,type PublishedSearchQuery} from "./published-search";
 import {directoryFingerprint} from "./directory-cursor";
+import {requireKnowledgeRollout} from "./rollout-postgres";
 import { matchesSourceSpan, MAX_SEMANTIC_SOURCE_BYTES, MAX_SEMANTIC_TEXT_CHARS, verifiedSourceText } from "./source-text";
 import {parsePathFor} from "../processing/ir";
 import {readSourceSnapshot,type SourceSnapshot} from "../processing/source-snapshot";
@@ -87,6 +88,7 @@ export class PostgresSemanticReader {
       // Local role/owner-anchor evaluation shares the source/release snapshot.
       const access = await readProductAccess(identity, sql);
       if (!permits(access, "product.enter") || !permits(access, "data.read") || (exporting&&!permits(access,"data.export")) || (search&&!permits(access,"ai.use"))) throw new Error("semantic_read_denied");
+      await requireKnowledgeRollout(db,identity.workspaceId);
       const visible = (await db.query<{ id: string }>(`
         SELECT k.id FROM karda_kb.knowledge_base k
         JOIN karda_kb.kb_attachment a ON a.kb_id=k.id AND a.workspace_id=k.workspace_id
