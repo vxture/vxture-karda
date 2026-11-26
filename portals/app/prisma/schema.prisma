@@ -1158,6 +1158,14 @@ model KnowledgeSubscription {
   updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
   @@map("knowledge_subscription")
   @@schema("karda_kb")
+  deliveryRevision Int @default(0) @map("delivery_revision")
+  deliverySequence Int @default(0) @map("delivery_sequence")
+  deliveryAttempt Int @default(0) @map("delivery_attempt")
+  deliveryStatus String @default("ready") @map("delivery_status") @db.VarChar(16)
+  deliveryWorker String? @map("delivery_worker") @db.VarChar(80)
+  leaseId String? @map("lease_id") @db.Uuid
+  leaseUntil DateTime? @map("lease_until") @db.Timestamptz()
+  retryAfter DateTime? @map("retry_after") @db.Timestamptz()
 }
 model KnowledgeSubscriptionEvent {
   subscriptionId String @map("subscription_id") @db.Uuid
@@ -1261,5 +1269,25 @@ model PilotEvent {
   @@id([caseId,revision])
   @@unique([caseId,eventId])
   @@map("pilot_event")
+  @@schema("karda_kb")
+}
+
+model KnowledgeDeliveryEvent {
+  subscriptionId String @map("subscription_id") @db.Uuid
+  revision Int
+  requestId String @map("request_id") @db.Uuid
+  fingerprint String @db.VarChar(64)
+  action String @db.VarChar(16)
+  status String @db.VarChar(16)
+  sequence Int
+  attempt Int
+  worker String? @db.VarChar(80)
+  note String?
+  reason String? @db.VarChar(32)
+  windowRevision String? @map("window_revision") @db.VarChar(64)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  @@id([subscriptionId,revision])
+  @@unique([subscriptionId,requestId])
+  @@map("knowledge_delivery_event")
   @@schema("karda_kb")
 }

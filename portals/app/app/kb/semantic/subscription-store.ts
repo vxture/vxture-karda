@@ -1,3 +1,5 @@
+import {randomUUID} from "node:crypto";
+import {handleDelivery,observeSubscription,deliveryEvent,deliveryMetadata,clearDeliveryLease,type DeliveryStored} from "./subscription-delivery";
 import {Pool,type PoolClient} from "pg";
 import {permits} from "../../authz/policy";
 import {readProductAccess,type RoleSql} from "../../authz/store";
@@ -9,7 +11,7 @@ import {knowledgeSyncResult} from "./knowledge-sync";
 import {profileHash} from "./profile-authority";
 import {parseSubscription,subscriptionWindow,SUB_UUID,type SubscriptionCommand,type SubscriptionRow,type SubscriptionEvent} from "./subscription";
 
-type Stored=SubscriptionRow&{request_hash:string;window:Record<string,unknown>};
+type Stored=DeliveryStored&{request_hash:string;window:Record<string,unknown>};
 export class PostgresSubscriptions{
   constructor(private pool:Pool,private objects:Pick<ObjectStore,"get">,private admit:(who:SemanticReadIdentity)=>Promise<boolean>){}
   private async current(db:PoolClient,who:SemanticReadIdentity,window:Record<string,unknown>):Promise<KnowledgePackage>{
@@ -40,12 +42,12 @@ export class PostgresSubscriptions{
       const access=await readProductAccess(who,sql);
       if(!permits(access,"product.enter")||!permits(access,"data.read"))throw Error("subscription_denied");
       // Cancelling and listing metadata remains possible while consumption is paused.
-      if(command.action!=="cancel"&&command.action!=="list")await requireKnowledgeRollout(db,who.workspaceId);
+      if(command.action!=="cancel"&&command.action!=="list"&&command.action!=="delivery_history")await requireKnowledgeRollout(db,who.workspaceId);
       const scope=[who.workspaceId,who.sub,who.productCode];
       if(command.action==="list"){
-        const rows=(await db.query<SubscriptionRow>(`SELECT id,name,window_request AS "window",enabled,sequence,ack_sequence,last_revision,created_at,updated_at
+        const rows=(await db.query<SubscriptionRow>(`SELECT id,name,window_request AS "window",enabled,sequence,ack_sequence,last_revision,created_at,updated_at,delivery_revision,delivery_sequence,delivery_attempt,delivery_status,delivery_worker,lease_until,retry_after
           FROM karda_kb.knowledge_subscription WHERE workspace_id=$1 AND user_sub=$2 AND product_code=$3
-          AND ($4::uuid IS NULL OR id<$4) ORDER BY id DESC LIMIT 21`,[...scope,command.before??null])).rows;
+          AND ($4::uuid IS NULL OR id<$4) AND ($5::text IS NULL OR delivery_status=$5) ORDER BY id DESC LIMIT 21`,[...scope,command.before??null,command.deliveryStatus??null])).rows;
         await db.query("COMMIT");return {format:"karda.subscriptions.v1",subscriptions:rows.slice(0,20),nextBefore:rows.length>20?rows[19].id:null};
       }
       let row=(await db.query<Stored>(`SELECT *,window_request AS "window" FROM karda_kb.knowledge_subscription WHERE workspace_id=$1 AND user_sub=$2 AND product_code=$3 AND id=$4 FOR UPDATE`,[...scope,command.id])).rows[0];
@@ -62,7 +64,14 @@ export class PostgresSubscriptions{
         await db.query("COMMIT");return {format:"karda.subscription-created.v1",id:command.id,duplicate:!!row};
       }
       if(!row)throw Error("subscription_not_found");
+      if(command.action==="delivery_history"){
+        const events=(await db.query("SELECT revision,action,status,sequence,attempt,worker,note,reason,window_revision,created_at FROM karda_kb.knowledge_delivery_event WHERE subscription_id=$1 AND ($2::integer IS NULL OR revision<$2) ORDER BY revision DESC LIMIT 21",[row.id,command.before??null])).rows;
+        await db.query("COMMIT");return {format:"karda.subscription-history.v1",id:row.id,events:events.slice(0,20),nextBefore:events.length>20?events[19].revision:null};
+      }
       if(command.action==="cancel"){
+        if(row.enabled){row.delivery_status="cancelled";row.retry_after=null;clearDeliveryLease(row);
+          await deliveryEvent(db,row,randomUUID(),profileHash(command),"cancel",null,null,row.last_revision);
+        }
         await db.query("UPDATE karda_kb.knowledge_subscription SET enabled=false,updated_at=now() WHERE id=$1",[row.id]);
         await db.query("COMMIT");return {format:"karda.subscription-cancelled.v1",id:row.id};
       }
@@ -70,6 +79,7 @@ export class PostgresSubscriptions{
       if(profileHash({name:row.name,window:row.window})!==row.request_hash)throw Error("subscription_corrupt");
       const knowledge=await this.current(db,who,row.window),sync=knowledgeSyncResult(who,subscriptionWindow(row.window),knowledge);
       if(command.action==="ack"){
+        if(["leased","retry","dead"].includes(row.delivery_status))throw Error("subscription_delivery_pending");
         const observed=(await db.query<{revision:string}>("SELECT revision FROM karda_kb.knowledge_subscription_event WHERE subscription_id=$1 AND sequence=$2",[row.id,command.sequence])).rows[0];
         if(!observed||observed.revision!==command.revision||sync.revision!==command.revision)throw Error("subscription_revision_changed");
         if(row.ack_sequence===command.sequence){await db.query("COMMIT");return {format:"karda.subscription-ack.v1",id:row.id,ackSequence:row.ack_sequence,duplicate:true};}
@@ -77,18 +87,16 @@ export class PostgresSubscriptions{
         await db.query("UPDATE karda_kb.knowledge_subscription SET ack_sequence=$2,updated_at=now() WHERE id=$1",[row.id,command.sequence]);
         await db.query("COMMIT");return {format:"karda.subscription-ack.v1",id:row.id,ackSequence:command.sequence,duplicate:false};
       }
-      if(row.last_revision!==sync.revision){
-        if(row.sequence>=2147483646)throw Error("subscription_limit");
-        row.sequence++;
-        await db.query("INSERT INTO karda_kb.knowledge_subscription_event(subscription_id,sequence,revision) VALUES($1,$2,$3)",[row.id,row.sequence,sync.revision]);
-        await db.query("UPDATE karda_kb.knowledge_subscription SET sequence=$2,last_revision=$3,updated_at=now() WHERE id=$1",[row.id,row.sequence,sync.revision]);
+      if(command.action!=="poll"){
+        const result=await handleDelivery(db,row,command,knowledge,sync.revision);await db.query("COMMIT");return result;
       }
+      await observeSubscription(db,row,sync.revision);
       const after=command.after??row.ack_sequence;if(after>row.sequence)throw Error("subscription_invalid_request");
       const events=(await db.query<SubscriptionEvent>(`SELECT sequence,revision,observed_at AS "observedAt" FROM karda_kb.knowledge_subscription_event
         WHERE subscription_id=$1 AND sequence>$2 ORDER BY sequence LIMIT 21`,[row.id,after])).rows;
       await db.query("COMMIT");
       return {format:"karda.subscription-delivery.v1",id:row.id,sequence:row.sequence,ackSequence:row.ack_sequence,revision:sync.revision,
-        observedAt:sync.observedAt,reuse:"revalidate",action:"replace",knowledge,events:events.slice(0,20),nextAfter:events.length>20?events[19].sequence:null,
+        delivery:deliveryMetadata(row),observedAt:sync.observedAt,reuse:"revalidate",action:"replace",knowledge,events:events.slice(0,20),nextAfter:events.length>20?events[19].sequence:null,
         replay:"revision_metadata_only",scope:"current_authorized_window"};
     }catch(error){await db.query("ROLLBACK");throw error;}finally{db.release();}
   }

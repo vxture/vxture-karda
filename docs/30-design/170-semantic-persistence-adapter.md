@@ -1105,3 +1105,24 @@ case open→reviewed→closed，可从reviewed/closed重开到open，重开清�
 本批软件完成不等同真实业务质量/Agent试点或正式切换验收，不自动关闭K6/S6整体。开发仅必要3项协议/指纹/DDL定向、类型及集中无界面页面验证，真实数据库比较/授权/指纹冲突/状态CAS/不可变授权/迁移在阶段CI集中执行，无本地全量和性能专项。Ontos仍未开发后置，S4正式权威、S5外部主动投递/真实消费者保持独立缺项。
 
 owner再次指出命令窗口干扰后，本轮已停止本地开发服务与页面验证浏览器，不再启动。初次页面检查仅确认创建/双路显示及精确证据；后续评审选择器等待超时，已为选择器补明确aria-label，不宣称整个页面流程通过。剩余状态流程由阶段CI真实数据库验证，后续如需完整浏览器验收再按owner允许的环境执行。必要Git/CI操作使用Node REPL直接执行文件、windowsHide，不经命令行shell包装。
+
+
+## 67. 消费交付租约、失败重试与死信恢复（2026-11-27）
+
+继续S5独立软件闭环，在既有持久消费订阅上加入claim/complete/fail/redrive/delivery_history，不假定外部Webhook或Agent平台已提供服务。RP /channels/deliveries与既有GET/POST /api/knowledge-subscriptions、OBO karda.knowledge_subscription共享同一服务；订阅页链接交付页，poll附交付元数据并在交付未决时禁用普通确认。没有后台轮询、定时器、远端发送或模型调用，也不宣称主动推送/事务outbox/所有中间变化均捕获。
+
+每次动作复核平台准入、当前product.enter/data.read及当前workspace/user/callerProduct隔离，服务模式仍拒绝。claim/complete/fail/redrive逐次精确核验订阅固定库的当前可见性/挂载、知识消费开关、原件/来源/发布/裁决，读取当前完整有界窗口；取消/list/history仅个人元数据，在暂停或解绑时可管理，但撤销角色仍拒绝。worker只是<=80字符诊断标签，不是授权身份；所有者/调用产品不接受客户端输入。
+
+claim需requestId/expectedDeliveryRevision/worker，当前知识版本产生单调sequence观测后，单个订阅同一窗口至多一个有效三分钟租约；行锁/CAS保护，最多三次尝试（包含到期恢复）。相同requestId在原领取仍有效、未变修订/窗口时返回同一leaseId/当前正文，不增加尝试；迟到旧领取重试409，不重放旧内容。窗口改变可用新的显式claim替换旧领取，重置新窗口尝试，旧leaseId无法再完成。已确认当前窗口返回idle无正文；仍在等待重试返回元数据，活跃租约冲突409。达到三次且租约过期后，下一次显式claim将其落为dead，无后台自动状态推进。
+
+complete需eventId/leaseId/expectedDeliveryRevision/sequence/revision，租约有效且仍是当前窗口才能推进ack并标记done；ack和状态/租约清理同事务原子更新。普通ack不得绕过leased/retry/dead，数据库CHECK亦限制这些状态下ack_sequence必须小于delivery_sequence，保护直接旧路径或回滚软件不误确认；done要求ack不小于对应窗口。外部消费者的业务副作用不与本库事务原子提交：至少一次处理，消费方必须以subscriptionId/sequence幂等，不能宣称恰好一次或提前确认。
+
+fail需eventId/leaseId/expectedDeliveryRevision和transient/permanent分类，不接受原始堆栈/供应方异常正文；仍须当前权限与有效租约。临时失败在未达三次时进入retry，等待15秒/30秒后允许显式领取；永久失败或第三次失败进入dead。无自动重试模型或后台发送。redrive仅retry/dead，需eventId/CAS/必填人工原因，重新核验当前窗口，重置attempt=0到ready；下一次领取才处理，不在恢复命令里自动执行。重试周期可多次人工恢复，说明/追加历史可核查。取消会使领取失效并追加取消记录，不改变已完成确认或取消外部副作用。
+
+0037为knowledge_subscription增加交付修订/窗口序号/尝试/状态/标签/租约/重试时间8列，并增加knowledge_delivery_event（68→69表）。delivery_status=ready/leased/retry/dead/done/cancelled；数据库约束租约字段成对且仅leased存在、retry时间仅retry存在及ack围栏。0034仅为新建表补前向兼容声明，现存表实际由0037 ADD COLUMN IF NOT EXISTS升级；不收窄既有数据，旧已取消订阅初始化cancelled/修订0。baseline/Prisma/98/增量/旧41表夹具锁步，db-init次序baseline→97→incr→98。服务仅UPDATE交付状态列，原身份/窗口锚点不变；交付事件仅SELECT/INSERT、无UPDATE/DELETE，同subscription/revision主键、同subscription/request_id唯一，记录动作/状态/序号/尝试/诊断标签/安全分类或人工恢复原因/窗口revision，无旧知识正文或租约令牌。库/订阅原有删除级联清理，不宣称永久归档，暂无后台保留期清理。
+
+list新增可选deliveryStatus过滤，20条分页，返回交付元数据但不返回lease_id。delivery_history只返回20条元数据历史及整数before续页，不含requestId或leaseId；当前令牌仅由claim响应交付。claim、complete、fail、redrive均通过请求指纹和追加事件幂等；过期领取或当前窗口变化拒绝旧claim，成功处置的重复命令只回原收据，不再写状态。消费错误分类403/409/400/503，无SQL/上游隐私错误；任何错误清空旧正文。元数据不是旧知识读取凭证。
+
+交付页具备服务端状态筛选/分页、手动刷新、诊断标签、当前领取/事实与精确证据、勾选后完成/失败、重试时间与尝试次数、死信手动恢复原因/CAS/历史分页。租约令牌仅在本页内存，刷新或离开丢失后需等到期恢复，不落localStorage。领取期间保留上下文，导航入口不冒充跨产品管理权限；外部OBO消费者使用自身调用产品上下文。按钮时间就绪需手动刷新，无后台轮询。当前来源/权限变化后无法用旧窗口确认，consumer仍需每次使用前重核验。
+
+开发只做必要协议/生命周期/DDL定向与类型守卫，阶段CI统一真实PostgreSQL租约恢复、确认围栏/死信恢复/变化/取消/撤权/不可变授权及新旧迁移重放。不启动本地开发服务、浏览器或CMD窗口；文件操作在进程内，必要命令用Node REPL直接隐藏可执行文件，不经shell。不操作客户权限或知识内容，不发送他人消息。S5本批消费交付恢复子项完成不代替真实Agent联调或外部主动推送，S3 Ontos未开发后置、S4正式权威与S6业务切换继续独立验收；17主验收维持7完成/6进行中/4待门槛。

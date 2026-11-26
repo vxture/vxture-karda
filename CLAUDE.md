@@ -1,6 +1,22 @@
 # vxture-karda Repository Standards
 
-Latest production 2026-11-27: v0.12.42 / f7a5d7718e35294f19b490b12701409eb55ac4ea,
+Latest production 2026-11-27: v0.12.43 / 5648146aa9cf3bfc274351abd56b12fe6a2cbe15,
+deploy45877987416 succeeded at2026-11-26T18:47:45Z (02:47:45 Asia/Shanghai).
+PR385 adds same-question source/published retrieval comparison and metadata-only
+pilot cases, current-window human review, close/reopen and immutable history.
+Migration0036 run45877696739 succeeded at18:40:59Z;68tables. PR CI45876798312:
+1147pass/zero skips, scan45876798212; main CI45877231557/scan45877231658passed.
+Health/ready deps OK; anonymous pilots GET/POST/package401. No local full suite.
+Owner objected to command-window popups: local dev/browser stopped; do not restart.
+Use in-process file tools or Node REPL direct hidden executable calls, no shells.
+Partial UI only: create and both result panels; verdict locator label corrected,
+full browser flow not verified. Real DB workflow stage CI passed. Release v0.12.43
+has final evidence; local450/checklist/memory ride NEXT functional PR, no docs-only
+full-main rerun. Preserve user70/output. Next remaining authority/sync software
+adaptation follows actual contracts; Ontos undeveloped/deferred, business/Agent
+and production cutover independent. Fixed17items7done/6in progress/4gated. I1paused.
+
+Historical production 2026-11-27: v0.12.42 / f7a5d7718e35294f19b490b12701409eb55ac4ea,
 deploy45871086242 succeeded at2026-11-26T17:56:57Z (01:56:57 Asia/Shanghai).
 PR384 replaces demo rebuild with durable index-only plans, real Atlas candidates,
 explicit atomic batch activation, baseline restore/cancel, CAS and history.
