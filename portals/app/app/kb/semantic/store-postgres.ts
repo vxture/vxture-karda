@@ -288,7 +288,8 @@ export class PostgresSemanticStore {
         }
         const result=current?row.result:{};
         if(Buffer.byteLength(JSON.stringify([result,current?.entities,current?.assertions]))>2*1024*1024)throw new Error("semantic_snapshot_limit");
-        tasks.push({...metadata,result,schemaRef:{namespace:snapshot.schema.namespace,schemaId:snapshot.schema.schemaId,version:snapshot.schema.version},sourceState:query.taskId?(current?"current":"changed"):"not_loaded",
+        tasks.push({...metadata,result,...(snapshot?.schema&&[snapshot.schema.namespace,snapshot.schema.schemaId,snapshot.schema.version].every(v=>typeof v==="string")?
+          {schemaRef:{namespace:snapshot.schema.namespace,schemaId:snapshot.schema.schemaId,version:snapshot.schema.version}}:{}),sourceState:query.taskId?(current?"current":"changed"):"not_loaded",
           ...(current?{sourceIds:current.sources.map(s=>s.documentId).sort()}:{}),
           ...(current?{resultHash:semanticValueHash(result),context:{entities:current.entities,assertions:current.assertions}}:{})});
       }
