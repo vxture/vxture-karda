@@ -263,7 +263,7 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
     const scopedId=randomUUID(),selectedSource=doc;
     const extraScopeSources=Array.from({length:101},()=>randomUUID());
     await admin.query(`INSERT INTO karda_kb.document(id,kb_id,title,source,mime,size_bytes,storage_ref,content_hash,content_state,active_chunk_version)
-      SELECT x,$1,'Unselected source','upload','text/plain',1,'unused',$3,'indexed',1 FROM unnest($2::uuid[]) AS x`,[kb,extraScopeSources,hash]);
+      SELECT x,$1,'Unselected source','upload','text/plain',1,'unused',md5(x::text)||md5(x::text),'indexed',1 FROM unnest($2::uuid[]) AS x`,[kb,extraScopeSources]);
     await assert.rejects(store.createCompileTask(identity,kb,randomUUID()),/semantic_source_budget/);
     assert.deepEqual(await store.createCompileTask(identity,kb,scopedId,[selectedSource]),{taskId:scopedId,duplicate:false});
     assert.deepEqual(await store.createCompileTask(identity,kb,scopedId,[selectedSource]),{taskId:scopedId,duplicate:true});
