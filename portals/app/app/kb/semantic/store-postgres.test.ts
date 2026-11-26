@@ -274,6 +274,7 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
     assert.deepEqual((await store.browseCompileTasks(identity,kb,{taskId:scopedId})).tasks[0].sourceIds,[selectedSource]);
     await assert.rejects(store.createCompileTask(identity,kb,scopedId,[extraScopeSources[0]]),/semantic_task_conflict/);
     await admin.query("DELETE FROM karda_kb.document WHERE id=ANY($1::uuid[])",[extraScopeSources]);
+    await admin.query("DELETE FROM karda_kb.semantic_compile_task WHERE id=$1",[scopedId]);
     const taskId=randomUUID();
     assert.deepEqual(await store.createCompileTask(identity,kb,taskId),{taskId,duplicate:false});
     assert.deepEqual(await store.createCompileTask(identity,kb,taskId),{taskId,duplicate:true});
