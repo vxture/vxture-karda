@@ -324,3 +324,9 @@ GRANT SELECT, INSERT ON karda_kb.maintenance_task_event TO karda_svc;
 REVOKE UPDATE, DELETE ON karda_kb.compile_profile_version, karda_kb.compile_profile_activation FROM karda_svc;
 GRANT SELECT, INSERT ON karda_kb.compile_profile_version, karda_kb.compile_profile_activation TO karda_svc;
 -- END COMPILE PROFILE LOCKS
+
+-- BEGIN KNOWLEDGE SUBSCRIPTION LOCKS
+REVOKE UPDATE, DELETE ON karda_kb.knowledge_subscription, karda_kb.knowledge_subscription_event FROM karda_svc;
+GRANT SELECT, INSERT ON karda_kb.knowledge_subscription, karda_kb.knowledge_subscription_event TO karda_svc;
+GRANT UPDATE (enabled,sequence,ack_sequence,last_revision,updated_at) ON karda_kb.knowledge_subscription TO karda_svc;
+-- END KNOWLEDGE SUBSCRIPTION LOCKS

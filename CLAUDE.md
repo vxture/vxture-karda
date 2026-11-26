@@ -34,6 +34,14 @@ Avoid separate docs-only release PRs that trigger another main full run; carry
 final release evidence in the next functional stage or GitHub release record.
 Never skip required PR/main checks or claim external business acceptance.
 
+## Owner environment and dependency correction - 2026-11-27
+
+Owner states Ontos has not been implemented at all. Defer Ontos integration;
+do not search for or wait for an assumed Ontos service as the next work item.
+Continue independent knowledge-platform software. Avoid opening visible command
+windows; use existing hidden execution and windowsHide for child processes.
+Do not use Start-Process without -WindowStyle Hidden or launch visible terminals.
+
 ## Owner delivery cadence - 2026-11-25
 
 Owner requests larger functional stages and fewer repeated tests. Develop related
@@ -118,7 +126,19 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-26): v0.12.39 / 06f67ab4, deploy45850983056
+Current production (2026-11-27): v0.12.40 / fe8ec730, deploy45857158822
+succeeded at2026-11-26T16:22:47Z (00:22:47 Asia/Shanghai). PR382 delivers
+local semantic compiler profile versioning/activation/restore and pinned publication
+consumption. Real Ontos rules/contracts remain pending; do not close all S3.
+Migration0033 run45856534185 succeeded;60tables. PR CI45856010869:1134pass/
+zero skips/scan45856010763; exact-main CI45856392889/scan45856392943passed.
+Health/ready and anonymous profiles GET/POST/package401. No local full regression.
+GitHub Release v0.12.40 holds final evidence; local deployment420/checklist/memory
+closeout changes ride NEXT functional PR, no docs-only full-main rerun.
+Next inspect formal Ontos/library authority contracts for real software adaptation.
+S3 partial plus S4-S6 still unfinished; fixed17items7complete/10unfinished.
+
+Historical production (2026-11-26): v0.12.39 / 06f67ab4, deploy45850983056
 succeeded at2026-11-26T15:43:48Z through normal production review. PR381
 replaces the demo pipeline board with a real authorized work center and exact
 processing/compile/OCR/maintenance destinations. No DDL;58tables unchanged.

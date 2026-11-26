@@ -58,6 +58,7 @@
 | `karda.get_context` | OBO/service | **免计量** | 已交付 | **未实现** | `140` §8.3 |
 | `karda.knowledge_package` | **仅 OBO** | 免计量，有界已发布知识核验 | 本仓实现；kb_id或最多20库kb_ids，目录page_cursor逐页复验；真实OBO待验 | 未开放，现有service通道不适用 | `170` §15/25/30 |
 | `karda.knowledge_sync` | **仅 OBO** | 免计量，有界已发布知识核验 | 本仓实现；known_revision条件同步，每次复核当前权限/来源；真实Agent待验 | 未开放，现有service通道不适用 | `170` §39 |
+| `karda.knowledge_subscription` | **仅 OBO** | 免计量，与knowledge_sync一致 | 拉取式持久消费窗口/确认进度/修订元数据续读，本仓实现、真实Agent待验 | service不开放 | `170` §64 |
 | `karda.topic_knowledge` | **仅 OBO** | 免计量，与knowledge_package读取一致 | 主题发现/当前事实汇编/人工认可摘要及证据读取，本仓实现，真实Agent待验 | 未开放，service通道不适用 | `170` §58 |
 | `karda.published_search` | **仅 OBO** | per_call，沿用karda.search | 本仓实现；当前已发布事实全文词法排序/精确证据，真实Agent待验 | 未开放，service通道不适用 | `170` §44 |
 | `karda.source_search` | **仅 OBO** | per_call，沿用karda.search | 本仓实现，真实OBO/账单待验 | 未开放，现有service通道不适用 | `170` §21 |

@@ -24,6 +24,8 @@ export interface ToolDescriptor {
 export const PROTOCOL_VERSION = "1.0.0";
 
 export const TOOLS: ToolDescriptor[] = [
+  {name:"karda.knowledge_subscription",summary:"Persist an identity/product-bound knowledge window and consumption checkpoint. action=create/list/poll/ack/cancel. Poll always revalidates current scope and returns a replacement window plus bounded revision metadata replay; ack is explicit CAS and never grants offline access. No historical content, webhook push, background polling or model call. On any error discard cached content; cancelled or revoked scopes cannot deliver.",
+    mode:"obo_only",metering:{kind:"none"},input:["action","id","name","window","before","after","sequence","revision","expectedAck"],authz:{asset_types:["knowledge_base"]}},
   {
     name:"karda.topic_knowledge",
     summary:"Discover current relation topics, then read an evidence compilation and separately human-accepted cited summary. Same current authority, consumer-product attachment, source and latest-review checks as knowledge packages. action=list or read with relation_type; optional summary_id selects an accepted current summary, before pages accepted summaries. Empty results never expose pending/stale summary identities. No model call, approval or writes. Discard old content on errors; revalidate before reuse.",

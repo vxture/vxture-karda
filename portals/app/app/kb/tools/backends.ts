@@ -31,6 +31,7 @@ import { writeDocument } from "./write";
 import { createEntry } from "./entry";
 import { createKb, attachKb, detachKb } from "../attachments/tools";
 import {knowledgePackageTool} from "../semantic/package-tool";
+import {subscriptionTool} from "../semantic/subscription-tool";
 import {knowledgeSyncTool} from "../semantic/sync-tool";
 import {publishedSearchTool} from "../semantic/published-search-tool";
 import {topicKnowledgeTool} from "../semantic/topic-knowledge-tool";
@@ -46,6 +47,7 @@ export function buildToolBackends(): ToolBackends {
     topicKnowledge:topicKnowledgeTool,
     publishedSearch:publishedSearchTool,
     knowledgeSync:knowledgeSyncTool,
+    knowledgeSubscription:subscriptionTool,
     sourceSearch:sourceSearchTool,
     knowledgePackage:knowledgePackageTool,
     async listKbs(workspaceId) {
