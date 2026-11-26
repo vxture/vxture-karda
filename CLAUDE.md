@@ -20,6 +20,12 @@ that full run locally without a failure or unresolved risk. Keep mandatory PR
 and exact-main checks, production review and post-release health/auth probes.
 Do not close business/external gates from implementation evidence.
 
+Owner progress report format - 2026-11-26: every completion report must name
+what was completed, merged/deployed status, remaining batches and the next step.
+Always distinguish functional subitems from the fixed17 main acceptance items;
+report the actual6 in-progress and4 gated items rather than only a release number.
+
+
 ## Reconstruction scope - 2026-11-24
 
 Read docs/90-memory/20-platform-integration-handoff.md first for platform ownership, post-delivery verification and the user-paused I1 scope.

@@ -72,9 +72,11 @@ async function latestReviews(db: PoolClient, kbId: string, input: PublishedRelat
     ORDER BY subject_key,revision DESC`, [kbId, input.relations.map(row => `relation/${row.id}`)])).rows;
 }
 function acceptedReviews(input: PublishedRelationInput, reviews: ReviewRow[]): void {
+  const bySubject = new Map(reviews.map(review=>[review.subject_key,review]));
+  const definition=semanticDefinitionKey(input);
   if (reviews.length !== input.relations.length || input.relations.some(relation => {
-    const review = reviews.find(row => row.subject_key === `relation/${relation.id}`);
-    return !review || review.decision !== "accept" || review.subject_hash !== subjectHash(input, relation.id);
+    const review = bySubject.get(`relation/${relation.id}`);
+    return !review || review.decision !== "accept" || review.subject_hash !== semanticValueHash({definition,sources:input.sources,relation});
   })) throw new Error("semantic_review_required");
 }
 
@@ -768,8 +770,10 @@ export class PostgresFormalSemanticLoader {
         WHERE kb_id=$1 AND release_id=$2 ORDER BY relation_id,assertion_id LIMIT 5001`, [row.kb_id, row.id])).rows;
       const sources = (await db.query<{document_id: string; document_version: number; content_hash: string}>(`SELECT document_id,document_version,content_hash
         FROM karda_kb.semantic_release_source WHERE kb_id=$1 AND release_id=$2 ORDER BY document_id LIMIT 5001`, [row.kb_id, row.id])).rows;
+      const supportsByRelation=new Map<string,string[]>();
+      for(const support of supports){const ids=supportsByRelation.get(support.relation_id)??[];ids.push(support.assertion_id);supportsByRelation.set(support.relation_id,ids);}
       const normalized = relations.map(r => ({id: r.relation_id, type: r.type, sourceId: r.source_id, targetId: r.target_id,
-        origin: r.origin, assertionIds: supports.filter(s => s.relation_id === r.relation_id).map(s => s.assertion_id)}));
+        origin: r.origin, assertionIds: supportsByRelation.get(r.relation_id)??[]}));
       const expected = [...input.relations].sort((a,b) => a.id.localeCompare(b.id)).map(r => ({id: r.id, type: r.type,
         sourceId: r.sourceId, targetId: r.targetId, origin: r.origin, assertionIds: [...r.assertionIds].sort()}));
       if (supports.length > 5000 || semanticValueHash(normalized) !== semanticValueHash(expected) ||
@@ -780,9 +784,13 @@ export class PostgresFormalSemanticLoader {
       acceptedReviews(input, bound);
       if (semanticValueHash(bound) !== command.reviewRevision) throw new Error("semantic_corrupt_release");
       const latest = releaseId?bound:await latestReviews(db, row.kb_id, input);
-      output.relations.push(...input.relations.filter(relation => latest.some(review => review.subject_key === `relation/${relation.id}` &&
-        review.id === bound.find(b => b.subject_key === review.subject_key)?.id && review.decision === "accept" &&
-        review.subject_hash === subjectHash(input, relation.id))));
+      const boundBySubject=new Map(bound.map(review=>[review.subject_key,review]));
+      const latestBySubject=new Map(latest.map(review=>[review.subject_key,review]));
+      // acceptedReviews already verified every bound subject hash in this same snapshot.
+      output.relations.push(...input.relations.filter(relation => {
+        const key=`relation/${relation.id}`,review=latestBySubject.get(key),accepted=boundBySubject.get(key);
+        return !!review&&!!accepted&&review.id===accepted.id&&review.decision==="accept"&&review.subject_hash===accepted.subject_hash;
+      }));
       output.sources.push(...input.sources);
       if (output.relations.length > 5000 || output.sources.length > 5000) throw new Error("semantic_snapshot_limit");
     }
