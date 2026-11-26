@@ -352,3 +352,6 @@ baseline/0020/Prisma/98锁步，新旧库重复演练；生产通过db-init审�
 
 
 2026-11-27 0035新增index_rebuild/index_rebuild_item/index_rebuild_event（65表）。计划固定创建人/库/参数/模型/请求hash与说明；item复合PK(run_id,document_id)，不可变来源版本/hash与baseline，状态/3次尝试/租约/候选/hash可更新；event复合PK(run_id,revision)、同run/event_id唯一，追加式不可修改。item不外键关联资料，删除资料后只能浏览历史元数据，不能继续切换。98按列最小授权，baseline/增量/Prisma/旧41表重放锁步，见170§65。
+
+
+2026-11-27 0036新增pilot_case/pilot_observation/pilot_event（68表）。case固定问题/创建者/参数/说明/request_hash，状态/修订/结论/评审观测可按列更新；observation仅id/case/fingerprint/summary/created_at，无正文；event复合PK(case_id,revision)、同case/event_id唯一并复合引用观测，追加式保存人工说明/结论。98无观测/历史UPDATE/DELETE，baseline/增量/Prisma/旧41表夹具锁步，见170§66。

@@ -1,6 +1,20 @@
 # vxture-karda Repository Standards
 
-Latest production 2026-11-27: v0.12.41 / 93915e20, deploy45862976272
+Latest production 2026-11-27: v0.12.42 / f7a5d7718e35294f19b490b12701409eb55ac4ea,
+deploy45871086242 succeeded at2026-11-26T17:56:57Z (01:56:57 Asia/Shanghai).
+PR384 replaces demo rebuild with durable index-only plans, real Atlas candidates,
+explicit atomic batch activation, baseline restore/cancel, CAS and history.
+Migration0035 run45870834220 succeeded at17:49:30Z;65tables. PR CI45870003789:
+1143pass/zero skips, scan45870004128; main CI45870423805/scan45870423807passed.
+Health/ready deps OK; anonymous rebuild GET/POST/package401. No local full suite.
+GitHub Release v0.12.42 has final evidence; local deployment440/checklist/memory
+closeout ride NEXT functional PR, no docs-only full-main rerun. Preserve user70/output.
+Next independent software: S6 same-question read-only source/published search
+comparison and pilot operations. Ontos remains undeveloped/deferred; no visible
+command windows. Formal library authority/external push/Agent/business gates
+stay open. Fixed17items7done/6in progress/4gated. I1 user-paused.
+
+Historical production 2026-11-27: v0.12.41 / 93915e20, deploy45862976272
 succeeded at2026-11-26T17:01:07Z (01:01:07 Asia/Shanghai). PR383 adds durable
 consumer windows, explicit acknowledgement CAS and revision metadata replay.
 Migration0034 run45862443931 succeeded;62tables. PR CI45861782800:1138pass/
@@ -46,6 +60,14 @@ use only necessary focused checks; full regression belongs at the stage boundary
 Avoid separate docs-only release PRs that trigger another main full run; carry
 final release evidence in the next functional stage or GitHub release record.
 Never skip required PR/main checks or claim external business acceptance.
+
+## Owner local process correction - 2026-11-27
+
+Owner again objected to command-window popups during local UI validation.
+Stop starting local browsers/development servers. Use in-process file tools or
+Node REPL with direct executable calls and windowsHide:true for necessary Git/CI
+operations; no shell wrappers or visible terminal panels. Existing local validation
+processes were stopped. Stage verification stays in CI; no local UI rerun.
 
 ## Owner environment and dependency correction - 2026-11-27
 
@@ -139,7 +161,7 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-27): v0.12.40 / fe8ec730, deploy45857158822
+Historical production (2026-11-27): v0.12.40 / fe8ec730, deploy45857158822
 succeeded at2026-11-26T16:22:47Z (00:22:47 Asia/Shanghai). PR382 delivers
 local semantic compiler profile versioning/activation/restore and pinned publication
 consumption. Real Ontos rules/contracts remain pending; do not close all S3.

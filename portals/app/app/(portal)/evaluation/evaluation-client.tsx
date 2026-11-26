@@ -84,6 +84,7 @@ export function EvaluationClient() {
         meta={m.pageMeta(v.coveragePct, v.stale, baselineLine)}
         actions={
           <>
+            <Button variant="outline" asChild><Link href="/evaluation/pilots">{m.pilotComparison}</Link></Button>
             <Button variant="outline" asChild>
               <a href="/bench">{sh.subBench}</a>
             </Button>

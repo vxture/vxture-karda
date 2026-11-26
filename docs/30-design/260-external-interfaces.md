@@ -424,3 +424,6 @@ OCR草稿（170§60）：RP GET/POST `/api/kb/[id]/ocr-drafts`，当前同空间
 
 
 受控索引重建（170§65）：RP GET/POST `/api/pipeline/rebuild`替换演示读模型，当前user库所有者及product.enter/data.read/data.write；执行附ai.use。GET必填kbId，可选互斥id/before，20条计划元数据；POST同源JSON严格create/execute/activate/revert/cancel。create仅id/kbId/documentIds/params/note，execute仅id/documentId，处置仅id/eventId/expectedRevision/note；身份由会话生成。候选构建实际Atlas调用，旧索引服务不变；整批切换/恢复先复核全部当前来源/配置/索引、CAS及租约。无历史正文输出、自动发布或新增OBO工具。
+
+
+试点对照（170§66）：RP GET/POST `/api/knowledge-pilots`，当前user库所有者及记录创建人，product.enter/data.read/data.write；compare/review/close附ai.use、当前挂载/消费开关。GET kbId必填、互斥id/before、historyBefore仅详情，20条案例/最近20观测/20条历史续页。POST严格create/compare/review/close/reopen，同源JSON，不接收身份或正文；create固定query/topK，compare两路同快照检索并追加无正文观测、每次计量2search，review/close当前窗口指纹核验与CAS，reopen保留历史。无模型/自动发布/生产切换/OBO新增面。
