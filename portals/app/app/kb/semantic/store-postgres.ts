@@ -16,6 +16,7 @@ import {parsePathFor} from "../processing/ir";
 import {readSourceSnapshot} from "../processing/source-snapshot";
 import {SOURCE_FORMATS} from "../processing/source-formats";
 import {inspectSources,type SourceCandidate} from "./source-readiness";
+import {parseSourceInspectionQuery,type SourceInspectionQuery} from "./source-query";
 import { maintenanceReport, type MaintenanceReport, type MaintenanceDocument, type MaintenanceAssertion, type MaintenanceGround } from "./maintenance";
 import {verifyAuditWindow,type AuditHistory,type AuditRelease} from "./audit-history";
 import {parseCompileTaskQuery,type CompileTaskQuery} from "./task-query";
@@ -176,20 +177,28 @@ export class PostgresSemanticStore {
     }, true);
   }
 
-  async sourceReadiness(identity:SemanticReadIdentity,kbId:string){
+  async sourceReadiness(identity:SemanticReadIdentity,kbId:string,query:SourceInspectionQuery={}){
+    const params=new URLSearchParams({view:"sources",...Object.fromEntries(Object.entries(query).filter(([,value])=>value!==undefined))});
+    query=parseSourceInspectionQuery(params);
+    const before=query.before??null,documentId=query.documentId??null;
     return this.write(identity,kbId,"data.write",async db=>{
       const access=await readProductAccess(identity,{$queryRawUnsafe:async<R>(s:string,...v:unknown[])=>(await db.query(s,v)).rows as R,
         $executeRawUnsafe:async()=>{throw new Error("semantic_write_denied");}});
       if(!permits(access,"data.read")||!permits(access,"service.publish"))throw new Error("semantic_write_denied");
+      const anchor=before??documentId;
+      if(anchor&&(await db.query("SELECT id FROM karda_kb.document WHERE kb_id=$1 AND id=$2",[kbId,anchor])).rowCount!==1)throw new Error("semantic_source_conflict");
       const documents=(await db.query<SourceCandidate>(`SELECT id,title,mime,content_state,active_chunk_version,content_hash,storage_ref,size_bytes
-        FROM karda_kb.document WHERE kb_id=$1 ORDER BY id LIMIT 101`,[kbId])).rows;
-      return inspectSources(documents,async doc=>{
+        FROM karda_kb.document WHERE kb_id=$1 AND ($2::uuid IS NULL OR id>$2) AND ($3::uuid IS NULL OR id=$3)
+        ORDER BY id LIMIT 21`,[kbId,before,documentId])).rows;
+      const more=documents.length>20;if(more)documents.pop();
+      const report=await inspectSources(documents,async doc=>{
         const native=doc.mime==="text/plain"||doc.mime==="text/markdown";
         const normalized=native?null:await readSourceSnapshot(async(sql,...values)=>(await db.query(sql,values)).rows,doc.id,doc.active_chunk_version!);
         const bytes=await this.objects.get(doc.storage_ref!);
         const text=verifiedSourceText({activeVersion:doc.active_chunk_version,contentState:doc.content_state,contentHash:doc.content_hash,mime:doc.mime,normalized},bytes?.length===Number(doc.size_bytes)?bytes:null);
         return {text,parserVersion:text===null?null:native?"native_text":normalized?.parserVersion??null};
       },async()=>(await db.query<{now:Date}>("SELECT statement_timestamp() AS now")).rows[0].now.toISOString());
+      return {...report,page:{scope:"current_authorized_source_window" as const,limit:20,before,documentId,next:more?documents.at(-1)!.id:null}};
     },true);
   }
 
