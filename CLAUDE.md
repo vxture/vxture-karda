@@ -93,7 +93,16 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-26): v0.12.32 / 789feec4, deploy45789138310
+Current production (2026-11-26): v0.12.33 / f8f867d9, deploy45794703777
+succeeded at2026-11-26T09:49:58Z through normal production review. PR370
+adds capacity tooling/reports and indexed formal review/support checks.
+Stage CI45793902213:1113pass/zero skips; main CI45794307730/scan45794307466pass.
+No DDL,56tables. Health/ready and anonymous package/search-page/control refusal pass.
+Local4800 multi-library concurrent facts remain slow (P95~9.99s); scale gate open.
+No local full-suite repetition. Fixed17items:7complete/10unfinished.
+See docs/50-deployment/350-service-capacity-release-20261126.md.
+
+Historical production (2026-11-26): v0.12.32 / 789feec4, deploy45789138310
 succeeded at2026-11-26T09:17:16Z through normal production review. PR368
 adds workspace rollout controls, immutable audit and shared consumer gating.
 Stage CI45787788754:1111pass/zero skips; main CI45788527036/scan45788526920pass.

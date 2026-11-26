@@ -63,3 +63,5 @@ exercised (live since v0.1.0); the beta tier stays a reserved channel (TD-001).
 | `330-fact-pages-release-20261126.md` | v0.12.31 bound published fact search pages and production evidence |
 
 | `340-rollout-control-release-20261126.md` | v0.12.32 workspace rollout controls, migration0029 and production evidence |
+
+| `350-service-capacity-release-20261126.md` | v0.12.33 indexed formal reads, capacity measurements and production evidence |
