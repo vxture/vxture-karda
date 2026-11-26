@@ -343,3 +343,9 @@ REVOKE UPDATE, DELETE ON karda_kb.pilot_case, karda_kb.pilot_observation, karda_
 GRANT SELECT, INSERT ON karda_kb.pilot_case, karda_kb.pilot_observation, karda_kb.pilot_event TO karda_svc;
 GRANT UPDATE (state,revision,verdict,reviewed_observation,updated_at) ON karda_kb.pilot_case TO karda_svc;
 -- END PILOT WORKFLOW LOCKS
+
+-- BEGIN KNOWLEDGE DELIVERY LOCKS
+REVOKE UPDATE, DELETE ON karda_kb.knowledge_delivery_event FROM karda_svc;
+GRANT SELECT, INSERT ON karda_kb.knowledge_delivery_event TO karda_svc;
+GRANT UPDATE (delivery_revision,delivery_sequence,delivery_attempt,delivery_status,delivery_worker,lease_id,lease_until,retry_after) ON karda_kb.knowledge_subscription TO karda_svc;
+-- END KNOWLEDGE DELIVERY LOCKS

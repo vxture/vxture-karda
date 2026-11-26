@@ -1,5 +1,6 @@
 import type {Catalog} from "../catalog";
 export const subscriptions={
+  deliveryCenter:{"zh-CN":"\u6d88\u8d39\u4ea4\u4ed8\u4e0e\u5931\u8d25\u6062\u590d","en-US":"Delivery and recovery"},
   title:{"zh-CN":"\u77e5\u8bc6\u6d88\u8d39\u540c\u6b65\u8ba2\u9605","en-US":"Knowledge consumption subscriptions"},
   hint:{"zh-CN":"\u4fdd\u5b58\u77e5\u8bc6\u6d88\u8d39\u7a97\u53e3\uff0c\u624b\u52a8\u62c9\u53d6\u5f53\u524d\u53d8\u5316\u3001\u786e\u8ba4\u5df2\u6d88\u8d39\u4fee\u8ba2\uff0c\u5e76\u5728\u91cd\u542f\u540e\u6062\u590d\u672a\u786e\u8ba4\u8bb0\u5f55\u3002","en-US":"Save a consumption window, pull current changes, acknowledge consumed revisions and resume unacknowledged work after restart."},
   scope:{"zh-CN":"\u8ba2\u9605\u7ed1\u5b9a\u5f53\u524d\u7528\u6237\u3001\u7a7a\u95f4\u548c\u8c03\u7528\u4ea7\u54c1\u3002\u6b64\u9875\u9762\u4ec5\u7ba1\u7406 Karda \u7684\u8ba2\u9605\uff1b\u667a\u80fd\u4f53\u7528\u5404\u81ea\u4ea7\u54c1\u7684 OBO \u5de5\u5177\u7ba1\u7406\u72ec\u7acb\u8ba2\u9605\u3002\u6ca1\u6709\u540e\u53f0\u8f6e\u8be2\u6216\u5916\u90e8\u56de\u8c03\u63a8\u9001\u3002","en-US":"Subscriptions bind the current user, workspace and caller product. This page manages Karda subscriptions; agents manage separate subscriptions through OBO. No background polling or webhook push."},

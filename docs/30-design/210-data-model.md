@@ -355,3 +355,6 @@ baseline/0020/Prisma/98锁步，新旧库重复演练；生产通过db-init审�
 
 
 2026-11-27 0036新增pilot_case/pilot_observation/pilot_event（68表）。case固定问题/创建者/参数/说明/request_hash，状态/修订/结论/评审观测可按列更新；observation仅id/case/fingerprint/summary/created_at，无正文；event复合PK(case_id,revision)、同case/event_id唯一并复合引用观测，追加式保存人工说明/结论。98无观测/历史UPDATE/DELETE，baseline/增量/Prisma/旧41表夹具锁步，见170§66。
+
+
+2026-11-27 0037新增knowledge_delivery_event（69表），为knowledge_subscription增加delivery_revision/sequence/attempt/status/worker、lease_id/until、retry_after。交付事件同subscription/revision主键和request_id唯一、仅SELECT/INSERT，无正文或租约令牌。数据库CHECK保护成对租约/重试时间/尝试上限及未决交付ack围栏；0034新表声明前向兼容，老表由0037幂等添加，baseline/Prisma/98/旧41表重放锁步，见170§67。

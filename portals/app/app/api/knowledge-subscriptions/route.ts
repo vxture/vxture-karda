@@ -11,9 +11,9 @@ async function handle(req:Request){
     if(req.method==="POST"&&(!reviewOriginAllowed(req,getOidcConfig().appOrigin)||!req.headers.get("content-type")?.startsWith("application/json")))return NextResponse.json({error:"origin_invalid"},{status:403,headers});
     const auth=await requireAuth("data.read");if(!auth.ok)return auth.response;
     const params=new URL(req.url).searchParams;
-    if([...params.keys()].some(k=>k!=="before")||params.getAll("before").length>1||(req.method==="POST"&&params.size))throw Error("subscription_invalid_request");
+    if([...params.keys()].some(k=>!["before","deliveryStatus"].includes(k))||[...params.keys()].some(k=>params.getAll(k).length>1)||(req.method==="POST"&&params.size))throw Error("subscription_invalid_request");
     const text=req.method==="POST"?await req.text():"";if(text.length>8192)throw Error("subscription_invalid_request");
-    let body:unknown;try{body=req.method==="POST"?JSON.parse(text):{action:"list",...(params.has("before")?{before:params.get("before")}:{})};}catch{throw Error("subscription_invalid_request");}
+    let body:unknown;try{body=req.method==="POST"?JSON.parse(text):{action:"list",...(params.has("before")?{before:params.get("before")}:{}) ,...(params.has("deliveryStatus")?{deliveryStatus:params.get("deliveryStatus")}:{})};}catch{throw Error("subscription_invalid_request");}
     const who={workspaceId:auth.user.activeWorkspace,sub:auth.user.sub,roles:[...auth.user.roles],productCode:"karda"};
     return NextResponse.json(await subscriptionService(who,body,async()=>(await userAdmission(auth.user)).allowed),{headers});
   }catch(error){const failure=subscriptionFailure(error);return NextResponse.json({error:failure.code},{status:failure.status,headers});}

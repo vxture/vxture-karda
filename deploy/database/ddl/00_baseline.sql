@@ -1480,6 +1480,18 @@ CREATE TABLE IF NOT EXISTS karda_kb.knowledge_subscription (
   sequence INTEGER NOT NULL DEFAULT 0 CHECK (sequence>=0),
   ack_sequence INTEGER NOT NULL DEFAULT 0 CHECK (ack_sequence>=0 AND ack_sequence<=sequence),
   last_revision VARCHAR(64) CHECK (last_revision ~ '^[a-f0-9]{64}$'),
+  delivery_revision INTEGER NOT NULL DEFAULT 0 CHECK (delivery_revision>=0),
+  delivery_sequence INTEGER NOT NULL DEFAULT 0 CHECK (delivery_sequence>=0 AND delivery_sequence<=sequence),
+  delivery_attempt INTEGER NOT NULL DEFAULT 0 CHECK (delivery_attempt BETWEEN 0 AND 3),
+  delivery_status VARCHAR(16) NOT NULL DEFAULT 'ready',
+  delivery_worker VARCHAR(80),
+  lease_id UUID,
+  lease_until TIMESTAMPTZ,
+  retry_after TIMESTAMPTZ,
+  CONSTRAINT chk_subscription_delivery_status CHECK (delivery_status IN ('ready','leased','retry','dead','done','cancelled')),
+  CONSTRAINT chk_subscription_delivery_lease CHECK ((delivery_status='leased')=(lease_id IS NOT NULL AND lease_until IS NOT NULL) AND (lease_id IS NULL)=(lease_until IS NULL)),
+  CONSTRAINT chk_subscription_delivery_checkpoint CHECK ((delivery_status NOT IN ('leased','retry','dead') OR ack_sequence<delivery_sequence) AND (delivery_status<>'done' OR ack_sequence>=delivery_sequence)),
+  CONSTRAINT chk_subscription_delivery_retry CHECK ((delivery_status='retry')=(retry_after IS NOT NULL)),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -1584,3 +1596,23 @@ CREATE TABLE IF NOT EXISTS karda_kb.pilot_event (
   CHECK ((action='reopen' AND observation_id IS NULL AND verdict IS NULL) OR (action<>'reopen' AND observation_id IS NOT NULL AND verdict IS NOT NULL))
 );
 -- END PILOT WORKFLOW
+
+-- BEGIN KNOWLEDGE DELIVERY
+CREATE TABLE IF NOT EXISTS karda_kb.knowledge_delivery_event (
+  subscription_id UUID NOT NULL REFERENCES karda_kb.knowledge_subscription(id) ON DELETE CASCADE,
+  revision INTEGER NOT NULL CHECK (revision>0),
+  request_id UUID NOT NULL,
+  fingerprint VARCHAR(64) NOT NULL CHECK (fingerprint ~ '^[a-f0-9]{64}$'),
+  action VARCHAR(16) NOT NULL CHECK (action IN ('claim','complete','fail','redrive','cancel')),
+  status VARCHAR(16) NOT NULL CHECK (status IN ('ready','leased','retry','dead','done','cancelled')),
+  sequence INTEGER NOT NULL CHECK (sequence>=0),
+  attempt INTEGER NOT NULL CHECK (attempt BETWEEN 0 AND 3),
+  worker VARCHAR(80),
+  note TEXT,
+  reason VARCHAR(32) CHECK (reason IN ('transient','permanent','attempt_limit')),
+  window_revision VARCHAR(64) CHECK (window_revision ~ '^[a-f0-9]{64}$'),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY(subscription_id,revision),
+  UNIQUE(subscription_id,request_id)
+);
+-- END KNOWLEDGE DELIVERY

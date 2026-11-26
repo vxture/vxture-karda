@@ -6,10 +6,10 @@ import {PageHead} from "../../../_shell/PageHead";
 import {useMessages} from "../../../_i18n/useMessages";
 import {subscriptions} from "../../../_i18n/messages/subscriptions";
 import {SignInGate} from "../../../_lib/ui";
-import type {SubscriptionCommand,SubscriptionRow,SubscriptionEvent} from "../../../kb/semantic/subscription";
+import type {SubscriptionCommand,SubscriptionRow,SubscriptionEvent,DeliveryMetadata} from "../../../kb/semantic/subscription";
 import type {KnowledgePackage} from "../../../kb/semantic/read-postgres";
 interface Delivery {format:string;id:string;sequence:number;ackSequence:number;revision:string;observedAt:string;
-  knowledge:KnowledgePackage;events:SubscriptionEvent[];nextAfter:number|null}
+  delivery?:DeliveryMetadata;knowledge:KnowledgePackage;events:SubscriptionEvent[];nextAfter:number|null}
 export function SubscriptionsClient(){
   const m=useMessages(subscriptions),[rows,setRows]=useState<SubscriptionRow[]>([]),[next,setNext]=useState<string|null>(null),[delivery,setDelivery]=useState<Delivery|null>(null),
     [busy,setBusy]=useState(false),[error,setError]=useState(0),[notice,setNotice]=useState(false),[name,setName]=useState(""),[kb,setKb]=useState(""),[entity,setEntity]=useState(""),[confirm,setConfirm]=useState(false);
@@ -43,7 +43,7 @@ export function SubscriptionsClient(){
   function edit(){pending.current=null;setNotice(false);}
   if(error===401)return <SignInGate from="/channels/subscriptions"/>;
   return <div className="flex min-w-0 flex-col gap-md" aria-busy={busy}>
-    <PageHead title={m.title}/><p>{m.hint}</p><p className="text-body-sm text-muted-foreground">{m.scope}</p>
+    <PageHead title={m.title}/><Link href="/channels/deliveries">{m.deliveryCenter}</Link><p>{m.hint}</p><p className="text-body-sm text-muted-foreground">{m.scope}</p>
     <div className="flex flex-wrap gap-sm"><Button variant="outline" disabled={busy} onClick={()=>void list()}>{m.refresh}</Button><Button variant="outline" asChild><Link href="/tools">{m.tools}</Link></Button></div>
     {error!==0&&<Banner tone="danger" title={error===403?m.denied:error===409?m.changed:m.unavailable}/>}{notice&&<Banner tone="success" title={m.saved}/>}
     {error>=500&&pending.current&&<Button disabled={busy} onClick={()=>void execute(pending.current!)}>{m.retry}</Button>}
@@ -64,7 +64,7 @@ export function SubscriptionsClient(){
     </section>
     {delivery&&<section className="grid min-w-0 gap-sm rounded border p-md"><h2>{m.current}</h2>
       <p>{m.observed}: {delivery.observedAt} / {m.sequence}: {delivery.sequence} / {m.ack}: {delivery.ackSequence}</p>
-      <p className="break-all">{delivery.revision}</p><p>{m.revalidate}</p>
+      <p className="break-all">{delivery.revision}</p>{delivery.delivery&&["leased","retry","dead"].includes(delivery.delivery.delivery_status)&&<p><Link href="/channels/deliveries">{m.deliveryCenter}</Link></p>}<p>{m.revalidate}</p>
       <p>{m.nodes}: {delivery.knowledge.nodes.length} / {m.edges}: {delivery.knowledge.edges.length}</p>
       {delivery.knowledge.truncated&&<Banner tone="warning" title={m.truncated}/>}
       {delivery.knowledge.statements.map(s=><p key={s.id} className="whitespace-pre-wrap break-words">{s.statement}</p>)}
@@ -72,7 +72,7 @@ export function SubscriptionsClient(){
       <h3>{m.events}</h3><p>{m.metadata}</p>{delivery.events.map(e=><p key={e.sequence} className="break-all">{e.sequence} / {e.revision} / {String(e.observedAt)}</p>)}
       {delivery.nextAfter!==null&&<Button variant="outline" disabled={busy} onClick={()=>void execute({action:"poll",id:delivery.id,after:delivery.nextAfter!})}>{m.nextEvents}</Button>}
       <label><input type="checkbox" checked={confirm} onChange={e=>setConfirm(e.target.checked)}/> {m.confirm}</label>
-      <Button disabled={busy||!confirm||delivery.sequence===delivery.ackSequence} onClick={()=>void execute({action:"ack",id:delivery.id,sequence:delivery.sequence,revision:delivery.revision,expectedAck:delivery.ackSequence})}>{m.acknowledge}</Button>
+      <Button disabled={busy||!confirm||delivery.sequence===delivery.ackSequence||!!(delivery.delivery&&["leased","retry","dead"].includes(delivery.delivery.delivery_status))} onClick={()=>void execute({action:"ack",id:delivery.id,sequence:delivery.sequence,revision:delivery.revision,expectedAck:delivery.ackSequence})}>{m.acknowledge}</Button>
     </section>}
   </div>;
 }

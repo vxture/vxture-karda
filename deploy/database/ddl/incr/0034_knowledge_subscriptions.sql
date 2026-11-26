@@ -12,6 +12,18 @@ CREATE TABLE IF NOT EXISTS karda_kb.knowledge_subscription (
   sequence INTEGER NOT NULL DEFAULT 0 CHECK (sequence>=0),
   ack_sequence INTEGER NOT NULL DEFAULT 0 CHECK (ack_sequence>=0 AND ack_sequence<=sequence),
   last_revision VARCHAR(64) CHECK (last_revision ~ '^[a-f0-9]{64}$'),
+  delivery_revision INTEGER NOT NULL DEFAULT 0 CHECK (delivery_revision>=0),
+  delivery_sequence INTEGER NOT NULL DEFAULT 0 CHECK (delivery_sequence>=0 AND delivery_sequence<=sequence),
+  delivery_attempt INTEGER NOT NULL DEFAULT 0 CHECK (delivery_attempt BETWEEN 0 AND 3),
+  delivery_status VARCHAR(16) NOT NULL DEFAULT 'ready',
+  delivery_worker VARCHAR(80),
+  lease_id UUID,
+  lease_until TIMESTAMPTZ,
+  retry_after TIMESTAMPTZ,
+  CONSTRAINT chk_subscription_delivery_status CHECK (delivery_status IN ('ready','leased','retry','dead','done','cancelled')),
+  CONSTRAINT chk_subscription_delivery_lease CHECK ((delivery_status='leased')=(lease_id IS NOT NULL AND lease_until IS NOT NULL) AND (lease_id IS NULL)=(lease_until IS NULL)),
+  CONSTRAINT chk_subscription_delivery_checkpoint CHECK ((delivery_status NOT IN ('leased','retry','dead') OR ack_sequence<delivery_sequence) AND (delivery_status<>'done' OR ack_sequence>=delivery_sequence)),
+  CONSTRAINT chk_subscription_delivery_retry CHECK ((delivery_status='retry')=(retry_after IS NOT NULL)),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
