@@ -260,6 +260,20 @@ test("formal semantic store: compile/review/publish/read, replay, CAS, revocatio
     await admin.query("DELETE FROM karda_kb.kb_attachment WHERE kb_id=$1",[kb]);
     assert.equal((await read()).edges.length,0);
     await admin.query("UPDATE karda_kb.entity SET kind='thing' WHERE kb_id=$1",[kb]);
+    const scopedId=randomUUID(),selectedSource=doc;
+    const extraScopeSources=Array.from({length:101},()=>randomUUID());
+    await admin.query(`INSERT INTO karda_kb.document(id,kb_id,title,source,mime,size_bytes,storage_ref,content_hash,content_state,active_chunk_version)
+      SELECT x,$1,'Unselected source','upload','text/plain',1,'unused',$3,'indexed',1 FROM unnest($2::uuid[]) AS x`,[kb,extraScopeSources,hash]);
+    await assert.rejects(store.createCompileTask(identity,kb,randomUUID()),/semantic_source_budget/);
+    assert.deepEqual(await store.createCompileTask(identity,kb,scopedId,[selectedSource]),{taskId:scopedId,duplicate:false});
+    assert.deepEqual(await store.createCompileTask(identity,kb,scopedId,[selectedSource]),{taskId:scopedId,duplicate:true});
+    await assert.rejects(store.createCompileTask(identity,kb,scopedId,[randomUUID()]),/semantic_task_conflict/);
+    await assert.rejects(store.createCompileTask(identity,kb,randomUUID(),[randomUUID()]),/semantic_source_selection_changed/);
+    const scopedStored=(await admin.query("SELECT snapshot FROM karda_kb.semantic_compile_task WHERE id=$1",[scopedId])).rows[0].snapshot;
+    assert.deepEqual(scopedStored.sources.map((s:{documentId:string})=>s.documentId),[selectedSource]);
+    assert.deepEqual((await store.browseCompileTasks(identity,kb,{taskId:scopedId})).tasks[0].sourceIds,[selectedSource]);
+    await assert.rejects(store.createCompileTask(identity,kb,scopedId,[extraScopeSources[0]]),/semantic_task_conflict/);
+    await admin.query("DELETE FROM karda_kb.document WHERE id=ANY($1::uuid[])",[extraScopeSources]);
     const taskId=randomUUID();
     assert.deepEqual(await store.createCompileTask(identity,kb,taskId),{taskId,duplicate:false});
     assert.deepEqual(await store.createCompileTask(identity,kb,taskId),{taskId,duplicate:true});

@@ -17,12 +17,14 @@ import {readSourceSnapshot} from "../processing/source-snapshot";
 import {SOURCE_FORMATS} from "../processing/source-formats";
 import {inspectSources,type SourceCandidate} from "./source-readiness";
 import {parseSourceInspectionQuery,type SourceInspectionQuery} from "./source-query";
+import {compileSourceSelection} from "./compile-source-selection";
 import { maintenanceReport, type MaintenanceReport, type MaintenanceDocument, type MaintenanceAssertion, type MaintenanceGround } from "./maintenance";
 import {verifyAuditWindow,type AuditHistory,type AuditRelease} from "./audit-history";
 import {parseCompileTaskQuery,type CompileTaskQuery} from "./task-query";
 import {retrySemanticTransaction} from "./transaction-retry";
 
 export interface CompileTaskRow {
+  sourceIds?:string[];
   created_at?:Date;updated_at?:Date;lease_until?:Date|null;canRetry?:boolean;sourceState?:"current"|"changed"|"not_loaded";
   id:string; state:string; attempt:number; run_id:string|null; error_code:string|null; result:Record<string,unknown>;
   resultHash?:string;
@@ -202,13 +204,19 @@ export class PostgresSemanticStore {
     },true);
   }
 
-  async createCompileTask(identity:SemanticReadIdentity,kbId:string,taskId:string) {
+  async createCompileTask(identity:SemanticReadIdentity,kbId:string,taskId:string,documentIds?:string[]) {
     if(!UUID.test(taskId))throw new Error("semantic_invalid_task");
+    const selected=documentIds===undefined?undefined:compileSourceSelection(documentIds);
     const existing=await this.write(identity,kbId,"data.write",async db=>{
-      const row=(await db.query<{id:string}>("SELECT id FROM karda_kb.semantic_compile_task WHERE kb_id=$1 AND id=$2 AND created_by=$3",[kbId,taskId,identity.sub])).rows[0];
-      if(row)return {existing:row.id,sources:[]};
+      const row=(await db.query<{id:string;snapshot:CompilerSnapshot}>("SELECT id,snapshot FROM karda_kb.semantic_compile_task WHERE kb_id=$1 AND id=$2 AND created_by=$3",[kbId,taskId,identity.sub])).rows[0];
+      if(row){
+        if(selected&&semanticValueHash(row.snapshot.sources.map(s=>s.documentId).sort())!==semanticValueHash(selected))throw new Error("semantic_task_conflict");
+        return {existing:row.id,sources:[]};
+      }
       const sources=(await db.query<{id:string;active_chunk_version:number;content_hash:string}>(`SELECT id,active_chunk_version,content_hash
-        FROM karda_kb.document WHERE kb_id=$1 AND content_state='indexed' AND mime=ANY($2::text[]) ORDER BY id LIMIT 101`,[kbId,["text/plain","text/markdown",...SOURCE_FORMATS.map(f=>f.mime)]])).rows;
+        FROM karda_kb.document WHERE kb_id=$1 AND content_state='indexed' AND mime=ANY($2::text[])
+        AND ($3::uuid[] IS NULL OR id=ANY($3::uuid[])) ORDER BY id LIMIT 101`,[kbId,["text/plain","text/markdown",...SOURCE_FORMATS.map(f=>f.mime)],selected??null])).rows;
+      if(selected&&sources.length!==selected.length)throw new Error("semantic_source_selection_changed");
       if(!sources.length)throw new Error("semantic_compile_inputs_required");
       if(sources.length>100)throw new Error("semantic_source_budget");
       return {existing:null,sources:sources.map(s=>({kbId,documentId:s.id,version:s.active_chunk_version,contentHash:s.content_hash}))};
@@ -272,6 +280,7 @@ export class PostgresSemanticStore {
         const result=current?row.result:{};
         if(Buffer.byteLength(JSON.stringify([result,current?.entities,current?.assertions]))>2*1024*1024)throw new Error("semantic_snapshot_limit");
         tasks.push({...metadata,result,sourceState:query.taskId?(current?"current":"changed"):"not_loaded",
+          ...(current?{sourceIds:current.sources.map(s=>s.documentId).sort()}:{}),
           ...(current?{resultHash:semanticValueHash(result),context:{entities:current.entities,assertions:current.assertions}}:{})});
       }
       return {tasks,next:more?rows.at(-1)!.id:null};
