@@ -421,3 +421,6 @@ OCR草稿（170§60）：RP GET/POST `/api/kb/[id]/ocr-drafts`，当前同空间
 
 
 语义配置管理（170§63，2026-11-27）：RP GET/POST `/api/kb/[id]/compile-profiles`，当前同空间user库所有者及product.enter/data.read/data.write/service.publish。GET id/before/historyBefore有界20条版本和20条历史，返回独立当前启用；POST save仅action/id/title/definition，activate仅action/eventId/profileId/expectedRevision/note（profileId=null恢复内置）。同源JSON、不可变版本、CAS/事件幂等；不调用模型、不批准事实，不自称Ontos契约。既有compile-tasks详情附schemaRef，编译/读取固定版本，跨不兼容语义多库读取拒绝。
+
+
+受控索引重建（170§65）：RP GET/POST `/api/pipeline/rebuild`替换演示读模型，当前user库所有者及product.enter/data.read/data.write；执行附ai.use。GET必填kbId，可选互斥id/before，20条计划元数据；POST同源JSON严格create/execute/activate/revert/cancel。create仅id/kbId/documentIds/params/note，execute仅id/documentId，处置仅id/eventId/expectedRevision/note；身份由会话生成。候选构建实际Atlas调用，旧索引服务不变；整批切换/恢复先复核全部当前来源/配置/索引、CAS及租约。无历史正文输出、自动发布或新增OBO工具。

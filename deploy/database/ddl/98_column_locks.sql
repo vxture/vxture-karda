@@ -330,3 +330,10 @@ REVOKE UPDATE, DELETE ON karda_kb.knowledge_subscription, karda_kb.knowledge_sub
 GRANT SELECT, INSERT ON karda_kb.knowledge_subscription, karda_kb.knowledge_subscription_event TO karda_svc;
 GRANT UPDATE (enabled,sequence,ack_sequence,last_revision,updated_at) ON karda_kb.knowledge_subscription TO karda_svc;
 -- END KNOWLEDGE SUBSCRIPTION LOCKS
+
+-- BEGIN INDEX REBUILD LOCKS
+REVOKE UPDATE, DELETE ON karda_kb.index_rebuild, karda_kb.index_rebuild_item, karda_kb.index_rebuild_event FROM karda_svc;
+GRANT SELECT, INSERT ON karda_kb.index_rebuild, karda_kb.index_rebuild_item, karda_kb.index_rebuild_event TO karda_svc;
+GRANT UPDATE (state,revision,updated_at) ON karda_kb.index_rebuild TO karda_svc;
+GRANT UPDATE (state,attempt,lease_id,lease_until,candidate,candidate_hash,error_code,updated_at) ON karda_kb.index_rebuild_item TO karda_svc;
+-- END INDEX REBUILD LOCKS

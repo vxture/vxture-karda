@@ -1,227 +1,86 @@
 "use client";
-
-import { useEffect, useState } from "react";
-import { Banner, Button, Card, CardContent, Icon, StatusBadge } from "@vxture/design-system";
-import { PageHead } from "../../../_shell/PageHead";
-import { KVRows, AsideCard } from "../_ui";
-import type { RebuildData } from "../../../kb/demo/pipeline-types";
-import { useMessages } from "../../../_i18n/useMessages";
-import { pipeline as pipelineMessages } from "../../../_i18n/messages/pipeline";
-import { shell } from "../../../_i18n/messages/shell";
-import { common } from "../../../_i18n/messages/common";
-
-// 受控重建 (design canvas: PipelineRebuild board, light-theme translation).
-// build-then-swap: active rebuild (4-step progress, old index keeps serving),
-// a switched library inside its rollback window, a queued package
-// instantiation; 页内副栏 = triggers, safety constraints, the agent's advice.
-
-const STEP_KEYS = ["stepDeclare", "stepShadow", "stepSwap", "stepWindow"] as const;
-
-export function RebuildClient() {
-  const m = useMessages(pipelineMessages);
-  const sh = useMessages(shell);
-  const c = useMessages(common);
-  const [data, setData] = useState<RebuildData | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/pipeline/rebuild", { cache: "no-store" })
-      .then(async (res) => {
-        if (!res.ok) throw new Error(String(res.status));
-        setData((await res.json()) as RebuildData);
-      })
-      .catch(() => setError(m.errLoadRebuild));
-  }, []);
-
-  if (error) {
-    return (
-      <div className="mx-auto max-w-[42rem] py-16">
-        <Banner tone="danger" title={error} />
-      </div>
-    );
+import {useEffect,useRef,useState} from "react";
+import Link from "next/link";
+import {Banner,Button} from "@vxture/design-system";
+import {PageHead} from "../../../_shell/PageHead";
+import {SignInGate} from "../../../_lib/ui";
+import {useMessages} from "../../../_i18n/useMessages";
+import {rebuild} from "../../../_i18n/messages/rebuild";
+import type {RebuildCommand,RebuildView} from "../../../kb/processing/rebuild-contract";
+export function RebuildClient(){
+  const m=useMessages(rebuild),[kb,setKb]=useState(""),[docs,setDocs]=useState(""),[target,setTarget]=useState(512),[max,setMax]=useState(1024),[note,setNote]=useState(""),
+    [rows,setRows]=useState<RebuildView[]>([]),[next,setNext]=useState<string|null>(null),[selected,setSelected]=useState<RebuildView|null>(null),
+    [busy,setBusy]=useState(false),[error,setError]=useState(0),[code,setCode]=useState(""),[saved,setSaved]=useState(false),[confirm,setConfirm]=useState(false),
+    [libraries,setLibraries]=useState<{id:string;name:string}[]>([]);
+  const locked=useRef(false),sequence=useRef(0),controller=useRef<AbortController|null>(null),pending=useRef<RebuildCommand|null>(null);
+  const endpoint="/api/pipeline/rebuild";
+  useEffect(()=>{
+    const ctl=new AbortController();fetch("/api/kb",{cache:"no-store",signal:ctl.signal}).then(async r=>{
+      if(r.ok){const v=await r.json();if(Array.isArray(v.knowledgeBases))setLibraries(v.knowledgeBases);}
+    }).catch(()=>{});
+    return()=>{ctl.abort();sequence.current++;controller.current?.abort();};
+  },[]);
+  function edit(){pending.current=null;setSaved(false);setConfirm(false);}
+  async function read(signal:AbortSignal,id?:string,before?:string){
+    const q=new URLSearchParams({kbId:kb.trim(),...(id?{id}:{}),...(before?{before}:{})});
+    const r=await fetch(endpoint+"?"+q,{cache:"no-store",signal});
+    if(!r.ok){const value=await r.json();throw {status:r.status,code:value.error};}
+    const v=await r.json();if(v.format!=="karda.index-rebuild.v1"||!Array.isArray(v.runs))throw Error("invalid");
+    if(id)setSelected(v.runs[0]);else{setRows(v.runs);setNext(v.nextBefore);}
   }
-  if (!data) {
-    return (
-      <div className="flex items-center justify-center py-24 text-body-md text-muted-foreground">
-        <Icon name="spinner" className="mr-2 animate-spin" />
-        {m.loadingRebuild}
-      </div>
-    );
+  async function run(work:(signal:AbortSignal)=>Promise<void>){
+    if(locked.current)return;locked.current=true;const ticket=++sequence.current;
+    controller.current?.abort();const ctl=new AbortController();controller.current=ctl;
+    setBusy(true);setError(0);setCode("");setSaved(false);setConfirm(false);setRows([]);setSelected(null);setNext(null);
+    try{await work(ctl.signal);}catch(e){if(ticket===sequence.current){const value=e as {status?:number;code?:string};setError(value.status??503);setCode(value.code??"");setRows([]);setSelected(null);setNext(null);if([400,401,403,404,409].includes(value.status??0))pending.current=null;}}
+    finally{if(ticket===sequence.current){locked.current=false;setBusy(false);}}
   }
-
-  return (
-    <>
-      <PageHead
-        title={sh.subRebuild}
-        description={m.rebuildDesc}
-        meta={m.rebuildMeta}
-        actions={
-          /* 显式禁用,并说明原因。这个按钮此前没有任何 onClick——点了不会发生任何
-             事。**一个点了没反应的按钮比没有按钮更糟**:它承诺了产品做不到的事,而且
-             要等到有人真的需要重建时才会发现。
-             做成真正的流程需要触发接口,以及 150 §4 第②段要的影响预览(会重建哪些库、
-             旧索引保留多久、期间检索用什么)——那是一件功能,见 150 §4.1。 */
-          <Button disabled title={m.rebuildStartUnavailable}>
-            {m.rebuildStart}
-          </Button>
-        }
-      />
-
-      <div className="flex flex-col gap-lg @min-[52rem]:flex-row">
-        <div className="flex min-w-0 flex-1 flex-col gap-md">
-          {/* active rebuild */}
-          <Card className="py-md border-t-medium border-t-primary">
-            <CardContent className="flex flex-col gap-md px-lg">
-              <div className="flex items-start justify-between gap-md">
-                <span className="flex min-w-0 flex-col gap-2xs">
-                  <span className="flex items-center gap-sm">
-                    <span className="text-label-lg">{data.active.kbName}</span>
-                    <StatusBadge tone="brand" dot>
-                      <span className="font-mono text-code-sm">REBUILDING</span>
-                    </StatusBadge>
-                  </span>
-                  <span className="text-body-sm text-muted-foreground">{m.triggerLabel(data.active.trigger)}</span>
-                </span>
-                <StatusBadge tone="success" dot>
-                  {data.active.servingNote}
-                </StatusBadge>
-              </div>
-
-              {/* 4 steps */}
-              <div className="flex items-center">
-                {STEP_KEYS.map((s, i) => (
-                  <div key={s} className={`flex items-center ${i > 0 ? "flex-1" : ""}`}>
-                    {i > 0 && (
-                      <span
-                        className={`mx-sm h-px flex-1 ${i <= data.active.stepIndex ? "bg-success-border/60" : "bg-border"}`}
-                        aria-hidden="true"
-                      />
-                    )}
-                    <span className="flex shrink-0 items-center gap-sm">
-                      {i < data.active.stepIndex ? (
-                        <span className="flex size-icon-md items-center justify-center rounded-full border border-success-border bg-success-muted/40">
-                          <Icon name="check" size="xs" className="text-success-text" />
-                        </span>
-                      ) : i === data.active.stepIndex ? (
-                        <span className="flex size-icon-md items-center justify-center rounded-full border border-primary bg-primary-muted/40">
-                          <span className="size-2xs rounded-full bg-primary" />
-                        </span>
-                      ) : (
-                        <span className="size-icon-md rounded-full border border-border" />
-                      )}
-                      <span
-                        className={`text-body-sm ${i === data.active.stepIndex ? "font-semibold" : "text-muted-foreground"}`}
-                      >
-                        {m[s]}
-                      </span>
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-lg">
-                <div className="flex min-w-0 flex-1 flex-col gap-2xs">
-                  <div className="flex justify-between text-body-sm">
-                    <span className="text-muted-foreground">{m.shadowProgress}</span>
-                    <span className="font-mono text-primary">{data.active.progressLabel}</span>
-                  </div>
-                  <div className="h-[5px] rounded-full bg-muted">
-                    <div className="h-full rounded-full bg-primary" style={{ width: `${data.active.progressPct}%` }} />
-                  </div>
-                  <div className="flex gap-md font-mono text-code-sm text-muted-foreground">
-                    {data.active.facts.map((f) => (
-                      <span key={f}>{f}</span>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex shrink-0 gap-sm">
-                  <Button variant="outline" size="sm">{c.pause}</Button>
-                  <Button variant="outline" size="sm" className="border-destructive-border/50 text-destructive-text">
-                    {m.discardShadow}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* switched, rollback window open */}
-          <Card className="py-md border-t-medium border-t-success-border">
-            <CardContent className="flex items-center gap-lg px-lg">
-              <span className="flex min-w-0 flex-1 flex-col gap-2xs">
-                <span className="flex items-center gap-sm">
-                  <span className="text-label-lg">{data.switched.kbName}</span>
-                  <StatusBadge tone="success" dot={false}>
-                    <span className="font-mono text-code-sm">SWITCHED</span>
-                  </StatusBadge>
-                </span>
-                <span className="text-body-sm text-muted-foreground">{data.switched.changeNote}</span>
-              </span>
-              <span className="flex shrink-0 flex-col items-end gap-2xs">
-                <span className="font-mono text-code-sm text-muted-foreground">
-                  {m.rollbackLeft(data.switched.windowLeft)}
-                </span>
-                <span className="h-[4px] w-[8rem] rounded-full bg-muted">
-                  <span
-                    className="block h-full rounded-full bg-success"
-                    style={{ width: `${data.switched.windowPct}%` }}
-                  />
-                </span>
-              </span>
-              <Button variant="outline" size="sm" className="shrink-0">
-                {data.switched.rollbackTo}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* instantiation queued */}
-          <Card className="py-md">
-            <CardContent className="flex items-center gap-lg px-lg">
-              <span className="flex min-w-0 flex-1 flex-col gap-2xs">
-                <span className="flex items-center gap-sm">
-                  <span className="text-label-lg">{data.instantiation.title}</span>
-                  <StatusBadge tone="neutral" dot={false}>
-                    <span className="font-mono text-code-sm">QUEUED · BULK</span>
-                  </StatusBadge>
-                </span>
-                <span className="text-body-sm text-muted-foreground">{data.instantiation.flowNote}</span>
-              </span>
-              <span className="flex shrink-0 flex-col items-end gap-2xs font-mono text-code-sm text-muted-foreground">
-                <span>{data.instantiation.estimate}</span>
-                <span>{data.instantiation.costNote}</span>
-              </span>
-              <Button variant="outline" size="sm" className="shrink-0">
-                {m.queueDetail}
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* 页内副栏 */}
-        <div className="flex w-full shrink-0 flex-col gap-md xl:w-[22rem]">
-          <AsideCard title={m.whatTriggers}>
-            <div className="flex flex-col gap-xs text-body-sm text-muted-foreground">
-              {data.triggers.map((t) => (
-                <span key={t} className="flex gap-sm">
-                  <span className="mt-[6px] size-2xs shrink-0 rounded-full bg-primary" />
-                  <span>{t}</span>
-                </span>
-              ))}
-            </div>
-          </AsideCard>
-          <AsideCard title={m.safetyLimits}>
-            <KVRows rows={data.constraints} />
-          </AsideCard>
-          <Card className="py-md border-t-medium border-t-ai-border">
-            <CardContent className="flex flex-col gap-xs px-lg">
-              <span className="flex items-center gap-sm">
-                <Icon name="sparkles" size="sm" className="text-ai-text" />
-                <span className="text-label-lg">{m.agentSuggestion}</span>
-              </span>
-              <span className="text-body-sm leading-relaxed text-muted-foreground">{data.agentAdvice}</span>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </>
-  );
+  async function load(id?:string,before?:string){pending.current=null;await run(signal=>read(signal,id,before));}
+  async function execute(command:RebuildCommand){
+    pending.current=command;
+    await run(async signal=>{
+      const r=await fetch(endpoint,{method:"POST",cache:"no-store",signal,headers:{"Content-Type":"application/json"},body:JSON.stringify(command)});
+      const v=await r.json();if(!r.ok)throw {status:r.status,code:v.error};pending.current=null;
+      await read(signal);await read(signal,command.id);setSaved(true);
+    });
+  }
+  const state=(value:string)=>m[value as "planned"|"running"|"ready"|"failed"|"active"|"reverted"|"cancelled"]??value;
+  if(error===401)return <SignInGate from="/pipeline/rebuild"/>;
+  const field="block w-full rounded border p-sm";
+  return <div className="flex min-w-0 flex-col gap-md" aria-busy={busy}>
+    <PageHead title={m.title}/><p>{m.hint}</p><p className="text-body-sm text-muted-foreground">{m.limits}</p>
+    {error!==0&&<Banner tone="danger" title={error===403?m.denied:error===409?m.changed:error===400?m.invalid:m.unavailable}/>}
+    {code&&<p role="alert">{m.errorCode}: <code>{code}</code></p>}{saved&&<Banner tone="success" title={m.saved}/>}
+    {error>=500&&pending.current&&<Button disabled={busy} onClick={()=>void execute(pending.current!)}>{m.retry}</Button>}
+    {busy&&<p role="status">{m.loading}</p>}
+    <fieldset disabled={busy} className="grid min-w-0 gap-sm rounded border p-md">
+      <label>{m.library}<input list="rebuild-libraries" className={field} value={kb} onChange={e=>{edit();setKb(e.target.value);setRows([]);setSelected(null);setNext(null);}}/></label>
+      <datalist id="rebuild-libraries">{libraries.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</datalist>
+      <div className="flex flex-wrap gap-sm"><Button disabled={!kb.trim()} variant="outline" onClick={()=>void load()}>{m.refresh}</Button><Link href={kb.trim()?"/assets/"+encodeURIComponent(kb.trim()):"/assets"}>{m.assets}</Link></div>
+      <form className="grid gap-sm" onSubmit={e=>{e.preventDefault();void execute({action:"create",id:crypto.randomUUID(),kbId:kb.trim(),documentIds:docs.trim().split(/[\s,]+/).filter(Boolean),params:{targetTokens:target,maxTokens:max,overlap:0},note:note.trim()});}}>
+        <label>{m.docs}<textarea rows={3} className={field} value={docs} onChange={e=>{edit();setDocs(e.target.value);}}/></label>
+        <div className="grid gap-sm sm:grid-cols-2"><label>{m.target}<input type="number" min={32} max={2048} className={field} value={target} onChange={e=>{edit();setTarget(Number(e.target.value));}}/></label>
+        <label>{m.max}<input type="number" min={target} max={4096} className={field} value={max} onChange={e=>{edit();setMax(Number(e.target.value));}}/></label></div>
+        <label>{m.note}<textarea required maxLength={2000} className={field} value={note} onChange={e=>{edit();setNote(e.target.value);}}/></label>
+        <Button type="submit" disabled={!kb.trim()||!docs.trim()||!note.trim()}>{m.create}</Button>
+      </form>
+    </fieldset>
+    <section className="grid min-w-0 gap-sm">{!rows.length&&!selected&&!busy&&<p>{m.empty}</p>}
+      {rows.map(r=><article key={r.id} className="grid gap-sm rounded border p-md"><p className="break-all">{r.name} / {r.id}</p><p>{m.state}: {state(r.state)} / {m.revision}: {r.revision}</p><p>{r.items.filter(i=>i.state==="ready").length} / {r.items.length}</p>
+        <Button disabled={busy} variant="outline" onClick={()=>void load(r.id)}>{m.detail}</Button></article>)}
+      {next&&<Button disabled={busy} variant="outline" onClick={()=>void load(undefined,next)}>{m.more}</Button>}
+    </section>
+    {selected&&<section className="grid min-w-0 gap-sm rounded border p-md"><h2 className="break-all">{selected.name} / {selected.id}</h2>
+      <p>{m.state}: {state(selected.state)} / {m.revision}: {selected.revision}</p><p>{selected.note}</p>
+      {selected.items.map(i=><article key={i.document_id} className="grid gap-xs rounded border p-sm"><p className="break-all">{i.title||i.document_id} / {i.document_id}</p>
+        <p>{m.state}: {state(i.state)} / {m.version}: {i.source_version}</p><p>{m.counts}: {i.oldCount} &rarr; {i.newCount} / {m.model}: {i.model??"-"}</p>
+        <p>{m.attempt}: {i.attempt} / 3 {i.lease_until&&<span>{m.lease}: {i.lease_until}</span>}</p>{i.error_code&&<p>{m.errorCode}: {i.error_code}</p>}
+        {selected.state==="planned"&&i.state!=="ready"&&<Button disabled={busy||i.attempt>=3||(i.state==="running"&&!!i.lease_until&&Date.parse(i.lease_until)>Date.now())} variant="outline" onClick={()=>void execute({action:"execute",id:selected.id,documentId:i.document_id})}>{m.execute}</Button>}
+      </article>)}
+      <Button disabled={busy} variant="outline" onClick={()=>void load(selected.id)}>{m.detail}</Button>
+      {(["planned","active"].includes(selected.state))&&<><label className="flex gap-sm"><input type="checkbox" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)}/>{m.confirm}</label>
+        <div className="flex flex-wrap gap-sm">{(selected.state==="active"?["revert"] as const:["activate","cancel"] as const).map(action=><Button key={action} variant="outline" disabled={busy||!confirm||!note.trim()||(action==="activate"&&selected.items.some(i=>i.state!=="ready"))} onClick={()=>void execute({action,id:selected.id,eventId:crypto.randomUUID(),expectedRevision:selected.revision,note:note.trim()})}>{m[action]}</Button>)}</div></>}
+      <h3>{m.history}</h3>{selected.events.map(e=><p key={e.revision}>{e.revision} / {m[e.action as "activate"|"revert"|"cancel"]} / {e.created_at} / {e.note}</p>)}
+    </section>}
+  </div>;
 }
