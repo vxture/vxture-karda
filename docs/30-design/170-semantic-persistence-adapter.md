@@ -1044,3 +1044,24 @@ profile定义仅schema和entityTypes映射；schemaRef(namespace/schemaId/versio
 开发仅一次类型、2项定义/DDL定向与集中页面验收；阶段CI验证真实数据库配置CAS/不可变授权、新任务固定版本、旧任务保留、配置回退后自定义发布仍可消费及新旧迁移重放。无本地全量重复或性能专项，软件功能和真实Ontos/Agent/业务验收分开。
 
 集中Playwright合成验收通过：复制当前、保存不启用、理由/勾选后启用、版本复制保存、恢复内置和历史、403清空、390px无横向溢出。2项协议/DDL定向和一次类型通过，真实数据库与发布消费链留到阶段CI。
+
+
+## 64. 持久消费窗口、显式确认与修订元数据恢复（2026-11-27）
+
+owner明确Ontos尚未开发，相关集成后置，不作为当前软件推进依赖；并要求避免弹出命令窗口。本阶段独立交付S5拉取式消费订阅：RP `/channels/subscriptions`及GET/POST `/api/knowledge-subscriptions`、OBO工具`karda.knowledge_subscription`共用持久服务。create/list/poll/ack/cancel，不调用模型、不发送他人消息、不需要外部Webhook契约。不宣称后台推送/自动轮询或正式Ontos联调。
+
+窗口复用knowledge_package明确库/实体/关系/预算，拒绝known_revision与page_cursor，不把可变目录续页保存成订阅；有界窗口不是整库副本。订阅固定当前workspace/user/callerProduct，不允许客户端提交或切换身份。最多50个启用窗口，取消不可恢复（可明确建立新订阅），已取消记录保留；列表每页20个。RP只管理karda调用产品订阅，OBO按真实调用产品隔离，不互相代管。所有动作需平台准入/product.enter/data.read；不扩大知识业务写权限。
+
+0034新增knowledge_subscription和knowledge_subscription_event，60→62表，baseline/Prisma/98和旧41表升级夹具锁步。订阅锚点/name/window/request_hash不可修改；服务仅更新enabled/sequence/ack_sequence/last_revision/updated_at，事件仅SELECT/INSERT，无DELETE。事件只含单调sequence、观测revision和observed_at，不保存正文、旧来源/审核内容或历史授权。同步声明不是外部不可删归档；当前没有后台保留期自动清理，事件存储随观测增长，生产配额/清理另设计。
+
+每次poll/ack在同一REPEATABLE READ事务内，角色→主体订阅串行锁及成员/订阅行锁后复核当前许可、消费暂停、固定窗口所有请求库的当前可见性及调用产品挂载；任何库撤回/解绑导致scope_changed，不静默缩成别的库范围。读共享知识包，核验当前来源/发布/裁决，sourceStatus不完整拒绝；读取失败不写事件/确认，不返回旧正文。序号只在当前授权窗口revision变化时追加，重复poll不增序；进程重启依数据库继续，不依赖内存或存RP凭据。窗口曾变回旧内容会产生新sequence，不以内容hash作唯一事件键。
+
+poll始终交付当前完整窗口的replace响应，revision沿用身份/范围/当前知识内容绑定hash。after默认消费ack，可显式0重看历史序号；每批20条修订元数据，nextAfter继续。不重放旧正文，过去事件不是历史读取权限；多次变化可合并成当前窗口，未观测的中间变化不保证记录，不宣称事务outbox/全业务事件流。所有错误/401/403/409要求消费者丢弃旧正文，已交付内容不能远程收回；每次使用前仍需重新核验。
+
+ack要求subscription id/sequence/revision/expectedAck，当前窗口重核验仍等于指定revision且该sequence事件hash匹配，ack单调CAS推进，重复相同确认幂等；旧revision/并发确认冲突409，不自动确认。消费者可确认当前最新窗口以合并处理旧修订（UI明确），确认记录仅消费进度，不认可事实或发布知识。cancel/list可在消费暂停时管理自身元数据，取消后poll拒绝；权限撤销后list也拒绝，不提供管理绕过。list只返回用户自己原提交的窗口及确认元数据，不表示这些库目前可读。
+
+页面提供命名/单库及实体范围建窗口、目录窗口提示、列表/分页、显式拉取/从头续读、当前事实/证据、元数据记录/续页、勾选确认进度、取消。每次新请求清旧正文/确认勾选，迟到响应以取消/序号拦截，权限/异常清空。API响应安全错误分类不泄露SQL或上游私文。无需打开浏览器/终端窗口收集业务资料；阶段末只集中必要功能检查，CI统一数据库/回归，不本地全量或性能专项。
+
+真实Agent接入和外部主动推送/重试投递仍未完成；本批先交付不依赖外部平台的拉取/确认/恢复软件能力，不提前关闭S5整体或主验收。
+
+后台无界面集中Playwright合成流程通过：建立窗口→当前拉取→勾选后确认→确认清空旧正文→从头修订记录→409清空→取消及390px布局。协议/工具目录定向20项通过（新增工具排序预期修正），类型检查只修测试替身返回形状；真实数据库确认CAS/撤挂载/隔离/恢复留阶段CI。无可见终端/浏览器交互，无本地全量或性能专项。

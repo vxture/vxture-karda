@@ -80,6 +80,7 @@ export const NAV_ITEMS = [
     sub: [
       { key: "channels", href: "/channels", labelKey: "subChannelsOverview" },
       { key: "tools", href: "/tools", labelKey: "subTools" },
+      { key: "subscriptions", href: "/channels/subscriptions", labelKey: "subSubscriptions" },
       { key: "bench", href: "/bench", labelKey: "subBench" },
     ],
   },
@@ -152,6 +153,7 @@ export const NAV_SECTIONS = [
     items: [
       { key: "channels", href: "/channels", icon: "plugs-connected", labelKey: "subChannelsOverview", subLabel: "Channels" },
       { key: "tools", href: "/tools", icon: "api", labelKey: "subTools", subLabel: "Tools" },
+      { key: "subscriptions", href: "/channels/subscriptions", icon: "refresh", labelKey: "subSubscriptions", subLabel: "Subscriptions" },
       { key: "bench", href: "/bench", icon: "terminal", labelKey: "subBench", subLabel: "Bench" },
     ],
   },

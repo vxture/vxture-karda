@@ -150,3 +150,5 @@ scope 语义执行:token 侧 grant scope=retrieve 的库,其内容仅经带 ref 
 - 平台侧登记(product_310):C2 可见集用户维度(既有)+ 本文新增可见集失效事件通道;
 - 110-processing(加工管线):`karda.write_document/create_entry` 的落库路径、failed 驻留、增量更新为其范围;
 - Console 需求:关联清单管理、召回测试、清单过大提示(§7)。
+
+2026-11-27 新增karda.knowledge_subscription，目录18项。仅OBO/data.read，保存消费窗口、当前重核验/修订元数据续读、显式CAS确认和取消；不推送Webhook、不保存历史正文、不授离线访问权。见170§64和260登记；真实Agent联调独立。
