@@ -5,7 +5,7 @@ import {cpus,platform,totalmem} from "node:os";
 import {performance} from "node:perf_hooks";
 import {Pool} from "pg";
 import {PostgresSemanticStore,PostgresFormalSemanticLoader,semanticValueHash} from "./store-postgres";
-import {PostgresSemanticReader,type KnowledgePackage,type PublishedRelationInput} from "./read-postgres";
+import {PostgresSemanticReader,type KnowledgePackage,type PublishedRelationInput,type SemanticReadPhase} from "./read-postgres";
 import {localCompileProfile} from "./compile-profile";
 import {SEMANTIC_RELEASE_FORMAT,type SemanticReleasePayload,semanticDefinitionKey} from "./release-format";
 import {sourceHash} from "../processing/source-snapshot";
@@ -46,7 +46,8 @@ export async function benchmarkKnowledgeCapacity(endpoint:string,samples=10){
     const profile=localCompileProfile(),raw=Buffer.from("Synthetic capacity evidence requires approval."),hash=sourceHash(raw);
     const objects={get:async()=>raw},store=new PostgresSemanticStore(service,objects,async()=>true);
     const loader=new PostgresFormalSemanticLoader({schema:profile.schema,entityTypes:new Map(profile.entityTypes.map(t=>[t.kind,t.type]))});
-    const reader=new PostgresSemanticReader(service,objects,async()=>true,(db,ids)=>loader.load(db,ids));
+    let phaseSamples:Partial<Record<SemanticReadPhase,number[]>>|null=null;
+    const reader=new PostgresSemanticReader(service,objects,async()=>true,(db,ids)=>loader.load(db,ids),(phase,ms)=>{if(phaseSamples)(phaseSamples[phase]??=[]).push(ms);});
     const fixtures:{kb:string;doc:string;relations:number;payload:SemanticReleasePayload}[]=[];
     async function seed(count:number){
       const kb=randomUUID(),doc=randomUUID(),assertion=randomUUID(),span=randomUUID(),nodes=Array.from({length:Math.min(count,200)},()=>randomUUID());
@@ -75,8 +76,10 @@ export async function benchmarkKnowledgeCapacity(endpoint:string,samples=10){
     async function measure(run:()=>Promise<KnowledgePackage>,expected:number,concurrency:number){
       const firstStart=performance.now(),first=await run(),firstObservedMs=performance.now()-firstStart;assert.equal(first.edges.length,expected);
       const times:number[]=[];
+      phaseSamples={};
       for(let i=0;i<samples;i++)await Promise.all(Array.from({length:concurrency},async()=>{const start=performance.now(),result=await run();const elapsed=performance.now()-start;assert.equal(result.edges.length,expected);assert.equal(result.sourceStatus,"complete");times.push(elapsed);}));
-      return {concurrency,firstObservedMs,responseBytes:Buffer.byteLength(JSON.stringify(first)),...capacityStats(times)};
+      const phases=Object.fromEntries(Object.entries(phaseSamples).map(([phase,values])=>[phase,capacityStats(values)]));phaseSamples=null;
+      return {concurrency,firstObservedMs,responseBytes:Buffer.byteLength(JSON.stringify(first)),...capacityStats(times),phases};
     }
     const cases=[];
     const workloads:[string,typeof fixtures][]=[["one-library-100",[small.fixture]],["one-library-400",[large.fixture]],["twelve-libraries-4800",all]];

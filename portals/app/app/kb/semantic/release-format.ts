@@ -36,7 +36,11 @@ function unique(values: string[]): void {
 
 /** Decode a bounded immutable command into the precise read-side input. */
 export function decodeSemanticRelease(input: PublicationCommand): PublishedRelationInput {
-  const { command } = preparePublication(input);
+  return decodePreparedSemanticRelease(preparePublication(input));
+}
+/** Internal reuse of a freshly validated/canonicalized command, never a wire payload. */
+export function decodePreparedSemanticRelease(prepared:ReturnType<typeof preparePublication>):PublishedRelationInput {
+  const {command}=prepared;
   const payload = object(command.payload);
   if (payload.format !== SEMANTIC_RELEASE_FORMAT) invalid();
   const definition = object(payload.schema);

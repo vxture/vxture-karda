@@ -38,16 +38,16 @@ export function preparePublication(input: PublicationCommand): {
     if (array && (keys.length !== value.length || keys.some((key, i) => key !== String(i)))) {
       throw new Error("publication_invalid_json");
     }
-    const members = keys.sort().map(key => {
+    const member = (key:string):string => {
       const descriptor = Object.getOwnPropertyDescriptor(value, key)!;
       if (!descriptor.enumerable || !Object.hasOwn(descriptor, "value")) throw new Error("publication_invalid_json");
-      return [key, canonical(descriptor.value, depth + 1)] as const;
-    });
+      return canonical(descriptor.value, depth + 1);
+    };
+    // Array keys have already been checked in numeric order. Avoid tuple arrays
+    // and two sorts for every nested value while retaining descriptor checks.
+    const members = array?keys.map(member):keys.sort().map(key=>`${JSON.stringify(key)}:${member(key)}`);
     ancestors.delete(value);
-    // Array order is numeric, not lexical (index 10 must follow index 9).
-    return array
-      ? `[${members.sort((a, b) => Number(a[0]) - Number(b[0])).map(entry => entry[1]).join(",")}]`
-      : `{${members.map(([key, entry]) => `${JSON.stringify(key)}:${entry}`).join(",")}}`;
+    return array ? `[${members.join(",")}]` : `{${members.join(",")}}`;
   }
   const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!uuid.test(input.kbId) || !uuid.test(input.eventId) || !Number.isSafeInteger(input.expectedGeneration)

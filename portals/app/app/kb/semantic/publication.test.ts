@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { preparePublication, type PublicationCommand } from "./publication";
 import { PostgresPublicationProtocol } from "./publication-postgres";
 import { Pool } from "pg";
+import {createHash} from "node:crypto";
 
 function command(payload: unknown = { entities: [] }): PublicationCommand {
   return { kbId: randomUUID(), eventId: randomUUID(), expectedGeneration: 0,
@@ -45,4 +46,16 @@ test("publication validates identifiers, generation, revisions and sandbox names
   assert.throws(() => preparePublication({ ...command(), kbId: "not-a-uuid" }), /publication_invalid_command/);
   assert.throws(() => preparePublication({ ...command(), sourceRevision: "" }), /publication_invalid_revision/);
   assert.throws(() => new PostgresPublicationProtocol({} as Pool, "public", async () => { throw new Error(); }), /publication_sandbox_required/);
+});
+
+test("publication canonical bytes stay compatible across nested numeric keys and array positions",()=>{
+  const reference=(value:unknown):string=>Array.isArray(value)?`[${value.map(reference).join(",")}]`:
+    value&&typeof value==="object"?`{${Object.keys(value).sort().map(k=>`${JSON.stringify(k)}:${reference((value as Record<string,unknown>)[k])}`).join(",")}}`:JSON.stringify(value);
+  const nested=Object.assign(Object.create(null),{"10":"ten","2":"two",escaped:"\n\"\\",unicode:"\u4e2d\ud83d\ude00"});
+  const input=command({nested,values:Array.from({length:120},(_,i)=>({index:i,negative:-0,bool:i%2===0,empty:[]}))});
+  const expected=reference(input),prepared=preparePublication(input);
+  assert.equal(prepared.json,expected);
+  assert.equal(prepared.fingerprint,createHash("sha256").update(expected).digest("hex"));
+  const array=[1,2];Object.defineProperty(array,"1",{enumerable:true,get(){throw Error("must_not_execute");}});
+  assert.throws(()=>preparePublication(command(array)),/publication_invalid_json/);
 });
