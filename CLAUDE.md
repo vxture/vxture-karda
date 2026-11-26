@@ -106,7 +106,16 @@ workspace package scope `@karda/*`; secrets `KARDA_DB_SVC_PASSWORD`,
 
 ## Build status
 
-Current production (2026-11-26): v0.12.34 / b2b1687c, deploy45805225113
+Current production (2026-11-26): v0.12.35 / d4ed8ca7, deploy45810716945
+succeeded at2026-11-26T11:34:13Z through normal production review. PR374
+adds agent/user topic discovery, accepted summary consumption and exact evidence.
+Stage CI45809766251:1116pass/zero skips; main CI45810313107/scan45810313240pass.
+No DDL,56tables; health/ready and anonymous topic list/read/package refusal pass.
+Functional completeness takes priority; performance-only work is stopped.
+No local full-suite repetition. Fixed17items:7complete/10unfinished.
+See docs/50-deployment/370-topic-knowledge-release-20261126.md and workplan197.
+
+Historical production (2026-11-26): v0.12.34 / b2b1687c, deploy45805225113
 succeeded at2026-11-26T10:57:31Z through normal production review. PR372
 adds read phase diagnostics, canonical-byte-compatible normalization and batched authority reads.
 Stage CI45804422506:1114pass/zero skips; main CI45804788408/scan45804788346pass.
