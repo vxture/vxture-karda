@@ -136,7 +136,7 @@ test("semantic foundation PostgreSQL: fresh and old-41 upgrade twice, immutable 
     for (const { admin, service } of [fresh, upgraded]) {
       if (admin === fresh.admin) await seed(admin);
       assert.equal(Number((await admin.query(`SELECT count(*) FROM information_schema.tables
-        WHERE table_schema IN ('karda_kb','local_authz','local_usage','vx_provision') AND table_type='BASE TABLE'`)).rows[0].count), 91);
+        WHERE table_schema IN ('karda_kb','local_authz','local_usage','vx_provision') AND table_type='BASE TABLE'`)).rows[0].count), 94);
       await service.query(`INSERT INTO karda_kb.semantic_schema_version(id,kb_id,namespace,schema_id,version,definition_hash,definition)
         VALUES($1,$2,'test','things','1',$3,'{}')`, [schema, kb, hash]);
       await service.query(`INSERT INTO karda_kb.semantic_review(id,kb_id,subject_key,revision,decision,subject_hash,reviewer_sub,note)

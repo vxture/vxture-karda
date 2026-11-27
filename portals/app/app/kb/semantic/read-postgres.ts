@@ -206,7 +206,7 @@ export class PostgresSemanticReader {
       const identityInfo:NonNullable<KnowledgePackage['identity']>=[];
       for(const g of governance){const inv=await identityInventory(db,[g.kbId],{...published,relations:relations.filter(r=>r.kbId===g.kbId)});
         const eligible=eligibleGraph(snapshot,published.schema,scope),eligibleIds=new Set(eligible.edges.map(e=>e.id)),eligibleNodes=new Set(eligible.nodes.map(n=>n.id));
-        const applied=applyIdentity(snapshot,g.config,inv,scope.now);
+        const applied=applyIdentity(snapshot,g.config,inv,scope.now,eligibleIds);
         query.seedIds=query.seedIds.map(id=>applied.mappings.find(m=>m.from===id)?.to??id);
         identityInfo.push({kbId:g.kbId,versionId:g.versionId,profiles:effectiveEntities(inv.entities,g.config).filter(e=>eligibleNodes.has(e.id)).map(e=>({id:e.id,name:e.name,kind:e.kind,aliases:e.aliases,external:e.external})),mappings:applied.mappings.filter(m=>eligibleNodes.has(m.from)||eligibleNodes.has(m.to)),decisions:applied.decisions.filter(d=>d.relationIds.every(id=>eligibleIds.has(id))).map(d=>({relationIds:d.relationIds,outcome:d.outcome,scope:d.scope,from:d.from,until:d.until})),unresolved:identityConflicts(inv,g.config).filter(c=>['open','stale','pending'].includes(c.status)&&c.relationIds.every(id=>eligibleIds.has(id))).length,staleDecisions:applied.staleDecisions.length});
       }
