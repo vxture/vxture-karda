@@ -1,6 +1,21 @@
 # vxture-karda Repository Standards
 
-Latest production 2026-11-27: v0.12.44 / 01117b0ff0f5a19db81e986310545a151e341e5e,
+Latest production 2026-11-27: v0.12.45 / 4c793aae0b531d81f6846b27222aeef7d3db38c4,
+deploy45923699581 succeeded at2026-11-27T01:44:46Z (09:44:46 Asia/Shanghai).
+PR387 adds user-library sharing impact preview, explicit reason/confirmation,
+CAS/idempotent changes and immutable history; settings immediate toggle replaced.
+Migration0038 run45923533949 succeeded at01:37:34Z;70tables. PR CI45922927139:
+1154pass/zero skips, scan45922927202; main CI45923252140/scan45923252126passed.
+Health/ready deps OK; anonymous sharing GET/POST/package401. No local dev/browser/
+CMD or full-suite/performance; executables direct windowsHide via Node REPL.
+Standalone browser flow unverified. Stage CI verifies full DB sharing/withdrawal
+and consumer lease refusal. Release v0.12.45 holds final evidence; local470/
+checklist/memory ride NEXT functional PR, no docs-only full-main rerun. Preserve
+owner70/output. Formal tenant/platform/product/preset/cross-workspace authority
+NOT implemented; user-sharing governance does not close S4. Ontos undeveloped,
+external push/real Agent/business cutover pending. Fixed17:7done/6progress/4gated.
+
+Historical production 2026-11-27: v0.12.44 / 01117b0ff0f5a19db81e986310545a151e341e5e,
 deploy45883661257 succeeded at2026-11-26T19:33:18Z (03:33:18 Asia/Shanghai).
 PR386 adds leased subscription delivery, completion, classified failure, bounded
 retry/dead-letter redrive and history on RP/OBO plus /channels/deliveries console.
@@ -835,3 +850,14 @@ Index/retrieval/grounded answers, AI/search/ask C3 receipts/dedup and identity
 context notifications remain open. Current details override historical pending
 logout/hash wording above; see the authoritative batch tracker P9.12/P9.13.
 No release, platform source/configuration, credentials or server variables changed.
+
+
+## Owner module approval workflow - 2026-11-27
+
+One complete functional module per stage. Present concrete implementation scope
+first; only implement after owner approval. Current approved module: knowledge
+source integration and synchronization management (170 section69). Complete the
+whole module and stage CI/release before reporting. Do not start a different
+unapproved module. No local servers, browsers or visible CMD/PowerShell windows;
+use in-process files and direct windowsHide executables without shells. Only
+necessary focused/type checks during development, full regression at stage CI.

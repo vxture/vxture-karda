@@ -25,6 +25,7 @@ export async function GET(): Promise<Response> {
       code: c.code,
       name: c.name,
       capabilities: c.capabilities,
+      readiness:c.code==="api"?"ready":"external_contract_required",
       degradations: degradations(c.capabilities),
       // I4 (delete-expressible). A connector that can neither be told of deletes
       // nor reconcile to find them is a COMPLIANCE gap, not a UX one - the

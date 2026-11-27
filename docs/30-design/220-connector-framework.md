@@ -167,3 +167,8 @@ Binding 转 `revoked` 时：① Binding 置终态；② 其血缘下全部 Docum
 - `110-processing`：`poll` 型源的调度进 `sync` 队列，backfill 进 `bulk` 队列；
 - `200-arda-channel`：降为实现层，见 §10；
 - `10-product-definition` §8 对外接口关系表：Arda 行的表述应随之调整（对等契约 → 连接器实现）。
+
+
+## 2026-11-27 实现边界修正
+
+知识源管理整板块见170§69。api直传连接器已实现持久初始/增量版本批次、显式删除、失败恢复及撤销；不是远端轮询器。catalog声明能力不等于真实就绪，Arda明确external_contract_required，现有fetch_ref未实现真实拉取/清单对账，不宣称端到端同步。新受控来源不接受旧无版本ingest，旧历史绑定兼容路径保留。

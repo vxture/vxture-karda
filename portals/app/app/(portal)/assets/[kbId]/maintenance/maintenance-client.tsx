@@ -9,7 +9,7 @@ import {SignInGate} from "../../../../_lib/ui";
 import type {MaintenanceReport} from "../../../../kb/semantic/maintenance";
 import {maintenanceImpact,MAINTENANCE_ISSUES} from "../../../../kb/semantic/maintenance-impact";
 
-export function MaintenanceClient({kbId}:{kbId:string}){
+export function MaintenanceClient({kbId,initialDocumentId=""}:{kbId:string;initialDocumentId?:string}){
   const m=useMessages(semantic),sequence=useRef(0);
   const [report,setReport]=useState<MaintenanceReport|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(0);
   const [selected,setSelected]=useState(""),[onlyIssues,setOnlyIssues]=useState(true);
@@ -27,7 +27,7 @@ export function MaintenanceClient({kbId}:{kbId:string}){
       if(ticket!==sequence.current)return;
       if(!response.ok){setError(response.status);return;}
       const value=await response.json() as MaintenanceReport;
-      if(ticket===sequence.current)setReport(value);
+      if(ticket===sequence.current){setReport(value);if(value.sources.some(s=>s.id===initialDocumentId))setSelected(initialDocumentId);}
     }catch{if(ticket===sequence.current)setError(503);}
     finally{if(ticket===sequence.current)setBusy(false);}
   }
