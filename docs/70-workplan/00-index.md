@@ -2,6 +2,10 @@
 
 ## Active knowledge platform reconstruction - 2026-11-24
 
+[Approved graph foundation stage and migration plan](202-graph-foundation-g6-jena-20261127.md): PostgreSQL authority + G6 + Jena; F1-F6 implementation and migration status. No Neo4j.
+
+[Graph technology comparison and proposed next stage](../30-design/180-knowledge-graph-technology-selection.md): owner requested mature foundation reuse. G6 + Jena semantic stack recommended with PG authority; Neo4j/RDF4J alternatives compared. Documentation review only; integration and complete graph module still require an approved plan.
+
 [Execution checklist with remaining counts](120-rebuild-execution-checklist-20261124.md): 7 major batches, 17 execution items (7 complete, 10 remaining); checkboxes distinguish verified implementation from full product acceptance. Owner now prioritizes functional completeness: P4 data foundation, compilation/review, Agent packages, graph exploration and maintenance subchains are implemented and incrementally released. Continue the remaining source, external-authority, performance and business acceptance work in the fixed checklist. K0b human review/independent quality acceptance moves before K6 pilot/cutover and no longer blocks local development.
 
 [K0-K6 capability map and implementation plan](80-knowledge-platform-rebuild-20261124.md): owner authorized design, batches and implementation. First foundation merged in PR272; K0b public-source draft evaluation is in progress and human-reviewed business gold remains pending. Platform I1 stays paused.
@@ -1120,3 +1124,5 @@ No new application release yet. Full evidence and ordered continuation:
 | `198-knowledge-service-center-20261127.md` | 智能体知识服务中心六项批准范围、逐项完成及验收证据 |
 
 | `199-knowledge-production-center-20261127.md` | 知识生产编排与发布中心批准计划、六项实施与逐项验收 |
+
+| `201-knowledge-event-push-center-20261127.md` | 知识变更事件与外部推送中心批准计划、B1–B6逐项验收 |

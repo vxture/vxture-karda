@@ -1,6 +1,8 @@
 import type { Catalog } from "../catalog";
 
 export const semantic = {
+  graphEngineReady:{"zh-CN":"\u56fe\u8c31\u5df2\u5c31\u7eea","en-US":"Graph ready"},
+  graphEngineFailed:{"zh-CN":"\u753b\u5e03\u6682\u4e0d\u53ef\u7528\uff0c\u8bf7\u4f7f\u7528\u5b9e\u4f53\u4e0e\u5173\u7cfb\u76ee\u5f55","en-US":"Canvas unavailable; use the entity and relation catalogs"},
   configuration:{"zh-CN": "\u8bed\u4e49\u4e0e\u7f16\u8bd1\u914d\u7f6e", "en-US": "Semantic and compiler configuration"},
   operationsTask:{"zh-CN": "\u5efa\u7acb\u5904\u7f6e\u4efb\u52a1", "en-US": "Create remediation task"},
   operationsQueue:{"zh-CN": "\u7ef4\u62a4\u4efb\u52a1\u4e2d\u5fc3", "en-US": "Maintenance task center"},
@@ -277,7 +279,7 @@ export const semantic = {
   summaryGenerate:{"zh-CN":"\u751f\u6210\u6216\u91cd\u8bd5\u5f15\u7528\u6458\u8981","en-US":"Generate or retry cited summary"},
   summaryTitle:{"zh-CN":"\u6a21\u578b\u4e3b\u9898\u6458\u8981","en-US":"Model topic summary"},
   summaryCitation:{"zh-CN":"\u6838\u5bf9\u652f\u6301\u539f\u6587","en-US":"Inspect supporting source"},
-  graphKeyboard:{"zh-CN":"\u952e\u76d8\uff1aTab\u8fdb\u5165\u753b\u5e03\u3001\u5173\u7cfb\u6216\u5b9e\u4f53\uff1b\u753b\u5e03\u65b9\u5411\u952e\u5e73\u79fb\uff0c+/-\u7f29\u653e\uff0cHome\u590d\u4f4d\uff1b\u5b9e\u4f53\u548c\u5173\u7cfb\u7528\u65b9\u5411\u952e\u3001Home/End\u79fb\u52a8\uff0cEnter/\u7a7a\u683c\u9009\u62e9\uff1bEsc\u5173\u95ed\u5927\u753b\u5e03\u3002","en-US":"Keyboard: Tab into canvas, relations or entities. Canvas arrows pan, +/- zoom, Home resets. Entity/relation arrows and Home/End move focus; Enter/Space selects. Esc closes the large canvas."},
+  graphKeyboard:{"zh-CN":"\u952e\u76d8\uff1aTab \u8fdb\u5165\u753b\u5e03\u3001\u63a7\u5236\u6309\u94ae\u6216\u5b9e\u4f53/\u5173\u7cfb\u76ee\u5f55\u3002\u753b\u5e03\u65b9\u5411\u952e\u5e73\u79fb\uff0c+/- \u7f29\u653e\uff0cHome \u590d\u4f4d\uff1b\u76ee\u5f55\u652f\u6301\u65b9\u5411\u952e\u3001Home/End \u9009\u62e9\uff0cTab \u79fb\u52a8\u81f3\u5c55\u5f00\u6216\u8bc1\u636e\u64cd\u4f5c\uff1bEsc \u5173\u95ed\u5927\u753b\u5e03\u3002","en-US":"Keyboard: Tab into the canvas, controls or entity/relation catalogs. Canvas arrows pan, +/- zoom, Home resets. Catalog arrows and Home/End select; Tab reaches expansion and evidence actions. Esc closes the large canvas."},
   directoryPage:{"zh-CN":"\u76ee\u5f55\u9875","en-US":"Directory page"},
   directoryPrevious:{"zh-CN":"\u4e0a\u4e00\u9875\u76ee\u5f55","en-US":"Previous directory page"},
   directoryNext:{"zh-CN":"\u4e0b\u4e00\u9875\u76ee\u5f55","en-US":"Next directory page"},

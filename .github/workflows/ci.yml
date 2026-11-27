@@ -64,6 +64,17 @@ jobs:
           curl -fsSL "$url" -o /tmp/osv-bin/osv-scanner
           echo "${sha256}  /tmp/osv-bin/osv-scanner" | sha256sum -c -
 
+      - name: Set up Java for semantic dependency inventory
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: portals/semantic/pom.xml
+
+      - name: Resolve complete semantic dependency inventory
+        run: mvn -B -f portals/semantic/pom.xml org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeBom -DincludeTestScope=false -DincludeBomSerialNumber=false
+
       - name: OSV dependency scan
         shell: bash
         run: |
@@ -77,7 +88,7 @@ jobs:
           # dependencies, so the lockfile lists 0 packages; without this flag
           # osv-scanner exits 128 ("no package sources"). Once batch 2 adds real
           # dependencies the flag is a no-op and this becomes a real scan.
-          /tmp/osv-bin/osv-scanner scan -L pnpm-lock.yaml -L scripts/knowledge/requirements.txt --config .osv-scanner.toml --allow-no-lockfiles
+          /tmp/osv-bin/osv-scanner scan -L pnpm-lock.yaml -L scripts/knowledge/requirements.txt -S portals/semantic/target/bom.json --config .osv-scanner.toml --allow-no-lockfiles
 
   # -- Did any CODE change? ---------------------------------------------------
   # The required checks must ALWAYS report - a docs-only PR that never produces
@@ -302,6 +313,19 @@ jobs:
           # @vxture/shared resolves from GitHub Packages (org secret, visibility
           # "all" - every org repo's Actions can read it).
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+
+      - name: Set up Java for semantic runtime
+        if: env.CODE == 'true'
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: portals/semantic/pom.xml
+
+      - name: Build and verify Jena semantic runtime
+        if: env.CODE == 'true'
+        run: mvn -B -f portals/semantic/pom.xml verify
 
       - name: Prepare isolated provisioning database
         if: env.CODE == 'true'

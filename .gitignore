@@ -68,3 +68,6 @@ temp/
 # Local browser verification artifacts
 .playwright-cli/
 output/playwright/
+
+# Maven semantic runtime build artifacts
+portals/semantic/target/

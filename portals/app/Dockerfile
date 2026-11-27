@@ -3,6 +3,14 @@
 # Build context = repo root (so the workspace and lockfile are visible).
 # Produces the single owned image <code>-app.
 
+FROM maven:3.9.11-eclipse-temurin-21 AS semantic-builder
+WORKDIR /semantic
+COPY portals/semantic/pom.xml ./pom.xml
+COPY portals/semantic/src ./src
+RUN mvn -B -DskipTests package
+
+FROM eclipse-temurin:21-jre-alpine AS semantic-java
+
 FROM node:24-alpine AS base
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH
 RUN corepack enable && corepack prepare pnpm@11.21.0 --activate
@@ -30,7 +38,12 @@ RUN pnpm --filter @karda/app build
 # --- runner (Next standalone, non-root, never migrates) ---
 FROM base AS runner
 WORKDIR /app
-RUN apk add --no-cache python3 py3-pip poppler-utils && python3 -m venv /opt/karda-source-python
+COPY --from=semantic-java /opt/java/openjdk /opt/java/openjdk
+COPY --from=semantic-builder /semantic/target/karda-semantic.jar /app/semantic/karda-semantic.jar
+COPY --from=semantic-builder /semantic/target/lib /app/semantic/lib
+COPY portals/semantic/THIRD-PARTY-NOTICES /app/semantic/THIRD-PARTY-NOTICES
+ENV JAVA_HOME=/opt/java/openjdk KARDA_JAVA_BINARY=/opt/java/openjdk/bin/java KARDA_JENA_JAR=/app/semantic/karda-semantic.jar
+RUN apk add --no-cache libstdc++ python3 py3-pip poppler-utils && python3 -m venv /opt/karda-source-python
 COPY scripts/knowledge/requirements.txt /tmp/source-requirements.txt
 COPY scripts/knowledge/render-pdf-ocr.py /app/source-tools/
 RUN /opt/karda-source-python/bin/pip install --no-cache-dir --require-hashes --only-binary=:all: -r /tmp/source-requirements.txt

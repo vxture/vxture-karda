@@ -1,6 +1,24 @@
 # vxture-karda Repository Standards
 
-Latest production 2026-11-27: v0.12.49 / 350590582585de1856a1ae08df6b152fba504a78,
+Latest production 2026-11-27: v0.12.50 / ddf4a4b4d326a4e3b11fd8aa2cd0c948f9b753e5,
+deploy45951494536 succeeded at2026-11-27T06:30:22Z (14:30:22 Asia/Shanghai).
+Approved events/push center B1-B6 completed: transactional metadata events,
+scoped consumers/encrypted one-time keys/verification, signed durable delivery,
+retries/dead/replay console, integration sample/export and current authority
+convergence. Entry /channels/push;201acceptance/510release. PR392 CI45950606808
+once1172pass/zero skips; scan45950607000; exact-main CI45950952663/scan45950952727
+passed.0042run45951215841 succeeded at06:21:48Z;87tables. Health/ready versions/
+deps OK; anonymous push GET/POST/details/package401; sample307 sign-in gate.
+No real external receiver production test or browser click acceptance. No local
+dev/browser/CMD/full suite/performance; commands Node REPL direct windowsHide
+without shells. Git transport timed out: standard Git objects API uploaded exact
+same tree, remote original commit SHA verified locally; normal PR/all gates, then
+fetch/ff original signed main. No bypass or moved tags. Owner70/output preserved.
+Local510/201/checklists/memory closeout rides NEXT approved functional PR; no
+docs-only main full run. External Ontos/formal authority/real Agent/business
+cutover/Arda fetch remain separate. Fixed17:7done/6progress/4gated;I1paused.
+
+Historical production 2026-11-27: v0.12.49 / 350590582585de1856a1ae08df6b152fba504a78,
 deploy45941702168 succeeded at2026-11-27T04:50:56Z (12:50:56 Asia/Shanghai).
 Approved production center P1-P6 completed: real overview, frozen plans, server
 orchestration/recovery, explicit assertion/relation review, per-library release/

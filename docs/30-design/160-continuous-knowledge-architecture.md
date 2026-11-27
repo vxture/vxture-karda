@@ -4,6 +4,9 @@
 定位上承 [owner 蓝图](../20-specs/30-agent-knowledge-blueprint.md)，产品决策见 [KD-227–KD-230](../20-specs/20-decisions.md#5-知识平台重构2026-11-24)。
 实施入口：[重构批次](../70-workplan/80-knowledge-platform-rebuild-20261124.md)；参考快照与采纳表：[LLM Wiki 源码对标](../70-workplan/90-llm-wiki-source-benchmark-20261124.md)。
 
+
+2026-11-27 基础组件选型补充：[180 技术对比](180-knowledge-graph-technology-selection.md)。owner 要求优先复用成熟组件；建议 G6 与 Jena 语义栈、PG 保留权威，Neo4j/RDF4J 为备选。此为待确认建议，未安装或接入，不改变本文现有能力与 Ontos 后置边界。
+
 ## 1. 三类使用者，同一个知识核心
 
 平台目标：为智能体提供可信上下文，为人提供大幅可探索图谱，并通过 Ontos 的业务语义组织、验证和解释知识。

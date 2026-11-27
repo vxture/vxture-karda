@@ -11,6 +11,7 @@ platform repo's `{kind}_{domain}_{NNN}_{slug}` family is not used here.
 
 | Doc | Scope | State |
 |-----|-------|-------|
+| [180-knowledge-graph-technology-selection](180-knowledge-graph-technology-selection.md) | Graph visualization, semantic/query engines, ontology validation, reuse boundaries and proposed integration stage | Comparison complete 2026-11-27; recommendation pending approval, no implementation |
 | `170-semantic-persistence-adapter.md` | Existing-to-semantic mappings, publication/CAS and persistence constraints | K1b preparation only; no DDL or production wiring |
 | `160-continuous-knowledge-architecture.md` | LLM Wiki-inspired continuous compilation, ontology, evidence-backed graph and Agent service | v1.0, current reconstruction design; implementation tracked in K0–K6 |
 | `100-kb-model.md` | knowledge-base object model, dual templates, hierarchy, metadata, lifecycle state machines, library-level config surface | Draft v0.1, 4 open decisions |

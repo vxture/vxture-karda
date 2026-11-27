@@ -1,3 +1,4 @@
+import {validateCurrentGraph} from "./jena-runtime";
 import type { Pool, PoolClient } from "pg";
 import { permits } from "../../authz/policy";
 import { readProductAccess, type MemberIdentity, type RoleSql } from "../../authz/store";
@@ -25,6 +26,7 @@ export interface PublishedRelationInput {
 }
 export type SemanticReadResult = GraphProjection & { sourceStatus: "complete" | "partial" };
 export type KnowledgePackage = SemanticReadResult & {
+  semanticEngine?:{engine:"apache-jena";version:"6.3.0";fingerprint:string};
   format:"karda.knowledge-package.v1";
   statements:{id:string;statement:string}[];
   passages:{evidenceId:string;excerpt:string}[];
@@ -200,13 +202,14 @@ export class PostgresSemanticReader {
         new Map(assertions.map(a=>[a.id,a.search_statement??""])),new Map(grounds.map(g=>[g.id,g.excerpt])),query.relationTypes,
         directoryFingerprint([identity.workspaceId,identity.sub,identity.productCode,[...kbIds].sort()])):directory?projectDirectory(snapshot,published.schema,scope,query):
         projectNeighborhood(snapshot, published.schema, scope, query);
+      const semanticEngine=await validateCurrentGraph(result,published.schema);
       phase("projection");
       // Enrich only the final eligible projection, in the same authorized snapshot.
       const ids=result.assertions.map(a=>a.id);
       const statements=ids.length?(await db.query<{id:string;statement:string}>(`SELECT id,statement FROM karda_kb.assertion
         WHERE kb_id=ANY($1::uuid[]) AND id=ANY($2::uuid[]) ORDER BY id`,[visible,ids])).rows:[];
       const passages=result.evidence.map(e=>({evidenceId:e.id,excerpt:grounds.find(g=>g.id===e.id)!.excerpt}));
-      const response:KnowledgePackage={ ...result, sourceStatus: incomplete ? "partial" : "complete",format:"karda.knowledge-package.v1",statements,passages,
+      const response:KnowledgePackage={ ...result,...(semanticEngine?{semanticEngine}:{}), sourceStatus: incomplete ? "partial" : "complete",format:"karda.knowledge-package.v1",statements,passages,
         gaps:[...(result.edges.length?[]:["no_published_support"]),...(incomplete?["source_support_unavailable"]:[]),
           ...(result.truncated?["neighborhood_truncated"]:[])] };
       if(search&&Buffer.byteLength(JSON.stringify(response))>2*1024*1024)throw new Error("published_search_budget");
