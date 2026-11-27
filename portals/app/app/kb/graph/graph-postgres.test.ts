@@ -1,3 +1,4 @@
+import {completeIndex} from './runtime';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Pool} from 'pg';
@@ -25,6 +26,7 @@ test('graph centers PostgreSQL: scoped index queue and asset CAS/version/publica
   const second=await command('publish',view,3);assert.notEqual(second.versionId,first.versionId);await command('rollback',view,4,{versionId:first.versionId});await command('stop',view,5);
   assert.equal((await store.browse(who,kb,view)).versions.length,2);await assert.rejects(service.query('DELETE FROM karda_kb.graph_asset_version WHERE asset_id=$1',[view]),/permission denied/);await assert.rejects(service.query('UPDATE karda_kb.graph_asset SET created_by=$2 WHERE id=$1',[view,'other']),/permission denied/);
   assert.equal((await command('build',index,0)).state,'queued');assert.equal((await command('cancel',index,1)).state,'cancelled');assert.equal((await command('retry',index,2)).state,'queued');
+  const lease=randomUUID();await admin.query("UPDATE karda_kb.graph_index SET state='building',lease_id=$2 WHERE id=$1",[index,lease]);const row={id:index,workspace_id:ws,created_by:sub,revision:3};assert.equal(await completeIndex(service,row,lease,'ready',{key:'c'.repeat(64),nodes:0,edges:0,manifest:{phase:'ready'}}),true);assert.equal(await completeIndex(service,row,lease,'failed',{error:'late_worker'}),false);
   const schema=localCompileProfile().schema;await admin.query('INSERT INTO karda_kb.semantic_schema_version(kb_id,namespace,schema_id,version,definition_hash,definition) VALUES($1,$2,$3,$4,$5,$6)',[kb,schema.namespace,schema.schemaId,schema.version,semanticValueHash({schema,entityTypes:[]}),{schema,entityTypes:[]}]);
   await command('save',rules,0,{kind:'rules',title:'Finite rules',visibility:'personal',config:{schema,rules:[{id:'part-of-transitive',kind:'transitive',input:'part_of',output:'part_of'}]}});await command('publish',rules,1);
   assert.ok((await store.browse(who,kb)).history.length>=9);

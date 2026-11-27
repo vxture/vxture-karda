@@ -34,7 +34,7 @@ export class GraphStore {
    if(isIndex){row=(await db.query('SELECT * FROM karda_kb.graph_index WHERE workspace_id=$1 AND created_by=$2 AND scope_key=$3 FOR UPDATE',[who.workspaceId,who.sub,scopeKey([kbId])])).rows[0];
     if(row&&row.id!==target||Number(c.revision)!==(row?.revision??0))throw Error('graph_conflict');
     if(!row){if(action!=='build')throw Error('graph_conflict');await db.query("INSERT INTO karda_kb.graph_index(id,workspace_id,created_by,kb_ids,scope_key) VALUES($1,$2,$3,$4,$5)",[target,who.workspaceId,who.sub,JSON.stringify([kbId]),scopeKey([kbId])]);}
-    else await db.query("UPDATE karda_kb.graph_index SET state=$2,active_hash=CASE WHEN $2='cancelled' THEN NULL ELSE active_hash END,target_hash=CASE WHEN $2='cancelled' THEN NULL ELSE target_hash END,revision=revision+1,attempt=0,lease_id=NULL,lease_until=NULL,error_code=NULL,updated_at=now() WHERE id=$1",[target,action==='cancel'?'cancelled':'queued']);
+    else await db.query("UPDATE karda_kb.graph_index SET state=$2::varchar,active_hash=CASE WHEN $2::varchar='cancelled' THEN NULL ELSE active_hash END,target_hash=CASE WHEN $2::varchar='cancelled' THEN NULL ELSE target_hash END,revision=revision+1,attempt=0,lease_id=NULL,lease_until=NULL,error_code=NULL,updated_at=now() WHERE id=$1",[target,action==='cancel'?'cancelled':'queued']);
     result={id:target,revision:(row?.revision??0)+1,state:action==='cancel'?'cancelled':'queued'};
    }else{row=(await db.query('SELECT * FROM karda_kb.graph_asset WHERE id=$1 AND workspace_id=$2 AND kb_id=$3 FOR UPDATE',[target,who.workspaceId,kbId])).rows[0];
     if(Number(c.revision)!==(row?.revision??0)||row&&row.created_by!==who.sub||row?.state==='deleted')throw Error('graph_conflict');
