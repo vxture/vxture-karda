@@ -1128,3 +1128,5 @@ No new application release yet. Full evidence and ordered continuation:
 | `199-knowledge-production-center-20261127.md` | 知识生产编排与发布中心批准计划、六项实施与逐项验收 |
 
 | `201-knowledge-event-push-center-20261127.md` | 知识变更事件与外部推送中心批准计划、B1–B6逐项验收 |
+
+- [205 实体身份与知识一致性中心](205-entity-consistency-center-20261127.md)：owner批准整板块E1–E6及验证上线/逐项汇报，实施中。

@@ -1,3 +1,6 @@
+import {activeConfigs} from '../identity/store';
+import {inventory as identityInventory} from '../identity/inventory';
+import {applyIdentity,effectiveEntities,conflicts as identityConflicts} from '../identity/engine';
 import {eligibleGraph} from "../graph/eligible";
 import {validateCurrentGraph} from "./jena-runtime";
 import type { Pool, PoolClient } from "pg";
@@ -27,6 +30,7 @@ export interface PublishedRelationInput {
 }
 export type SemanticReadResult = GraphProjection & { sourceStatus: "complete" | "partial" };
 export type KnowledgePackage = SemanticReadResult & {
+  identity?:{kbId:string;versionId:string;profiles:{id:string;name:string;kind:string;aliases:string[];external:{namespace:string;value:string}[]}[];mappings:{from:string;to:string}[];decisions:{relationIds:string[];outcome:string;scope:string;from:string|null;until:string|null}[];unresolved:number;staleDecisions:number}[];
   semanticEngine?:{engine:"apache-jena";version:"6.3.0";fingerprint:string};
   format:"karda.knowledge-package.v1";
   statements:{id:string;statement:string}[];
@@ -119,7 +123,8 @@ export class PostgresSemanticReader {
             source.version < 1 || !/^[a-f0-9]{64}$/.test(source.contentHash)) throw new Error("semantic_invalid_manifest");
         manifest.set(source.documentId, source);
       }
-      const entityIds = [...new Set(relations.flatMap(r => [r.sourceId, r.targetId]))];
+      const governance=await activeConfigs(db,visible);
+      const entityIds = [...new Set([...relations.flatMap(r => [r.sourceId, r.targetId]),...governance.flatMap(g=>g.config.links.flatMap(l=>[l.from,l.to]))])];
       const assertionIds = [...new Set(relations.flatMap(r => r.assertionIds))];
       if (entityIds.length > MAX_ROWS || assertionIds.length > MAX_ROWS ||
           ![...entityIds, ...assertionIds].every(id => UUID.test(id))) throw new Error("semantic_invalid_release");
@@ -198,6 +203,13 @@ export class PostgresSemanticReader {
         validFrom: null, supersededById: row.superseded_by, evidenceIds: evidenceIds.get(row.id) ?? [] }));
       const clock = await db.query<{ now: Date }>("SELECT statement_timestamp() AS now");
       const scope={visibleKbIds:visibleSet,now:clock.rows[0].now.toISOString()};
+      const identityInfo:NonNullable<KnowledgePackage['identity']>=[];
+      for(const g of governance){const inv=await identityInventory(db,[g.kbId],{...published,relations:relations.filter(r=>r.kbId===g.kbId)});
+        const eligible=eligibleGraph(snapshot,published.schema,scope),eligibleIds=new Set(eligible.edges.map(e=>e.id)),eligibleNodes=new Set(eligible.nodes.map(n=>n.id));
+        const applied=applyIdentity(snapshot,g.config,inv,scope.now,eligibleIds);
+        query.seedIds=query.seedIds.map(id=>applied.mappings.find(m=>m.from===id)?.to??id);
+        identityInfo.push({kbId:g.kbId,versionId:g.versionId,profiles:effectiveEntities(inv.entities,g.config).filter(e=>eligibleNodes.has(e.id)).map(e=>({id:e.id,name:e.name,kind:e.kind,aliases:e.aliases,external:e.external})),mappings:applied.mappings.filter(m=>eligibleNodes.has(m.from)||eligibleNodes.has(m.to)),decisions:applied.decisions.filter(d=>d.relationIds.every(id=>eligibleIds.has(id))).map(d=>({relationIds:d.relationIds,outcome:d.outcome,scope:d.scope,from:d.from,until:d.until})),unresolved:identityConflicts(inv,g.config).filter(c=>['open','stale','pending'].includes(c.status)&&c.relationIds.every(id=>eligibleIds.has(id))).length,staleDecisions:applied.staleDecisions.length});
+      }
       phase("sources");
       // Directory selects across the complete eligible snapshot after authority,
       // source and premise checks. Hidden/rejected rows cannot consume its budget.
@@ -212,8 +224,9 @@ export class PostgresSemanticReader {
       const statements=ids.length?(await db.query<{id:string;statement:string}>(`SELECT id,statement FROM karda_kb.assertion
         WHERE kb_id=ANY($1::uuid[]) AND id=ANY($2::uuid[]) ORDER BY id`,[visible,ids])).rows:[];
       const passages=result.evidence.map(e=>({evidenceId:e.id,excerpt:grounds.find(g=>g.id===e.id)!.excerpt}));
-      const response:KnowledgePackage={ ...result,...(semanticEngine?{semanticEngine}:{}), sourceStatus: incomplete ? "partial" : "complete",format:"karda.knowledge-package.v1",statements,passages,
-        gaps:[...(result.edges.length?[]:["no_published_support"]),...(incomplete?["source_support_unavailable"]:[]),
+      const servedNodes=new Set(result.nodes.map(n=>n.id)),servedEdges=new Set(result.edges.map(e=>e.id));
+      const response:KnowledgePackage={ ...result,...(identityInfo.length?{identity:identityInfo.map(g=>({...g,profiles:g.profiles.filter(p=>servedNodes.has(p.id)||g.mappings.some(m=>m.from===p.id&&servedNodes.has(m.to))),mappings:g.mappings.filter(m=>servedNodes.has(m.to)),decisions:g.decisions.filter(d=>d.relationIds.some(id=>servedEdges.has(id)))}))}:{}),...(semanticEngine?{semanticEngine}:{}), sourceStatus: incomplete ? "partial" : "complete",format:"karda.knowledge-package.v1",statements,passages,
+        gaps:[...(identityInfo.some(g=>g.unresolved)?["identity_unresolved_conflict"]:[]),...(identityInfo.some(g=>g.staleDecisions)?["identity_stale_decision"]:[]),...(result.edges.length?[]:["no_published_support"]),...(incomplete?["source_support_unavailable"]:[]),
           ...(result.truncated?["neighborhood_truncated"]:[])] };
       if(search&&Buffer.byteLength(JSON.stringify(response))>2*1024*1024)throw new Error("published_search_budget");
       if(!transaction)await db.query("COMMIT");

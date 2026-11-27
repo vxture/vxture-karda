@@ -781,7 +781,6 @@ model Entity {
   kb       KnowledgeBase      @relation(fields: [kbId], references: [id], onDelete: Cascade)
   mentions AssertionMention[]
 
-  @@unique([kbId, kind, name], map: "uidx_entity_kb_kind_name")
   @@map("entity")
   @@schema("karda_kb")
   @@unique([kbId, id], map: "uidx_entity_semantic_scope")
@@ -1651,5 +1650,43 @@ model GraphControl {
  @@unique([targetId,revision])
  @@unique([targetId,requestId])
  @@map("graph_control")
+ @@schema("karda_kb")
+}
+
+model IdentityHead {
+ kbId String @id @map("kb_id") @db.Uuid
+ workspaceId String @map("workspace_id") @db.Uuid
+ draft Json
+ revision Int @default(0)
+ activeVersion String? @map("active_version") @db.Uuid
+ updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+ @@map("identity_head")
+ @@schema("karda_kb")
+}
+model IdentityVersion {
+ id String @id @db.Uuid
+ kbId String @map("kb_id") @db.Uuid
+ config Json
+ configHash String @map("config_hash") @db.VarChar(64)
+ createdBy String @map("created_by") @db.VarChar(128)
+ note String
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+ @@unique([kbId,id])
+ @@map("identity_version")
+ @@schema("karda_kb")
+}
+model IdentityControl {
+ kbId String @map("kb_id") @db.Uuid
+ revision Int
+ requestId String @map("request_id") @db.Uuid
+ fingerprint String @db.VarChar(64)
+ action String @db.VarChar(32)
+ note String
+ result Json
+ createdBy String @map("created_by") @db.VarChar(128)
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+ @@id([kbId,revision])
+ @@unique([kbId,requestId])
+ @@map("identity_control")
  @@schema("karda_kb")
 }

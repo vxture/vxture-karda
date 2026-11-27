@@ -386,3 +386,20 @@ knowledge_change_event、knowledge_push_consumer/delivery/attempt/control五表�
 ## Graph centers (0043)
 
 Four additive tables: graph_index (scoped current build, leases and CAS head), graph_asset (view/topic/rules draft and activation), graph_asset_version (immutable config), graph_control (immutable request/revision history). PostgreSQL remains authority; TDB2 is reconstructible. Baseline/increment/Prisma/98 in lockstep,91 tables. No delete privilege or immutable-column update.
+
+
+## 实体身份与一致性治理（0044）
+
+### `identity_head`
+
+列：`kb_id`, `workspace_id`, `draft`, `revision`, `active_version`, `updated_at`。
+
+### `identity_version`
+
+列：`id`, `kb_id`, `config`, `config_hash`, `created_by`, `note`, `created_at`。
+
+### `identity_control`
+
+列：`kb_id`, `revision`, `request_id`, `fingerprint`, `action`, `note`, `result`, `created_by`, `created_at`。
+
+identity_head保存当前草稿/修订与生效指针；identity_version为不可变人工准入版本；identity_control保留幂等请求、理由和操作结果，svc不可改写/删除历史。原始实体及证据不改写。

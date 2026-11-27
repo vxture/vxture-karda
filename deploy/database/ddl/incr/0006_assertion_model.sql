@@ -191,8 +191,10 @@ CREATE TABLE IF NOT EXISTS karda_kb.entity (
 );
 -- One entity per (library, kind, name). Two things that share a name but not a
 -- kind are two things.
+DO $$ BEGIN IF to_regclass('karda_kb.identity_head') IS NULL THEN
 CREATE UNIQUE INDEX IF NOT EXISTS uidx_entity_kb_kind_name
   ON karda_kb.entity (kb_id, kind, name);
+END IF; END $$;
 
 -- --- assertion_mention --------------------------------------------------------
 --

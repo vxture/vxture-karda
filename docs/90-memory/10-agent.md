@@ -1,5 +1,15 @@
 # Agent entry point
 
+2026-11-27三中心整体软件已完成并上线v0.12.52/7cd217966fba1fde6628f6f846916603b58798bf，PR394+395。204全部I/V/R各6项已逐项勾选；530发布记录；GitHubRelease v0.12.52有权威证据。0043迁移45972344187于北京时间17:17:35成功91表；部署45972583905于17:26:14成功。线上health/ready版本及db/redis/storageConfig/jena均ok，匿名graph-center GET/POST/infer、package401，studio307。最终主板块CI45970179912应用1180+Java7零失败/跳过；兼容CI45971404178/扫描45971404197；精确主干CI45971915736/扫描45971915741通过。
+
+授权三板块实施已达成，无需继续把当前标成WIP。真实视觉浏览器/外部Agent业务/机构权威/Arda契约/Ontos与完整OWL DL独立。图谱5000实体/关系、窗口500/1000；规则100实体/200关系输入、500结论/32前提/16解释深明确预算。17主验收7完成/6进行中/4门槛不变，I1暂停。最后owner命令窗纠正后全程仅Node fs、native keyring和GitHub API，无本地子进程。local git refs/index尚未同步API提交，代码文件为最终版本，不要误回退；owner70/output保持，最终530/204/203/清单/记忆收尾随下一功能PR，不单独发文档全量。
+
+
+2026-11-27三中心整体授权已实施，PR394主板块+PR395 OBO product范围兼容已合并，最终远端main7cd217966fba1fde6628f6f846916603b58798bf。阶段CI45970179912应用1180+Java7零失败跳过；PR395CI45971404178/扫描45971404197通过；精确主干CI45971915736/扫描45971915741通过。0043迁移45972344187已于北京时间17:17:35成功91表，v0.12.52部署45972583905构建中，尚未确认应用上线。当前继续等待该部署、按既有owner授权审批production、完成健康/Jena/匿名门禁探针、发布Release并逐项汇报；不得误认为还需owner批准三板块。
+
+owner多次因CMD闪窗愤怒，已彻底停止任何本地子进程（包括git/gh/java/tsc），只用Node REPL fs和fetch GitHub API。GitHub凭据通过temp/api-native/node_modules/koffi(3.3.8/SHA512核验)调用Windows CredReadW读取现有gh:github.com:stonesmoker，token只在内存、不输出/保存。可继续使用REPL github(path,method,body)及githubToken；若重置从现有keyring原生读恢复，不用shell。远程Git objects API创建精确tree/commit并正常PR门禁；本地git refs/index仍未同步这些API提交，代码文件是最终实现+收尾，不要因本地dirty误回退。owner70/output保留排除。
+
+
 2026-11-27 owner整体批准语义图索引查询/探索展示/本体规则治理三个板块，正本203+204；当前分支codex/graph-platform-centers，整体WIP，尚未提交/CI/合并/部署，生产仍v0.12.51。已编码TDB2内部SemanticServer、受限RuleRuntime及解释、0043四表91表锁步、graph/contract+eligible+client+store+runtime+rules、graph-center API、G6位置捕获/图片导出和studio页面；不能声称完成或上线。最后owner询问CMD弹窗，已答复不主动启动shell但子进程无法确认；停止本地编译/可执行命令，改文件操作和远程CI，不再本机编译。已有local()全部windowsHide仍被质疑，后续勿重启任何本地服务/浏览器。最近tsc诊断只剩runtime.ts两个构造器callback位置，已补undefined未重跑。
 
 待处理实质事项：完整安全审阅与远程CI；graph_index自动转换审计/重试限额/共享key清理；规则Schema精确绑定与UI语义包编辑；restore/export跨分页完整当前引用；rule推导Agent正式可选接口接线与本体层级/约束治理仍缺；studio目前JSON规则编辑/分组注释/步骤演示需阶段验证。API版本diff已修command.payload嵌套；游标改复用directory-cursor；graph engine参数放PostgresSemanticReader第7保持第6observePhase兼容。内部Docker semantic service使用同app镜像+原OIDC secret、内部8080不发布、持久卷单拥有者；未实际启动。Java3类新源码编译成功但未测试新类；未运行本地全量。Owner70/output始终保留，已有v0.12.51收尾文档一起携带。

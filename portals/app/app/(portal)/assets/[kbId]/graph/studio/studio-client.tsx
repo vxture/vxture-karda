@@ -1,4 +1,5 @@
 "use client";
+import {identityCenter} from '../../../../../_i18n/messages/identity-center';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import Link from 'next/link';
 import {Button,Banner,Card,CardContent} from '@vxture/design-system';
@@ -14,6 +15,7 @@ type Asset={id:string;title:string;kind:'view'|'topic'|'rules';visibility:string
 type Listing={assets:Asset[];index:null|{id:string;state:string;revision:number;node_count:number;edge_count:number;error_code:string|null;manifest:unknown};versions:{id:string;created_at:string;config:unknown}[];releases?:{id:string;generation:number}[];history:{action:string;note:string;revision:number;created_at:string}[]};
 const empty=():ViewConfig=>({nodeIds:[],edgeIds:[],layout:'structural',positions:{},focus:null,relationTypes:[],annotations:[],steps:[],groups:[]});
 export function GraphStudio({kbId}:{kbId:string}){
+ const identityLabels=useMessages(identityCenter);
  const m=useMessages(graphCenter),[list,setList]=useState<Listing>({assets:[],index:null,versions:[],history:[]}),[selected,setSelected]=useState<Asset|null>(null),[pack,setPack]=useState<KnowledgePackage|null>(null);
  const [config,setConfig]=useState<ViewConfig>(empty),[kind,setKind]=useState<Asset['kind']>('view'),[title,setTitle]=useState(''),[visibility,setVisibility]=useState('personal'),[note,setNote]=useState('');
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[status,setStatus]=useState(''),[missing,setMissing]=useState(false),[ruleJson,setRuleJson]=useState(''),[advanced,setAdvanced]=useState('');
@@ -42,7 +44,7 @@ export function GraphStudio({kbId}:{kbId:string}){
  const chosen=edges.find(e=>e.id===activeEdge),grounds=pack?.evidence.filter(e=>chosen?.assertionIds.some(id=>pack.assertions.find(a=>a.id===id)?.evidenceIds.includes(e.id))||activeStep?.evidenceIds.includes(e.id))??[];
  const field='min-w-0 rounded-md border border-border bg-background p-sm';
  return <div className={present?'fixed inset-0 z-50 overflow-auto bg-background p-md':'flex min-w-0 flex-col gap-md'} onKeyDown={e=>{if(!present||['INPUT','TEXTAREA','SELECT'].includes((e.target as HTMLElement).tagName))return;if(e.key==='Escape')setPresent(false);if(e.key==='ArrowRight')setStep(s=>Math.min(config.steps.length-1,s+1));if(e.key==='ArrowLeft')setStep(s=>Math.max(0,s-1));}}>
-  <PageHead title={m.title}/><p>{m.hint}</p>
+  <Link href={"/assets/"+kbId+"/identity"}>{identityLabels.title}</Link><PageHead title={m.title}/><p>{m.hint}</p>
   <div className="flex flex-wrap gap-sm"><Button asChild variant="outline"><Link href={'/assets/'+kbId+'/graph'}>{m.graph}</Link></Button><Button disabled={busy} onClick={()=>void run(async()=>{await refresh();await loadKnowledge();})}>{m.refresh}</Button></div>
   {error&&<Banner tone="danger" title={m.failed} description={error}/>} {status&&<p role="status">{status}</p>}{missing&&<Banner tone="warning" title={m.missing}/>}
   {!present&&<Card><CardContent className="flex flex-col gap-sm p-md"><h2>{m.index}</h2><p>{list.index?.state??m.empty} / {list.index?.node_count??0} / {list.index?.edge_count??0}</p>{list.index?.error_code&&<p>{list.index.error_code}</p>}

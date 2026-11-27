@@ -451,3 +451,8 @@ GET/POST /api/kb/[id]/sources为当前用户管理接口，非匿名/内部token
 
 
 Graph centers: existing karda.knowledge_package optionally accepts direction (both/out/in) and single-library rule_asset_id; inference is separate from reviewed asserted edges and includes current rule version, premise relation IDs, supporting assertions/evidence, and partial scope. No new unrestricted SPARQL or service-only authority. Management uses /api/kb/[id]/graph-center behind current RP permissions.
+
+
+## 实体身份与一致性管理
+
+/api/kb/:id/identity-center GET为owner当前治理工作台；POST要求当前RP、同源JSON、128KiB以内、显式revision/requestId/note与预览确认。详见170§75及205清单。Agent不获得治理写权限，knowledge_package可返回identity版本/档案/映射/裁决及未解决、失效缺口；原文证据不被裁决改写。
