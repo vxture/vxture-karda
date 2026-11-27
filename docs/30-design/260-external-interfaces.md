@@ -430,3 +430,6 @@ OCR草稿（170§60）：RP GET/POST `/api/kb/[id]/ocr-drafts`，当前同空间
 
 
 消费交付恢复（170§67）：RP /channels/deliveries及既有/api/knowledge-subscriptions、OBO karda.knowledge_subscription新增claim/complete/fail/redrive/delivery_history。claim按requestId/expectedDeliveryRevision/worker获取3分钟租约，complete按leaseId/sequence/revision与CAS确认，fail分类transient/permanent，redrive显式原因重置重试/死信；每周期最多3次，消费者需对副作用幂等。list可deliveryStatus筛选；history为20条整数before续页元数据，无正文或令牌。旧poll可诊断，普通ack不得绕过未决交付，取消使租约失效。每次当前权限/范围/消费开关/来源核验，无Webhook推送或后台轮询，不冒充外部正式事件契约。
+
+
+库共享控制（170§68）：RP GET/POST /api/kb/[id]/publish仅当前同空间user库属主或明确产品管理员，product.enter/data.read/service.publish。GET当前状态/允许目标/影响及20条历史，before整数续页；POST preview仅action/target，apply仅action/target/eventId/expectedRevision/previewHash/note，同源JSON、当前复核/CAS/幂等。旧仅target立即变更请求不再接受，设置页改共享管理入口；无OBO管理或tenant/platform/跨空间授权扩展。撤回保留挂载/订阅，后续读取/交付当前scope核验拒绝失去可见性的库。

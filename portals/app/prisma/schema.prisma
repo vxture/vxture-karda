@@ -1291,3 +1291,20 @@ model KnowledgeDeliveryEvent {
   @@map("knowledge_delivery_event")
   @@schema("karda_kb")
 }
+
+model LibrarySharingEvent {
+  kbId String @map("kb_id") @db.Uuid
+  revision Int
+  eventId String @map("event_id") @db.Uuid
+  fingerprint String @db.VarChar(64)
+  beforeState String @map("before_state") @db.VarChar(32)
+  afterState String @map("after_state") @db.VarChar(32)
+  impact Json
+  note String
+  createdBy String @map("created_by") @db.VarChar(128)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  @@id([kbId,revision])
+  @@unique([kbId,eventId])
+  @@map("library_sharing_event")
+  @@schema("karda_kb")
+}

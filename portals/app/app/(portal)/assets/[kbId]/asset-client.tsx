@@ -20,7 +20,6 @@ import {
   uploadDocument,
   deleteDocument,
   reprocessDocument,
-  setSharing,
   setGovernance,
   setProcessingTemplate,
   setEmbeddingModel,
@@ -330,9 +329,7 @@ export function AssetClient({ view = "content" }: { view?: AssetView } = {}) {
       }
       onShare={(target) =>
         run(assets.errShare, async () => {
-          if (kb.publishState === target) return;
-          setKb(await setSharing(kbId, target));
-          return m.okShare(f.sharing(target).label);
+          router.push(`/assets/${encodeURIComponent(kbId)}/sharing`);
         })
       }
       onTemplate={(templateId) =>

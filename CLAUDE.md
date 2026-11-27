@@ -1,6 +1,22 @@
 # vxture-karda Repository Standards
 
-Latest production 2026-11-27: v0.12.43 / 5648146aa9cf3bfc274351abd56b12fe6a2cbe15,
+Latest production 2026-11-27: v0.12.44 / 01117b0ff0f5a19db81e986310545a151e341e5e,
+deploy45883661257 succeeded at2026-11-26T19:33:18Z (03:33:18 Asia/Shanghai).
+PR386 adds leased subscription delivery, completion, classified failure, bounded
+retry/dead-letter redrive and history on RP/OBO plus /channels/deliveries console.
+Migration0037 run45882978456 succeeded at19:23:11Z;69tables. PR CI45882106333:
+1151pass/zero skips, scan45882106343; main CI45882605279/scan45882605241passed.
+Health/ready dependencies OK; anonymous subscriptions statusGET/POST/package401.
+No local dev/browser/CMD windows started; all executables direct windowsHide via
+Node REPL, no shell wrappers. No local full suite/performance/browser acceptance.
+Git transport resets fixed locally using verified canonical signed merge object
+with exact same SHA then fast-forward. Do not fabricate commits or skip gates.
+Release v0.12.44 holds final evidence; local460/checklist/memory ride NEXT feature
+PR, no docs-only full-main run. Preserve owner70/output. Next authority adaptation
+follows actual contracts; external push/real Agent, undeveloped Ontos, business
+cutover remain independent. Fixed17items7done/6in progress/4gated; I1paused.
+
+Historical production 2026-11-27: v0.12.43 / 5648146aa9cf3bfc274351abd56b12fe6a2cbe15,
 deploy45877987416 succeeded at2026-11-26T18:47:45Z (02:47:45 Asia/Shanghai).
 PR385 adds same-question source/published retrieval comparison and metadata-only
 pilot cases, current-window human review, close/reopen and immutable history.
