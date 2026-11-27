@@ -1,5 +1,7 @@
 import type {Catalog} from '../catalog';
 export const contributions={
+"related_knowledge_changed":{"zh-CN":"\u5173\u8054\u77e5\u8bc6\u5df2\u53d8\u5316\uff0c\u8bf7\u6838\u5bf9\u65b0\u7684\u5b9e\u4f53\u6216\u4e8b\u5b9e","en-US":"Related knowledge changed; review current entities and facts"},
+"target_relation_required":{"zh-CN":"\u8bf7\u660e\u786e\u5173\u8054\u9700\u8981\u7ea0\u9519\u3001\u8865\u8bc1\u6216\u5931\u6548\u5904\u7f6e\u7684\u5173\u7cfb\u4e8b\u5b9e","en-US":"Identify the relation to correct, support or invalidate"},
   "title": {
     "zh-CN": "\u667a\u80fd\u4f53\u77e5\u8bc6\u8d21\u732e\u4e0e\u53cd\u9988\u4e2d\u5fc3",
     "en-US": "Agent knowledge contributions"
