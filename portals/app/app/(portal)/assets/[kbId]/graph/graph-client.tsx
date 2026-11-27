@@ -7,8 +7,7 @@ import {useMessages} from "../../../../_i18n/useMessages";
 import {semantic} from "../../../../_i18n/messages/semantic";
 import {KnowledgeWindowClient,KnowledgeWindowError} from "../../../../_lib/knowledge-window";
 import {SignInGate} from "../../../../_lib/ui";
-import {layoutGraph,layoutGroupedGraph,graphGroups,graphCommunities,graphPath} from "../../../../kb/semantic/graph-view";
-import {useStructuralLayout} from "./use-structural-layout";
+import {graphGroups,graphCommunities,graphPath} from "../../../../kb/semantic/graph-view";
 import {GraphCanvas} from "./graph-canvas";
 import type {KnowledgePackage} from "../../../../kb/semantic/read-postgres";
 
@@ -40,9 +39,6 @@ export function GraphClient({kbId,initialEntity=""}:{kbId:string;initialEntity?:
   const groups=useMemo(()=>communities?graphCommunities(typedNodes,typedEdges):graphGroups(typedNodes,typedEdges),[typedNodes,typedEdges,communities]);
   const nodes=useMemo(()=>{const ids=groups.find(g=>g.id===groupId)?.nodeIds;return groupId?typedNodes.filter(n=>ids?.includes(n.id)):typedNodes;},[typedNodes,groups,groupId]);
   const edges=useMemo(()=>{const ids=new Set(nodes.map(n=>n.id));return typedEdges.filter(e=>ids.has(e.sourceId)&&ids.has(e.targetId));},[nodes,typedEdges]);
-  const fallback=useMemo(()=>layoutMode!=="circular"?layoutGroupedGraph(nodes,edges,communities):layoutGraph(nodes,edges),[nodes,edges,layoutMode,communities]);
-  const structural=useStructuralLayout(nodes,edges,layoutMode==="structural");
-  const layout=structural.layout??fallback;
   function resetSelection(){setSelected("");setEdgeId("");setFrom("");setTo("");}
   const path=useMemo(()=>from&&to?graphPath(nodes,edges,from,to):null,[nodes,edges,from,to]);
   const nodeIndex=useMemo(()=>new Map(data?.nodes.map(n=>[n.id,n])??[]),[data]);
@@ -94,11 +90,9 @@ export function GraphClient({kbId,initialEntity=""}:{kbId:string;initialEntity?:
           <option value="">{m.allGroups}</option>{groups.map((group,i)=><option key={group.id} value={group.id}>{i+1}. {label(group.id)} ({group.nodeIds.length} / {group.edgeIds.length})</option>)}
         </select>
       </section>
-      {structural.pending&&<p role="status">{m.layoutWorking}</p>}
-      {structural.failed&&<Banner tone="warning" title={m.layoutFallback}/>}
       <div className="grid min-w-0 gap-md xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="min-w-0 overflow-hidden rounded-md border border-border bg-background">
-          {!structural.pending&&<GraphCanvas key={JSON.stringify([sequence.current,entityType,filter,groupId,layoutMode,communities,Boolean(structural.layout)])} layout={layout} selected={selected} edgeId={edgeId} path={path} onNode={chooseNode} onEdge={setEdgeId}/>}
+          <GraphCanvas key={JSON.stringify([sequence.current,entityType,filter,groupId,layoutMode,communities])} nodes={nodes} edges={edges} groups={groups} layoutMode={layoutMode} selected={selected} edgeId={edgeId} path={path} onNode={chooseNode} onEdge={setEdgeId}/>
         </div>
         <aside className="flex min-w-0 flex-col gap-sm" aria-label={m.evidencePanel}>
           <h2 className="text-title-sm">{m.linkedEntities}</h2>

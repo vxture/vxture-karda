@@ -79,3 +79,5 @@ exercised (live since v0.1.0); the beta tier stays a reserved channel (TD-001).
 | `490-knowledge-service-center-release-20261127.md` | v0.12.47 complete agent knowledge service center, six-item acceptance and production evidence |
 
 | `500-knowledge-production-center-release-20261127.md` | v0.12.49 complete production orchestration/release center and six-part acceptance |
+
+| `510-knowledge-push-center-release-20261127.md` | v0.12.50 transactional events/external push and B1-B6 acceptance |

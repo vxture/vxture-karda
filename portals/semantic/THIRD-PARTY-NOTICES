@@ -1,0 +1,26 @@
+Karda semantic runtime dependencies
+
+Apache Jena 6.3.0 (jena-arq, jena-shacl)
+Copyright The Apache Software Foundation
+https://jena.apache.org/
+Licensed under the Apache License, Version 2.0.
+Upstream LICENSE and NOTICE and all dependency licenses are included in the
+original unmodified dependency JARs in lib/ where provided. This file does not replace those notices.
+
+Gson 2.15.0
+Copyright Google Inc.
+https://github.com/google/gson
+Apache License, Version 2.0.
+
+SLF4J 2.0.17
+Copyright QOS.ch
+https://www.slf4j.org/
+MIT License.
+
+AntV G6 5.1.1 (frontend, separately included through the pnpm lockfile)
+Copyright Alipay.inc and contributors
+https://github.com/antvis/G6
+MIT License. Its original license is included in the package distribution.
+
+The Karda application has its own rights posture. These third-party grants
+apply to the named components and do not relicense the application.
