@@ -1,5 +1,6 @@
 "use client";
 
+import {ResourcePicker} from "../../../../_components/resource-picker";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Banner, Button, Card, CardContent, EmptyState } from "@vxture/design-system";
@@ -26,6 +27,7 @@ export function SemanticReviewClient({kbId,initialTaskId}:{kbId:string;initialTa
   const createId=useRef<string|null>(null);
   const selectedCreateId=useRef<{key:string;id:string}|null>(null);
   const [compileSourceText,setCompileSourceText]=useState(""),[sourceSelectionInvalid,setSourceSelectionInvalid]=useState(false);
+  useEffect(()=>{const d=new URLSearchParams(window.location.search).get("documentId");if(d&&/^[a-f0-9-]{36}$/.test(d)){setCompileSourceText(d);setSourceLookup(d);}},[]);
   const [taskState,setTaskState]=useState(""),[taskLookup,setTaskLookup]=useState(""),[taskNext,setTaskNext]=useState<string|null>(null),[taskTrail,setTaskTrail]=useState<(string|undefined)[]>([undefined]);
   const [taskDetail,setTaskDetail]=useState<CompileTaskRow|null>(null);
   const [sources,setSources]=useState<Awaited<ReturnType<SemanticReviewApi["sources"]>>|null>(null);
@@ -163,7 +165,7 @@ export function SemanticReviewClient({kbId,initialTaskId}:{kbId:string;initialTa
       }}>
         <label htmlFor="compile-source-ids">{m.compileSelectedSources}</label>
         <p className="text-body-sm text-muted-foreground">{m.compileSelectedHint}</p>
-        <textarea id="compile-source-ids" required disabled={busy} value={compileSourceText} maxLength={4000} rows={3} onChange={e=>{setCompileSourceText(e.target.value);setSourceSelectionInvalid(false);}} className="min-w-0 rounded-md border border-border bg-background p-sm font-mono text-code-sm"/>
+        <ResourcePicker kbId={kbId} value={compileSourceText} multiple disabled={busy} onChange={v=>{setCompileSourceText(v);setSourceSelectionInvalid(false);}}/>
         <Button variant="outline" type="button" disabled={busy||!sources?.readable} onClick={()=>{setCompileSourceText(sources!.items.filter(row=>!row.issues.length).map(row=>row.id).join("\n"));setSourceSelectionInvalid(false);}}>{m.useReadableSourceBatch}</Button>
         {sourceSelectionInvalid&&<p role="alert" className="text-body-sm">{m.compileSourceSelectionInvalid}</p>}
         <Button type="submit" disabled={busy||!compileSourceText.trim()}>{m.createSelectedTask}</Button>

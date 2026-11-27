@@ -51,11 +51,11 @@ export function PortalShell({ children }: { children: ReactNode }) {
   // SSR renders the default (both side panes open); the persisted
   // preference applies after mount to keep hydration consistent.
   const [navCollapsed, setNavCollapsed] = useState(false);
-  const [hubOpen, setHubOpen] = useState(true);
+  const [hubOpen, setHubOpen] = useState(false);
 
   useEffect(() => {
     setNavCollapsed(readPref(LEFT_KEY, false));
-    setHubOpen(readPref(DOCK_KEY, true));
+    setHubOpen(window.innerWidth >= 1400 && readPref(DOCK_KEY, false));
   }, []);
 
   useEffect(() => {

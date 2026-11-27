@@ -1,5 +1,6 @@
 "use client";
 
+import {integration} from "../../../_i18n/messages/integration";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Banner, Button, Card, CardContent, Icon } from "@vxture/design-system";
@@ -103,6 +104,7 @@ const FAILURE_ROWS: { cls: FailureClassKey; dot: string; tone: string }[] = [
 
 export function TasksClient() {
   const m = useMessages(pipelineMessages);
+  const im=useMessages(integration);
   const sh = useMessages(shell);
   const a = useMessages(assets);
   const [data, setData] = useState<TasksData | null>(null);
@@ -141,14 +143,14 @@ export function TasksClient() {
       <PageHead
         title={sh.subTasks}
         description={m.tasksDesc}
-        meta={m.tasksMeta(data.throughput.freshnessP95Min, data.throughput.docsPerMin)}
+        meta={data.sources.tasks==="live"?im.tasks:m.tasksMeta(data.throughput.freshnessP95Min, data.throughput.docsPerMin)}
         actions={
           <>
             <Button variant="outline" asChild>
               <Link href="/pipeline/rebuild">{sh.subRebuild}</Link>
             </Button>
             <Button asChild>
-              <a href="/assets/new">{a.uploadButton}</a>
+              <a href="/assets">{a.uploadButton}</a>
             </Button>
           </>
         }
@@ -165,7 +167,7 @@ export function TasksClient() {
             <span className="font-mono text-code-sm tracking-widest text-muted-foreground">{m.tileThroughput}</span>
             <span className="flex items-baseline gap-sm">
               <span className="font-mono text-title-sm">{data.throughput.docsToday}</span>
-              <span className="text-body-sm text-muted-foreground">{m.tileThroughputNote(data.throughput.p95Seconds)}</span>
+              <span className="text-body-sm text-muted-foreground">{data.throughput.docsToday?m.tileThroughputNote(data.throughput.p95Seconds):im.unknown}</span>
             </span>
           </CardContent>
         </Card>
@@ -215,12 +217,12 @@ export function TasksClient() {
                 <span key={i} className="flex flex-1 flex-col items-center gap-2xs">
                   <span
                     className={`w-full rounded-sm ${v === maxP95 ? "bg-primary" : "bg-muted"}`}
-                    style={{ height: `${Math.max(3, Math.round((v / maxP95) * 22))}px` }}
+                    style={{ height: `${Math.max(3, Math.round((v / (maxP95||1)) * 22))}px` }}
                   />
                   {/* nowrap: "取 1.2" splitting across two lines is what made
                       this tile collide with itself at narrow widths. */}
                   <span className="whitespace-nowrap font-mono text-code-sm text-muted-foreground">
-                    {stageNames[i]} {v}
+                    {stageNames[i]} {v || "—"}
                   </span>
                 </span>
               ))}
@@ -274,7 +276,7 @@ export function TasksClient() {
             <CardContent className="flex flex-col gap-sm px-lg">
               <div className="flex items-baseline justify-between">
                 <span className="text-label-lg">{m.tiersTitle}</span>
-                <span className="font-mono text-code-sm text-muted-foreground">{data.orgConcurrency}</span>
+                <span className="font-mono text-code-sm text-muted-foreground">{data.sources.ops==="live"?data.orgConcurrency:im.unknown}</span>
               </div>
               <div className="flex flex-col gap-sm text-body-sm">
                 {data.tiers.map((tier) => (
@@ -282,7 +284,7 @@ export function TasksClient() {
                     <div className="flex justify-between gap-md">
                       <span className="min-w-0 truncate">{`${m[TIER_KEY[tier.key].name]} · ${m[TIER_KEY[tier.key].scope]}`}</span>
                       <span className="shrink-0 font-mono text-code-sm text-muted-foreground">
-                        {m.tierQueued(tier.queued, tier.concurrency)}
+                        {data.sources.ops==="live"?m.tierQueued(tier.queued, tier.concurrency):String(tier.queued)}
                       </span>
                     </div>
                     <div className="h-[4px] rounded-full bg-muted">
@@ -295,7 +297,7 @@ export function TasksClient() {
                 ))}
               </div>
               <div className="border-t border-dashed border-primary/10 pt-sm text-body-sm leading-relaxed text-muted-foreground dark:border-primary/20">
-                {m.backpressureNote}
+                {im.diagnostics}
               </div>
             </CardContent>
           </Card>
@@ -322,10 +324,8 @@ export function TasksClient() {
                   ) : null}
                 </div>
                 <div className="flex gap-sm pt-2xs">
-                  <Button variant="outline" size="sm">
-                    {m.viewFailures}
-                  </Button>
-                  <Button size="sm">{m.adjustTemplate}</Button>
+                  <Button variant="outline" size="sm" asChild><Link href="/pipeline">{m.viewFailures}</Link></Button>
+                  <Button size="sm" asChild><Link href="/assets">{m.adjustTemplate}</Link></Button>
                 </div>
               </CardContent>
             </Card>
@@ -355,7 +355,7 @@ export function TasksClient() {
           the agent's judgment are authored - see TasksData.sources. */}
       <span className="text-body-sm text-muted-foreground">
         {data.sources.tasks === "live" ? m.provTasksLive : m.provTasksDemo}
-        {m.provTasksRegistry}
+        
       </span>
     </>
   );

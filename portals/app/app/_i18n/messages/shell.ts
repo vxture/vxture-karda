@@ -142,7 +142,7 @@ export const shell = {
   /** 环心那行小字:环画的是什么的总量。 */
   ringTotal: { "zh-CN": "总计", "en-US": "Total" },
   ringAssets: { "zh-CN": "资产", "en-US": "Assets" },
-  ringEntries: { "zh-CN": "知识", "en-US": "Entries" },
+  ringEntries: { "zh-CN": "资料与条目", "en-US": "Documents and entries" },
   // 今日调用 / 直供通道 / 能力平台 are NOT here: they are the 供给通道 domain's
   // vocabulary, and this card renders that domain's data. Reading them from
   // `channels.ts` is what keeps the card and the page from disagreeing - they

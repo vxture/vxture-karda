@@ -21,6 +21,7 @@ test('production center PostgreSQL: durable plan/current evidence/manual admissi
   member=(await admin.query("INSERT INTO local_authz.member(workspace_id,sub) VALUES($1,$2) RETURNING id",[ws,sub])).rows[0].id;
   await admin.query("INSERT INTO local_authz.member_role(member_id,role_id) SELECT $1,id FROM local_authz.role WHERE role_code='member'",[member]);
   await admin.query("INSERT INTO karda_kb.knowledge_base(id,workspace_id,owner_type,owner_sub,name) VALUES($1,$2,'user',$3,'Pilot')",[kb,ws,sub]);
+  assert.equal((await store.tx(who,db=>store.library(db,who,kb))).id,kb,"owner production management does not require attachment");
   await admin.query("INSERT INTO karda_kb.kb_attachment(workspace_id,user_sub,product_code,kb_id) VALUES($1,$2,'karda',$3)",[ws,sub,kb]);
   await admin.query("INSERT INTO karda_kb.document(id,kb_id,title,source,content_state,active_chunk_version,storage_ref,content_hash,mime,size_bytes) VALUES($1,$2,'Proof','upload','indexed',1,'synthetic',$3,'text/plain',$4)",[doc,kb,hash,raw.length]);
   await admin.query("INSERT INTO karda_kb.entity(id,kb_id,kind,name) VALUES($1,$3,'thing','Approval'),($2,$3,'thing','Required')",[left,right,kb]);

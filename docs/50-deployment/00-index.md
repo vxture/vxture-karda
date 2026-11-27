@@ -89,3 +89,7 @@ exercised (live since v0.1.0); the beta tier stays a reserved channel (TD-001).
 - [540 实体身份与知识一致性中心](540-entity-consistency-center-release-20261127.md)：PR396，阶段验证与发布记录。
 
 - [550 智能体知识贡献与反馈中心](550-agent-contribution-center-release-20261127.md)：PR397阶段验证/发布记录。
+
+- [560 自动化知识源连接器中心](560-automatic-connectors-center-release-20261127.md)：PR398阶段验证与发布记录。
+
+- [570 平台功能贯通阶段发布](570-platform-functional-integration-release-20261127.md)：实施与阶段门禁记录，尚未上线。

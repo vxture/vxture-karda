@@ -1,4 +1,5 @@
 "use client";
+import {LibraryPicker,ResourcePicker} from "../../../_components/resource-picker";
 import {useEffect,useRef,useState} from "react";
 import Link from "next/link";
 import {Banner,Button} from "@vxture/design-system";
@@ -49,8 +50,8 @@ export function SubscriptionsClient(){
     {error>=500&&pending.current&&<Button disabled={busy} onClick={()=>void execute(pending.current!)}>{m.retry}</Button>}
     <form className="grid min-w-0 gap-sm rounded border p-md" onSubmit={e=>{e.preventDefault();void execute({action:"create",id:crypto.randomUUID(),name:name.trim(),window:{kb_id:kb.trim(),entity_ids:entity.split(/[\s,]+/).filter(Boolean),max_nodes:50,max_edges:100,max_hops:1}});}}>
       <h2>{m.create}</h2><label>{m.name}<input maxLength={120} className="block w-full rounded border p-sm" value={name} onChange={e=>{edit();setName(e.target.value);}}/></label>
-      <label>{m.library}<input className="block w-full rounded border p-sm" value={kb} onChange={e=>{edit();setKb(e.target.value);}}/></label>
-      <label>{m.entities}<textarea className="block w-full rounded border p-sm" rows={2} value={entity} onChange={e=>{edit();setEntity(e.target.value);}}/></label><p>{m.windowHint}</p>
+      <LibraryPicker value={kb} disabled={busy} onChange={v=>{edit();setKb(v);setEntity("");}}/>
+      <ResourcePicker kbId={kb} value={entity} multiple entity disabled={busy} onChange={v=>{edit();setEntity(v);}}/><p>{m.windowHint}</p>
       <Button type="submit" disabled={busy||!name.trim()||!kb.trim()}>{m.save}</Button>
     </form>
     <section className="grid min-w-0 gap-sm"><h2>{m.list}</h2>{!rows.length&&!busy&&<p>{m.empty}</p>}

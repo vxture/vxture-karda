@@ -54,8 +54,9 @@ export async function GET(): Promise<Response> {
     // path by which a demo figure gets read as real (240 section 9).
     ...(quality
       ? { metrics: quality.metrics, sets: quality.sets, baseline: quality.baseline, degraded: quality.degraded }
-      : {}),
-    sources: { corpus: "live", agent: "live", evaluation: quality ? "live" : "demo" },
+      : { metrics: [], sets: [], baseline: "", degraded: false }),
+    demoOps: false,
+    sources: { corpus: "live", agent: "live", evaluation: "live" },
   };
   return NextResponse.json(data);
 }

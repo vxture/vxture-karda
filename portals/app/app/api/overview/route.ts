@@ -160,10 +160,7 @@ export async function GET(): Promise<Response> {
     const h = heat.get(kb.id);
     // A seeded demo library keeps its authored ops story ONLY until it has real
     // traffic; once the ledger has anything to say about it, the ledger wins.
-    if (spec) {
-      const base = specToAsset(spec, kb.id, a);
-      return h ? { ...base, heat7d: h.heat7d, sparkline: h.sparkline, topConsumers: h.topConsumers } : base;
-    }
+
     // An asset outside the demo set (user-created): real content figures,
     // neutral ops defaults.
     const docTotal = a?.docTotal ?? 0;
@@ -212,6 +209,6 @@ export async function GET(): Promise<Response> {
     },
   };
   // Other authored asset ops fields still carry their existing demo provenance.
-  const data: OverviewData = { totals, assets, demoOps: true };
+  const data: OverviewData = { totals, assets, demoOps: false };
   return NextResponse.json(data, { headers: { "Cache-Control": "no-store" } });
 }

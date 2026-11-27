@@ -1,5 +1,6 @@
 "use client";
 
+import {integration} from "../../../../_i18n/messages/integration";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Banner, Button, Icon } from "@vxture/design-system";
@@ -88,6 +89,7 @@ function StageNode({ stage, last }: { stage: TaskStage; last: boolean }) {
 }
 
 export function TaskClient({ id }: { id: string }) {
+  const im=useMessages(integration);
   const m = useMessages(pipelineMessages);
   const sh = useMessages(shell);
   const [data, setData] = useState<TaskDetail | null>(null);
@@ -146,6 +148,7 @@ export function TaskClient({ id }: { id: string }) {
         </div>
       </div>
 
+      {data.navigation&&<section className="flex flex-wrap gap-sm rounded border border-border p-md"><Button asChild><Link href={"/assets/"+data.navigation.kbId+"?documentId="+data.navigation.documentId}>{im.recovery}</Link></Button><Button asChild variant="outline"><Link href={"/assets/"+data.navigation.kbId+"/sources"}>{im.sources}</Link></Button><Button asChild variant="outline"><Link href={"/assets/"+data.navigation.kbId+"/semantic?documentId="+data.navigation.documentId}>{im.knowledge}</Link></Button>{data.navigation.reason?.includes("service_exchange")&&<p>{im.upstreamFailure}</p>}{data.navigation.reason&&<details><summary>{im.diagnostics}</summary><p>{data.navigation.reason}</p></details>}</section>}
       <div className="flex flex-col gap-lg @min-[52rem]:flex-row">
         {/* stage timeline + agent strip */}
         <div className="flex min-w-0 flex-1 flex-col">

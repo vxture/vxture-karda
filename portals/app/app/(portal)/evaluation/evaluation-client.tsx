@@ -1,5 +1,6 @@
 "use client";
 
+import {integration} from "../../_i18n/messages/integration";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Banner, Button, Card, CardContent, Icon, MetricGrid, Progress, StatusBadge } from "@vxture/design-system";
@@ -38,6 +39,7 @@ const METRIC_KEY: Record<string, { label: EvalPlainKey; hint: EvalPlainKey }> = 
 
 export function EvaluationClient() {
   const m = useMessages(evalMessages);
+  const im=useMessages(integration);
   const sh = useMessages(shell);
   const f = useFormat();
   const [data, setData] = useState<EvaluationData | null>(null);
@@ -72,7 +74,7 @@ export function EvaluationClient() {
   // Composed once and read twice (the page meta and the quality card). The
   // server used to concatenate this - including the "· 链路降级" suffix - which
   // put a sentence on the wire.
-  const baselineLine = m.baselineLabel(data.baseline) + (data.degraded ? m.degradedSuffix : "");
+  const baselineLine = (data.baseline ? m.baselineLabel(data.baseline) : im.noMetrics) + (data.degraded ? m.degradedSuffix : "");
   const governed = v.verified + v.stale + v.unverified;
   const pct = (n: number) => (governed === 0 ? 0 : (n / governed) * 100);
 
@@ -130,7 +132,7 @@ export function EvaluationClient() {
           {
             id: "gaps",
             label: m.metricGaps,
-            value: data.sets.reduce((n, s) => n + s.gaps, 0),
+            value: data.metrics.length ? data.sets.reduce((n, s) => n + s.gaps, 0) : "—",
             icon: "target",
             tone: "info",
             tags: [m.metricGapsTag],
@@ -253,6 +255,7 @@ export function EvaluationClient() {
           </h3>
           <Card className="py-md">
             <CardContent className="flex flex-col gap-sm px-lg">
+              {!data.sets.length&&<p>{im.noMetrics}</p>}
               {data.sets.map((s) => {
                 const never = s.lastRun === null;
                 return (
@@ -291,7 +294,7 @@ export function EvaluationClient() {
           评测 is still the overlay. See EvaluationData.sources. */}
       <span className="text-body-sm text-muted-foreground">
         {data.sources.corpus === "live" ? m.provCorpusLive : m.provCorpusDemo}
-        {m.provAgentDemo}
+        {data.sources.agent==="live"?im.agentLive:m.provAgentDemo}
         {data.sources.evaluation === "live" ? m.provEvalLive : m.provEvalDemo}
       </span>
     </>

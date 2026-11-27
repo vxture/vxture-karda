@@ -1,3 +1,4 @@
+import {getAttachmentStore} from "../../kb/attachments/store";
 import { NextResponse } from "next/server";
 import { KbService } from "../../kb/lib/service";
 import { getKbStore, isSourceMode } from "../../kb/lib/store";
@@ -48,5 +49,6 @@ export async function POST(req: Request): Promise<Response> {
     sourceMode: isSourceMode(body.sourceMode) ? body.sourceMode : undefined,
   });
   if (!result.ok) return errorJson(result.error);
-  return NextResponse.json({ knowledgeBase: result.value }, { status: 201 });
+  let attached=true;try{await getAttachmentStore().attach({workspaceId:auth.user.activeWorkspace,userSub:auth.user.sub,productCode:"karda",kbId:result.value.id});}catch{attached=false;}
+  return NextResponse.json({ knowledgeBase: result.value, attached, attachmentPending:!attached }, { status: 201 });
 }

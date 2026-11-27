@@ -53,3 +53,5 @@ the Prisma schema - `lint:data-design` is a hard gate on their lockstep.
 - `295-access-events` - Durable invalidation outbox, replica cache versions and browser SSE.
 
 - `300-capacity-enforcement` - Product capacity counting, concurrency and staged delivery.
+
+- [310 平台功能贯通与真实状态](310-platform-functional-integration.md)：管理/消费权限、导航选择器和真实运营状态。

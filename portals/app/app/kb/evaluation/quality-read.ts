@@ -55,7 +55,7 @@ export async function readQuality(workspaceId: string, now: number = Date.now())
   // Sets exist but none has ever been run: still nothing measured. The page
   // keeps the overlay and its `demo` marker rather than showing empty metrics
   // under a live badge.
-  if (withRuns.length === 0) return null;
+  if (withRuns.length === 0) return {metrics:[],baseline:"",degraded:false,sets:sets.map(s=>({id:s.id,name:s.name,questionCount:s._count.questions,lastRun:null,passPct:0,gaps:0}))};
 
   // The HEADLINE metrics come from the single most recent run across the
   // workspace, compared against that same set's previous run. Averaging across

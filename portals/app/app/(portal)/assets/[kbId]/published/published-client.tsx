@@ -43,7 +43,7 @@ export function PublishedKnowledgeClient({kbId,initialEntity=""}:{kbId:string;in
     <Link href={`/assets/${kbId}/knowledge`}>{m.back}</Link>
     <div className="flex flex-wrap gap-sm"><Button variant="outline" asChild><Link href={`/assets/${kbId}/graph`}>{m.graphTitle}</Link></Button>
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/facts`}>{m.factSearchTitle}</Link></Button>
-      <Button variant="outline" asChild><Link href={`/assets/${kbId}/sources`}>{m.sourceSearchTitle}</Link></Button>
+      <Button variant="outline" asChild><Link href={`/assets/${kbId}/source-search`}>{m.sourceSearchTitle}</Link></Button>
       <Button variant="outline" disabled={busy} onClick={()=>{const current=activeWindow.current;void load(current.entity,current.cursor,current.history);}}>{m.recheckKnowledge}</Button>
       {focus&&value?.nodes.some(n=>n.id===focus)&&<Button variant="outline" asChild><Link href={`/assets/${kbId}/graph?entity=${encodeURIComponent(focus)}`}>{m.entityGraph}</Link></Button>}
       {value&&<Button variant="outline" asChild><a href={`/api/kb/${kbId}/knowledge-package?format=markdown${focus?`&entity=${encodeURIComponent(focus)}`:`&cursor=${encodeURIComponent(pages.at(-1)??"")}`}`}>{m.exportKnowledge}</a></Button>}</div>

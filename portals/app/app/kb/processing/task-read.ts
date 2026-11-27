@@ -248,7 +248,7 @@ export async function readTasks(workspaceId: string, now: number = Date.now()): 
       knowledgeBase: { workspaceId, deletedAt: null },
       // Live work regardless of age, plus anything that finished in the window -
       // a task parked for three days is still the operator's problem today.
-      OR: [{ state: { in: ["queued", "running", "suspended"] } }, { finishedAt: { gte: since } }],
+      OR: [{ state: { in: ["queued", "running", "suspended", "failed"] } }, { finishedAt: { gte: since } }],
     },
     orderBy: { queuedAt: "desc" },
     take: ROW_CAP,

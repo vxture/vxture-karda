@@ -46,6 +46,7 @@ export async function GET(): Promise<Response> {
     })),
     capabilities: DEMO_CHANNELS.capabilities.map((c) => ({
       ...c,
+      status: "unregistered" as const,
       todayCalls: t.capabilityCalls[c.code] ?? 0,
     })),
     // Consumers are entirely ledger-derived - there is no authored list to merge

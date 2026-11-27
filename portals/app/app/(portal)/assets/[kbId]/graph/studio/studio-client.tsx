@@ -1,4 +1,5 @@
 "use client";
+import {integration} from "../../../../../_i18n/messages/integration";
 import {identityCenter} from '../../../../../_i18n/messages/identity-center';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import Link from 'next/link';
@@ -15,6 +16,7 @@ type Asset={id:string;title:string;kind:'view'|'topic'|'rules';visibility:string
 type Listing={assets:Asset[];index:null|{id:string;state:string;revision:number;node_count:number;edge_count:number;error_code:string|null;manifest:unknown};versions:{id:string;created_at:string;config:unknown}[];releases?:{id:string;generation:number}[];history:{action:string;note:string;revision:number;created_at:string}[]};
 const empty=():ViewConfig=>({nodeIds:[],edgeIds:[],layout:'structural',positions:{},focus:null,relationTypes:[],annotations:[],steps:[],groups:[]});
 export function GraphStudio({kbId}:{kbId:string}){
+ const im=useMessages(integration);
  const identityLabels=useMessages(identityCenter);
  const m=useMessages(graphCenter),[list,setList]=useState<Listing>({assets:[],index:null,versions:[],history:[]}),[selected,setSelected]=useState<Asset|null>(null),[pack,setPack]=useState<KnowledgePackage|null>(null);
  const [config,setConfig]=useState<ViewConfig>(empty),[kind,setKind]=useState<Asset['kind']>('view'),[title,setTitle]=useState(''),[visibility,setVisibility]=useState('personal'),[note,setNote]=useState('');
@@ -47,8 +49,8 @@ export function GraphStudio({kbId}:{kbId:string}){
   <Link href={"/assets/"+kbId+"/identity"}>{identityLabels.title}</Link><PageHead title={m.title}/><p>{m.hint}</p>
   <div className="flex flex-wrap gap-sm"><Button asChild variant="outline"><Link href={'/assets/'+kbId+'/graph'}>{m.graph}</Link></Button><Button disabled={busy} onClick={()=>void run(async()=>{await refresh();await loadKnowledge();})}>{m.refresh}</Button></div>
   {error&&<Banner tone="danger" title={m.failed} description={error}/>} {status&&<p role="status">{status}</p>}{missing&&<Banner tone="warning" title={m.missing}/>}
-  {!present&&<Card><CardContent className="flex flex-col gap-sm p-md"><h2>{m.index}</h2><p>{list.index?.state??m.empty} / {list.index?.node_count??0} / {list.index?.edge_count??0}</p>{list.index?.error_code&&<p>{list.index.error_code}</p>}
-   <div className="flex flex-wrap gap-sm">{(['build','retry','cancel'] as const).map(action=><Button key={action} disabled={busy} onClick={()=>void run(async()=>{if(!note.trim())throw Error('graph_invalid_request');await request(endpoint,{kbId,id:list.index?.id??crypto.randomUUID(),requestId:crypto.randomUUID(),revision:list.index?.revision??0,action,note});await refresh();})}>{m[action]}</Button>)}</div>
+  {!present&&<Card><CardContent className="flex flex-col gap-sm p-md"><h2>{m.index}</h2><p>{error&&!list.index?im.loadFailed:list.index?.state??m.empty} / {list.index?.node_count??"—"} / {list.index?.edge_count??"—"}</p>{list.index?.error_code&&<p>{list.index.error_code}</p>}
+   <div className="flex flex-wrap gap-sm">{(['build','retry','cancel'] as const).map(action=><Button key={action} disabled={busy||!note.trim()||error==="graph_denied"||(action==="retry"&&!["failed","cancelled"].includes(list.index?.state??""))||(action==="cancel"&&!["queued","building"].includes(list.index?.state??""))} onClick={()=>void run(async()=>{if(!note.trim())throw Error('graph_invalid_request');await request(endpoint,{kbId,id:list.index?.id??crypto.randomUUID(),requestId:crypto.randomUUID(),revision:list.index?.revision??0,action,note});await refresh();})}>{m[action]}</Button>)}</div>
   </CardContent></Card>}
   {!present&&<div className="grid min-w-0 gap-md lg:grid-cols-[18rem_minmax(0,1fr)]"><aside className="flex min-w-0 flex-col gap-sm"><h2>{m.views}</h2><div className="flex flex-wrap gap-sm"><Button onClick={()=>newAsset('view')}>{m.newView}</Button><Button onClick={()=>newAsset('topic')}>{m.newTopic}</Button><Button onClick={()=>newAsset('rules')}>{m.newRules}</Button></div>
    {list.assets.map(a=><Button key={a.id} variant="outline" onClick={()=>void run(()=>open(a))}>{a.title} / {a.kind} / {a.state}</Button>)}

@@ -133,6 +133,7 @@ export interface TaskStage {
 }
 
 export interface TaskDetail {
+  navigation?: {kbId:string;documentId:string;state:string;reason:string|null};
   live?: boolean;
   id: string;
   title: string;

@@ -1,4 +1,5 @@
 "use client";
+import {LibraryPicker} from "../../../_components/resource-picker";
 import {useEffect,useRef,useState} from "react";
 import Link from "next/link";
 import {Banner,Button} from "@vxture/design-system";
@@ -42,7 +43,7 @@ export function PilotsClient(){
     {error!==0&&<Banner tone="danger" title={error===403?m.denied:error===409?m.changed:error===400?m.invalid:m.unavailable}/>}{code&&<p role="alert">{m.code}: <code>{code}</code></p>}
     {saved&&<Banner tone="success" title={m.saved}/>}{error>=500&&pending.current&&<Button disabled={busy} onClick={()=>void execute(pending.current!)}>{m.retry}</Button>}{busy&&<p role="status">{m.loading}</p>}
     <fieldset disabled={busy} className="grid min-w-0 gap-sm rounded border p-md">
-      <label>{m.library}<input list="pilot-libraries" className={field} value={kb} onChange={e=>{edit();setKb(e.target.value);setRows([]);setSelected(null);setComparison(null);setHistory([]);setObservations([]);setNext(null);setNextHistory(null);}}/></label><datalist id="pilot-libraries">{libraries.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</datalist>
+      <LibraryPicker value={kb} disabled={busy} onChange={v=>{edit();setKb(v);setRows([]);setSelected(null);}}/><datalist id="pilot-libraries">{libraries.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</datalist>
       <Button variant="outline" disabled={!kb.trim()} onClick={()=>void load()}>{m.reload}</Button>
       <form className="grid gap-sm" onSubmit={e=>{e.preventDefault();void execute({action:"create",id:crypto.randomUUID(),kbId:kb.trim(),title:title.trim(),query:query.trim(),topK,note:note.trim()});}}>
         <label>{m.name}<input required maxLength={200} className={field} value={title} onChange={e=>{edit();setTitle(e.target.value);}}/></label>

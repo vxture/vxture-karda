@@ -875,7 +875,7 @@ export const assets = {
   },
   loadingOverview: { "zh-CN": "正在加载知识资产…", "en-US": "Loading knowledge assets…" },
   pageMeta: {
-    "zh-CN": (a: number, e: string, pct: number) => `${a} 资产 · ${e} 条知识 · 验证覆盖 ${pct}%`,
+    "zh-CN": (a: number, e: string, pct: number) => `${a} 资产 · ${e} 份资料与条目 · 验证覆盖 ${pct}%`,
     "en-US": (a: number, e: string, pct: number) =>
       `${a} asset${a === 1 ? "" : "s"} · ${e} entries · ${pct}% verified`,
   } satisfies MessageFn<[number, string, number]>,
@@ -894,7 +894,7 @@ export const assets = {
   // a translation catalog - it is built at the call site.
   metricTopAgents: { "zh-CN": "调用 TOP 3 · 今日", "en-US": "Top 3 callers · today" },
   metricAgent: { "zh-CN": "卡尔达 · 今日", "en-US": "Karda · today" },
-  agentPendingLink: { "zh-CN": "项待确认 →", "en-US": "awaiting confirmation →" },
+  agentPendingLink: { "zh-CN": "查看待确认事项 →", "en-US": "awaiting confirmation →" },
   admittedTag: {
     "zh-CN": (n: number) => `已收录 ${n}`,
     "en-US": (n: number) => `Admitted ${n}`,
@@ -912,7 +912,7 @@ export const assets = {
     "en-US": (n: number) => `All ${n}`,
   } satisfies MessageFn<[number]>,
   demoNote: {
-    "zh-CN": "调用与引用为演示口径 · 供给账本建设中",
+    "zh-CN": "调用与引用来自实际供给账本",
     "en-US": "Call and citation figures are illustrative · the supply ledger is being built",
   },
   emptyFiltered: { "zh-CN": "没有匹配的资产", "en-US": "No assets match" },

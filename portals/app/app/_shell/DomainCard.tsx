@@ -590,7 +590,7 @@ function ChannelsBody({ c, ch, f }: { c: ShellData["channels"]; ch: ChMsgs; f: F
         slices={today}
         title={ch.callsToday}
         value={f.number(c.todayCalls)}
-        delta={{ text: `${c.deltaPct >= 0 ? "▲" : "▼"}${Math.abs(c.deltaPct)}%`, up: c.deltaPct >= 0 }}
+        delta={c.todayCalls?{ text: `${c.deltaPct >= 0 ? "▲" : "▼"}${Math.abs(c.deltaPct)}%`, up: c.deltaPct >= 0 }:undefined}
         f={f}
       />
       <span className="w-px shrink-0 self-stretch bg-border" />

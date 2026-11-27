@@ -1,5 +1,6 @@
 "use client";
 
+import {integration} from "../../_i18n/messages/integration";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -62,6 +63,7 @@ const MODE_KEY: Record<string, { label: ChKey; detail: ChKey }> = {
 
 export function ToolsClient() {
   const f = useFormat();
+  const im=useMessages(integration);
   const m = useMessages(channelMessages);
   const sh = useMessages(shell);
   const [data, setData] = useState<ToolCatalog | null>(null);
@@ -134,9 +136,7 @@ export function ToolsClient() {
             <CardHeader>
               <CardTitle>{m.accessTitle}</CardTitle>
               <CardDescription>
-                {data.sameBackendBothChannels
-                  ? m.accessSameBackend
-                  : m.accessTwoChannels}
+                {im.channelScope}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-md">
@@ -180,7 +180,9 @@ export function ToolsClient() {
                           these, and finding that out at runtime is expensive. */}
                       <span className="text-body-sm text-muted-foreground">{mode ? m[mode.label] : t.mode}</span>
                     </div>
-                    <span className="text-body-sm">{t.summary}</span>
+                    <span className="text-body-sm">{im[("tool_"+t.name.replace("karda.","")) as keyof typeof im]??t.name}</span>
+                    <span>{["attach_kb","detach_kb","create_kb","write_document","create_entry","knowledge_contribution","knowledge_subscription"].includes(t.name.replace("karda.",""))?im.writeOperation:im.readOnly}</span>
+                    <details><summary>{im.protocol}</summary><p className="whitespace-pre-wrap break-words">{t.summary}</p></details>
                     <span className="text-body-sm text-muted-foreground">{mode ? m[mode.detail] : ""}</span>
                     <span className="flex flex-wrap gap-xs">
                       {t.input.map((k) => (
