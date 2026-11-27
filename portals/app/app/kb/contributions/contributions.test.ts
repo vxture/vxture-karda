@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {payload} from './contract';
+import {similar} from './store';
+import {artifactText} from './runtime';
+import {dispatchTool} from '../tools/dispatch';
+import {toolByName} from '../tools/catalog';
+const kb=randomUUID(),doc=randomUUID();const proposal=()=>({kind:'addition',nature:'observation',title:'Finding',statement:'Observed result',taskId:'task-1',runId:'run-1',entityNames:['Project'],entityIds:[],relationIds:[],sources:[{documentId:doc,version:1,contentHash:'a'.repeat(64),start:0,end:10}],artifact:null,limitations:'Needs domain review'});
+test('contributions: bounded provenance and source contract, same-content duplicate key ignores task identity, explicit artifact nature',()=>{const a=payload(proposal()),b=payload({...proposal(),taskId:'other-task',runId:'other-run'});assert.equal(similar(a),similar(b));assert.throws(()=>payload({...proposal(),sources:[],artifact:null}),/evidence_required/);assert.throws(()=>payload({...proposal(),sources:[{...proposal().sources[0],start:-1}]}),/invalid_request/);assert.throws(()=>payload({...proposal(),artifact:{content:'x'.repeat(64001)}}),/invalid_request/);const source=artifactText({id:'contribution',created_by:'user',product_code:'agent'} as any,a);assert.match(source,/caller-declared/);assert.match(source,/Independent fact review/);assert.match(source,/observation/);});
+test('contribution Agent tools enforce OBO, separate read and write permission, and use one backend contract',async()=>{const c={callerProduct:'agent',org:null,workspace:kb,user:'usr_'+randomUUID(),mode:'obo' as const,productAccess:{roles:['readonly' as const],permissions:['product.enter','data.read'] as any}},backend={listKbs:async()=>[],knowledgeContribution:async()=>({status:200,body:{received:true}})};assert.equal(toolByName('karda.knowledge_contribution')?.mode,'obo_only');assert.equal((await dispatchTool('karda.knowledge_contribution',{action:'read'},c,backend)).status,200);assert.equal((await dispatchTool('karda.knowledge_contribution',{action:'submit'},c,backend)).status,403);assert.equal((await dispatchTool('karda.knowledge_contribution',{action:'read'},{...c,mode:'service',user:null},backend)).status,403);});

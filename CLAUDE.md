@@ -1,5 +1,7 @@
 # vxture-karda Repository Standards
 
+Latest production 2026-11-27: v0.12.53/4d3287146b4d1780a575344ab3f350f5e85f054f. PR396 completed approved entity identity/consistency E1-E6 plus stage release and itemized confirmation. 205/540 final checklists. StageCI45979853078/scan45979853154:1185app+7Java zero failure/skips; exact-mainCI45980315697/scan45980315713 passed.0044 migration45980829085 succeeded94 tables; deploy45981111106 at10:26:39Z success. Health/ready dependency versions OK; anonymous identity GET/POST/package401 and page307. No local subprocesses/CMD/server/browser; use Node fs/fetch API only. Local Git refs/index still stale; files final. Owner70/output preserved; I1paused. Final closeout rides NEXT approved functional PR, no docs-only main rerun. Single-library/same-type identity mappings and explicit single-value conflicts; browser/realAgent/Ontos remain separate. Next module needs plan approval.
+
 Latest production2026-11-27:v0.12.52/7cd217966fba1fde6628f6f846916603b58798bf.
 Owner approved all three graph modules together. PR394+395 delivered index/query,
 G6 view/topic/narrative/presentation/export and bounded Jena ontology/rule

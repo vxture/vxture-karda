@@ -400,3 +400,9 @@ REVOKE UPDATE,DELETE ON karda_kb.identity_head,karda_kb.identity_version,karda_k
 GRANT SELECT,INSERT ON karda_kb.identity_head,karda_kb.identity_version,karda_kb.identity_control TO karda_svc;
 GRANT UPDATE(draft,revision,active_version,updated_at) ON karda_kb.identity_head TO karda_svc;
 -- END ENTITY CONSISTENCY LOCKS
+
+-- BEGIN AGENT CONTRIBUTION LOCKS
+REVOKE UPDATE,DELETE ON karda_kb.knowledge_contribution,karda_kb.knowledge_contribution_version,karda_kb.knowledge_contribution_event FROM karda_svc;
+GRANT SELECT,INSERT ON karda_kb.knowledge_contribution,karda_kb.knowledge_contribution_version,karda_kb.knowledge_contribution_event TO karda_svc;
+GRANT UPDATE(payload_version,state,revision,assignee,similar_hash,plan_id,artifact_document_id,prepared_documents,handoff_state,lease_id,lease_until,error_code,updated_at) ON karda_kb.knowledge_contribution TO karda_svc;
+-- END AGENT CONTRIBUTION LOCKS

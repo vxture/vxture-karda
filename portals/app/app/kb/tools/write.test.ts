@@ -50,13 +50,13 @@ test("write_document rejects a library outside the caller's workspace (knowing a
   assert.equal(r.status, 404);
 });
 
-test("write_document validates args: kb_id required, content non-empty, file_ref not yet wired", async () => {
+test("write_document validates args: kb_id required, content non-empty, arbitrary file_ref refused", async () => {
   const { deps, kbId } = await fixture();
   assert.equal((await writeDocument(oboCaller(), { content: "x" }, deps)).status, 400, "no kb_id");
   assert.equal((await writeDocument(oboCaller(), { kb_id: kbId, content: "" }, deps)).status, 400, "empty content");
   const fr = await writeDocument(oboCaller(), { kb_id: kbId, file_ref: "obj://x" }, deps);
-  assert.equal(fr.status, 501, "file_ref ingestion is not wired yet");
-  assert.equal(fr.body.error, "not_implemented");
+  assert.equal(fr.status, 400, "arbitrary object URLs are not accepted");
+  assert.equal(fr.body.error, "invalid_request");
 });
 
 test("write_document meters ingest to the library's workspace, keyed by the new doc id", async () => {
@@ -84,3 +84,5 @@ test("write_document dedups identical content in the same library (409)", async 
   assert.equal(dup.status, 409);
   assert.equal(dup.body.error, "duplicate_document");
 });
+
+test('write_document controlled file reference uses the current authorized resolver and preserves upload governance',async()=>{const {deps,kbId,content}=await fixture();let checks=0;deps.authorize=async()=>{checks++;};deps.resolveFile=async(_c,_k,r)=>{assert.deepEqual(r,{document_id:'known',version:2,content_hash:'a'.repeat(64)});return{bytes:Buffer.from('resolved controlled file'),title:'Existing source',mime:'text/plain',documentId:'known'};};const result=await writeDocument(oboCaller(),{kb_id:kbId,file_ref:{document_id:'known',version:2,content_hash:'a'.repeat(64)}},deps);assert.equal(result.status,201);assert.equal(checks,1);const doc=await content.getDocument((result.body.document as {id:string}).id);assert.ok(doc.ok);assert.equal(doc.value.contentState,'processing');assert.equal((await writeDocument(oboCaller({user:'other'}),{kb_id:kbId,content:'forbidden'},deps)).status,403);assert.equal((await writeDocument(oboCaller({mode:'service',user:null}),{kb_id:kbId,file_ref:{}},deps)).status,403);});
