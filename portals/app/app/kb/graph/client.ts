@@ -6,7 +6,7 @@ import {selectGraph} from './eligible';
 import {hash} from './contract';
 import type {PoolClient} from 'pg';
 import type {SemanticReadIdentity} from '../semantic/read-postgres';
-export const scopeKey=(ids:string[])=>hash([...new Set(ids)].sort());
+export const scopeKey=(ids:string[],product="karda")=>hash([product,[...new Set(ids)].sort()]);
 export async function jenaCommand(body:unknown):Promise<Record<string,unknown>>{
  const url=process.env.KARDA_JENA_URL,secret=process.env.OIDC_CLIENT_SECRET;
  if(!url||!secret||secret.length<16)throw Error('graph_unavailable');
@@ -22,7 +22,7 @@ export async function graphManifest(db:PoolClient,graph:GraphProjection,schema:O
 }
 export async function queryIndex(who:SemanticReadIdentity,kbIds:string[],graph:GraphProjection,schema:OntologySchema,query:NeighborhoodQuery,directory:boolean,db:PoolClient,selection?:{nodeIds:string[];edgeIds:string[]}){
  const manifest=await graphManifest(db,graph,schema,kbIds);
- const row=(await db.query('SELECT * FROM karda_kb.graph_index WHERE workspace_id=$1 AND created_by=$2 AND scope_key=$3',[who.workspaceId,who.sub,scopeKey(kbIds)])).rows[0];
+ const row=(await db.query('SELECT * FROM karda_kb.graph_index WHERE workspace_id=$1 AND created_by=$2 AND scope_key=$3',[who.workspaceId,who.sub,scopeKey(kbIds,who.productCode)])).rows[0];
  if(!row||row.state!=='ready')throw Error('graph_index_not_ready');
  if(row.active_hash!==manifest.fingerprint)throw Error('graph_index_changed');
  const eligible=graph.edges.filter(e=>(!query.relationTypes||query.relationTypes.includes(e.type))&&(!selection||selection.edgeIds.includes(e.id)||selection.nodeIds.includes(e.sourceId)||selection.nodeIds.includes(e.targetId)));

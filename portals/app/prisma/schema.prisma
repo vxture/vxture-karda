@@ -1588,6 +1588,7 @@ model GraphIndex {
  id String @id @db.Uuid
  workspaceId String @map("workspace_id") @db.Uuid
  createdBy String @map("created_by") @db.VarChar(128)
+ productCode String @default("karda") @map("product_code") @db.VarChar(32)
  kbIds Json @map("kb_ids")
  scopeKey String @map("scope_key") @db.VarChar(64)
  state String @default("queued") @db.VarChar(16)

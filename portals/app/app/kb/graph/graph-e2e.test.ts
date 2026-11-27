@@ -40,6 +40,13 @@ test('CI graph end-to-end: real publication/current source authority to TDB HTTP
   await admin.query("INSERT INTO karda_kb.graph_index(id,workspace_id,created_by,kb_ids,scope_key,state,active_hash) VALUES($1,$2,$3,$4,$5,'ready',$6)",[indexId,ws,sub,JSON.stringify([kb]),scopeKey([kb]),m.fingerprint]);
   const reader=new PostgresSemanticReader(service,objects,async()=>true,(db,ids)=>loader.load(db,ids),undefined,(g,s,q,d,db)=>queryIndex(who,[kb],g,s,q,d,db));
   const pack=await reader.readPackage(who,[kb],{seedIds:[left],maxHops:2,maxNodes:50,maxEdges:100,direction:'out'});assert.equal(pack.edges.length,2);assert.equal((await reader.readPackage(who,[kb],{seedIds:[left],maxHops:2,maxNodes:50,maxEdges:100,direction:'in'})).edges.length,0);
+  const agent={...who,productCode:'runos'};
+  await admin.query("INSERT INTO karda_kb.kb_attachment(workspace_id,user_sub,product_code,kb_id) VALUES($1,$2,'runos',$3)",[ws,sub,kb]);
+  await admin.query("INSERT INTO karda_kb.graph_index(id,workspace_id,created_by,kb_ids,scope_key,product_code,state,active_hash) VALUES($1,$2,$3,$4,$5,'runos','ready',$6)",[randomUUID(),ws,sub,JSON.stringify([kb]),scopeKey([kb],'runos'),m.fingerprint]);
+  const agentReader=new PostgresSemanticReader(service,objects,async()=>true,(db,ids)=>loader.load(db,ids),undefined,(g,s,q,d,db)=>queryIndex(agent,[kb],g,s,q,d,db));
+  assert.equal((await agentReader.readPackage(agent,[kb],{seedIds:[left],maxHops:2,maxNodes:50,maxEdges:100})).edges.length,2);
+  await admin.query("DELETE FROM karda_kb.kb_attachment WHERE kb_id=$1 AND product_code='runos'",[kb]);
+  await assert.rejects(agentReader.readPackage(agent,[kb],{seedIds:[left],maxHops:2,maxNodes:50,maxEdges:100}),/semantic_read_denied/);
   const store=new GraphStore(service,async()=>true);await store.command(who,{kbId:kb,id:assetId,requestId:randomUUID(),revision:0,action:'save',note:'Create finite rules',kind:'rules',title:'Transitive hierarchy',visibility:'personal',config:{schema:schema.schema,rules:[{id:'hierarchy',kind:'transitive',input:'part_of',output:'part_of'}]}});await store.command(who,{kbId:kb,id:assetId,requestId:randomUUID(),revision:1,action:'publish',note:'Enable finite rules'});
   const inferred=await inferCurrent(service,store,who,kb,assetId,pack);assert.equal(inferred.inferences.length,1);assert.equal(inferred.inferences[0].premiseIds.length,2);assert.equal(inferred.inferences[0].evidenceIds.length,1);
   await store.command(who,{kbId:kb,id:assetId,requestId:randomUUID(),revision:2,action:'stop',note:'Stop rules'});await assert.rejects(inferCurrent(service,store,who,kb,assetId,pack),/graph_denied/);
