@@ -2,6 +2,8 @@
 
 ## Active knowledge platform reconstruction - 2026-11-24
 
+[Proposed semantic graph index and query center](203-semantic-graph-index-query-plan-20261127.md): G1-G6 persistent Jena/TDB2, versioned builds, current authority queries, real graph/Agent integration, operations and migration. Pending owner approval; no implementation.
+
 [Approved graph foundation stage and migration plan](202-graph-foundation-g6-jena-20261127.md): PostgreSQL authority + G6 + Jena; F1-F6 implementation and migration status. No Neo4j.
 
 [Graph technology comparison and proposed next stage](../30-design/180-knowledge-graph-technology-selection.md): owner requested mature foundation reuse. G6 + Jena semantic stack recommended with PG authority; Neo4j/RDF4J alternatives compared. Documentation review only; integration and complete graph module still require an approved plan.

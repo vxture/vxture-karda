@@ -1,3 +1,4 @@
+import {jenaCommand} from "../../kb/graph/client";
 import { NextResponse } from "next/server";
 import { serviceIdentity } from "@vxture/shared";
 import { BRAND } from "@karda/shared/brand";
@@ -24,11 +25,12 @@ export async function GET(): Promise<Response> {
     probeRedis(process.env.REDIS_URL),
     probeStorageConfiguration(process.env),
   ]);
+  const jena=process.env.KARDA_JENA_URL?await jenaCommand({operation:"health"}).then(()=>"ok" as const,()=>"fail" as const):undefined;
   const deployed = isDeployedStage();
   const r = readiness(db, redis, deployed, storageConfig);
   const identity = serviceIdentity({ service: `${BRAND.productCode}-app`, product: BRAND.productCode });
   return NextResponse.json(
-    { status: r.status, ...identity, uptimeSec: Math.round(process.uptime()), checks: r.checks },
-    { status: r.status === "fail" ? 503 : 200 },
+    { status: jena==="fail"?"fail":r.status, ...identity, uptimeSec: Math.round(process.uptime()), checks: {...r.checks,...(jena?{jena}:{})} },
+    { status: r.status === "fail" || jena === "fail" ? 503 : 200 },
   );
 }

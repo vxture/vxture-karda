@@ -56,10 +56,10 @@ export const TOOLS: ToolDescriptor[] = [
   },
   {
     name:"karda.knowledge_package",
-    summary:"Read reviewed published relations and exact evidence across up to 20 explicitly named, visible attached user libraries. Supply either kb_id or kb_ids. For directory paging use empty entity_ids and page_cursor='', then directoryPage.nextCursor with unchanged filters/budgets. On 409 restart; cursors grant no access. Library identities stay distinct.",
+    summary:"Read reviewed published relations and exact evidence across up to 20 explicitly named, visible attached user libraries. Supply either kb_id or kb_ids. For directory paging use empty entity_ids and page_cursor='', then directoryPage.nextCursor with unchanged filters/budgets. On 409 restart; cursors grant no access. Library identities stay distinct. Optional direction=both/out/in controls neighborhood traversal. A single-library rule_asset_id explicitly requests current enabled bounded deterministic inference, returned separately with rule version and premises.",
     mode:"obo_only",
     metering:{kind:"none"},
-    input:["kb_id","kb_ids","entity_ids","relation_types","max_hops","max_nodes","max_edges","page_cursor"],
+    input:["kb_id","kb_ids","entity_ids","relation_types","max_hops","max_nodes","max_edges","page_cursor","direction","rule_asset_id"],
     authz:{asset_types:["knowledge_base"]},
   },
   {

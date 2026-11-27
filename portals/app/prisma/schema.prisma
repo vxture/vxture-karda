@@ -1583,3 +1583,72 @@ model KnowledgePushControl {
  @@map("knowledge_push_control")
  @@schema("karda_kb")
 }
+
+model GraphIndex {
+ id String @id @db.Uuid
+ workspaceId String @map("workspace_id") @db.Uuid
+ createdBy String @map("created_by") @db.VarChar(128)
+ kbIds Json @map("kb_ids")
+ scopeKey String @map("scope_key") @db.VarChar(64)
+ state String @default("queued") @db.VarChar(16)
+ revision Int @default(1)
+ attempt Int @default(0)
+ leaseId String? @map("lease_id") @db.Uuid
+ leaseUntil DateTime? @map("lease_until") @db.Timestamptz()
+ targetHash String? @map("target_hash") @db.VarChar(64)
+ activeHash String? @map("active_hash") @db.VarChar(64)
+ nodeCount Int @default(0) @map("node_count")
+ edgeCount Int @default(0) @map("edge_count")
+ manifest Json @default("{}")
+ errorCode String? @map("error_code") @db.VarChar(80)
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+ updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+ @@unique([workspaceId,createdBy,scopeKey])
+ @@map("graph_index")
+ @@schema("karda_kb")
+}
+model GraphAsset {
+ id String @id @db.Uuid
+ workspaceId String @map("workspace_id") @db.Uuid
+ kbId String @map("kb_id") @db.Uuid
+ createdBy String @map("created_by") @db.VarChar(128)
+ kind String @db.VarChar(16)
+ title String @db.VarChar(200)
+ visibility String @default("personal") @db.VarChar(16)
+ draft Json
+ revision Int @default(1)
+ state String @default("draft") @db.VarChar(16)
+ activeVersion String? @map("active_version") @db.Uuid
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+ updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+ @@map("graph_asset")
+ @@schema("karda_kb")
+}
+model GraphAssetVersion {
+ id String @id @db.Uuid
+ assetId String @map("asset_id") @db.Uuid
+ config Json
+ configHash String @map("config_hash") @db.VarChar(64)
+ createdBy String @map("created_by") @db.VarChar(128)
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+ @@unique([assetId,id])
+ @@map("graph_asset_version")
+ @@schema("karda_kb")
+}
+model GraphControl {
+ id String @id @db.Uuid
+ workspaceId String @map("workspace_id") @db.Uuid
+ targetId String @map("target_id") @db.Uuid
+ revision Int
+ requestId String @map("request_id") @db.Uuid
+ fingerprint String @db.VarChar(64)
+ action String @db.VarChar(32)
+ note String
+ result Json
+ createdBy String @map("created_by") @db.VarChar(128)
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+ @@unique([targetId,revision])
+ @@unique([targetId,requestId])
+ @@map("graph_control")
+ @@schema("karda_kb")
+}

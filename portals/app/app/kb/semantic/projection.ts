@@ -49,6 +49,7 @@ function activeAt(a: GraphAssertion, now: number): boolean {
 }
 
 export function validateNeighborhoodQuery(query: NeighborhoodQuery): void {
+  if(query.direction!==undefined&&!["both","out","in"].includes(query.direction))throw new Error("invalid_graph_query");
   if(query.pageCursor!==undefined){
     if(typeof query.pageCursor!=="string"||query.maxNodes<2)throw new Error("invalid_graph_query");
     if(query.pageCursor)decodeDirectoryCursor(query.pageCursor);
@@ -208,6 +209,7 @@ function projectCurrentKnowledge(snapshot:KnowledgeSnapshot,schema:OntologySchem
     const current = queue[i];
     if (current.depth >= query.maxHops) continue;
     for (const edge of neighbors.get(current.id) ?? []) {
+      if(query.direction==="out"&&edge.sourceId!==current.id||query.direction==="in"&&edge.targetId!==current.id)continue;
       if (chosen.has(edge.id)) continue;
       const other = edge.sourceId === current.id ? edge.targetId : edge.sourceId;
       if (chosen.size >= query.maxEdges || (!reached.has(other) && reached.size >= query.maxNodes)) {

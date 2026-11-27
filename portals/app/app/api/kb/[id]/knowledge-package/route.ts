@@ -11,10 +11,10 @@ export async function GET(req:Request,ctx:{params:Promise<{id:string}>}) {
     const url=new URL(req.url),exporting=url.searchParams.get("format")==="markdown";
     const auth=await requireAuth(exporting?"data.export":"data.read");if(!auth.ok)return auth.response;
     const {id}=await ctx.params;
-    if([...url.searchParams.keys()].some(k=>!["entity","hops","nodes","edges","type","format","cursor"].includes(k))||
+    if([...url.searchParams.keys()].some(k=>!["entity","hops","nodes","edges","type","format","cursor","rule_asset_id","direction"].includes(k))||
       url.searchParams.getAll("cursor").length>1||
       (url.searchParams.has("format")&&!exporting))throw new Error("semantic_invalid_package_request");
-    const input=parsePackageRequest({kb_id:id,entity_ids:url.searchParams.getAll("entity"),
+    const input=parsePackageRequest({...(url.searchParams.has("rule_asset_id")?{rule_asset_id:url.searchParams.get("rule_asset_id")} :{}),...(url.searchParams.has("direction")?{direction:url.searchParams.get("direction")} :{}),kb_id:id,entity_ids:url.searchParams.getAll("entity"),
       max_hops:Number(url.searchParams.get("hops")??1),max_nodes:Number(url.searchParams.get("nodes")??50),
       max_edges:Number(url.searchParams.get("edges")??100),
       ...(url.searchParams.has("cursor")?{page_cursor:url.searchParams.get("cursor")}:{}),

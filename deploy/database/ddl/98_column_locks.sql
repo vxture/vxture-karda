@@ -387,3 +387,10 @@ GRANT UPDATE(name,endpoint,service_id,event_types,kb_ids,state,revision,config_r
 GRANT UPDATE(state,attempt,total_attempts,lease_id,lease_until,retry_after,error_code,http_status,updated_at) ON karda_kb.knowledge_push_delivery TO karda_svc;
 GRANT UPDATE(state,http_status,error_code,latency_ms,finished_at) ON karda_kb.knowledge_push_attempt TO karda_svc;
 -- END KNOWLEDGE PUSH LOCKS
+
+-- BEGIN GRAPH CENTERS LOCKS
+REVOKE UPDATE,DELETE ON karda_kb.graph_index,karda_kb.graph_asset,karda_kb.graph_asset_version,karda_kb.graph_control FROM karda_svc;
+GRANT SELECT,INSERT ON karda_kb.graph_index,karda_kb.graph_asset,karda_kb.graph_asset_version,karda_kb.graph_control TO karda_svc;
+GRANT UPDATE(state,revision,attempt,lease_id,lease_until,target_hash,active_hash,node_count,edge_count,manifest,error_code,updated_at) ON karda_kb.graph_index TO karda_svc;
+GRANT UPDATE(title,visibility,draft,revision,state,active_version,updated_at) ON karda_kb.graph_asset TO karda_svc;
+-- END GRAPH CENTERS LOCKS

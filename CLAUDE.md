@@ -1,5 +1,21 @@
 # vxture-karda Repository Standards
 
+Latest production 2026-11-27: v0.12.51 / bd8800b580a16243bc434cb4580fbc226e15cd1b,
+deploy45961078818 succeeded at07:57:31Z (15:57:31 Asia/Shanghai). PR393 completes
+approved PG+G6+Jena foundation F1-F6: G6 canvas/layout/camera, stable RDF/SHACL,
+actual bounded Jena execution/read gate, Java21 image and full runtime SBOM/SCA.
+No DDL,87tables; application-only migration. StageCI45960322551 first1175app+3Java
+zero skips; scan45960322540, exact-mainCI45960747578/scan45960747620passed.
+Health/ready versions/deps OK; anonymous semantic/package401, graph/license307.
+Fetch package timeouts rechecked independently401. No local full/dev/browser/CMD.
+Workflow scope is now granted in existing gh keyring; auth helper completed0.
+Git fetch HTTP1.1 succeeded and main fast-forwarded to original merge. Owner70/
+output preserved. Local520/202/indices/memory closeout rides NEXT approved
+functional PR; authoritative GitHub release has final evidence. Next complete
+module needs plan approval; persistent full graph index/inferred facts/Ontos
+and browser/customer/realAgent acceptance not completed. Fixed17 remains7done/
+6progress/4gated;I1paused.
+
 Latest production 2026-11-27: v0.12.50 / ddf4a4b4d326a4e3b11fd8aa2cd0c948f9b753e5,
 deploy45951494536 succeeded at2026-11-27T06:30:22Z (14:30:22 Asia/Shanghai).
 Approved events/push center B1-B6 completed: transactional metadata events,

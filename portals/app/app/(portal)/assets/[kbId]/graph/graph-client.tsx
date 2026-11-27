@@ -17,15 +17,16 @@ export function GraphClient({kbId,initialEntity=""}:{kbId:string;initialEntity?:
   const [search,setSearch]=useState(""),[wide,setWide]=useState(false);
   const [entityType,setEntityType]=useState(""),[groupId,setGroupId]=useState(""),[layoutMode,setLayoutMode]=useState("structural");
   const [communities,setCommunities]=useState(false);
+  const [direction,setDirection]=useState("both");
   const [pages,setPages]=useState<string[]>([""]),[neighborhood,setNeighborhood]=useState(false);
   const sequence=useRef(0);
   const windowClient=useRef<KnowledgeWindowClient|null>(null);if(!windowClient.current)windowClient.current=new KnowledgeWindowClient();
   const [observedAt,setObservedAt]=useState(""),[syncAction,setSyncAction]=useState("");
   const activeWindow=useRef({entity:initialEntity,cursor:"",history:[""]});
-  async function load(seed="",cursor="",history=[""]){
+  async function load(seed="",cursor="",history=[""],readDirection=direction){
     const ticket=++sequence.current;setBusy(true);setError(0);setObservedAt("");setSyncAction("");setData(null);setSelected("");setEdgeId("");setFrom("");setTo("");setFilter("");setSearch("");setEntityType("");setGroupId("");
     try{
-      const params=new URLSearchParams({nodes:"500",edges:"1000",hops:"2"});params.set(seed?"entity":"cursor",seed||cursor);
+      const params=new URLSearchParams({nodes:"500",edges:"1000",hops:"2",direction:readDirection});params.set(seed?"entity":"cursor",seed||cursor);
       const result=await windowClient.current!.read(kbId,params);
       if(ticket===sequence.current&&result){setData(result.knowledge);setObservedAt(result.observedAt);setSyncAction(result.action);setSelected(result.knowledge.nodes.some(n=>n.id===seed)?seed:"");setPages(history);setNeighborhood(Boolean(seed));activeWindow.current={entity:seed,cursor,history};}
     }catch(error){if(ticket===sequence.current)setError(error instanceof KnowledgeWindowError?error.status:503);}finally{if(ticket===sequence.current)setBusy(false);}
@@ -50,6 +51,7 @@ export function GraphClient({kbId,initialEntity=""}:{kbId:string;initialEntity?:
   if(error===401)return <SignInGate from={`/assets/${kbId}/graph`}/>;
   return <div className={`flex min-w-0 flex-col gap-md ${wide?"fixed inset-0 z-50 overflow-auto bg-background p-md":""}`} aria-busy={busy} onKeyDown={e=>{if(e.key==="Escape")setWide(false);}}>
     <PageHead title={m.graphTitle}/>
+    <Button variant="outline" asChild><Link href={`/assets/${kbId}/graph/studio`}>{m.graphStudio}</Link></Button>
     <div className="flex flex-wrap gap-sm">
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/published`}>{m.knowledgeTitle}</Link></Button>
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/facts`}>{m.factSearchTitle}</Link></Button>
@@ -74,6 +76,7 @@ export function GraphClient({kbId,initialEntity=""}:{kbId:string;initialEntity?:
       {data.gaps.map(g=><Banner key={g} tone="warning" title={g==="no_published_support"?m.noPublished:g==="neighborhood_truncated"?m.packageTruncated:m.partialSources}/>)}
       <p className="font-mono text-code-sm">{data.schema.namespace}/{data.schema.schemaId}/{data.schema.version} &middot; {nodes.length} {m.graphNodes} / {edges.length} {m.relations}</p>
       <div className="flex flex-wrap items-center gap-sm">
+        <label htmlFor="graph-direction">{m.direction}</label><select id="graph-direction" value={direction} onChange={e=>{setDirection(e.target.value);void load("","",[""],e.target.value);}} className="rounded-md border border-border bg-background p-sm"><option value="both">{m.directionBoth}</option><option value="out">{m.directionOut}</option><option value="in">{m.directionIn}</option></select>
         <label htmlFor="relation-filter">{m.relationFilter}</label><select id="relation-filter" value={filter} onChange={e=>{setFilter(e.target.value);setGroupId("");resetSelection();}} className="min-w-0 rounded-md border border-border bg-background p-sm">
           <option value="">{m.allTypes}</option>{[...new Set(data.edges.map(e=>e.type))].sort().map(type=><option key={type}>{type}</option>)}
         </select>
