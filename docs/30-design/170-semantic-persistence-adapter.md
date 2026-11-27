@@ -1281,3 +1281,16 @@ owner批准206整板块C1–C6及两项收尾。新贡献协议将新增/纠错/
 贡献变化与关联生产状态写contribution.changed，复用签名推送、确认、重试/重放；source.invalidated保持。read/list每次重新核验当前身份/库挂载，Agent只OBO，无管理/发布工具。RP /api/kb/:id/contributions及/assets/:id/contributions，Agent karda.knowledge_contribution。当前Runos既有MCP service通道不伪造用户，贡献使用认证OBO工具。受控write_document file_ref={document_id,version,content_hash}接入仅OBO同库当前文档，不接受网络地址。
 
 每库实体/关系5000，贡献每用户1000，来源20，列表20/页；内容100KB、请求128KiB，源文件8MiB。历史有界读取。无本地子进程/CMD/浏览器/服务或性能测试，整板块远端CI。
+
+
+## 77. 自动化知识源连接器中心
+
+owner批准207 A1–A6及两项收尾。复用source management作为落库权威，新增0046五表保存配置版本、加密凭据、持久逐页检查点/逐项写入恢复、来源head和CAS/幂等操作。入口/assets/:kbId/connectors及/api/kb/:id/automatic-connectors，owner/data.write/当前挂载/admission核验。正常定时任务按原创建者重新核验，不继承永久授权。
+
+成熟技术选型：Readability0.6.0提取正文、LinkeDOM0.18.12解析HTML/XML、robots-parser3.0.1执行robots。完整依赖锁定integrity及/legal/automatic-connectors-notices.txt。只静态HTTPS，不执行JS；同源/路径前缀范围、DNS所有结果必须公网并固定解析IP、TLS校验、逐跳重定向审查、响应2MiB/15秒。robots拒绝保留错误不当删除。正文最多200000字符，记录1000/运行，500请求页/运行；调度每15秒逐次持久推进，单轮失败最多3次后显式恢复。
+
+API提供数组/ID/标题/正文/删除字段点路径，URL下一页/页码/offset/游标分页及增量cursor请求参数。无任意脚本。API稳定source key哈希，URL来源键和实例隔离；入口身份字段修改需新实例，其他配置须暂停并重新首次预览。凭据AES-GCM绑定实例、HKDF独立域，从现有服务器secret派生，仅运行时解密，不读取/导出；URL禁止敏感凭据参数。
+
+第一次preview只采集不入库；人工核对完成的扫描后approve，随后同步成功项，正常启用后可手动/定时。扫描检查点和current_batch使崩溃后复用原source run/item/version。源版本变化复用来源失效与加工链，不批准/发布事实；未变化复用当前文档。全量扫描完成才允许absence候选；增量/失败/截断不推断缺失。显式404/410/API删除只成候选，人工delete_preview/confirm绑定当前head/扫描/影响，较新运行存在则拒绝旧扫描删除；来源撤回经既有源版本链同步，原始证据失效。
+
+工作台具连接预览/配置历史/启停/定时/完整及增量同步、逐项内容/失败/恢复、删除影响、当前来源和既有来源管理/加工恢复/图谱/生产入口。当前不含登录/JS渲染/验证码、专用SaaS、Arda真实契约。性能另维度；无本地命令/CMD/服务/浏览器，集中远端CI，真实站点和业务效果独立。

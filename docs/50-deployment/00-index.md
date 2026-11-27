@@ -87,3 +87,5 @@ exercised (live since v0.1.0); the beta tier stays a reserved channel (TD-001).
 - [530 Graph query/presentation/rules release](530-graph-platform-centers-release-20261127.md): v0.12.52, PR394+395,0043 migration91tables, actual Jena online and stage/exact-main evidence.
 
 - [540 实体身份与知识一致性中心](540-entity-consistency-center-release-20261127.md)：PR396，阶段验证与发布记录。
+
+- [550 智能体知识贡献与反馈中心](550-agent-contribution-center-release-20261127.md)：PR397阶段验证/发布记录。

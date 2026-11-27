@@ -408,3 +408,8 @@ identity_head保存当前草稿/修订与生效指针；identity_version为不�
 ## 智能体知识贡献（0045）
 
 knowledge_contribution：id/kb_id/workspace_id/created_by/product_code，payload_version/state/revision/assignee/similar_hash，plan_id/artifact_document_id/prepared_documents/handoff_state/lease_id/lease_until/error_code及时间。knowledge_contribution_version：contribution_id/version/payload/payload_hash/created_by/note/created_at，不可变提交历史。knowledge_contribution_event：contribution_id/revision/request_id/fingerprint/action/note/result/created_by/created_at，追加式反馈和幂等记录。baseline/Prisma/98同步，97表；production_step状态变化产生contribution.changed元数据事件。
+
+
+## 自动连接器（0046）
+
+automatic_connector保存kb/workspace/creator/binding、当前config/config_version、加密credential_cipher、revision/state/confirmed、interval_minutes/next_due和增量cursor。automatic_connector_version不可变配置版本；automatic_connector_run保存mode/full_scan/state/revision、scan分页检查点、apply_offset/current_batch、heads_hash、deletions/deletion_state、租约/尝试/错误/时间。automatic_connector_head保存source_key/url/title/hash/ETag/Last-Modified/deleted/source_version/document/last_run。automatic_connector_event保存revision/request_id/fingerprint/action/note/result/actor追加式操作历史。baseline/Prisma/98锁步102表。

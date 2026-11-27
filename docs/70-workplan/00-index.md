@@ -1131,4 +1131,6 @@ No new application release yet. Full evidence and ordered continuation:
 
 - [205 实体身份与知识一致性中心](205-entity-consistency-center-20261127.md)：E1–E6及验证上线/逐项汇报全部完成，v0.12.53。
 
-- [206 智能体知识贡献与反馈中心](206-agent-contribution-center-20261127.md)：owner批准C1–C6及两项收尾，整体实施中。
+- [206 智能体知识贡献与反馈中心](206-agent-contribution-center-20261127.md)：C1–C6及两项收尾全部完成，v0.12.54。
+
+- [207 自动化知识源连接器中心](207-automatic-connectors-center-20261127.md)：owner批准A1–A6及两项收尾，实施中。

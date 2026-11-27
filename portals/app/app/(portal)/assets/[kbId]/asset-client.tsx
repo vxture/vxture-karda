@@ -1,4 +1,5 @@
 "use client";
+import {automaticConnectors} from '../../../_i18n/messages/automatic-connectors';
 import {contributions} from '../../../_i18n/messages/contributions';
 import {identityCenter} from '../../../_i18n/messages/identity-center';
 
@@ -107,6 +108,7 @@ export function AssetClient({ view = "content" }: { view?: AssetView } = {}) {
   const sourceLabels=useMessages(sourceMessages);
   const identityLabels=useMessages(identityCenter);
   const contributionLabels=useMessages(contributions);
+  const connectorLabels=useMessages(automaticConnectors);
   const m = useMessages(assets);
   const c = useMessages(common);
   const params = useParams<{ kbId: string }>();
@@ -398,6 +400,7 @@ export function AssetClient({ view = "content" }: { view?: AssetView } = {}) {
               </Button>
               <Button variant="outline" asChild><Link href={`/assets/${kbId}/identity`}>{identityLabels.title}</Link></Button>
               <Button variant="outline" asChild><Link href={`/assets/${kbId}/contributions`}>{contributionLabels.title}</Link></Button>
+              <Button variant="outline" asChild><Link href={`/assets/${kbId}/connectors`}>{connectorLabels.title}</Link></Button>
               <Button variant="outline" asChild><Link href={`/assets/${kbId}/sources`}>{sourceLabels.open}</Link></Button>
               <Button variant="outline" asChild>
                 <Link href={`/assets/${kbId}/settings`}>{m.settingsLabel}</Link>
