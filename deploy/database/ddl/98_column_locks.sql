@@ -378,3 +378,12 @@ GRANT SELECT,INSERT ON karda_kb.production_plan,karda_kb.production_unit,karda_k
 GRANT UPDATE(state,revision,updated_at) ON karda_kb.production_plan TO karda_svc;
 GRANT UPDATE(state,attempt,lease_id,lease_until,receipt,error_code,updated_at) ON karda_kb.production_step TO karda_svc;
 -- END PRODUCTION CENTER LOCKS
+
+
+-- BEGIN KNOWLEDGE PUSH LOCKS
+REVOKE UPDATE,DELETE ON karda_kb.knowledge_change_event,karda_kb.knowledge_push_consumer,karda_kb.knowledge_push_delivery,karda_kb.knowledge_push_attempt,karda_kb.knowledge_push_control FROM karda_svc;
+GRANT SELECT,INSERT ON karda_kb.knowledge_change_event,karda_kb.knowledge_push_consumer,karda_kb.knowledge_push_delivery,karda_kb.knowledge_push_attempt,karda_kb.knowledge_push_control TO karda_svc;
+GRANT UPDATE(name,endpoint,service_id,event_types,kb_ids,state,revision,config_revision,key_id,key_cipher,verified_at,scope_since,updated_at) ON karda_kb.knowledge_push_consumer TO karda_svc;
+GRANT UPDATE(state,attempt,total_attempts,lease_id,lease_until,retry_after,error_code,http_status,updated_at) ON karda_kb.knowledge_push_delivery TO karda_svc;
+GRANT UPDATE(state,http_status,error_code,latency_ms,finished_at) ON karda_kb.knowledge_push_attempt TO karda_svc;
+-- END KNOWLEDGE PUSH LOCKS

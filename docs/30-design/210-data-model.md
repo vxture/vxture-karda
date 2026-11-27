@@ -376,3 +376,8 @@ knowledge_service/version/event/call四表，74→78。版本和控制事件不�
 ## 生产编排0041（2026-11-27）
 
 production_plan/unit/step/event四表，78→82。计划状态/修订和步骤租约/收据可变，冻结unit与控制事件不可变；断言抽取与父完成收据同事务落库，人工准入追加生产事件。baseline/增量/Prisma/98与41表升级回放一致。当前库授权/冻结源/原件验证、跨实例锁、租约、逐库发布对账及恢复详见170§71和199清单。
+
+
+## 知识事件与推送0042（2026-11-27）
+
+knowledge_change_event、knowledge_push_consumer/delivery/attempt/control五表，82→87，业务触发器保证原始变更与元数据事件同事务。事件/控制不可改，配置、交付和尝试仅状态列更新。事件无正文/凭据，密钥AES-GCM封装，服务/库current scope和控制修订围栏见170§72/201清单。baseline/增量/Prisma/98/41表回放一致。

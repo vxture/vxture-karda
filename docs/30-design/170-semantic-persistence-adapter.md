@@ -1204,3 +1204,30 @@ process复用实际processing_task/恢复调度，已indexed只接收版本和�
 总览计数来自本人未取消生产计划的真实步骤；所选库来源页标记是否匹配当前发布源hash/版本，范围明确，不作全平台全库完整性承诺。库拥有权/挂载收缩时仅保留本人计划元数据，隐藏冻结明细、候选、发布和服务引用；其他身份/空间和无角色拒绝。管理页面有计划/来源筛选分页、冻结输入、开始/暂停/恢复/取消/选中重试、集中断言准入和候选冲突/关系审核、发布/恢复预览、实际阶段/模型归因、服务入口与不可变历史。
 
 开发仅3项必要定向与类型/守卫，整板块CI集中真实PostgreSQL恢复/准入/审核/发布/回滚/租约/配置及服务影响变化/撤权/不可变授权和新旧迁移后发布。无本地服务器/浏览器/CMD或性能专项。真实Atlas授权/质量/账单、外部Agent/Runos/Ontos/机构权威/业务切换及Arda契约独立，17主验收7完成/6进行中/4待门槛保持，I1暂停。
+
+
+## 72. 知识变更事件与外部推送中心（2026-11-27）
+
+owner批准201清单B1–B6为一个完整板块。新增/channels/push与RP GET/POST /api/knowledge-push，复用现有订阅当前权限/租约/三次尝试/安全错误与后台平台准入语义；保留旧拉取窗口、knowledge_sync和ack，不把窗口revision观察冒充业务事件。当前新consumer只由本工作空间知识服务创建者管理，需product.enter/data.read/data.write/service.publish；服务配置不授予ACL，也不代替外部OBO身份。订阅服务需已有发布版本，冻结当前kbIds与事件类型。
+
+0042五表knowledge_change_event/push_consumer/push_delivery/push_attempt/push_control，82→87表；baseline/增量/Prisma/98/41表升级回放锁步。event与control只SELECT/INSERT，consumer和delivery/attempt仅指定状态列更新；旧角色广义DELETE被显式撤销。consumer保留原workspace/created_by/创建时间，配置修改有修订CAS和不可变命令收据。事件无kb/service强FK，保留真实变更元数据；delivery/event/consumer与尝试和control级联，无自动保留期清理或永久审计承诺。
+
+数据库AFTER触发器在业务事务写入metadata-only事件：semantic_release插入knowledge.published（releaseId/generation），document从indexed失效/版本hash变化或归档删除source.invalidated，库publish_state变化library.visibility_changed，知识服务当前state/active_version变化service.changed。失败回滚同时撤销事件；同正式release ID只一个origin_key，重复业务回执不重记事件，其他实际行变更用随机origin。服务草稿编辑没有当前发布变化不产生事件；不补造上线前历史，不声称捕获没有行写入的自然过期/其他外部身份事件。触发器普通权限执行（非SECURITY DEFINER），事件写失败阻止同事务业务成功而不是静默丢事件。
+
+订阅匹配冻结服务ID/库ID与类型，事件scope_since起点为创建/重新配置/轮换时间，不自动重放旧配置之前的事件。后台fanout按未建立delivery的真实事件生成唯一consumer/event记录，不依赖递增sequence水位，迟提交事件下次仍可发现；每轮最多50、每consumer待交付1000，满后暂停匹配但不丢事件。最多50consumer/主体/空间，每配置最多20库和4类型；列表/事件/交付/控制每页20，尝试最近50。事件/交付UUID分页是稳定键序，不宣称时间或严格业务顺序。
+
+create生成32字节随机HMAC密钥，AES-256-GCM封装与consumer/keyId绑定，封装key由既有OIDC_CLIENT_SECRET经HKDF独立域派生；不增加服务器变量或把平台共享凭据发给接收端。缺少封装材料即失败关闭。创建/轮换响应仅展示一次secret，数据库/历史/GET/接入JSON不存明文，网络不确定重复同命令仅回原收据并提示secretUnavailable，丢失须暂停轮换。应用OIDC机密变更导致旧封装不可读，逐consumer轮换验证才能恢复，不宣称无缝主密钥轮换或旧签名宽限。
+
+公网HTTPS仅443且无userinfo/query/fragment/IP字面量，DNS所有A/AAAA须为公网，拒绝loopback/private/linklocal/multicast/保留文档/隧道等特殊地址；解析预算4秒，实际HTTPS lookup固定本次验证地址，原主机证书/SNI严格校验，无系统代理/重定向/自动重试。请求原件最多16KiB，响应最多8KiB、网络8秒超时，绝不记录响应正文或上游私有详情。新增地址create/configure先验证DNS，实际发送每次重新解析并固定，防止DNS重绑定。没有客户真实公网接收端时不主动向任意站点测试。
+
+显式verify创建endpoint.test测试事件，metadata明确purpose=verification/configRevision，只在真实签名请求返回2xx且JSON eventId匹配/accepted=true后盖verified_at，未验证不能enable。test仍明确测试标志，无业务变更副作用；测试在draft/paused可发，普通业务仅active且verified。configure/rotate必须先暂停，取消旧未完成delivery/lease和started尝试，更新config_revision、scope_since并清verified；enable当前scope再验，disable永久终结并取消未完成，pause保留业务队列。地址/范围变更不是偷偷扩权；所有命令严格字段、同源JSON64KiB、修订CAS/必填原因/显式确认及事件指纹幂等。
+
+每次调度复用admitProductionOwner/workspacePlatformContext当前平台锚点/名单/订阅及本地角色/同空间user库可见和Karda挂载，服务创建者及冻结kbIds必须仍一致；知识消费暂停亦阻止发送。scope不要求服务active，允许service.changed停止通知自身，外部仍不能通过通知读取停用知识。没有草稿/原文/事实正文，只有事件ID/类型/发生时间、服务/库和必要变更metadata/配置版本。当前不合格时queued/retry/leased抑制且隐去事件详情，恢复需当前复核后明确重试；不缓存历史授权。
+
+后台10秒有界轮转20consumer、实例session互斥；3分钟租约、每轮3次尝试，30/60秒退避，2xx且精确ACK完成，4xx（除408/429）永久死信，其他失败/超时/无ACK/重定向按预算重试。claim先持久attempt始态和唯一requestId，实际网络前再次current fence/scope校验；完成先租约/config/key围栏再持久结果。进程中断后expired lease记录outcome_unknown并退避重投，相同eventId/deliveryId保持，requestId每尝试新建，接收端须按eventId幂等。旧租约结果不抑制新有效lease。每次当前检查不能撤回其后已经在途的外部请求，pause/撤权同样不能收回已确认内容，不能宣称分布式exactly-once或零竞态撤回。
+
+retry支持选中最多50个dead/retry/suppressed交付，当前配置与事件匹配核验后重置cycleattempt而保留total_attempts/历史；replay选中最多50个当前scope_since之后匹配业务事件，保留eventId，已排队/执行中的冲突拒绝，已完成可再次通知并追加尝试。操作原因追加control不可变事件；每次metadata追踪串联原始业务变更→event→delivery→attempt→ACK/重试/重放，密钥/接收正文不入追踪。超过当前事件起点的完整历史重放未开放，UI明确边界。
+
+工作台含创建/配置/端点验证/显式测试/启用暂停停用/轮换一次性密钥、服务和事件范围、真实状态计数、按状态/ID筛选与详情/分页、选中重试/重放、密钥标识和配置修订/操作历史；刷新/异常/切换清空旧数据/确认和secret，不用localStorage。提供签名/ACK原始字节规则、请求响应示例、无密钥JSON导出和可下载Node接收端inbox样例，样例校验时间/签名/身份/头体一致与eventID幂等并明确当前知识重新鉴权；没有替客户启动接收服务器。样例不执行任意通知正文指令。
+
+开发仅必要协议/签名/公网DNS/DDL定向与类型/守卫，整板块末CI集中真实PostgreSQL事务事件/验证/唯一交付/租约恢复/重试死信/重放/轮换/撤权/历史/旧库迁移和生产构建。无本地服务器/浏览器/CMD或全量/性能。真实外部消费者公网联调/实测网络投递及浏览器点击未自动验收；软件实现不关闭Ontos/正式机构权威/真实Agent业务/切换/Arda契约，17主验收计数维持，I1暂停。

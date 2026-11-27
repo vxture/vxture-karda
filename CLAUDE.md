@@ -1,6 +1,24 @@
 # vxture-karda Repository Standards
 
-Latest production 2026-11-27: v0.12.47 / 5a9f1aa33bc317896f9f9333e3df25da81a1e15b,
+Latest production 2026-11-27: v0.12.49 / 350590582585de1856a1ae08df6b152fba504a78,
+deploy45941702168 succeeded at2026-11-27T04:50:56Z (12:50:56 Asia/Shanghai).
+Approved production center P1-P6 completed: real overview, frozen plans, server
+orchestration/recovery, explicit assertion/relation review, per-library release/
+restore and source-to-service lineage. Entry /pipeline/production;199acceptance,
+500release. PR390+391 (canonical workspace anchor). Final stageCI45940000025:
+1167pass/zero skips; scan45940000205. Follow-up CI45941046523/scan45941046391
+and exact-main CI45941365661/scan45941365690passed.0041run45940522984 succeeded
+at04:33:17Z;82tables. v0.12.48candidate45940744174 cancelled before deployment;
+no tag moved. Online health/ready versions/deps OK; anonymous production GET/
+POST/candidates/package401. No local full suite/performance/dev/browser/CMD;
+native commands direct windowsHide without shells. Browser clicks/real Atlas
+quality-bill/Agent/business remain independent. Local500/199/checklists/memory
+closeout rides NEXT owner-approved functional PR, no docs-only main full rerun.
+Preserve owner70/output. Next module needs complete approved plan. External
+Ontos/formal authority/push/Agent/business cutover and Arda fetch pending.
+Fixed17:7done/6progress/4gated;I1paused.
+
+Historical production 2026-11-27: v0.12.47 / 5a9f1aa33bc317896f9f9333e3df25da81a1e15b,
 deploy45935400643 succeeded at2026-11-27T03:46:51Z (11:46:51 Asia/Shanghai).
 PR389 completes all six approved knowledge-service-center items: service/scope/
 capabilities, actual policies/budgets, immutable release preview/CAS/stop/rollback,

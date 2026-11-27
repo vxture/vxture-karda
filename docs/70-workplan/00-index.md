@@ -1118,3 +1118,5 @@ No new application release yet. Full evidence and ordered continuation:
 [roles delivery](60-explicit-product-roles-20261123.md).
 
 | `198-knowledge-service-center-20261127.md` | 智能体知识服务中心六项批准范围、逐项完成及验收证据 |
+
+| `199-knowledge-production-center-20261127.md` | 知识生产编排与发布中心批准计划、六项实施与逐项验收 |
