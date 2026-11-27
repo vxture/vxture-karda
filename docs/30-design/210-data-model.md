@@ -381,3 +381,8 @@ production_plan/unit/step/event四表，78→82。计划状态/修订和步骤�
 ## 知识事件与推送0042（2026-11-27）
 
 knowledge_change_event、knowledge_push_consumer/delivery/attempt/control五表，82→87，业务触发器保证原始变更与元数据事件同事务。事件/控制不可改，配置、交付和尝试仅状态列更新。事件无正文/凭据，密钥AES-GCM封装，服务/库current scope和控制修订围栏见170§72/201清单。baseline/增量/Prisma/98/41表回放一致。
+
+
+## Graph centers (0043)
+
+Four additive tables: graph_index (scoped current build, leases and CAS head), graph_asset (view/topic/rules draft and activation), graph_asset_version (immutable config), graph_control (immutable request/revision history). PostgreSQL remains authority; TDB2 is reconstructible. Baseline/increment/Prisma/98 in lockstep,91 tables. No delete privilege or immutable-column update.

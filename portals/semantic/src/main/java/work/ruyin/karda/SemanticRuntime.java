@@ -17,7 +17,7 @@ public final class SemanticRuntime {
   static Model model(String nt) {
     Model result = ModelFactory.createDefaultModel();
     RDFParser.fromString(nt,Lang.NTRIPLES).parse(result);
-    if (result.size() > 50000) throw new IllegalArgumentException("semantic_rdf_budget");
+    if (result.size() > 200000) throw new IllegalArgumentException("semantic_rdf_budget");
     return result;
   }
   static String text(JsonObject input, String key, int max) {

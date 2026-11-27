@@ -9,12 +9,13 @@ import type {GraphGroup} from "../../../../kb/semantic/graph-view";
 
 /** G6 owns drawing, camera and layouts. The native catalog alongside this canvas
  * remains the keyboard/assistive-technology path for every authorized object. */
-export function GraphCanvas({nodes,edges,groups,layoutMode,selected,edgeId,path,onNode,onEdge}:{
+export function GraphCanvas({nodes,edges,groups,layoutMode,selected,edgeId,path,onNode,onEdge,positions,onCapture,onExport}:{
   nodes:GraphEntity[];edges:SemanticRelation[];groups:GraphGroup[];layoutMode:string;
+  positions?:Record<string,{x:number;y:number}>;onCapture?:(p:Record<string,{x:number;y:number}>)=>void;onExport?:(fn:()=>Promise<string>)=>void;
   selected:string;edgeId:string;path:string[]|null;onNode:(id:string)=>void;onEdge:(id:string)=>void;
 }){
   const m=useMessages(semantic),container=useRef<HTMLDivElement>(null),graph=useRef<Graph|null>(null);
-  const current=useRef({selected,edgeId,path,onNode,onEdge});current.current={selected,edgeId,path,onNode,onEdge};
+  const current=useRef({selected,edgeId,path,onNode,onEdge,onCapture,onExport});current.current={selected,edgeId,path,onNode,onEdge,onCapture,onExport};
   const [state,setState]=useState<"loading"|"ready"|"failed">("loading"),[labels,setLabels]=useState("auto");
   const [zoom,setZoom]=useState(100);
   const showLabels=labels==="all"||(labels==="auto"&&nodes.length<=80);
@@ -28,15 +29,15 @@ export function GraphCanvas({nodes,edges,groups,layoutMode,selected,edgeId,path,
         const grouped=layoutMode==="grouped";
         const membership=new Map(groups.flatMap((g,i)=>g.nodeIds.map(id=>[id,"combo-"+i] as const)));
         instance=new Graph({container:container.current,autoResize:true,animation:false,padding:48,
-          data:{nodes:nodes.map(n=>({id:n.id,data:{label:n.label,type:n.type},...(grouped?{combo:membership.get(n.id)}:{})})),
+          data:{nodes:nodes.map(n=>({id:n.id,data:{label:n.label,type:n.type},...(positions?.[n.id]?{style:{x:positions[n.id].x,y:positions[n.id].y}}:{}),...(grouped?{combo:membership.get(n.id)}:{})})),
             edges:edges.map(e=>({id:e.id,source:e.sourceId,target:e.targetId,data:{label:e.type}})),
-            ...(grouped?{combos:groups.filter(g=>g.nodeIds.some(id=>nodes.some(n=>n.id===id))).map(g=>({id:membership.get(g.nodeIds[0])!}))}:{})},
+            ...(grouped?{combos:groups.filter(g=>g.nodeIds.some(id=>nodes.some(n=>n.id===id))).map(g=>({id:membership.get(g.nodeIds[0])!,data:{title:g.title??g.id}}))}:{})},
           node:{type:"circle",style:{size:36,fill:"#eef2ff",stroke:"#4f46e5",lineWidth:2,labelText:d=>String(d.data?.label??""),labelFill:text,labelPlacement:"bottom",labelVisibility:showLabels?"visible":"hidden"},
             state:{selected:{fill:"#c7d2fe",lineWidth:4,labelVisibility:"visible"}}},
           edge:{type:"line",style:{stroke:"#94a3b8",lineWidth:1.5,endArrow:true,labelText:d=>String(d.data?.label??""),labelFill:text,labelVisibility:"hidden"},
             state:{selected:{stroke:"#4f46e5",lineWidth:3,labelVisibility:"visible"},highlight:{stroke:"#d97706",lineWidth:3,labelVisibility:"visible"}}},
-          combo:{type:"circle",style:{fill:"#f1f5f9",fillOpacity:.25,stroke:"#94a3b8",padding:24}},
-          layout:layoutMode==="circular"?{type:"circular"}:grouped?{type:"combo-combined"}:{type:"force",preventOverlap:true,nodeSize:44},
+          combo:{type:"circle",style:{fill:"#f1f5f9",fillOpacity:.25,stroke:"#94a3b8",padding:24,labelText:d=>String(d.data?.title??""),labelFill:text}},
+          layout:positions&&nodes.every(n=>positions[n.id])?undefined:layoutMode==="circular"?{type:"circular"}:grouped?{type:"combo-combined"}:{type:"force",preventOverlap:true,nodeSize:44},
           behaviors:["drag-canvas","zoom-canvas","drag-element"],
           plugins:[{type:"minimap",size:[160,100]}],
           transforms:["process-parallel-edges"],
@@ -44,13 +45,15 @@ export function GraphCanvas({nodes,edges,groups,layoutMode,selected,edgeId,path,
         const live=instance;
         live.on("node:click",event=>{if("target" in event&&event.target&&"id" in event.target)current.current.onNode(String(event.target.id));});
         live.on("edge:click",event=>{if("target" in event&&event.target&&"id" in event.target)current.current.onEdge(String(event.target.id));});
+        live.on("afterlayout",()=>{if(!cancelled)current.current.onCapture?.(Object.fromEntries(nodes.map(n=>{const p=live.getElementPosition(n.id);return[n.id,{x:p[0],y:p[1]}];})));});
+        live.on("node:dragend",()=>{if(!cancelled)current.current.onCapture?.(Object.fromEntries(nodes.map(n=>{const p=live.getElementPosition(n.id);return[n.id,{x:p[0],y:p[1]}];})));});
         live.on("aftertransform",()=>{if(!cancelled)setZoom(Math.round(live.getZoom()*100));});
         await live.render();if(cancelled)return;await live.fitView();if(cancelled)return;
-        graph.current=live;setZoom(Math.round(live.getZoom()*100));setState("ready");
+        graph.current=live;current.current.onExport?.(()=>live.toDataURL({mode:"overall"}));setZoom(Math.round(live.getZoom()*100));setState("ready");
       }catch{if(!cancelled){graph.current=null;setState("failed");instance?.destroy();instance=null;}}
     })();
     return()=>{cancelled=true;graph.current=null;if(instance&&!instance.destroyed)instance.destroy();};
-  },[nodes,edges,groups,layoutMode,showLabels]);
+  },[nodes,edges,groups,layoutMode,showLabels,positions]);
   useEffect(()=>{
     const live=graph.current;if(state!=="ready"||!live)return;
     const highlighted=new Set(path??[]);

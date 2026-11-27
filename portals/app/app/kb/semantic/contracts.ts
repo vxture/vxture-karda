@@ -73,6 +73,7 @@ export interface AuthorizedReadScope {
   now: string;
 }
 export interface NeighborhoodQuery {
+  direction?:"both"|"out"|"in";
   /** Empty string starts an explicitly paged directory; absent keeps legacy projection. */
   pageCursor?:string;
   seedIds: string[];

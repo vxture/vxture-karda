@@ -1,5 +1,14 @@
 # Agent entry point
 
+2026-11-27 owner整体批准语义图索引查询/探索展示/本体规则治理三个板块，正本203+204；当前分支codex/graph-platform-centers，整体WIP，尚未提交/CI/合并/部署，生产仍v0.12.51。已编码TDB2内部SemanticServer、受限RuleRuntime及解释、0043四表91表锁步、graph/contract+eligible+client+store+runtime+rules、graph-center API、G6位置捕获/图片导出和studio页面；不能声称完成或上线。最后owner询问CMD弹窗，已答复不主动启动shell但子进程无法确认；停止本地编译/可执行命令，改文件操作和远程CI，不再本机编译。已有local()全部windowsHide仍被质疑，后续勿重启任何本地服务/浏览器。最近tsc诊断只剩runtime.ts两个构造器callback位置，已补undefined未重跑。
+
+待处理实质事项：完整安全审阅与远程CI；graph_index自动转换审计/重试限额/共享key清理；规则Schema精确绑定与UI语义包编辑；restore/export跨分页完整当前引用；rule推导Agent正式可选接口接线与本体层级/约束治理仍缺；studio目前JSON规则编辑/分组注释/步骤演示需阶段验证。API版本diff已修command.payload嵌套；游标改复用directory-cursor；graph engine参数放PostgresSemanticReader第7保持第6observePhase兼容。内部Docker semantic service使用同app镜像+原OIDC secret、内部8080不发布、持久卷单拥有者；未实际启动。Java3类新源码编译成功但未测试新类；未运行本地全量。Owner70/output始终保留，已有v0.12.51收尾文档一起携带。
+
+
+2026-11-27 owner批准PG+G6+Jena底座F1–F6已完整实施、PR393合并并发布v0.12.51/bd8800b580a16243bc434cb4580fbc226e15cd1b；部署45961078818于北京时间15:57:31成功。G6替换现有画布/布局/相机，稳定RDF/SHACL映射、真实Jena进程与读取门禁、Java21镜像和28运行依赖SBOM审计交付。无DDL、87表，不清库。阶段CI45960322551首轮应用1175+Java3项零失败跳过/扫描45960322540；精确主干CI45960747578/扫描45960747620通过。线上health/ready版本依赖正常，匿名语义/知识包401，图谱页/许可证307；fetch超时以独立HTTPS复核401。外部Agent/业务、浏览器点击、持久全库索引/规则推导发布/完整Ontos未验或未实现，17主项7完成/6进行中/4门槛，I1暂停。
+
+GitHub初次workflow scope不足推送拒绝；owner完成第二次设备授权，独立detached+windowsHide授权helper结果0，gh已含workflow。第一非持久授权进程未保存回执；后续设备流程要用持久helper或真正保持工具执行，不能依赖未等待的局部Promise。push用已有gh凭据的临时环境认证头，无令牌输出/持久化；fetchHTTP1.1成功并同步原正式main。无本地dev/浏览器/可见shell/全量性能，owner70/output保持。Local520/202/索引/CLAUDE/本记忆最终收尾随下一批准功能PR携带，不另开文档全量；GitHub Release v0.12.51有权威证据。下一整板块先计划审批。
+
 2026-11-27 owner要求先做知识图谱基础技术选型对比，避免完全自建。180设计专项已完成公开官方资料/许可证/现有代码对比：G6首选，Jena语义查询/SHACL首选候选，PG保留权威；Neo4j属性图与RDF4J备选，首期不双图引擎。Microsoft GraphRAG固定README已注明主要维护模式。仅文档，未装依赖/服务/迁移/测试/部署；接入确认与完整模块仍须计划批准。无性能专项、本地服务/浏览器/CMD，保留owner70/output与既有收尾改动。
 
 

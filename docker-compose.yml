@@ -40,6 +40,7 @@ services:
       # R3 (port registry): local dev port = in-code fallback = the IN-CONTAINER
       # port = karda's allocated 3240. Only the HOST publish port stays variable
       # (that is what lets beta 3241->3240 coexist with prod 3240->3240).
+      KARDA_JENA_URL: http://semantic:8080/internal
       PORT: "3240"
       REDIS_URL: redis://${PROJECT_NAME:-karda}-redis:6379
       DATABASE_URL: ${DATABASE_URL:-}
@@ -52,11 +53,26 @@ services:
     depends_on:
       - redis
       - db
+      - semantic
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3240/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3
+    networks: [appnet]
+    restart: unless-stopped
+
+  semantic:
+    container_name: ${PROJECT_NAME:-karda}-semantic
+    image: ${IMAGE_REGISTRY:-ghcr.io}/${IMAGE_NAMESPACE:-vxture}/${PRODUCT_CODE:-karda}-app:${IMAGE_TAG:-local}
+    command: ["/opt/java/openjdk/bin/java", "-Xms32m", "-Xmx384m", "-cp", "/app/semantic/karda-semantic.jar:/app/semantic/lib/*", "work.ruyin.karda.SemanticServer"]
+    env_file:
+      - path: ${APP_ENV_FILE:-.env}
+        required: false
+    environment:
+      KARDA_TDB_ROOT: /var/lib/karda/semantic
+    volumes:
+      - semantic:/var/lib/karda/semantic
     networks: [appnet]
     restart: unless-stopped
 
@@ -103,4 +119,5 @@ networks:
     name: ${PROJECT_NAME:-karda}-net
 
 volumes:
+  semantic:
   objects:

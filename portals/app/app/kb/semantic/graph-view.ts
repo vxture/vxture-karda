@@ -1,6 +1,6 @@
 import type {GraphEntity,SemanticRelation} from "./contracts";
 
-export interface GraphGroup {id:string;nodeIds:string[];edgeIds:string[]}
+export interface GraphGroup {title?:string;id:string;nodeIds:string[];edgeIds:string[]}
 
 /** Bounded deterministic local modularity optimization over authorized topology.
  * Undirected simple edges guide navigation only; business directions stay intact. */

@@ -16,15 +16,15 @@ export function resource(kind:"entity"|"relation"|"assertion"|"evidence"|"source
   if(!uuid.test(kb)||!uuid.test(id))throw new Error("semantic_rdf_invalid_identity");
   return "urn:karda:"+kind+":"+kb+":"+id;
 }
-const schemaType=(schema:OntologySchema,kind:string,id:string)=>"urn:karda:schema:"+
+export const schemaType=(schema:OntologySchema,kind:string,id:string)=>"urn:karda:schema:"+
   [schema.namespace,schema.schemaId,schema.version,kind,id].map(encodeURIComponent).join(":");
 export interface RdfProjection {format:"karda.rdf-projection.v1";fingerprint:string;data:string;shapes:string;nodes:number;edges:number;partial:boolean}
 /** Accept only the current authorized projection from PostgresSemanticReader.
  * This mapping does not grant access and must never receive raw table candidates. */
-export function projectRdf(graph:GraphProjection,schema:OntologySchema):RdfProjection{
+export function projectRdf(graph:GraphProjection,schema:OntologySchema,full=false):RdfProjection{
   validateOntology(schema);
   if(graph.schema.namespace!==schema.namespace||graph.schema.schemaId!==schema.schemaId||graph.schema.version!==schema.version||
-    graph.nodes.length>500||graph.edges.length>1000)throw new Error("semantic_rdf_scope");
+    graph.nodes.length>(full?5000:500)||graph.edges.length>(full?5000:1000))throw new Error("semantic_rdf_scope");
   const triples:string[]=[],shapes:string[]=[];
   const add=(s:string,p:string,o:string)=>triples.push(iri(s)+" "+iri(p)+" "+o+" .");
   const shape=(s:string,p:string,o:string)=>shapes.push(s+" "+iri(SH+p)+" "+o+" .");
@@ -78,6 +78,6 @@ export function projectRdf(graph:GraphProjection,schema:OntologySchema):RdfProje
     }
   }
   const data=[...new Set(triples)].sort().join("\n")+"\n",constraints=shapes.join("\n")+"\n";
-  if(Buffer.byteLength(data)+Buffer.byteLength(constraints)>1536*1024)throw new Error("semantic_rdf_budget");
+  if(Buffer.byteLength(data)+Buffer.byteLength(constraints)>(full?12*1024*1024:1536*1024))throw new Error("semantic_rdf_budget");
   return{format:"karda.rdf-projection.v1",fingerprint:createHash("sha256").update("karda.rdf.v1\n"+data+constraints).digest("hex"),data,shapes:constraints,nodes:graph.nodes.length,edges:graph.edges.length,partial:graph.truncated};
 }

@@ -74,7 +74,7 @@ RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
 #
 # Only the filesystem tier needs this; prod runs on OSS (KD-019 selection order
 # is OSS -> KARDA_OBJECT_ROOT -> in-memory).
-RUN mkdir -p /var/lib/karda/objects && chown -R nextjs:nodejs /var/lib/karda
+RUN mkdir -p /var/lib/karda/semantic /var/lib/karda/objects && chown -R nextjs:nodejs /var/lib/karda
 COPY --from=builder /repo/portals/app/.next/standalone ./
 COPY --from=builder /repo/portals/app/.next/static ./portals/app/.next/static
 COPY --from=builder /repo/portals/app/public ./portals/app/public

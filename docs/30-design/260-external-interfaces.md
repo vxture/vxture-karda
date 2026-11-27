@@ -448,3 +448,6 @@ GET/POST /api/kb/[id]/sources为当前用户管理接口，非匿名/内部token
 
 
 知识事件推送（170§72）：出站consumer配置的公网HTTPS443，事件格式karda.knowledge-event.v1，无知识正文；X-Karda-Key-Id/Timestamp/Signature/Event-Id/Delivery-Id/Request-Id签名元数据，HMAC-SHA256(secret,timestamp+dot+deliveryId+dot+rawBody)，2xx精确JSON {eventId,accepted:true}确认。至少一次/可能乱序，接收端eventId幂等并重新鉴权读知识。RP GET/POST /api/knowledge-push配置/验证/启用/暂停/停用/轮换/重试/有界重放；当前服务创建者及service.publish和data.write，非OBO新工具。Node接收样例/integrations/karda-push-receiver.mjs公开可下载，不含凭据；没有平台注册或自动外部联调。
+
+
+Graph centers: existing karda.knowledge_package optionally accepts direction (both/out/in) and single-library rule_asset_id; inference is separate from reviewed asserted edges and includes current rule version, premise relation IDs, supporting assertions/evidence, and partial scope. No new unrestricted SPARQL or service-only authority. Management uses /api/kb/[id]/graph-center behind current RP permissions.

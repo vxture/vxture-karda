@@ -1,6 +1,7 @@
 import type { Catalog } from "../catalog";
 
 export const semantic = {
+  graphStudio:{"zh-CN":"\u56fe\u8c31\u4e0e\u672c\u4f53\u5de5\u4f5c\u53f0","en-US":"Graph and ontology studio"},
   graphEngineReady:{"zh-CN":"\u56fe\u8c31\u5df2\u5c31\u7eea","en-US":"Graph ready"},
   graphEngineFailed:{"zh-CN":"\u753b\u5e03\u6682\u4e0d\u53ef\u7528\uff0c\u8bf7\u4f7f\u7528\u5b9e\u4f53\u4e0e\u5173\u7cfb\u76ee\u5f55","en-US":"Canvas unavailable; use the entity and relation catalogs"},
   configuration:{"zh-CN": "\u8bed\u4e49\u4e0e\u7f16\u8bd1\u914d\u7f6e", "en-US": "Semantic and compiler configuration"},

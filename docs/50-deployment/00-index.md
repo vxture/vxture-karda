@@ -81,3 +81,5 @@ exercised (live since v0.1.0); the beta tier stays a reserved channel (TD-001).
 | `500-knowledge-production-center-release-20261127.md` | v0.12.49 complete production orchestration/release center and six-part acceptance |
 
 | `510-knowledge-push-center-release-20261127.md` | v0.12.50 transactional events/external push and B1-B6 acceptance |
+
+- [520 Graph foundation release](520-graph-foundation-release-20261127.md): v0.12.51, G6/Jena foundation, PR393, stage/exact-main gates and production evidence.

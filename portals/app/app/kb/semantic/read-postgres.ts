@@ -1,3 +1,4 @@
+import {eligibleGraph} from "../graph/eligible";
 import {validateCurrentGraph} from "./jena-runtime";
 import type { Pool, PoolClient } from "pg";
 import { permits } from "../../authz/policy";
@@ -64,6 +65,7 @@ export class PostgresSemanticReader {
     private readonly admitPlatform: (identity: SemanticReadIdentity) => Promise<boolean>,
     private readonly loadPublished: (db: PoolClient, kbIds: string[]) => Promise<PublishedRelationInput>,
     private readonly observePhase?: (phase:SemanticReadPhase,elapsedMs:number)=>void,
+    private readonly graphEngine?: (graph:GraphProjection,schema:OntologySchema,query:NeighborhoodQuery,directory:boolean,db:PoolClient)=>Promise<GraphProjection>,
   ) {}
 
   async read(identity: SemanticReadIdentity, kbIds: string[], query: NeighborhoodQuery): Promise<SemanticReadResult> {
@@ -198,11 +200,11 @@ export class PostgresSemanticReader {
       phase("sources");
       // Directory selects across the complete eligible snapshot after authority,
       // source and premise checks. Hidden/rejected rows cannot consume its budget.
-      const result = search?projectPublishedSearch(snapshot,published.schema,scope,search,
+      const result = !search&&this.graphEngine?await this.graphEngine(eligibleGraph(snapshot,published.schema,scope),published.schema,query,directory,db):search?projectPublishedSearch(snapshot,published.schema,scope,search,
         new Map(assertions.map(a=>[a.id,a.search_statement??""])),new Map(grounds.map(g=>[g.id,g.excerpt])),query.relationTypes,
         directoryFingerprint([identity.workspaceId,identity.sub,identity.productCode,[...kbIds].sort()])):directory?projectDirectory(snapshot,published.schema,scope,query):
         projectNeighborhood(snapshot, published.schema, scope, query);
-      const semanticEngine=await validateCurrentGraph(result,published.schema);
+      const semanticEngine=this.graphEngine?{engine:"apache-jena" as const,version:"6.3.0" as const,fingerprint:directoryFingerprint(result)}:await validateCurrentGraph(result,published.schema);
       phase("projection");
       // Enrich only the final eligible projection, in the same authorized snapshot.
       const ids=result.assertions.map(a=>a.id);

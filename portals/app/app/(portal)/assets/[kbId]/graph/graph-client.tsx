@@ -50,6 +50,7 @@ export function GraphClient({kbId,initialEntity=""}:{kbId:string;initialEntity?:
   if(error===401)return <SignInGate from={`/assets/${kbId}/graph`}/>;
   return <div className={`flex min-w-0 flex-col gap-md ${wide?"fixed inset-0 z-50 overflow-auto bg-background p-md":""}`} aria-busy={busy} onKeyDown={e=>{if(e.key==="Escape")setWide(false);}}>
     <PageHead title={m.graphTitle}/>
+    <Button variant="outline" asChild><Link href={`/assets/${kbId}/graph/studio`}>{m.graphStudio}</Link></Button>
     <div className="flex flex-wrap gap-sm">
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/published`}>{m.knowledgeTitle}</Link></Button>
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/facts`}>{m.factSearchTitle}</Link></Button>
