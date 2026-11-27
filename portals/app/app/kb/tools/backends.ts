@@ -1,3 +1,4 @@
+import {knowledgeServiceTool} from "../services/execute";
 // The one place tool backends are assembled (shared by the S2S tool route and
 // the Runos MCP channel, 230-runos-channel). Both channels front the SAME
 // knowledge service - the owner's product definition makes that a design rule
@@ -44,6 +45,7 @@ export function buildToolBackends(): ToolBackends {
   const runtime = getProcessingRuntime();
   const generation = getGenerationClient();
   return {
+    knowledgeService:knowledgeServiceTool,
     topicKnowledge:topicKnowledgeTool,
     publishedSearch:publishedSearchTool,
     knowledgeSync:knowledgeSyncTool,

@@ -71,3 +71,7 @@ exercised (live since v0.1.0); the beta tier stays a reserved channel (TD-001).
 | `370-topic-knowledge-release-20261126.md` | v0.12.35 agent/user topic discovery, accepted summaries and exact evidence |
 
 | `380-docx-numbering-release-20261126.md` | v0.12.36 DOCX authored numbering, migration0030 and production evidence |
+
+| `470-library-sharing-release-20261127.md` | v0.12.45 sharing governance and production evidence |
+
+| `480-source-management-release-20261127.md` | v0.12.46 complete source management and production evidence |

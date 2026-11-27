@@ -362,3 +362,11 @@ GRANT UPDATE(state,updated_at) ON karda_kb.source_sync_run TO karda_svc;
 GRANT UPDATE(state,attempt,lease_id,lease_until,document_id,outcome,error_code,updated_at) ON karda_kb.source_sync_item TO karda_svc;
 GRANT UPDATE(source_version,event,content_hash,document_id,updated_at) ON karda_kb.source_document_head TO karda_svc;
 -- END SOURCE MANAGEMENT LOCKS
+
+
+-- BEGIN KNOWLEDGE SERVICES LOCKS
+REVOKE UPDATE,DELETE ON karda_kb.knowledge_service,karda_kb.knowledge_service_version,karda_kb.knowledge_service_event,karda_kb.knowledge_service_call FROM karda_svc;
+GRANT SELECT,INSERT ON karda_kb.knowledge_service,karda_kb.knowledge_service_version,karda_kb.knowledge_service_event,karda_kb.knowledge_service_call TO karda_svc;
+GRANT UPDATE(draft,revision,state,active_version,updated_at) ON karda_kb.knowledge_service TO karda_svc;
+GRANT UPDATE(state,status,error_code,latency_ms,output_bytes,steps,usage,finished_at) ON karda_kb.knowledge_service_call TO karda_svc;
+-- END KNOWLEDGE SERVICES LOCKS

@@ -1,6 +1,21 @@
 # vxture-karda Repository Standards
 
-Latest production 2026-11-27: v0.12.45 / 4c793aae0b531d81f6846b27222aeef7d3db38c4,
+Latest production 2026-11-27: v0.12.46 / bd068e09078f02c9662892b158c8c4a9de877bf7,
+deploy45928813120 succeeded at2026-11-27T02:37:46Z (10:37:46 Asia/Shanghai).
+PR388 completes approved source management: registration/scope, durable batches,
+ordered deltas/tombstones, failure isolation/retry, pause/resume/cancel, revocation
+preview/CAS/history, processing recovery and lineage workbench. API batches ready;
+Arda real registration/fetch/inventory pending, no remote polling/reconcile claim.
+Stage CI45928146965:1158pass/zero skips; scan45928147272, main CI45928465100/
+scan45928464905passed. Migration0039 run45928638476 succeeded at02:30:27Z;74tables.
+Health/ready/version/deps OK; anonymous source GET/POST/package401. No local
+full suite/dev/browser/CMD/performance. Standalone browser interaction unverified.
+Local480/checklists/memory closeout rides NEXT owner-approved functional PR,
+no docs-only full-main rerun. Preserve owner70/output. Next module requires an
+approved full-module plan. Formal authority/undeveloped Ontos/external push/
+real Agent/business cutover remain separate. Fixed17:7done/6progress/4gated.
+
+Historical production 2026-11-27: v0.12.45 / 4c793aae0b531d81f6846b27222aeef7d3db38c4,
 deploy45923699581 succeeded at2026-11-27T01:44:46Z (09:44:46 Asia/Shanghai).
 PR387 adds user-library sharing impact preview, explicit reason/confirmation,
 CAS/idempotent changes and immutable history; settings immediate toggle replaced.

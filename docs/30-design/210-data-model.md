@@ -366,3 +366,8 @@ baseline/0020/Prisma/98锁步，新旧库重复演练；生产通过db-init审�
 ## 知识源管理增量0039（2026-11-27）
 
 四张表source_control_event/source_sync_run/source_sync_item/source_document_head持久保存来源控制、批次、不可变清单/租约状态和单来源文档最新版本/删除头，70→74表。source_control_event仅SELECT/INSERT，sync_item原始payload/hash及身份字段不可改，允许更新处理状态列；head保留tombstone顺序围栏。document_id为追溯引用，不强制FK，以保留版本链；库/绑定删除按声明级联。baseline/0039/98/Prisma及旧迁移夹具一致。事务/配额/撤销规则见170§69。
+
+
+## 智能体知识服务0040（2026-11-27）
+
+knowledge_service/version/event/call四表，74→78。版本和控制事件不可变，call不存query/答案/证据正文，只存元数据和现有用量key；配置和调用服务仅更新状态列，历史清理按外键级联。配置不是ACL，当前授权/发布CAS/租约外执行/最终当前状态检查详见170§70。
