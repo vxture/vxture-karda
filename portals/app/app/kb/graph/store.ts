@@ -21,7 +21,7 @@ export class GraphStore {
  }
  async browse(who:SemanticReadIdentity,kbId:string,assetId?:string){id(kbId);if(assetId)id(assetId);return this.transaction(who,[kbId],false,async db=>{
   const assets=(await db.query("SELECT * FROM karda_kb.graph_asset WHERE workspace_id=$1 AND kb_id=$2 AND state<>'deleted' AND (created_by=$3 OR visibility='workspace') AND ($4::uuid IS NULL OR id=$4) ORDER BY updated_at DESC,id LIMIT 100",[who.workspaceId,kbId,who.sub,assetId??null])).rows;
-  const index=(await db.query('SELECT id,state,revision,attempt,active_hash,target_hash,node_count,edge_count,manifest,error_code,updated_at FROM karda_kb.graph_index WHERE workspace_id=$1 AND created_by=$2 AND scope_key=$3',[who.workspaceId,who.sub,scopeKey([kbId])])).rows[0]??null;
+  const index=(await db.query('SELECT id,state,revision,attempt,active_hash,target_hash,node_count,edge_count,manifest,error_code,updated_at FROM karda_kb.graph_index WHERE workspace_id=$1 AND created_by=$2 AND scope_key=$3',[who.workspaceId,who.sub,scopeKey([kbId],who.productCode)])).rows[0]??null;
   const versions=assetId?(await db.query("SELECT v.* FROM karda_kb.graph_asset_version v JOIN karda_kb.graph_asset a ON a.id=v.asset_id WHERE a.id=$1 AND a.workspace_id=$2 AND a.kb_id=$3 AND a.state<>'deleted' AND (a.created_by=$4 OR a.visibility='workspace') ORDER BY v.created_at DESC,v.id LIMIT 50",[assetId,who.workspaceId,kbId,who.sub])).rows:[];
   const history=(await db.query('SELECT action,note,revision,created_by,created_at FROM karda_kb.graph_control WHERE workspace_id=$1 AND target_id=ANY($2::uuid[]) ORDER BY created_at DESC LIMIT 100',[who.workspaceId,[...assets.map(a=>a.id),...(index?[index.id]:[])]] )).rows;
   const releases=(await db.query('SELECT id,generation,created_at FROM karda_kb.semantic_release WHERE kb_id=$1 ORDER BY generation DESC LIMIT 100',[kbId])).rows;return{assets,index,versions,history,releases};});}
@@ -31,9 +31,9 @@ export class GraphStore {
    await db.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',['karda:graph:target:'+target]);
    const fingerprint=hash(c),prior=(await db.query('SELECT fingerprint,result FROM karda_kb.graph_control WHERE target_id=$1 AND request_id=$2 AND workspace_id=$3 AND created_by=$4',[target,requestId,who.workspaceId,who.sub])).rows[0];if(prior){if(prior.fingerprint!==fingerprint)throw Error('graph_conflict');return prior.result;}
    let row:any;let result:Record<string,unknown>;
-   if(isIndex){row=(await db.query('SELECT * FROM karda_kb.graph_index WHERE workspace_id=$1 AND created_by=$2 AND scope_key=$3 FOR UPDATE',[who.workspaceId,who.sub,scopeKey([kbId])])).rows[0];
+   if(isIndex){row=(await db.query('SELECT * FROM karda_kb.graph_index WHERE workspace_id=$1 AND created_by=$2 AND scope_key=$3 FOR UPDATE',[who.workspaceId,who.sub,scopeKey([kbId],who.productCode)])).rows[0];
     if(row&&row.id!==target||Number(c.revision)!==(row?.revision??0))throw Error('graph_conflict');
-    if(!row){if(action!=='build')throw Error('graph_conflict');await db.query("INSERT INTO karda_kb.graph_index(id,workspace_id,created_by,kb_ids,scope_key) VALUES($1,$2,$3,$4,$5)",[target,who.workspaceId,who.sub,JSON.stringify([kbId]),scopeKey([kbId])]);}
+    if(!row){if(action!=='build')throw Error('graph_conflict');await db.query("INSERT INTO karda_kb.graph_index(id,workspace_id,created_by,kb_ids,scope_key,product_code) VALUES($1,$2,$3,$4,$5,$6)",[target,who.workspaceId,who.sub,JSON.stringify([kbId]),scopeKey([kbId],who.productCode),who.productCode]);}
     else await db.query("UPDATE karda_kb.graph_index SET state=$2::varchar,active_hash=CASE WHEN $2::varchar='cancelled' THEN NULL ELSE active_hash END,target_hash=CASE WHEN $2::varchar='cancelled' THEN NULL ELSE target_hash END,revision=revision+1,attempt=0,lease_id=NULL,lease_until=NULL,error_code=NULL,updated_at=now() WHERE id=$1",[target,action==='cancel'?'cancelled':'queued']);
     result={id:target,revision:(row?.revision??0)+1,state:action==='cancel'?'cancelled':'queued'};
    }else{row=(await db.query('SELECT * FROM karda_kb.graph_asset WHERE id=$1 AND workspace_id=$2 AND kb_id=$3 FOR UPDATE',[target,who.workspaceId,kbId])).rows[0];

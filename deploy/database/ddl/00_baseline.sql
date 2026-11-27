@@ -1794,6 +1794,7 @@ CREATE TRIGGER capture_service_change AFTER UPDATE ON karda_kb.knowledge_service
 -- BEGIN GRAPH CENTERS
 CREATE TABLE IF NOT EXISTS karda_kb.graph_index (
  id UUID PRIMARY KEY, workspace_id UUID NOT NULL, created_by VARCHAR(128) NOT NULL,
+ product_code VARCHAR(32) NOT NULL DEFAULT 'karda',
  kb_ids JSONB NOT NULL CHECK(jsonb_typeof(kb_ids)='array'), scope_key VARCHAR(64) NOT NULL,
  state VARCHAR(16) NOT NULL DEFAULT 'queued' CHECK(state IN ('queued','building','ready','failed','cancelled','stale')),
  revision INTEGER NOT NULL DEFAULT 1 CHECK(revision>0), attempt INTEGER NOT NULL DEFAULT 0,
