@@ -6,9 +6,9 @@ import {getObjectStore} from '../storage/objectstore';
 import {authorizedRoster} from '../../platform/roster';
 import {getEntitlementResolver} from '../../entitlement/resolver';
 import {hasProductAccess} from '../../entitlement/types';
-import {tenantForWorkspace} from '../processing/atlas-embedder';
+import {workspacePlatformContext} from '../../platform/client';
 import type {SemanticReadIdentity} from '../semantic/read-postgres';
-export async function admitProductionOwner(who:SemanticReadIdentity){const tenant=await tenantForWorkspace(who.workspaceId);if(!tenant)return false;const context={orgId:tenant,workspaceId:who.workspaceId};const roster=await authorizedRoster(context);if(!roster.items.some(m=>m.subject===who.sub))return false;return hasProductAccess(await getEntitlementResolver().resolve(who.workspaceId,context));}
+export async function admitProductionOwner(who:SemanticReadIdentity){const context=await workspacePlatformContext(who.workspaceId);const roster=await authorizedRoster(context);if(!roster.items.some(m=>m.subject===who.sub))return false;return hasProductAccess(await getEntitlementResolver().resolve(who.workspaceId,context));}
 let busy=false,started=false,cursor:string|null=null;
 export async function productionPass(){if(busy||!process.env.DATABASE_URL)return 0;busy=true;const pool=new Pool({connectionString:process.env.DATABASE_URL,max:3,statement_timeout:15000,connectionTimeoutMillis:5000,allowExitOnIdle:true});let mutex;
  try{mutex=await pool.connect();if(!(await mutex.query('SELECT pg_try_advisory_lock(1903240,41) AS locked')).rows[0].locked)return 0;const objects=getObjectStore(),store=new ProductionStore(pool,objects,admitProductionOwner),engine=new ProductionEngine(store,new PostgresSemanticStore(pool,objects,admitProductionOwner));
