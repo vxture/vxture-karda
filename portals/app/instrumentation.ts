@@ -19,5 +19,7 @@ export async function register(): Promise<void> {
     startPushDispatch();
     const {startGraphDispatch}=await import("./app/kb/graph/runtime");
     startGraphDispatch();
+    const {startAutomaticDispatch}=await import("./app/kb/connectors/automatic/runtime");
+    startAutomaticDispatch();
   }
 }

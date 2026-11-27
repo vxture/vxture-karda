@@ -1741,3 +1741,96 @@ model KnowledgeContributionEvent {
  @@map("knowledge_contribution_event")
  @@schema("karda_kb")
 }
+
+model AutomaticConnector {
+ id String @id @db.Uuid
+ kbId String @db.Uuid @map("kb_id")
+ workspaceId String @db.Uuid @map("workspace_id")
+ createdBy String @db.VarChar(128) @map("created_by")
+ bindingId String @db.Uuid @map("binding_id")
+ config Json
+ configVersion String @db.Uuid @map("config_version")
+ credentialCipher String? @map("credential_cipher")
+ revision Int @default(1)
+ state String @default("paused") @db.VarChar(16)
+ confirmed Boolean @default(false)
+ intervalMinutes Int @default(0) @map("interval_minutes")
+ nextDue DateTime? @db.Timestamptz() @map("next_due")
+ cursor String?
+ createdAt DateTime @default(now()) @db.Timestamptz() @map("created_at")
+ updatedAt DateTime @default(now()) @db.Timestamptz() @map("updated_at")
+ 
+ @@map("automatic_connector")
+ @@schema("karda_kb")
+}
+
+model AutomaticConnectorVersion {
+ id String @id @db.Uuid
+ connectorId String @db.Uuid @map("connector_id")
+ config Json
+ configHash String @db.VarChar(64) @map("config_hash")
+ createdBy String @db.VarChar(128) @map("created_by")
+ note String
+ createdAt DateTime @default(now()) @db.Timestamptz() @map("created_at")
+ 
+ @@map("automatic_connector_version")
+ @@schema("karda_kb")
+}
+
+model AutomaticConnectorRun {
+ id String @id @db.Uuid
+ connectorId String @db.Uuid @map("connector_id")
+ configVersion String @db.Uuid @map("config_version")
+ mode String @db.VarChar(16)
+ fullScan Boolean @map("full_scan")
+ state String @default("scanning") @db.VarChar(16)
+ revision Int @default(1)
+ scan Json
+ applyOffset Int @default(0) @map("apply_offset")
+ currentBatch Json? @map("current_batch")
+ headsHash String @db.VarChar(64) @map("heads_hash")
+ deletions Json @default("[]")
+ deletionState String @default("pending") @db.VarChar(16) @map("deletion_state")
+ leaseId String? @db.Uuid @map("lease_id")
+ leaseUntil DateTime? @db.Timestamptz() @map("lease_until")
+ attempt Int @default(0)
+ errorCode String? @db.VarChar(80) @map("error_code")
+ createdAt DateTime @default(now()) @db.Timestamptz() @map("created_at")
+ updatedAt DateTime @default(now()) @db.Timestamptz() @map("updated_at")
+ 
+ @@map("automatic_connector_run")
+ @@schema("karda_kb")
+}
+
+model AutomaticConnectorHead {
+ connectorId String @db.Uuid @map("connector_id")
+ sourceKey String @db.VarChar(80) @map("source_key")
+ url String
+ title String @db.VarChar(512)
+ contentHash String? @db.VarChar(64) @map("content_hash")
+ etag String?
+ modified String?
+ deleted Boolean @default(false)
+ sourceVersion Int @default(0) @map("source_version")
+ documentId String? @db.Uuid @map("document_id")
+ lastRun String @db.Uuid @map("last_run")
+ @@id([connectorId,sourceKey])
+ @@map("automatic_connector_head")
+ @@schema("karda_kb")
+}
+
+model AutomaticConnectorEvent {
+ connectorId String @db.Uuid @map("connector_id")
+ revision Int
+ requestId String @db.Uuid @map("request_id")
+ fingerprint String @db.VarChar(64)
+ action String @db.VarChar(32)
+ note String
+ result Json
+ createdBy String @db.VarChar(128) @map("created_by")
+ createdAt DateTime @default(now()) @db.Timestamptz() @map("created_at")
+ @@id([connectorId,revision])
+ @@unique([connectorId,requestId])
+ @@map("automatic_connector_event")
+ @@schema("karda_kb")
+}

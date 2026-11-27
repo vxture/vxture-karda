@@ -406,3 +406,11 @@ REVOKE UPDATE,DELETE ON karda_kb.knowledge_contribution,karda_kb.knowledge_contr
 GRANT SELECT,INSERT ON karda_kb.knowledge_contribution,karda_kb.knowledge_contribution_version,karda_kb.knowledge_contribution_event TO karda_svc;
 GRANT UPDATE(payload_version,state,revision,assignee,similar_hash,plan_id,artifact_document_id,prepared_documents,handoff_state,lease_id,lease_until,error_code,updated_at) ON karda_kb.knowledge_contribution TO karda_svc;
 -- END AGENT CONTRIBUTION LOCKS
+
+-- BEGIN AUTOMATIC CONNECTOR LOCKS
+REVOKE UPDATE,DELETE ON karda_kb.automatic_connector,karda_kb.automatic_connector_version,karda_kb.automatic_connector_run,karda_kb.automatic_connector_head,karda_kb.automatic_connector_event FROM karda_svc;
+GRANT SELECT,INSERT ON karda_kb.automatic_connector,karda_kb.automatic_connector_version,karda_kb.automatic_connector_run,karda_kb.automatic_connector_head,karda_kb.automatic_connector_event TO karda_svc;
+GRANT UPDATE(config,config_version,credential_cipher,revision,state,confirmed,interval_minutes,next_due,cursor,updated_at) ON karda_kb.automatic_connector TO karda_svc;
+GRANT UPDATE(state,revision,scan,apply_offset,current_batch,deletions,deletion_state,lease_id,lease_until,attempt,error_code,updated_at) ON karda_kb.automatic_connector_run TO karda_svc;
+GRANT UPDATE(url,title,content_hash,etag,modified,deleted,source_version,document_id,last_run) ON karda_kb.automatic_connector_head TO karda_svc;
+-- END AUTOMATIC CONNECTOR LOCKS

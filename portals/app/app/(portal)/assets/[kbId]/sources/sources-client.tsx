@@ -11,10 +11,10 @@ interface Document {id:string;title:string;content_state:string;source_doc_id:st
 interface History {revision:number;action:string;note:string;created_at:string;result:Record<string,unknown>}
 interface View {format:string;kbId:string;bindings:SourceBinding[];runs:SourceRun[];items:SourceProgressItem[];documents:Document[];history:History[];nextBefore:string|null;nextHistoryBefore:number|null;nextDocumentBefore:string|null}
 interface Preview {bindingId:string;revision:number;previewHash:string;documents:number;pendingItems:number}
-export function SourcesClient({kbId}:{kbId:string}){
+export function SourcesClient({kbId,initialBinding=''}:{kbId:string;initialBinding?:string}){
  const m=useMessages(sources),[view,setView]=useState<View|null>(null),[binding,setBinding]=useState(""),[runId,setRunId]=useState(""),[connector,setConnector]=useState<"api"|"arda">("api"),[external,setExternal]=useState(""),[note,setNote]=useState(""),[accept,setAccept]=useState(false),[confirm,setConfirm]=useState(false),[manifest,setManifest]=useState(""),[version,setVersion]=useState(1),[selected,setSelected]=useState<string[]>([]),[docs,setDocs]=useState<string[]>([]),[preview,setPreview]=useState<Preview|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(0),[code,setCode]=useState(""),[saved,setSaved]=useState(false);
  const fileTicket=useRef(0),lock=useRef(false),ticket=useRef(0),abort=useRef<AbortController|null>(null),pending=useRef<SourceCommand|null>(null),endpoint="/api/kb/"+encodeURIComponent(kbId)+"/sources";
- useEffect(()=>{void load();return()=>{ticket.current++;abort.current?.abort();};},[kbId]);
+ useEffect(()=>{void load(initialBinding);return()=>{ticket.current++;abort.current?.abort();};},[kbId]);
  const current=view?.bindings.find(b=>b.id===binding),currentRun=view?.runs.find(r=>r.id===runId);
  const text=(s:string)=>m[s as "active"|"paused"|"revoked"|"queued"|"running"|"applied"|"failed"|"cancelled"|"attention"|"done"|"created"|"superseded"|"deleted"|"absent"|"unchanged"|"obsolete"]??s;
  function edit(){fileTicket.current++;pending.current=null;setConfirm(false);setPreview(null);setSaved(false);}

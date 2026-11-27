@@ -29,7 +29,10 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwindcss": "^4.3.3",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "@mozilla/readability": "0.6.0",
+    "linkedom": "0.18.12",
+    "robots-parser": "3.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",

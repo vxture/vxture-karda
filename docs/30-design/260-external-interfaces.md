@@ -461,3 +461,8 @@ Graph centers: existing karda.knowledge_package optionally accepts direction (bo
 ## 智能体知识贡献与反馈
 
 /api/kb/:id/contributions GET支持id/before/state，POST提交/修改/分派/审核/撤回/prepare。认证OBO工具karda.knowledge_contribution支持submit/amend/withdraw/read/list；read/list需data.read，写入需data.write；任何贡献动作不能发布正式知识。文档写入file_ref仅{document_id,version,content_hash}且当前同库授权。contribution.changed为持久元数据事件，消费者重新认证查询贡献/知识。详细契约170§76及206清单。
+
+
+## 自动化知识源连接器
+
+/api/kb/:id/automatic-connectors GET支持id/runId/before；POST统一kbId/id/requestId/revision/action/note/payload。动作create/configure/preview/approve/sync/pause/resume/retry/cancel/delete_preview/delete_confirm；删除必须当前影响hash与confirm。配置api字段及认证详见170§77，凭据只写不可读。知识发布沿用既有审核，不因采集成功自动发布。
