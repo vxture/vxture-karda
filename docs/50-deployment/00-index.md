@@ -75,3 +75,5 @@ exercised (live since v0.1.0); the beta tier stays a reserved channel (TD-001).
 | `470-library-sharing-release-20261127.md` | v0.12.45 sharing governance and production evidence |
 
 | `480-source-management-release-20261127.md` | v0.12.46 complete source management and production evidence |
+
+| `490-knowledge-service-center-release-20261127.md` | v0.12.47 complete agent knowledge service center, six-item acceptance and production evidence |

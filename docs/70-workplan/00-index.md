@@ -1116,3 +1116,5 @@ storage skip). Karda PR259 mergedf37a421; main45115081992 passes (899/899,no ski
 Production DB review: Arda45115384853/DDL0005 and Karda45115340531/DDL0015.
 No new application release yet. Full evidence and ordered continuation:
 [roles delivery](60-explicit-product-roles-20261123.md).
+
+| `198-knowledge-service-center-20261127.md` | 智能体知识服务中心六项批准范围、逐项完成及验收证据 |

@@ -370,3 +370,11 @@ GRANT SELECT,INSERT ON karda_kb.knowledge_service,karda_kb.knowledge_service_ver
 GRANT UPDATE(draft,revision,state,active_version,updated_at) ON karda_kb.knowledge_service TO karda_svc;
 GRANT UPDATE(state,status,error_code,latency_ms,output_bytes,steps,usage,finished_at) ON karda_kb.knowledge_service_call TO karda_svc;
 -- END KNOWLEDGE SERVICES LOCKS
+
+
+-- BEGIN PRODUCTION CENTER LOCKS
+REVOKE UPDATE,DELETE ON karda_kb.production_plan,karda_kb.production_unit,karda_kb.production_step,karda_kb.production_event FROM karda_svc;
+GRANT SELECT,INSERT ON karda_kb.production_plan,karda_kb.production_unit,karda_kb.production_step,karda_kb.production_event TO karda_svc;
+GRANT UPDATE(state,revision,updated_at) ON karda_kb.production_plan TO karda_svc;
+GRANT UPDATE(state,attempt,lease_id,lease_until,receipt,error_code,updated_at) ON karda_kb.production_step TO karda_svc;
+-- END PRODUCTION CENTER LOCKS

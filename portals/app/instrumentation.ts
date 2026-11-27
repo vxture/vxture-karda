@@ -13,5 +13,7 @@ export async function register(): Promise<void> {
     startStorageRecovery();
     const { startProcessingDispatch } = await import("./app/kb/processing/dispatch");
     startProcessingDispatch();
+    const { startProductionDispatch } = await import("./app/kb/production/runtime");
+    startProductionDispatch();
   }
 }
