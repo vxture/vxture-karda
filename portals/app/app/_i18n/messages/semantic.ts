@@ -1,6 +1,10 @@
 import type { Catalog } from "../catalog";
 
 export const semantic = {
+  direction:{"zh-CN":"\u5c55\u5f00\u65b9\u5411","en-US":"Traversal direction"},
+  directionBoth:{"zh-CN":"\u53cc\u5411\u5173\u8054","en-US":"Both directions"},
+  directionOut:{"zh-CN":"\u6cbf\u5173\u7cfb\u65b9\u5411","en-US":"Outgoing"},
+  directionIn:{"zh-CN":"\u9006\u5173\u7cfb\u65b9\u5411","en-US":"Incoming"},
   graphStudio:{"zh-CN":"\u56fe\u8c31\u4e0e\u672c\u4f53\u5de5\u4f5c\u53f0","en-US":"Graph and ontology studio"},
   graphEngineReady:{"zh-CN":"\u56fe\u8c31\u5df2\u5c31\u7eea","en-US":"Graph ready"},
   graphEngineFailed:{"zh-CN":"\u753b\u5e03\u6682\u4e0d\u53ef\u7528\uff0c\u8bf7\u4f7f\u7528\u5b9e\u4f53\u4e0e\u5173\u7cfb\u76ee\u5f55","en-US":"Canvas unavailable; use the entity and relation catalogs"},
