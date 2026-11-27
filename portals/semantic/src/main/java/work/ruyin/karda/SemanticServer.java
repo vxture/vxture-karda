@@ -32,6 +32,10 @@ public final class SemanticServer implements AutoCloseable {
     String op=SemanticRuntime.text(input,"operation",24);
     if(op.equals("health")){JsonObject r=ok();r.addProperty("ready",true);return r;}
     if(op.equals("infer"))return RuleRuntime.execute(input);
+    if(op.equals("list")){
+      String after=SemanticRuntime.text(input,"after",64);if(!after.isEmpty()&&!after.matches("[a-f0-9]{64}"))throw new IllegalArgumentException("semantic_index_key");
+      dataset.begin(ReadWrite.READ);try{List<String> keys=new ArrayList<>();dataset.listNames().forEachRemaining(n->{if(n.startsWith("urn:karda:index:")){String k=n.substring("urn:karda:index:".length());if(k.compareTo(after)>0)keys.add(k);}});Collections.sort(keys);JsonArray values=new JsonArray();keys.stream().limit(100).forEach(values::add);JsonObject r=ok();r.add("keys",values);return r;}finally{dataset.end();}
+    }
     String name=key(input);
     if(op.equals("build")){
       Model data=SemanticRuntime.model(SemanticRuntime.text(input,"data",MAX)),shapes=SemanticRuntime.model(SemanticRuntime.text(input,"shapes",MAX));

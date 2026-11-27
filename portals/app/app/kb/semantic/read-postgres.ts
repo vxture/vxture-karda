@@ -106,6 +106,7 @@ export class PostgresSemanticReader {
           AND k.owner_type='user' AND (k.owner_sub=$3 OR k.publish_state IN ('ws_published','org_published'))
           AND a.user_sub=$3 AND a.product_code=$4 ORDER BY k.id`,
         [kbIds, identity.workspaceId, identity.sub, identity.productCode])).rows.map(row => row.id);
+      if(this.graphEngine&&visible.length!==kbIds.length)throw new Error("semantic_read_denied");
       phase("authority");
       const published = structuredClone(await this.loadPublished(db, [...visible]));
       phase("published");
