@@ -58,6 +58,7 @@ const CAPABILITY_BY_OPERATION: Record<string, string> = {
   ask: "karda.kb-read",
   list_kbs: "karda.kb-read",
   write_document: "karda.kb-write",
+  knowledge_contribution: "karda.kb-write",
   create_entry: "karda.kb-write",
   create_kb: "karda.kb-write",
   attach_kb: "karda.kb-write",

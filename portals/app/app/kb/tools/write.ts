@@ -25,14 +25,16 @@ export interface WriteDeps {
   objects: ObjectStore;
   /** the shared runtime queue - the same one the tick endpoint drains. */
   queue: TaskQueue;
+  authorize?:(caller:CallerContext,kbId:string)=>Promise<void>;
+  resolveFile?:(caller:CallerContext,kbId:string,ref:unknown)=>Promise<{bytes:Buffer;title:string;mime:string;documentId:string}>;
 }
 
 const bad = (detail: string): DispatchResult => ({ status: 400, body: { error: "invalid_request", detail } });
 
 /**
  * karda.write_document: capture a document into a library. Accepts inline
- * `content` (utf-8 text) today; `file_ref` ingestion (a pre-staged object or an
- * external reference) is a later addition. The library must exist in the caller's
+ * `content` (utf-8 text) today; `file_ref` ingestion (a current authorized same-library document, not an
+ * external URL or object key) uses the shared runtime resolver. The library must exist in the caller's
  * workspace - knowing an id is not permission, the same floor the HTTP upload
  * route enforces.
  */
@@ -49,27 +51,23 @@ export async function writeDocument(
   const kbId = typeof args.kb_id === "string" ? args.kb_id : "";
   if (!kbId) return bad("kb_id is required");
 
-  const content = typeof args.content === "string" ? args.content : null;
-  if (content === null) {
-    return {
-      status: 501,
-      body: {
-        error: "not_implemented",
-        detail: "write_document accepts inline `content` (utf-8) today; `file_ref` ingestion is not wired yet",
-      },
-    };
-  }
-  if (content.length === 0) return bad("content is empty");
-
+  if(caller.mode==='obo'&&!caller.user||args.file_ref!==undefined&&caller.mode!=='obo')return{status:403,body:{error:'access_denied'}};
+  const content=typeof args.content==='string'?args.content:null;
+  if((content===null)===(args.file_ref===undefined))return bad('supply exactly one of content or file_ref');
+  if(content!==null&&(content.length===0||Buffer.byteLength(content)>1024*1024))return bad('content must contain 1 to 1048576 UTF-8 bytes');
   // Authorization: the library must exist and belong to the caller's workspace.
   const got = await deps.kb.get(kbId);
   if (!got.ok || got.value.workspaceId !== ws) {
     return { status: 404, body: { error: "not_found", detail: "library not found in this workspace" } };
   }
   const kb = got.value;
+  if(caller.mode==='obo'&&(kb.ownerType!=='user'||kb.ownerSub!==caller.user))return{status:403,body:{error:'access_denied'}};
+  let resolved:{bytes:Buffer;title:string;mime:string;documentId:string}|undefined;
+  try{if(caller.mode==='obo')await deps.authorize?.(caller,kbId);if(content===null){if(!deps.resolveFile)return bad('file_ref resolver is unavailable');resolved=await deps.resolveFile(caller,kbId,args.file_ref);}}catch{return{status:403,body:{error:'file_reference_denied'}};}
 
-  const title = typeof args.title === "string" && args.title ? args.title : "captured document";
-  const bytes = Buffer.from(content, "utf-8");
+
+  const title = typeof args.title === "string" && args.title ? args.title : resolved?.title??"captured document";
+  const bytes = resolved?.bytes??Buffer.from(content!, "utf-8");
 
   const result = await uploadDocument(
     {
@@ -77,7 +75,7 @@ export async function writeDocument(
       workspaceId: ws,
       folderId: null,
       title,
-      mime: "text/plain",
+      mime: resolved?.mime??"text/plain",
       bytes,
       // Provenance: the calling product (S2S act.sub, or "runos" on the Runos
       // channel) + the OBO user when one exists (null on a service-mode write).

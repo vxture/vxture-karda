@@ -20,6 +20,7 @@ export interface DispatchResult {
 }
 
 export interface ToolBackends {
+  knowledgeContribution?(caller:CallerContext,args:Record<string,unknown>):Promise<DispatchResult>;
   knowledgeService?(caller:CallerContext,args:Record<string,unknown>):Promise<DispatchResult>;
   knowledgeSubscription?(caller:CallerContext,args:Record<string,unknown>):Promise<DispatchResult>;
   topicKnowledge?(caller:CallerContext,args:Record<string,unknown>):Promise<DispatchResult>;
@@ -95,13 +96,14 @@ async function dispatchUnchecked(
   }
 
   if(caller.mode === "obo") {
-    const permission=["karda.ask","karda.search","karda.source_search","karda.published_search"].includes(name)?"ai.use":["karda.knowledge_service","karda.knowledge_package","karda.knowledge_sync","karda.topic_knowledge","karda.knowledge_subscription"].includes(name)?"data.read":tool.mode==="obo_only"?"data.write":"data.read";
+    const permission=name==="karda.knowledge_contribution"&&["read","list"].includes(String(args.action))?"data.read":["karda.ask","karda.search","karda.source_search","karda.published_search"].includes(name)?"ai.use":["karda.knowledge_service","karda.knowledge_package","karda.knowledge_sync","karda.topic_knowledge","karda.knowledge_subscription"].includes(name)?"data.read":tool.mode==="obo_only"?"data.write":"data.read";
     if(!permits(caller.productAccess,permission)) return accessDenied("product permission required");
   }
   const ws = caller.workspace;
   if (!ws) return { status: 400, body: { error: "no_workspace", detail: "token carries no workspace" } };
 
   switch (name) {
+    case "karda.knowledge_contribution": return backends.knowledgeContribution?backends.knowledgeContribution(caller,args):notImplemented(name);
     case "karda.knowledge_service": return backends.knowledgeService?backends.knowledgeService(caller,args):notImplemented(name);
     case "karda.knowledge_subscription": return backends.knowledgeSubscription?backends.knowledgeSubscription(caller,args):notImplemented(name);
     case "karda.topic_knowledge":

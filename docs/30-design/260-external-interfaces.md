@@ -456,3 +456,8 @@ Graph centers: existing karda.knowledge_package optionally accepts direction (bo
 ## 实体身份与一致性管理
 
 /api/kb/:id/identity-center GET为owner当前治理工作台；POST要求当前RP、同源JSON、128KiB以内、显式revision/requestId/note与预览确认。详见170§75及205清单。Agent不获得治理写权限，knowledge_package可返回identity版本/档案/映射/裁决及未解决、失效缺口；原文证据不被裁决改写。
+
+
+## 智能体知识贡献与反馈
+
+/api/kb/:id/contributions GET支持id/before/state，POST提交/修改/分派/审核/撤回/prepare。认证OBO工具karda.knowledge_contribution支持submit/amend/withdraw/read/list；read/list需data.read，写入需data.write；任何贡献动作不能发布正式知识。文档写入file_ref仅{document_id,version,content_hash}且当前同库授权。contribution.changed为持久元数据事件，消费者重新认证查询贡献/知识。详细契约170§76及206清单。

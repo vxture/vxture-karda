@@ -403,3 +403,8 @@ Four additive tables: graph_index (scoped current build, leases and CAS head), g
 列：`kb_id`, `revision`, `request_id`, `fingerprint`, `action`, `note`, `result`, `created_by`, `created_at`。
 
 identity_head保存当前草稿/修订与生效指针；identity_version为不可变人工准入版本；identity_control保留幂等请求、理由和操作结果，svc不可改写/删除历史。原始实体及证据不改写。
+
+
+## 智能体知识贡献（0045）
+
+knowledge_contribution：id/kb_id/workspace_id/created_by/product_code，payload_version/state/revision/assignee/similar_hash，plan_id/artifact_document_id/prepared_documents/handoff_state/lease_id/lease_until/error_code及时间。knowledge_contribution_version：contribution_id/version/payload/payload_hash/created_by/note/created_at，不可变提交历史。knowledge_contribution_event：contribution_id/revision/request_id/fingerprint/action/note/result/created_by/created_at，追加式反馈和幂等记录。baseline/Prisma/98同步，97表；production_step状态变化产生contribution.changed元数据事件。

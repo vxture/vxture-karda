@@ -1129,4 +1129,6 @@ No new application release yet. Full evidence and ordered continuation:
 
 | `201-knowledge-event-push-center-20261127.md` | 知识变更事件与外部推送中心批准计划、B1–B6逐项验收 |
 
-- [205 实体身份与知识一致性中心](205-entity-consistency-center-20261127.md)：owner批准整板块E1–E6及验证上线/逐项汇报，实施中。
+- [205 实体身份与知识一致性中心](205-entity-consistency-center-20261127.md)：E1–E6及验证上线/逐项汇报全部完成，v0.12.53。
+
+- [206 智能体知识贡献与反馈中心](206-agent-contribution-center-20261127.md)：owner批准C1–C6及两项收尾，整体实施中。

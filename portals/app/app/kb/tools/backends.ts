@@ -1,3 +1,5 @@
+import {resolveFileReference,writeAuthority} from './file-reference';
+import {contributionTool} from '../contributions/runtime';
 import {knowledgeServiceTool} from "../services/execute";
 // The one place tool backends are assembled (shared by the S2S tool route and
 // the Runos MCP channel, 230-runos-channel). Both channels front the SAME
@@ -45,6 +47,7 @@ export function buildToolBackends(): ToolBackends {
   const runtime = getProcessingRuntime();
   const generation = getGenerationClient();
   return {
+    knowledgeContribution:contributionTool,
     knowledgeService:knowledgeServiceTool,
     topicKnowledge:topicKnowledgeTool,
     publishedSearch:publishedSearchTool,
@@ -57,7 +60,7 @@ export function buildToolBackends(): ToolBackends {
     },
     // write_document is wired (TD-009 9a): capture a document and enqueue it on
     // the shared runtime queue (the same one POST /api/kb/processing/tick drains).
-    writeDocument: (caller, args) => writeDocument(caller, args, { kb, content, objects, queue: runtime.queue }),
+    writeDocument: (caller, args) => writeDocument(caller, args, { kb, content, objects, queue: runtime.queue,authorize:writeAuthority,resolveFile:resolveFileReference }),
     // create_entry is wired (TD-009 9b): write a template-shaped draft entry. The
     // resolver bridges the template code the caller passes -> the seeded row id.
     createEntry: (caller, args) => createEntry(caller, args, { kb, content, templates: getTemplateResolver() }),

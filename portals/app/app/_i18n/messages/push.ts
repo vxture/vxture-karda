@@ -1,4 +1,5 @@
 export const pushMessages = {
+  "contributionChanged":{"zh-CN":"\u77e5\u8bc6\u8d21\u732e\u5904\u7406\u53d8\u5316","en-US":"Knowledge contribution changed"},
   "title": {
     "zh-CN": "\u77e5\u8bc6\u53d8\u66f4\u4e8b\u4ef6\u4e0e\u5916\u90e8\u63a8\u9001\u4e2d\u5fc3",
     "en-US": "Knowledge events and external delivery"

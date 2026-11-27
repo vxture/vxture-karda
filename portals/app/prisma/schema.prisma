@@ -1690,3 +1690,54 @@ model IdentityControl {
  @@map("identity_control")
  @@schema("karda_kb")
 }
+
+model KnowledgeContribution {
+ id String @id @db.Uuid
+ kbId String @map("kb_id") @db.Uuid
+ workspaceId String @map("workspace_id") @db.Uuid
+ createdBy String @map("created_by") @db.VarChar(128)
+ productCode String @map("product_code") @db.VarChar(32)
+ payloadVersion Int @default(1) @map("payload_version")
+ state String @default("submitted") @db.VarChar(24)
+ revision Int @default(1)
+ assignee String? @db.VarChar(128)
+ similarHash String @map("similar_hash") @db.VarChar(64)
+ planId String? @map("plan_id") @db.Uuid
+ artifactDocumentId String? @map("artifact_document_id") @db.Uuid
+ preparedDocuments Json @default("[]") @map("prepared_documents")
+ handoffState String @default("none") @map("handoff_state") @db.VarChar(16)
+ leaseId String? @map("lease_id") @db.Uuid
+ leaseUntil DateTime? @map("lease_until") @db.Timestamptz()
+ errorCode String? @map("error_code") @db.VarChar(80)
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+ updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+ @@map("knowledge_contribution")
+ @@schema("karda_kb")
+}
+model KnowledgeContributionVersion {
+ contributionId String @map("contribution_id") @db.Uuid
+ version Int
+ payload Json
+ payloadHash String @map("payload_hash") @db.VarChar(64)
+ createdBy String @map("created_by") @db.VarChar(128)
+ note String
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+ @@id([contributionId,version])
+ @@map("knowledge_contribution_version")
+ @@schema("karda_kb")
+}
+model KnowledgeContributionEvent {
+ contributionId String @map("contribution_id") @db.Uuid
+ revision Int
+ requestId String @map("request_id") @db.Uuid
+ fingerprint String @db.VarChar(64)
+ action String @db.VarChar(32)
+ note String
+ result Json
+ createdBy String @map("created_by") @db.VarChar(128)
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+ @@id([contributionId,revision])
+ @@unique([contributionId,requestId])
+ @@map("knowledge_contribution_event")
+ @@schema("karda_kb")
+}

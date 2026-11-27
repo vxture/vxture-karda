@@ -1,3 +1,7 @@
+2026-11-27 owner批准205实体身份一致性E1–E6及两项收尾全部完成上线v0.12.53/4d3287146b4d1780a575344ab3f350f5e85f054f，PR396。阶段CI45979853078/scan45979853154：1185app+7Java零失败/跳过；精确主干CI45980315697/scan45980315713通过。0044迁移45980829085于北京时间18:18:28成功94/94表，部署45981111106于18:26:39成功；health/ready版本及db/redis/storageConfig/jena均ok，匿名identity GET/POST/package401、页面307。205/540最终全部勾选，GitHub Release v0.12.53保存权威证据。首轮唯一失败旧表数91应94已修。单库同类型映射、显式单值冲突、scope=library；原实体/证据不改写，原文和旧断言历史保留，完整Ontos/跨库主数据/浏览器点击/真实Agent业务独立。全程无本地子进程/CMD/服务/浏览器/性能，owner70/output保留；local Git refs/index仍旧而文件为最终，勿回退。最终540/205/197/索引/CLAUDE/记忆收尾随NEXT批准功能PR，不单独文档全量；下一板块先计划审批，能力路线剩5模块，固定17仍7/6/4，I1暂停。
+
+2026-11-27 owner批准205实体身份一致性E1–E6及两项收尾，PR396已合并main4d3287146b4d1780a575344ab3f350f5e85f054f。阶段CI45979853078/扫描45979853154全部通过1185app+7Java零失败/跳过；首轮仅旧总表数91应94已修。当前继续精确主干CI、0044生产迁移（94表）及v0.12.53发布，尚未上线；不再次询问授权。新增identity_head/version/control、实体同名独立建档/预览可逆映射/指纹裁决/工作台API和统一知识包读取，205/540记录。全程Node fs/fetch API，无本地子进程/CMD/dev/browser；保留owner70/output，I1暂停。local git refs/index仍未同步API提交，文件含最终代码不要回退。GitHub helper/featureCommit/mergedSha在Node kernel。540最终收尾随NEXT功能PR，勿单独文档全量。
+
 # Agent entry point
 
 2026-11-27三中心整体软件已完成并上线v0.12.52/7cd217966fba1fde6628f6f846916603b58798bf，PR394+395。204全部I/V/R各6项已逐项勾选；530发布记录；GitHubRelease v0.12.52有权威证据。0043迁移45972344187于北京时间17:17:35成功91表；部署45972583905于17:26:14成功。线上health/ready版本及db/redis/storageConfig/jena均ok，匿名graph-center GET/POST/infer、package401，studio307。最终主板块CI45970179912应用1180+Java7零失败/跳过；兼容CI45971404178/扫描45971404197；精确主干CI45971915736/扫描45971915741通过。
