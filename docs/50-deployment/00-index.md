@@ -83,3 +83,5 @@ exercised (live since v0.1.0); the beta tier stays a reserved channel (TD-001).
 | `510-knowledge-push-center-release-20261127.md` | v0.12.50 transactional events/external push and B1-B6 acceptance |
 
 - [520 Graph foundation release](520-graph-foundation-release-20261127.md): v0.12.51, G6/Jena foundation, PR393, stage/exact-main gates and production evidence.
+
+- [530 Graph query/presentation/rules release](530-graph-platform-centers-release-20261127.md): v0.12.52, PR394+395,0043 migration91tables, actual Jena online and stage/exact-main evidence.

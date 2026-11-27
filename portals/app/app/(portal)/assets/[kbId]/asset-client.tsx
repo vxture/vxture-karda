@@ -1,4 +1,5 @@
 "use client";
+import {identityCenter} from '../../../_i18n/messages/identity-center';
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -103,6 +104,7 @@ export type AssetView = "content" | "settings";
 export function AssetClient({ view = "content" }: { view?: AssetView } = {}) {
   const f = useFormat();
   const sourceLabels=useMessages(sourceMessages);
+  const identityLabels=useMessages(identityCenter);
   const m = useMessages(assets);
   const c = useMessages(common);
   const params = useParams<{ kbId: string }>();
@@ -392,6 +394,7 @@ export function AssetClient({ view = "content" }: { view?: AssetView } = {}) {
               <Button variant="outline" asChild>
                 <Link href={`/assets/${kbId}/knowledge`}>{m.knowledgeLabel}</Link>
               </Button>
+              <Button variant="outline" asChild><Link href={`/assets/${kbId}/identity`}>{identityLabels.title}</Link></Button>
               <Button variant="outline" asChild><Link href={`/assets/${kbId}/sources`}>{sourceLabels.open}</Link></Button>
               <Button variant="outline" asChild>
                 <Link href={`/assets/${kbId}/settings`}>{m.settingsLabel}</Link>

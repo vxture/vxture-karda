@@ -1,5 +1,23 @@
 # vxture-karda Repository Standards
 
+Latest production2026-11-27:v0.12.52/7cd217966fba1fde6628f6f846916603b58798bf.
+Owner approved all three graph modules together. PR394+395 delivered index/query,
+G6 view/topic/narrative/presentation/export and bounded Jena ontology/rule
+governance.204checklist/530release. StageCI45970179912:1180app+7Java zero
+fail/skips; compatibilityCI45971404178/scan45971404197; exact-mainCI45971915736/
+scan45971915741 passed.0043migration45972344187 at09:17:35Z91tables; deployment
+45972583905 at09:26:14Z(17:26:14Asia/Shanghai)success. Health/ready includes jena
+ok; anonymous graph managementGET/POST/infer/package401; studio307.
+No local subprocesses after last popup correction: use Node REPL fs/fetch GitHub
+API only. Existing gh keyring read in process through verified temp koffi/CredReadW;
+never output credentials. No git/gh/java/tsc commands. Remote API commits/normal
+PR and gates; local refs/index not yet synchronized, files contain final code.
+Preserve owner70/output. Local530/204/203/checklists/memory closeout rides next
+approved functional PR, no docs-only full-main rerun. Authoritative Release52
+has evidence. FullOWL DL/externalOntos/realAgent business and browser visual
+acceptance remain independent; graph5000 entities/relations and window500/1000,
+rule100/200input+500outputs bounded. Fixed17 remains7done/6progress/4gated;I1paused.
+
 Latest production 2026-11-27: v0.12.51 / bd8800b580a16243bc434cb4580fbc226e15cd1b,
 deploy45961078818 succeeded at07:57:31Z (15:57:31 Asia/Shanghai). PR393 completes
 approved PG+G6+Jena foundation F1-F6: G6 canvas/layout/camera, stable RDF/SHACL,

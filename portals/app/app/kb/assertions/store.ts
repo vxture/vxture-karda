@@ -69,12 +69,13 @@ export async function storeExtraction(
     let entitiesCreated = 0;
 
     for (const name of surfaces) {
-      const existing = await tx.entity.findFirst({
+      const matches = await tx.entity.findMany({
         where: { kbId: ctx.kbId, kind: "thing", name },
+        take: 2,
         select: { id: true },
       });
-      if (existing) {
-        entityIds.set(name, existing.id);
+      if (matches.length===1) {
+        entityIds.set(name, matches[0].id);
         continue;
       }
       const created = await tx.entity.create({

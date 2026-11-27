@@ -927,21 +927,7 @@ CREATE TABLE IF NOT EXISTS karda_kb.entity (
   CONSTRAINT fk_entity_kb FOREIGN KEY (kb_id)
     REFERENCES karda_kb.knowledge_base (id) ON DELETE CASCADE
 );
--- One entity per (library, kind, name). Two things that share a name but not a
--- kind are two things.
--- entity 由 incr/0006 建,新库上这条守卫恒真;它存在是为了统一形状 —— 一条
--- 「baseline 里的独立索引一律带列守卫」的规则不需要每次判断表是老是新,
--- 而需要判断的规则迟早会判错一次。check-data-architecture 机器执行这条。
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'karda_kb' AND table_name = 'entity' AND column_name = 'kind'
-  ) THEN
-      CREATE UNIQUE INDEX IF NOT EXISTS uidx_entity_kb_kind_name
-      ON karda_kb.entity (kb_id, kind, name);
-  END IF;
-END $$;
+-- Entity identity is its stable id. Names are not unique after 0044.
 
 -- --- assertion_mention --------------------------------------------------------
 --
@@ -1825,3 +1811,22 @@ CREATE TABLE IF NOT EXISTS karda_kb.graph_control (
  UNIQUE(target_id,revision), UNIQUE(target_id,request_id)
 );
 -- END GRAPH CENTERS
+
+-- BEGIN ENTITY CONSISTENCY
+CREATE TABLE IF NOT EXISTS karda_kb.identity_head (
+ kb_id UUID PRIMARY KEY REFERENCES karda_kb.knowledge_base(id),workspace_id UUID NOT NULL,
+ draft JSONB NOT NULL,revision INTEGER NOT NULL DEFAULT 0 CHECK(revision>=0),active_version UUID,
+ updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS karda_kb.identity_version (
+ id UUID PRIMARY KEY,kb_id UUID NOT NULL REFERENCES karda_kb.knowledge_base(id),config JSONB NOT NULL,
+ config_hash VARCHAR(64) NOT NULL,created_by VARCHAR(128) NOT NULL,note TEXT NOT NULL,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT now(),UNIQUE(kb_id,id)
+);
+CREATE TABLE IF NOT EXISTS karda_kb.identity_control (
+ kb_id UUID NOT NULL REFERENCES karda_kb.knowledge_base(id),revision INTEGER NOT NULL CHECK(revision>0),
+ request_id UUID NOT NULL,fingerprint VARCHAR(64) NOT NULL,action VARCHAR(32) NOT NULL,note TEXT NOT NULL,
+ result JSONB NOT NULL,created_by VARCHAR(128) NOT NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+ PRIMARY KEY(kb_id,revision),UNIQUE(kb_id,request_id)
+);
+-- END ENTITY CONSISTENCY

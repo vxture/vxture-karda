@@ -394,3 +394,9 @@ GRANT SELECT,INSERT ON karda_kb.graph_index,karda_kb.graph_asset,karda_kb.graph_
 GRANT UPDATE(state,revision,attempt,lease_id,lease_until,target_hash,active_hash,node_count,edge_count,manifest,error_code,updated_at) ON karda_kb.graph_index TO karda_svc;
 GRANT UPDATE(title,visibility,draft,revision,state,active_version,updated_at) ON karda_kb.graph_asset TO karda_svc;
 -- END GRAPH CENTERS LOCKS
+
+-- BEGIN ENTITY CONSISTENCY LOCKS
+REVOKE UPDATE,DELETE ON karda_kb.identity_head,karda_kb.identity_version,karda_kb.identity_control FROM karda_svc;
+GRANT SELECT,INSERT ON karda_kb.identity_head,karda_kb.identity_version,karda_kb.identity_control TO karda_svc;
+GRANT UPDATE(draft,revision,active_version,updated_at) ON karda_kb.identity_head TO karda_svc;
+-- END ENTITY CONSISTENCY LOCKS
