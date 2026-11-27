@@ -46,7 +46,7 @@ test('production center PostgreSQL: durable plan/current evidence/manual admissi
   await assert.rejects(service.query("UPDATE karda_kb.production_unit SET manifest='{}' WHERE id=$1",[unit.id]),/permission denied/);await assert.rejects(service.query('DELETE FROM karda_kb.production_event WHERE plan_id=$1',[id]),/permission denied/);await assert.rejects(store.browse({...who,workspaceId:randomUUID()},{id}),/production_denied/);
   await admin.query('DELETE FROM local_authz.member_role WHERE member_id=$1',[member]);await assert.rejects(store.browse(who,{id}),/production_denied/);
  }finally{await admin.query('DELETE FROM karda_kb.knowledge_service WHERE workspace_id=$1',[ws]);await admin.query('DELETE FROM karda_kb.production_plan WHERE workspace_id=$1',[ws]);
-  for(const table of ["semantic_event_receipt","semantic_release_head","semantic_release_review","semantic_relation_assertion","semantic_relation","semantic_release_source","semantic_release","semantic_compile_run","semantic_review","semantic_schema_version"])await admin.query("DELETE FROM karda_kb."+table+" WHERE kb_id=$1",[kb]);
+  for(const table of ["semantic_event_receipt","semantic_release_head","semantic_release_review","semantic_relation_assertion","semantic_relation","semantic_release_source","semantic_release","semantic_compile_task","semantic_compile_run","semantic_review","semantic_schema_version"])await admin.query("DELETE FROM karda_kb."+table+" WHERE kb_id=$1",[kb]);
   await admin.query("DELETE FROM karda_kb.knowledge_base WHERE id=$1",[kb]);
   if(member){await admin.query("DELETE FROM local_authz.member_role WHERE member_id=$1",[member]);await admin.query("DELETE FROM local_authz.member WHERE id=$1",[member]);}
   await service.end();await admin.end();}
