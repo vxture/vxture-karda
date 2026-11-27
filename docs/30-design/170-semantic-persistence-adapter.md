@@ -1160,3 +1160,24 @@ owner批准后完整实施，不拆小步发布。新增 /assets/[kbId]/sources 
 连接器能力与真实就绪分开：API版本化批次可用；Arda仅登记并明确external_contract_required。实际Arda缺登记/内容fetch/远端inventory契约，本批不伪造抓取或对账成功。第三方定时抓取、凭据托管和远端全量对账不在本地API传输实现中。UI具备文件/JSON清单、真实进度、失败分类、批量/单项执行、重试/取消、文档加工恢复、20条批次/文档/历史分页及影响确认，无自动模型或客户导入。
 
 仅开发必要类型和协议定向；板块末CI集中全回归及真实PostgreSQL验证租约恢复/毒条隔离/版本删除/预览变化/原子撤销/当前撤权。无本地dev/浏览器/CMD，必要命令direct windowsHide无shell。S3真实Ontos后置、S4正式库权威、S5外部主动推送/真实Agent、S6业务切换独立；17主验收保持7完成/6进行中/4待门槛，I1暂停。
+
+
+## 70. 智能体知识服务中心整板块（2026-11-27）
+
+owner批准六项范围，验收逐项正本为198清单。/channels/services提供服务列表/详情、名称/说明、同空间当前挂载可读user库范围及facts/topics/source/package能力配置。sourceFallback只用于事实检索成功且空命中，失败/拒绝不能回退掩盖。verificationFilter仅作用于原文检索与回退；事实/主题/知识包继续既有人工审核和当前来源校验。topK限制事实/原文结果和知识包关系；主题读取按原有汇编语义，不伪造topK筛选。contextBytes为4096–262144字节完整UTF-8响应预算，超限拒绝且无正文，保留完整证据不做破坏性截断。
+
+同空间knowledge_service配置由创建者或明确产品管理员管理，均需当前product.enter/data.read/data.write。配置不是ACL：范围只在每次当前用户/产品可见与挂载交集中有效。发布/停用/回退另需service.publish，草稿保存不改已发布版本。管理工作台不可让其他用户读取尚未发布草稿；正式OBO按已知服务ID调用，库授权不随服务创建者转移。机构库/跨空间/服务身份访问不扩大。
+
+0040四表knowledge_service（可变草稿/修订/状态/启用指针）、knowledge_service_version（不可变配置和hash）、knowledge_service_event（追加控制收据）、knowledge_service_call（无正文调用元数据），74→78表。基线/增量/Prisma/98及41表升级回放锁步。版本与事件服务仅SELECT/INSERT；配置和调用仅授权状态列更新。无物理删除API或保留期清理，记录随服务管理员删除级联；不宣称永久审计。服务总量每空间100，上下文最多20库，列表/版本/控制历史/调用每页20，库选择最多200。
+
+create/save严格配置契约、必填原因、事件幂等、修订CAS；preview目标draft/stop/历史version，校验当前范围、给当前与目标配置/变化字段/库范围和未完成调用数量。预览hash绑定主体/完整服务修订/库owner/共享状态/更新时间和影响汇总。apply重核验后一事务写新不可变发布版本（回退也复制成新版本）、指针/状态及事件。停用保留版本和追溯，结果交付前再次校验状态/修订，执行期间停用/切换则拒绝旧正文；不是分布式撤回已交付内容。
+
+统一OBO工具karda.knowledge_service走既有S2S /api/tools/knowledge_service、当前aud/scope/委托准入；RP POST /api/knowledge-services/invoke与同一executeKnowledgeService/既有后端函数。输入serviceId/requestId/capability，可选query/kbId/relationType/summaryId/before/entityIds/pageCursor，严格按能力限制字段，无身份/任意库覆盖。source/facts需ai.use，topics/package只data.read。当前库许可/挂载及真实后端来源/最新裁决检查，每次新调用即读取当前知识；服务版本冻结策略，不冻结旧知识。draft调试仅Karda本产品配置管理者，返回draft=true/versionId=null。非生成式服务不自动ask/调用模型。
+
+返回实际versionId/configHash/requestId、步骤、完整后端result（证据/缺口/部分/截断字段保持）及sourceFallback/用量关联。facts与source复用既有检索后端计量，用量idempotencyKey=knowledge-service:<requestId>:<tool>，外层工具不再计一次；空事实回退可产生两次检索。后端读取成功并持久计量后，若预算/版本最终核验拒绝仍可能已计检索，追踪保留关联；不把该场景叫未计费。结果交付前必须持久完成追踪，追踪失败返回503无正文。requestId全局唯一，重复请求409且不重新执行或回放旧正文；网络结果不确定时查元数据，不自动用新ID重试。进程中断running保持未完成，不自动重放计量调用。
+
+追踪只含主体/产品、服务/版本/configHash、能力、草稿标识、开始/完成时间、状态/分类错误、耗时、完整响应字节、步骤状态与精确用量key；不存query/答案/证据正文或token。入参/身份/服务范围初步拒绝不建立可被探测的他人服务追踪。列表可按state/requestId收窄和request_id续页，详情内元数据展开。当前角色和服务管理权逐次复核，库撤回后仍可维护本服务配置以修复范围；正式消费拒绝撤权。
+
+检验台通过?serviceId复用ServiceDebug，中心与检验台同一组件和真实执行链；可调试当前发布/已保存草稿、参数和分页、查看结构化响应与原文证据链接。版本对比和接入示例/配置JSON导出不包含凭据，不把服务ID当授权。编辑/刷新/切换或异常清空旧结果，未保存表单不能发布。中心导航已接入供给通道。没有浏览器/本地服务/CMD窗口；开发仅必要定向与类型，整块CI真实DB/构建/集中回归后发布。
+
+六项软件交付不代表Runos注册/真实外部Agent联调、正式机构权威、未开发Ontos或业务质量/切换通过。17主验收7完成/6进行中/4待门槛保持，I1暂停。下一模块仍先计划再审批。

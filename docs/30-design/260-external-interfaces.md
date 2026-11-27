@@ -46,7 +46,7 @@
 
 ## 3. 入站:agent 工具面 `karda.*`
 
-十六件工具,两条通道。同一套 `buildToolBackends()`,**一个知识服务,两扇门**。
+十九件工具,两条通道。同一套 `buildToolBackends()`,**一个知识服务,两扇门**。
 
 | 工具 | 模式 | 计量 | 直连 S2S | Runos MCP | 权威 |
 |---|---|---|---|---|---|
@@ -58,6 +58,7 @@
 | `karda.get_context` | OBO/service | **免计量** | 已交付 | **未实现** | `140` §8.3 |
 | `karda.knowledge_package` | **仅 OBO** | 免计量，有界已发布知识核验 | 本仓实现；kb_id或最多20库kb_ids，目录page_cursor逐页复验；真实OBO待验 | 未开放，现有service通道不适用 | `170` §15/25/30 |
 | `karda.knowledge_sync` | **仅 OBO** | 免计量，有界已发布知识核验 | 本仓实现；known_revision条件同步，每次复核当前权限/来源；真实Agent待验 | 未开放，现有service通道不适用 | `170` §39 |
+| `karda.knowledge_service` | **仅 OBO** | 外层免计量，facts/source按实际后端检索计量 | 按已发布服务ID执行/真实版本/当前许可及挂载/证据和用量关联，本批实现、外部Agent待验 | 未开放，service通道不适用 | `170` §70 / `198`清单 |
 | `karda.knowledge_subscription` | **仅 OBO** | 免计量，与knowledge_sync一致 | 拉取式消费窗口/确认/租约领取/失败重试与死信恢复，本仓实现、真实Agent待验 | service不开放 | `170` §64 |
 | `karda.topic_knowledge` | **仅 OBO** | 免计量，与knowledge_package读取一致 | 主题发现/当前事实汇编/人工认可摘要及证据读取，本仓实现，真实Agent待验 | 未开放，service通道不适用 | `170` §58 |
 | `karda.published_search` | **仅 OBO** | per_call，沿用karda.search | 本仓实现；当前已发布事实全文词法排序/精确证据，真实Agent待验 | 未开放，service通道不适用 | `170` §44 |
@@ -438,3 +439,6 @@ OCR草稿（170§60）：RP GET/POST `/api/kb/[id]/ocr-drafts`，当前同空间
 ## 知识源管理RP接口（2026-11-27）
 
 GET/POST /api/kb/[id]/sources为当前用户管理接口，非匿名/内部token批量授权。GET支持bindingId/runId、before/historyBefore/documentBefore分页；POST严格create/stage/execute/retry/cancel_run/retry_processing/pause/resume/finish_backfill/revoke_preview/revoke，完整字段见source-contract.ts与170§69。API connector支持显式原件批次和版本化删除，无远端清单对账。旧bindings写接口409 source_use_management_workflow；受控绑定旧内部ingest返回409 source_versioned_batches_required。连接器列表额外readiness，Arda external_contract_required不能当已连通。错误不返回SQL/上游私有详情。
+
+
+智能体知识服务中心（170§70）：RP GET/POST /api/knowledge-services管理配置/预览/发布/停用/回退，POST /api/knowledge-services/invoke与OBO karda.knowledge_service复用同执行器。工具参数serviceId/requestId/capability，能力特定query/kbId/relationType/summaryId/before/entityIds/pageCursor，draft仅本产品管理者。requestId不重放正文，不确定结果通过追踪判断；当前版本和权限每次核验，外层免重复计量。入参正文64KiB、响应按策略完整字节预算。Runos未注册，不新增service模式许可。外部Artifact接口文档无本地可写载体，本仓登记册与工具元数据/导出为此次同步投影；未宣称外部Artifact已更新。
