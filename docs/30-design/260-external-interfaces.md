@@ -442,3 +442,6 @@ GET/POST /api/kb/[id]/sources为当前用户管理接口，非匿名/内部token
 
 
 智能体知识服务中心（170§70）：RP GET/POST /api/knowledge-services管理配置/预览/发布/停用/回退，POST /api/knowledge-services/invoke与OBO karda.knowledge_service复用同执行器。工具参数serviceId/requestId/capability，能力特定query/kbId/relationType/summaryId/before/entityIds/pageCursor，draft仅本产品管理者。requestId不重放正文，不确定结果通过追踪判断；当前版本和权限每次核验，外层免重复计量。入参正文64KiB、响应按策略完整字节预算。Runos未注册，不新增service模式许可。外部Artifact接口文档无本地可写载体，本仓登记册与工具元数据/导出为此次同步投影；未宣称外部Artifact已更新。
+
+
+知识生产中心（170§71）：RP GET/POST /api/production-center，仅本人当前工作空间已挂载user库范围。GET id/before/kbId/state/historyBefore/documentBefore有界分页，候选读取id/unitId及可选assertionBefore互斥其他参数。POST严格create/start/pause/resume/cancel/retry/review_assertions/review_relations/select/preview/publish，同源JSON64KiB、事件幂等/CAS、显式原因及当前权限。start授权后台有界加工/抽取/编译，approve/publish仍明确人工；后台复用当前服务名单/权益及本地权限，不保存RP凭据或扩展平台授权。无新OBO/Runos工具。

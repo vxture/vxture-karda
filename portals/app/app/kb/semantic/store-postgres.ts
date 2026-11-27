@@ -608,13 +608,15 @@ export class PostgresSemanticStore {
 
   async reviewRelation(identity: SemanticReadIdentity, kbId: string, request: {
     runId: string; relationId: string; expectedRevision: number; decision: "accept" | "revise" | "reject"; note: string;
-  }): Promise<{ reviewId: string; revision: number }> {
+  }, currentGate?:(db:PoolClient)=>Promise<void>): Promise<{ reviewId: string; revision: number }> {
     const input = { ...request }, actor = identity.sub;
     if (!UUID.test(input.runId) || !UUID.test(input.relationId) || !Number.isSafeInteger(input.expectedRevision) ||
       input.expectedRevision < 0 || input.expectedRevision >= 2147483647 || !["accept", "revise", "reject"].includes(input.decision) ||
       typeof input.note !== "string" || !input.note.trim() || [...input.note].length > 10000) throw new Error("semantic_invalid_review");
     return this.write(identity, kbId, "service.publish", async db => {
+      if(currentGate)await currentGate(db);
       const compiledInput = (await compiled(db, kbId, input.runId)).input;
+      if(currentGate)await validateGrounds(db,compiledInput,await this.sources(db,compiledInput));
       if (!compiledInput.relations.some(row => row.id === input.relationId)) throw new Error("semantic_relation_missing");
       const subjectKey = `relation/${input.relationId}`;
       const previous = (await latestReviews(db, kbId, compiledInput)).find(row => row.subject_key === subjectKey);

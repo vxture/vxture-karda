@@ -1,6 +1,23 @@
 # vxture-karda Repository Standards
 
-Latest production 2026-11-27: v0.12.46 / bd068e09078f02c9662892b158c8c4a9de877bf7,
+Latest production 2026-11-27: v0.12.47 / 5a9f1aa33bc317896f9f9333e3df25da81a1e15b,
+deploy45935400643 succeeded at2026-11-27T03:46:51Z (11:46:51 Asia/Shanghai).
+PR389 completes all six approved knowledge-service-center items: service/scope/
+capabilities, actual policies/budgets, immutable release preview/CAS/stop/rollback,
+unified OBO invocation, shared debug/integration export and metadata-only traces
+with exact usage keys. Entry /channels/services; plan acceptance198, release490.
+Stage CI45934626684 once:1163pass/zero skips; scan45934626546; exact-main
+CI45934973433/scan45934973466passed. Migration0040 run45935209816 succeeded
+at03:38:23Z;78tables. Online health/ready versions/deps OK; anonymous management
+GET/POST, RP invoke, OBO tool invoke and package GET401. No local full suite,
+performance, dev server, browser or visible CMD/PowerShell. Native commands direct
+windowsHide without shells; standalone browser clicks/external Agent unverified.
+Local490/198/checklists/memory closeout rides NEXT owner-approved functional PR,
+no docs-only main full rerun. Preserve owner70/output. Next module needs an
+approved complete plan. Ontos/formal authority/external push/real Agent/business
+cutover and Arda fetch remain separate. Fixed17:7done/6progress/4gated;I1paused.
+
+Historical production 2026-11-27: v0.12.46 / bd068e09078f02c9662892b158c8c4a9de877bf7,
 deploy45928813120 succeeded at2026-11-27T02:37:46Z (10:37:46 Asia/Shanghai).
 PR388 completes approved source management: registration/scope, durable batches,
 ordered deltas/tombstones, failure isolation/retry, pause/resume/cancel, revocation
