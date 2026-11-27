@@ -15,8 +15,6 @@ import {
   listConnectors,
   getAssetSupply,
   getLibraryKarda,
-  createBinding,
-  bindingAction,
   uploadDocument,
   deleteDocument,
   reprocessDocument,
@@ -53,7 +51,7 @@ import { PageHead } from "../../../_shell/PageHead";
 import { DocumentPanel } from "./DocumentPanel";
 import { LifecycleStrip } from "./LifecycleStrip";
 import { SettingsPanel } from "./SettingsPanel";
-import { BindingPanel } from "./BindingPanel";
+import {sources as sourceMessages} from "../../../_i18n/messages/sources";
 import { useFormat, type Failure } from "../../../_i18n/useFormat";
 import { useMessages } from "../../../_i18n/useMessages";
 import { common } from "../../../_i18n/messages/common";
@@ -104,6 +102,7 @@ export type AssetView = "content" | "settings";
 
 export function AssetClient({ view = "content" }: { view?: AssetView } = {}) {
   const f = useFormat();
+  const sourceLabels=useMessages(sourceMessages);
   const m = useMessages(assets);
   const c = useMessages(common);
   const params = useParams<{ kbId: string }>();
@@ -263,35 +262,7 @@ export function AssetClient({ view = "content" }: { view?: AssetView } = {}) {
     />
   );
 
-  const bindingPanel = kb && (
-    <BindingPanel
-      kb={kb}
-      bindings={bindings}
-      connectors={connectors}
-      busy={busy}
-      onCreate={(connectorCode, externalSourceId) =>
-        run(assets.errBind, async () => {
-          const r = await createBinding(kbId, connectorCode, externalSourceId);
-          setBindings(await listBindings(kbId));
-          return m.okBind(r.connector?.name ?? connectorCode, externalSourceId);
-        })
-      }
-      onAction={(binding, action) =>
-        run(assets.errBindingAction, async () => {
-          const r = await bindingAction(kbId, binding.id, action);
-          setBindings(await listBindings(kbId));
-          if (action === "revoke") {
-            // Report what the cascade ACTUALLY did, not what the preview
-            // predicted - if they ever diverge, the owner should see the
-            // real number.
-            await loadDocs();
-            return m.okRevoke(binding.externalSourceId, r.cascade?.tombstoned ?? 0);
-          }
-          return action === "pause" ? m.okPause : m.okResume;
-        })
-      }
-    />
-  );
+  const bindingPanel=kb&&<div className="grid gap-md rounded border p-md"><h2>{sourceLabels.title}</h2><p>{sourceLabels.hint}</p><Button asChild><a href={"/assets/"+encodeURIComponent(kbId)+"/sources"}>{sourceLabels.open}</a></Button></div>;
 
   const settingsPanel = kb && (
     <SettingsPanel
@@ -421,6 +392,7 @@ export function AssetClient({ view = "content" }: { view?: AssetView } = {}) {
               <Button variant="outline" asChild>
                 <Link href={`/assets/${kbId}/knowledge`}>{m.knowledgeLabel}</Link>
               </Button>
+              <Button variant="outline" asChild><Link href={`/assets/${kbId}/sources`}>{sourceLabels.open}</Link></Button>
               <Button variant="outline" asChild>
                 <Link href={`/assets/${kbId}/settings`}>{m.settingsLabel}</Link>
               </Button>

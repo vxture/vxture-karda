@@ -354,3 +354,11 @@ GRANT UPDATE (delivery_revision,delivery_sequence,delivery_attempt,delivery_stat
 REVOKE UPDATE, DELETE ON karda_kb.library_sharing_event FROM karda_svc;
 GRANT SELECT, INSERT ON karda_kb.library_sharing_event TO karda_svc;
 -- END LIBRARY SHARING LOCKS
+
+-- BEGIN SOURCE MANAGEMENT LOCKS
+REVOKE UPDATE, DELETE ON karda_kb.source_control_event,karda_kb.source_sync_run,karda_kb.source_sync_item,karda_kb.source_document_head FROM karda_svc;
+GRANT SELECT, INSERT ON karda_kb.source_control_event,karda_kb.source_sync_run,karda_kb.source_sync_item,karda_kb.source_document_head TO karda_svc;
+GRANT UPDATE(state,updated_at) ON karda_kb.source_sync_run TO karda_svc;
+GRANT UPDATE(state,attempt,lease_id,lease_until,document_id,outcome,error_code,updated_at) ON karda_kb.source_sync_item TO karda_svc;
+GRANT UPDATE(source_version,event,content_hash,document_id,updated_at) ON karda_kb.source_document_head TO karda_svc;
+-- END SOURCE MANAGEMENT LOCKS

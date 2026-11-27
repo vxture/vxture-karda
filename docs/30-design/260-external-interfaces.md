@@ -433,3 +433,8 @@ OCR草稿（170§60）：RP GET/POST `/api/kb/[id]/ocr-drafts`，当前同空间
 
 
 库共享控制（170§68）：RP GET/POST /api/kb/[id]/publish仅当前同空间user库属主或明确产品管理员，product.enter/data.read/service.publish。GET当前状态/允许目标/影响及20条历史，before整数续页；POST preview仅action/target，apply仅action/target/eventId/expectedRevision/previewHash/note，同源JSON、当前复核/CAS/幂等。旧仅target立即变更请求不再接受，设置页改共享管理入口；无OBO管理或tenant/platform/跨空间授权扩展。撤回保留挂载/订阅，后续读取/交付当前scope核验拒绝失去可见性的库。
+
+
+## 知识源管理RP接口（2026-11-27）
+
+GET/POST /api/kb/[id]/sources为当前用户管理接口，非匿名/内部token批量授权。GET支持bindingId/runId、before/historyBefore/documentBefore分页；POST严格create/stage/execute/retry/cancel_run/retry_processing/pause/resume/finish_backfill/revoke_preview/revoke，完整字段见source-contract.ts与170§69。API connector支持显式原件批次和版本化删除，无远端清单对账。旧bindings写接口409 source_use_management_workflow；受控绑定旧内部ingest返回409 source_versioned_batches_required。连接器列表额外readiness，Arda external_contract_required不能当已连通。错误不返回SQL/上游私有详情。

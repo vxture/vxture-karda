@@ -361,3 +361,8 @@ baseline/0020/Prisma/98锁步，新旧库重复演练；生产通过db-init审�
 
 
 2026-11-27 0038新增library_sharing_event（70表），同kb/revision主键、kb/event_id唯一，追加式保存共享before/after、影响元数据、操作者/原因与请求fingerprint；98仅SELECT/INSERT无UPDATE/DELETE。现有publish_state仍唯一权威，未新增机构库ACL；baseline/增量/Prisma/旧41表升级锁步，见170§68。
+
+
+## 知识源管理增量0039（2026-11-27）
+
+四张表source_control_event/source_sync_run/source_sync_item/source_document_head持久保存来源控制、批次、不可变清单/租约状态和单来源文档最新版本/删除头，70→74表。source_control_event仅SELECT/INSERT，sync_item原始payload/hash及身份字段不可改，允许更新处理状态列；head保留tombstone顺序围栏。document_id为追溯引用，不强制FK，以保留版本链；库/绑定删除按声明级联。baseline/0039/98/Prisma及旧迁移夹具一致。事务/配额/撤销规则见170§69。

@@ -121,3 +121,8 @@ Binding = KnowledgeBase(Karda 侧) ←订阅→ DataSource(Arda 侧)
 - 120-retrieval-tools §3:visible-set-invalidate 与本契约 revoke_binding 的双事件分工已在 §7 固化;
 - product_310/C3:webhook 域投递本契约通知的通道登记;
 - product_110:级联撤销原则(§10-#2)由本契约 §7 落为可执行语义。
+
+
+## 2026-11-27 来源管理实际状态
+
+Arda连接器可登记、暂停及撤销，UI/API明确等待外部登记/fetch/inventory契约；当前Arda仓未实现这条完整内容服务链。旧fetch_ref停驻不等于已获取正文。来源软件闭环可先使用api版本化原件批次，见170§69，不以本地模拟标记Arda联调完成。

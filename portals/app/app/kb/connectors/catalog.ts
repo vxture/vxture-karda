@@ -35,6 +35,7 @@ export interface ConnectorDescriptor {
 // Arda's declaration - a plain external doc library would more typically be
 // poll/karda/direct/none/absence.
 export const CONNECTORS: ConnectorDescriptor[] = [
+  {code:"api",name:"Versioned API batches",capabilities:{changeDetection:"source",delivery:"notify",fetch:"direct",reconcile:"none",deleteSignal:"tombstone"}},
   {
     code: "arda",
     name: "Arda knowledge channel",

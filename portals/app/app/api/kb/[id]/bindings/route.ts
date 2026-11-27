@@ -32,49 +32,16 @@ async function scopedKb(id: string, user: AuthUser & { activeWorkspace: string }
 }
 
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }): Promise<Response> {
-  const auth = await requireAuth("data.read");
+  const auth = await requireAuth("data.write");
   if (!auth.ok) return auth.response;
   const { id } = await ctx.params;
-  if (!(await scopedKb(id, auth.user))) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  const kb=await scopedKb(id, auth.user);if(!kb)return NextResponse.json({error:"not_found"},{status:404});
+  if(!mayManage(auth.user,kb))return NextResponse.json({error:"source_denied"},{status:403});
   const bindings = await new BindingService(getBindingStore()).listForKb(id);
   return NextResponse.json({ bindings });
 }
 
-export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }): Promise<Response> {
-  const auth = await requireAuth("data.write");
-  if (!auth.ok) return auth.response;
-  const { id } = await ctx.params;
-  const kb = await scopedKb(id, auth.user);
-  if (!kb) return NextResponse.json({ error: "not_found" }, { status: 404 });
-  if (!mayManage(auth.user, kb)) {
-    return NextResponse.json({ error: "forbidden", detail: "only an owner or admin may bind a source" }, { status: 403 });
-  }
-
-  const body = await readJson(req);
-  const connectorCode = typeof body.connector_code === "string" ? body.connector_code : "";
-  const externalSourceId = typeof body.external_source_id === "string" ? body.external_source_id : "";
-  if (!connectorCode || !externalSourceId) {
-    return NextResponse.json({ error: "invalid_request", detail: "connector_code and external_source_id are required" }, { status: 400 });
-  }
-
-  const result = await new BindingService(getBindingStore()).create({
-    kbId: id,
-    connectorCode,
-    externalSourceId,
-    createdBy: auth.user.sub,
-  });
-  if (!result.ok) {
-    const status = result.error.code === "binding_exists" ? 409
-      : result.error.code === "capacity_exceeded" ? 403
-      : result.error.code === "capacity_unconfigured" || result.error.code === "capacity_unavailable" ? 503 : 400;
-    return NextResponse.json({ error: result.error.code }, { status });
-  }
-
-  // Surface the connector's accepted trade-offs so the owner sees them at bind
-  // time (section 4 / section 8 - degradation must be explicit, not silent).
-  const connector = connectorByCode(connectorCode);
-  return NextResponse.json(
-    { binding: result.value, connector: connector && { name: connector.name, capabilities: connector.capabilities, degradations: degradations(connector.capabilities) } },
-    { status: 201 },
-  );
+export async function POST():Promise<Response>{
+ const auth=await requireAuth("data.write");if(!auth.ok)return auth.response;
+ return NextResponse.json({error:"source_use_management_workflow"},{status:409,headers:{"Cache-Control":"private, no-store"}});
 }

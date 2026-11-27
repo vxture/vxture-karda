@@ -1,3 +1,4 @@
+import {Pool} from "pg";
 import { NextResponse } from "next/server";
 import { parseEnvelope } from "../../../kb/connectors/envelope";
 import { ingestEnvelope } from "../../../kb/connectors/ingest";
@@ -30,6 +31,12 @@ export async function POST(req: Request): Promise<Response> {
   const parsed = parseEnvelope(body);
   if (!parsed.ok) return NextResponse.json({ error: "invalid_envelope", detail: parsed.error }, { status: 400 });
 
+  if(process.env.DATABASE_URL){
+    const pool=new Pool({connectionString:process.env.DATABASE_URL,max:1,allowExitOnIdle:true});
+    try{const managed=await pool.query("SELECT binding_id FROM karda_kb.source_control_event WHERE binding_id=$1 LIMIT 1",[parsed.value.bindingId]);
+      if(managed.rowCount)return NextResponse.json({error:"source_versioned_batches_required"},{status:409});
+    }finally{await pool.end();}
+  }
   const runtime = getProcessingRuntime();
   const result = await ingestEnvelope(parsed.value, {
     content: new ContentService(getContentStore()),
