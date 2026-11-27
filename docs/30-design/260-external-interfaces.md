@@ -445,3 +445,6 @@ GET/POST /api/kb/[id]/sources为当前用户管理接口，非匿名/内部token
 
 
 知识生产中心（170§71）：RP GET/POST /api/production-center，仅本人当前工作空间已挂载user库范围。GET id/before/kbId/state/historyBefore/documentBefore有界分页，候选读取id/unitId及可选assertionBefore互斥其他参数。POST严格create/start/pause/resume/cancel/retry/review_assertions/review_relations/select/preview/publish，同源JSON64KiB、事件幂等/CAS、显式原因及当前权限。start授权后台有界加工/抽取/编译，approve/publish仍明确人工；后台复用当前服务名单/权益及本地权限，不保存RP凭据或扩展平台授权。无新OBO/Runos工具。
+
+
+知识事件推送（170§72）：出站consumer配置的公网HTTPS443，事件格式karda.knowledge-event.v1，无知识正文；X-Karda-Key-Id/Timestamp/Signature/Event-Id/Delivery-Id/Request-Id签名元数据，HMAC-SHA256(secret,timestamp+dot+deliveryId+dot+rawBody)，2xx精确JSON {eventId,accepted:true}确认。至少一次/可能乱序，接收端eventId幂等并重新鉴权读知识。RP GET/POST /api/knowledge-push配置/验证/启用/暂停/停用/轮换/重试/有界重放；当前服务创建者及service.publish和data.write，非OBO新工具。Node接收样例/integrations/karda-push-receiver.mjs公开可下载，不含凭据；没有平台注册或自动外部联调。
