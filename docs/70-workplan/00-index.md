@@ -1133,4 +1133,8 @@ No new application release yet. Full evidence and ordered continuation:
 
 - [206 智能体知识贡献与反馈中心](206-agent-contribution-center-20261127.md)：C1–C6及两项收尾全部完成，v0.12.54。
 
-- [207 自动化知识源连接器中心](207-automatic-connectors-center-20261127.md)：owner批准A1–A6及两项收尾，实施中。
+- [207 自动化知识源连接器中心](207-automatic-connectors-center-20261127.md)：A1–A6及两项收尾全部完成，v0.12.55。
+
+- [208 平台页面走查与问题清单](208-platform-page-walkthrough-20261127.md)：页面观察完成41/41，36项问题/改进/待复核现象；含本体建模能力结论和后续整板块建议，未实施修复。
+
+- [209 平台功能贯通与真实状态修复](209-platform-functional-integration-20261127.md)：T1–T6及两项收尾完整计划，用户已批准，T1–T6实施中，尚未阶段上线。

@@ -99,7 +99,7 @@ export function ChannelsClient() {
       <PageHead
         title={sh.navChannels}
         description={sh.navChannelsDesc}
-        meta={m.pageMeta(totals.todayCalls.toLocaleString(), totals.directCalls, totals.runosCalls, totals.p95Ms)}
+        meta={totals.todayCalls?m.pageMeta(totals.todayCalls.toLocaleString(), totals.directCalls, totals.runosCalls, totals.p95Ms):m.callsToday+": 0"}
         actions={
           <Button variant="outline" asChild>
             <a href="/bench">{sh.subBench}</a>
@@ -123,7 +123,7 @@ export function ChannelsClient() {
           },
           { id: "direct", label: m.metricDirect, value: totals.directCalls.toLocaleString(), icon: "plug", tone: "info" },
           { id: "runos", label: "Runos · MCP", value: totals.runosCalls.toLocaleString(), icon: "puzzle", tone: "info" },
-          { id: "p95", label: m.metricP95, value: `${totals.p95Ms}ms`, icon: "timer", tone: "success" },
+          { id: "p95", label: m.metricP95, value: totals.todayCalls?`${totals.p95Ms}ms`:"—", icon: "timer", tone: "success" },
         ]}
       />
 
@@ -151,10 +151,10 @@ export function ChannelsClient() {
                       {m.callsToday}<span className="ml-2xs font-mono text-foreground">{c.todayCalls.toLocaleString()}</span>
                     </span>
                     <span className="text-muted-foreground">
-                      P95<span className="ml-2xs font-mono text-foreground">{off ? "—" : `${c.p95Ms}ms`}</span>
+                      P95<span className="ml-2xs font-mono text-foreground">{off||!c.todayCalls ? "—" : `${c.p95Ms}ms`}</span>
                     </span>
                     <span className="text-muted-foreground">
-                      {m.errorRate}<span className="ml-2xs font-mono text-foreground">{off ? "—" : `${c.errorRatePct}%`}</span>
+                      {m.errorRate}<span className="ml-2xs font-mono text-foreground">{off||!c.todayCalls ? "—" : `${c.errorRatePct}%`}</span>
                     </span>
                   </div>
                 </CardContent>
@@ -275,7 +275,7 @@ export function ChannelsClient() {
                     />
                     <span className="flex min-w-0 flex-col">
                       <span className={a.done ? "text-muted-foreground line-through" : "text-foreground"}>{a.label}</span>
-                      <span className="text-body-sm text-muted-foreground">{a.note}</span>
+                      <details><summary>{m.accessTitle}</summary><span className="text-body-sm text-muted-foreground">{a.note}</span></details>
                     </span>
                   </span>
                 ))}

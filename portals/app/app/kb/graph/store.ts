@@ -13,7 +13,7 @@ export class GraphStore {
   if(!await this.admit(who))throw Error('graph_denied');
   const access=await readProductAccess(who,{$queryRawUnsafe:async<T>(s:string,...v:unknown[])=>(await db.query(s,v)).rows as T,$executeRawUnsafe:async()=>{throw Error('graph_denied');}});
   if(!permits(access,'product.enter')||!permits(access,'data.read')||(write&&!permits(access,'data.write'))||(exporting&&!permits(access,'data.export')))throw Error('graph_denied');
-  const rows=(await db.query("SELECT k.id,k.owner_sub FROM karda_kb.knowledge_base k JOIN karda_kb.kb_attachment a ON a.kb_id=k.id AND a.workspace_id=k.workspace_id WHERE k.workspace_id=$1 AND k.id=ANY($2::uuid[]) AND k.deleted_at IS NULL AND k.owner_type='user' AND (k.owner_sub=$3 OR k.publish_state IN ('ws_published','org_published')) AND a.user_sub=$3 AND a.product_code=$4",[who.workspaceId,kbIds,who.sub,who.productCode])).rows;
+  const rows=(await db.query("SELECT k.id,k.owner_sub FROM karda_kb.knowledge_base k WHERE k.workspace_id=$1 AND k.id=ANY($2::uuid[]) AND k.deleted_at IS NULL AND k.owner_type='user' AND ((k.owner_sub=$3 AND $4='karda') OR ((k.owner_sub=$3 OR k.publish_state IN ('ws_published','org_published')) AND EXISTS(SELECT 1 FROM karda_kb.kb_attachment a WHERE a.kb_id=k.id AND a.workspace_id=k.workspace_id AND a.user_sub=$3 AND a.product_code=$4)))",[who.workspaceId,kbIds,who.sub,who.productCode])).rows;
   if(rows.length!==new Set(kbIds).size||write&&rows.some(r=>r.owner_sub!==who.sub))throw Error('graph_denied');return access;
  }
  async transaction<T>(who:SemanticReadIdentity,kbIds:string[],write:boolean,work:(db:PoolClient)=>Promise<T>){

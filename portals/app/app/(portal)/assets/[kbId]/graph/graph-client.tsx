@@ -55,7 +55,7 @@ export function GraphClient({kbId,initialEntity=""}:{kbId:string;initialEntity?:
     <div className="flex flex-wrap gap-sm">
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/published`}>{m.knowledgeTitle}</Link></Button>
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/facts`}>{m.factSearchTitle}</Link></Button>
-      <Button variant="outline" asChild><Link href={`/assets/${kbId}/sources`}>{m.sourceSearchTitle}</Link></Button>
+      <Button variant="outline" asChild><Link href={`/assets/${kbId}/source-search`}>{m.sourceSearchTitle}</Link></Button>
       <Button variant="outline" disabled={busy} onClick={()=>void load()}>{m.graphOverview}</Button>
       <Button variant="outline" disabled={busy} onClick={()=>{const current=activeWindow.current;void load(current.entity,current.cursor,current.history);}}>{m.recheckKnowledge}</Button>
       <Button variant="outline" onClick={()=>setWide(!wide)}>{wide?m.closeCanvas:m.largeCanvas}</Button>

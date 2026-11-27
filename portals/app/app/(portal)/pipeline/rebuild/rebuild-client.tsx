@@ -1,4 +1,5 @@
 "use client";
+import {LibraryPicker,ResourcePicker} from "../../../_components/resource-picker";
 import {useEffect,useRef,useState} from "react";
 import Link from "next/link";
 import {Banner,Button} from "@vxture/design-system";
@@ -15,6 +16,7 @@ export function RebuildClient(){
   const locked=useRef(false),sequence=useRef(0),controller=useRef<AbortController|null>(null),pending=useRef<RebuildCommand|null>(null);
   const endpoint="/api/pipeline/rebuild";
   useEffect(()=>{
+    const params=new URLSearchParams(window.location.search),k=params.get("kbId"),d=params.get("documentId");if(k&&/^[a-f0-9-]{36}$/.test(k))setKb(k);if(d&&/^[a-f0-9-]{36}$/.test(d))setDocs(d);
     const ctl=new AbortController();fetch("/api/kb",{cache:"no-store",signal:ctl.signal}).then(async r=>{
       if(r.ok){const v=await r.json();if(Array.isArray(v.knowledgeBases))setLibraries(v.knowledgeBases);}
     }).catch(()=>{});
@@ -54,11 +56,11 @@ export function RebuildClient(){
     {error>=500&&pending.current&&<Button disabled={busy} onClick={()=>void execute(pending.current!)}>{m.retry}</Button>}
     {busy&&<p role="status">{m.loading}</p>}
     <fieldset disabled={busy} className="grid min-w-0 gap-sm rounded border p-md">
-      <label>{m.library}<input list="rebuild-libraries" className={field} value={kb} onChange={e=>{edit();setKb(e.target.value);setRows([]);setSelected(null);setNext(null);}}/></label>
+      <LibraryPicker value={kb} disabled={busy} onChange={v=>{edit();setKb(v);setDocs("");setRows([]);setSelected(null);}}/>
       <datalist id="rebuild-libraries">{libraries.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</datalist>
       <div className="flex flex-wrap gap-sm"><Button disabled={!kb.trim()} variant="outline" onClick={()=>void load()}>{m.refresh}</Button><Link href={kb.trim()?"/assets/"+encodeURIComponent(kb.trim()):"/assets"}>{m.assets}</Link></div>
       <form className="grid gap-sm" onSubmit={e=>{e.preventDefault();void execute({action:"create",id:crypto.randomUUID(),kbId:kb.trim(),documentIds:docs.trim().split(/[\s,]+/).filter(Boolean),params:{targetTokens:target,maxTokens:max,overlap:0},note:note.trim()});}}>
-        <label>{m.docs}<textarea rows={3} className={field} value={docs} onChange={e=>{edit();setDocs(e.target.value);}}/></label>
+        <ResourcePicker kbId={kb} multiple value={docs} disabled={busy} onChange={v=>{edit();setDocs(v);}}/>
         <div className="grid gap-sm sm:grid-cols-2"><label>{m.target}<input type="number" min={32} max={2048} className={field} value={target} onChange={e=>{edit();setTarget(Number(e.target.value));}}/></label>
         <label>{m.max}<input type="number" min={target} max={4096} className={field} value={max} onChange={e=>{edit();setMax(Number(e.target.value));}}/></label></div>
         <label>{m.note}<textarea required maxLength={2000} className={field} value={note} onChange={e=>{edit();setNote(e.target.value);}}/></label>

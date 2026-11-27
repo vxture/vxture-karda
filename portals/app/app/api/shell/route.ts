@@ -43,33 +43,20 @@ export async function GET(): Promise<Response> {
     const workspaceId = auth.user.activeWorkspace;
     const scope = { knowledgeBase: { workspaceId, deletedAt: null } };
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const [kbCount, entryTotal, entryFresh] = await Promise.all([
+    const [kbCount, entryTotal, entryFresh, docTotal] = await Promise.all([
       p.knowledgeBase.count({ where: { workspaceId, deletedAt: null } }),
       p.entry.count({ where: scope }),
       p.entry.count({ where: { ...scope, createdAt: { gte: since } } }),
+      p.document.count({where:scope}),
     ]);
     assetCount = kbCount;
-    entryCount = entryTotal;
+    entryCount = entryTotal + docTotal;
     weeklyNew = entryFresh;
 
     // 每个库装了多少条目。`groupBy` 一次拿计数,再取名字——两趟,但第二趟只查
     // 前几个库的名字,不是全表。
-    const grouped = await p.entry.groupBy({
-      by: ["kbId"],
-      where: scope,
-      _count: { _all: true },
-      orderBy: { _count: { kbId: "desc" } },
-      take: TOP_ASSETS + 1,
-    });
-    const names = new Map(
-      (
-        await p.knowledgeBase.findMany({
-          where: { id: { in: grouped.map((g) => g.kbId) } },
-          select: { id: true, name: true },
-        })
-      ).map((k) => [k.id, k.name]),
-    );
-    ranked = grouped.map((g) => ({ name: names.get(g.kbId) ?? g.kbId.slice(0, 8), entries: g._count._all }));
+    const libraries=await p.knowledgeBase.findMany({where:{workspaceId,deletedAt:null},select:{name:true,_count:{select:{entries:true,documents:true}}}});
+    ranked=libraries.map(k=>({name:k.name,entries:k._count.entries+k._count.documents})).sort((a,b)=>b.entries-a.entries);
   }
 
   // 前 N 个单列,其余并成一条。并起来而不是截断:截断会让条加起来对不上总数,

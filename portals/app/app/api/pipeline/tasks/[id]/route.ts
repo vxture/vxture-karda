@@ -25,6 +25,6 @@ export async function GET(
     include: { document: { select: { title: true } }, knowledgeBase: { select: { name: true } }, stages: true },
   });
   if (!row) return NextResponse.json({ error: "not_found" }, { status: 404 });
-  return NextResponse.json(taskDetail({ ...row, kbName: row.knowledgeBase.name,
-    documentTitle: row.document.title ?? "", stages: row.stages }), { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({...taskDetail({ ...row, kbName: row.knowledgeBase.name,
+    documentTitle: row.document.title ?? "", stages: row.stages }),navigation:{kbId:row.kbId,documentId:row.documentId,state:row.state,reason:row.failureReason}}, { headers: { "Cache-Control": "no-store" } });
 }

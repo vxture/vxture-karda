@@ -22,7 +22,7 @@ export function SourceSearchClient({kbId}:{kbId:string}){
       if(!response.ok){setError(response.status);setCode(body.error??"");return;}setData(body);
     }catch{if(ticket===sequence.current)setError(503);}finally{if(ticket===sequence.current)setBusy(false);}
   }
-  if(error===401)return <SignInGate from={`/assets/${kbId}/sources`}/>;
+  if(error===401)return <SignInGate from={`/assets/${kbId}/source-search`}/>;
   return <div className="flex min-w-0 flex-col gap-md" aria-busy={busy}>
     <PageHead title={m.sourceSearchTitle}/>
     <div className="flex flex-wrap gap-sm"><Button variant="outline" asChild><Link href={`/assets/${kbId}/published`}>{m.knowledgeTitle}</Link></Button>

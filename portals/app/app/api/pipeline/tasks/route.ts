@@ -48,7 +48,7 @@ export async function GET(): Promise<Response> {
       freshnessP95Min: DEMO_TASKS.throughput.freshnessP95Min,
     },
     queueDepth: t.queueDepth,
-    failures: t.failures,
+    failures: {...t.failures,permanent:t.counts.failed},
     stageP95: t.stageP95,
     // Tier labels and concurrency strings are configuration; only the depth is
     // measured.

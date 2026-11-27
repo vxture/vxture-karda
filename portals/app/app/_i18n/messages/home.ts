@@ -25,7 +25,7 @@ export const home = {
   // --- 可用性状态 ---------------------------------------------------------
   stateReady: { "zh-CN": "检索链路通", "en-US": "Retrieval is live" },
   stateDegraded: { "zh-CN": "可用,但有一部分卡住", "en-US": "Usable, with something stuck" },
-  stateUnavailable: { "zh-CN": "当前不可用", "en-US": "Not usable right now" },
+  stateUnavailable: { "zh-CN": "尚无可检索知识", "en-US": "No searchable knowledge yet" },
   stateEmpty: { "zh-CN": "还没有内容", "en-US": "Nothing ingested yet" },
 
   // --- 原因(与 ReadinessReason 一一对应)---------------------------------

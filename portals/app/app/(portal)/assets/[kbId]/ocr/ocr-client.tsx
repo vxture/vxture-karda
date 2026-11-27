@@ -1,4 +1,6 @@
 "use client";
+import {integration} from "../../../../_i18n/messages/integration";
+import {ResourcePicker} from "../../../../_components/resource-picker";
 import {useEffect,useRef,useState} from "react";
 import Link from "next/link";
 import {Button,Banner} from "@vxture/design-system";
@@ -11,6 +13,7 @@ import type {OcrPayload} from "../../../../kb/processing/pdf-ocr";
 interface Draft {id:string;state:string;model_code:string;created_at:string;error_code:string|null;payload:OcrPayload|null;committed_version:number|null;stale:boolean}
 interface Result {format:string;documentId:string;drafts:Draft[];nextBefore:string|null}
 export function OcrClient({kbId,initialDocumentId,initialDraftId}:{kbId:string;initialDocumentId?:string;initialDraftId?:string}){
+  const im=useMessages(integration);
   const m=useMessages(ocr),[doc,setDoc]=useState(initialDocumentId&&/^[a-f0-9-]{36}$/.test(initialDocumentId)?initialDocumentId:""),[model,setModel]=useState(""),[value,setValue]=useState<Result|null>(null),
     [draft,setDraft]=useState<Draft|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(0),[code,setCode]=useState(""),
     [confirmed,setConfirmed]=useState(false),[receipt,setReceipt]=useState<number|null>(null);
@@ -39,8 +42,8 @@ export function OcrClient({kbId,initialDocumentId,initialDraftId}:{kbId:string;i
     <PageHead title={m.title}/><p>{m.hint}</p>
     <Button variant="outline" asChild><Link href={`/assets/${kbId}/semantic`}>{m.back}</Link></Button>
     <form className="grid gap-sm rounded border p-md" onSubmit={e=>{e.preventDefault();void request("list");}}>
-      <label>{m.document}<input className="block w-full rounded border p-sm" required value={doc} onChange={e=>{clear();setDoc(e.target.value);}}/></label>
-      <label>{m.model}<input className="block w-full rounded border p-sm" value={model} onChange={e=>setModel(e.target.value)}/></label>
+      <ResourcePicker kbId={kbId} value={doc} disabled={busy} onChange={v=>{clear();setDoc(v);}}/>
+      <p role="status">{im.modelsUnavailable}</p><label>{m.model}<input className="block w-full rounded border p-sm" value={model} onChange={e=>setModel(e.target.value)}/></label>
       <p>{m.limit}</p><div className="flex flex-wrap gap-sm">
         <Button disabled={busy||!doc.trim()} type="submit">{m.history}</Button>
         <Button type="button" disabled={busy||!doc.trim()||!model.trim()} onClick={()=>void request("create")}>{m.create}</Button>

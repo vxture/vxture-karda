@@ -137,7 +137,7 @@ export const channels = {
   },
   modeOboOnly: { "zh-CN": "仅 OBO", "en-US": "OBO only" },
   modeOboOnlyDetail: {
-    "zh-CN": "必须代表一个真实用户——写入类工具不接受纯服务身份",
+    "zh-CN": "必须代表真实用户调用；是否写入及所需权限由各工具分别校验",
     "en-US": "must act for a real user - write tools do not accept a bare service identity",
   },
 

@@ -1,4 +1,5 @@
 "use client";
+import {integration} from "../../../../_i18n/messages/integration";
 import {useEffect,useMemo,useRef,useState} from "react";
 import Link from "next/link";
 import {Banner,Button,Card,CardContent} from "@vxture/design-system";
@@ -9,6 +10,7 @@ import {SignInGate} from "../../../../_lib/ui";
 import {compareAuditReleases,type AuditHistory} from "../../../../kb/semantic/audit-history";
 
 export function HistoryClient({kbId}:{kbId:string}){
+  const im=useMessages(integration);
   const m=useMessages(semantic),sequence=useRef(0),[data,setData]=useState<AuditHistory|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(0);
   const [from,setFrom]=useState(""),[to,setTo]=useState("");
   async function load(before?:number){
@@ -33,7 +35,7 @@ export function HistoryClient({kbId}:{kbId:string}){
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/graph`}>{m.graphTitle}</Link></Button></div>
     {busy&&<p role="status">{m.loading}</p>}{!!error&&<Banner tone="danger" title={error===403?m.denied:m.unavailable}/>}
     {data&&<>
-      <Banner tone={data.replay==="failed"?"danger":data.replay==="window"?"warning":"success"} title={data.replay==="complete"?m.historyComplete:data.replay==="window"?m.historyWindow:m.historyFailed}/>
+      <Banner tone={data.replay==="failed"?"danger":data.replay==="window"?"warning":"success"} title={!data.releases.length?im.emptyHistory:data.replay==="complete"?m.historyComplete:data.replay==="window"?m.historyWindow:m.historyFailed}/>
       <p className="break-all text-body-sm">{m.generation}: {data.headGeneration} / {data.checkedAt}</p>
       <div className="flex flex-wrap gap-sm"><label htmlFor="history-from">{m.historyFrom}</label><select id="history-from" value={from} onChange={e=>setFrom(e.target.value)} className="min-w-0 rounded-md border border-border bg-background p-sm"><option value="">-</option>{data.releases.filter(r=>r.verified).map(r=><option key={r.id} value={r.id}>v{r.generation}</option>)}</select>
         <label htmlFor="history-to">{m.historyTo}</label><select id="history-to" value={to} onChange={e=>setTo(e.target.value)} className="min-w-0 rounded-md border border-border bg-background p-sm"><option value="">-</option>{data.releases.filter(r=>r.verified).map(r=><option key={r.id} value={r.id}>v{r.generation}</option>)}</select></div>

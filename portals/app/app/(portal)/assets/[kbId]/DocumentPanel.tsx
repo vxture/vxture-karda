@@ -1,5 +1,6 @@
 "use client";
 
+import {integration} from "../../../_i18n/messages/integration";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActionMenu,
@@ -113,6 +114,7 @@ export function DocumentPanel({
   onRetry: (doc: Doc) => void | Promise<void>;
   onDelete: (doc: Doc) => void | Promise<void>;
 }) {
+  const im=useMessages(integration);
   const f = useFormat();
   const m = useMessages(assets);
   const c = useMessages(common);
@@ -121,6 +123,8 @@ export function DocumentPanel({
   const [sort, setSort] = useState<DataTableSort>({ columnId: "updated", direction: "desc" });
   const [view, setView] = useState<FilterBarView>("list");
   const [preview, setPreview] = useState<Doc | null>(null);
+  const located=useRef(false);
+  useEffect(()=>{if(!docs||located.current)return;const id=new URLSearchParams(window.location.search).get("documentId");const doc=docs.find(d=>d.id===id);if(doc){located.current=true;setQuery(doc.title??"");}},[docs]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // 视图偏好在挂载后才读:直接在 useState 初值里读 localStorage 会让服务端渲染出的
@@ -241,6 +245,8 @@ export function DocumentPanel({
     const readable = previewKind(doc.mime) !== "none";
     const gov = kb.governanceEnabled;
     return [
+      {id:"compile",label:im.knowledge,icon:"file" as const,onSelect:()=>window.location.assign("/assets/"+kb.id+"/semantic?documentId="+doc.id)},
+      {id:"rebuild",label:im.maintenance,icon:"refresh" as const,onSelect:()=>window.location.assign("/pipeline/rebuild?kbId="+kb.id+"&documentId="+doc.id)},
       // 只有真会渲染的才给「预览」。一个点下去变成下载的「预览」是失约,不是回退。
       readable
         ? { id: "preview", label: m.actPreview, icon: "eye" as const, onSelect: () => setPreview(doc) }

@@ -1,4 +1,5 @@
 "use client";
+import {integration} from "../_i18n/messages/integration";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -89,6 +90,11 @@ export function AppHeader({
   const [user, setUser] = useState<SessionUser | null>(null);
   const [sessionLoaded, setSessionLoaded] = useState(false);
   const [query, setQuery] = useState("");
+  const im=useMessages(integration);
+  const [panel,setPanel]=useState<"help"|"notifications"|"settings"|null>(null);
+  const [searchItems,setSearchItems]=useState<{id:string;name:string;href:string}[]>([]);
+  const [searchError,setSearchError]=useState(false);
+  useEffect(()=>{const ac=new AbortController();setSearchItems([]);setSearchError(false);if(!query.trim())return;const timer=setTimeout(()=>{fetch("/api/workspace/search?q="+encodeURIComponent(query),{cache:"no-store",signal:ac.signal}).then(async r=>{if(!r.ok)throw Error();const b=await r.json();if(!ac.signal.aborted)setSearchItems(b.items??[]);}).catch(()=>{if(!ac.signal.aborted)setSearchError(true);});},200);return()=>{clearTimeout(timer);ac.abort();};},[query,pathname]);
 
   useEffect(() => {
     getSession()
@@ -131,10 +137,11 @@ export function AppHeader({
     const groups = [];
     if (pages.length) groups.push({ key: "pages", heading: m.groupPages, items: pages });
     if (actions.length) groups.push({ key: "actions", heading: m.groupActions, items: actions });
+    if(searchItems.length)groups.unshift({key:"assets",heading:im.assets,items:searchItems.map(k=>({key:k.id,label:k.name,description:im.assets,icon:"folder-open" as const,onSelect:()=>router.push(k.href)}))});
     return groups;
-  }, [query, router]);
+  }, [query, router, m, im.assets, searchItems]);
 
-  const displayName = user?.sub ?? m.signedOut;
+  const displayName = user ? im.localUser : m.signedOut;
   const roleLabel = m[ROLE_LABEL_KEY[sessionRole(user)]];
 
   // Domain navigation lives in the 导航栏 cards, so the 顶栏 keeps only
@@ -169,6 +176,24 @@ export function AppHeader({
   // Trailing follows the Console header's three blocks, gap-md between them,
   // gap-2xs inside a group: [助手] · [系统工具组] · [账户]. Do not fold the
   // assistant into the icon group - it is its own block, one size larger.
+  const preferencePanel = <ShellPreferencePanel
+              locale={locale}
+              localeOptions={LOCALE_OPTIONS}
+              theme={mode}
+              density={density}
+              fontSize={fontSize}
+              showDensity
+              showFontSize
+              labels={prefLabels}
+              // The DS panel hands back a bare string (its locale list is open);
+              // re-narrow before it reaches shell state.
+              onLocaleChange={(next) => {
+                if (isLocale(next)) setLocale(next);
+              }}
+              onThemeChange={(t) => setMode(t)}
+              onDensityChange={setDensity}
+              onFontSizeChange={setFontSize}
+            />;
   const trailing = (
     <div className="flex items-center gap-md">
       <form ref={logoutForm} action="/auth/logout" method="post" hidden />
@@ -203,9 +228,9 @@ export function AppHeader({
           enterLabel={m.fullscreen}
           exitLabel={m.exitFullscreen}
         />
-        <ShellIconButton icon="help" label={m.help} />
-        <ShellIconButton icon="bell" label={m.notifications} />
-        <ShellIconButton icon="settings" label={m.settings} onClick={() => router.push("/assets/new")} />
+        <ShellIconButton icon="help" label={m.help} onClick={()=>setPanel(panel==="help"?null:"help")} />
+        <ShellIconButton icon="bell" label={m.notifications} onClick={()=>setPanel(panel==="notifications"?null:"notifications")} />
+        <ShellIconButton icon="settings" label={m.settings} onClick={()=>setPanel(panel==="settings"?null:"settings")} />
       </ShellIconGroup>
       <ShellUserMenu
           user={{
@@ -216,24 +241,7 @@ export function AppHeader({
           openLabel={m.account}
           online={Boolean(user)}
           settings={
-            <ShellPreferencePanel
-              locale={locale}
-              localeOptions={LOCALE_OPTIONS}
-              theme={mode}
-              density={density}
-              fontSize={fontSize}
-              showDensity
-              showFontSize
-              labels={prefLabels}
-              // The DS panel hands back a bare string (its locale list is open);
-              // re-narrow before it reaches shell state.
-              onLocaleChange={(next) => {
-                if (isLocale(next)) setLocale(next);
-              }}
-              onThemeChange={(t) => setMode(t)}
-              onDensityChange={setDensity}
-              onFontSizeChange={setFontSize}
-            />
+            preferencePanel
           }
           // Role slots, same grammar as the Console user panel: the earned
           // slot lights up, the rest stay locked rather than inventing a level.
@@ -282,6 +290,8 @@ export function AppHeader({
   );
 
   return (
+    <>
+    {panel&&<section role="dialog" aria-modal="false" aria-label={panel==="settings"?im.preferences:panel==="help"?im.help:im.notifications} onKeyDown={e=>{if(e.key==="Escape")setPanel(null);}} className="fixed right-4 top-14 z-50 max-h-[80vh] w-[min(30rem,90vw)] overflow-auto rounded-lg border border-border bg-card p-lg shadow-lg"><button type="button" onClick={()=>setPanel(null)}>{im.close}</button><h2>{panel==="settings"?im.preferences:panel==="help"?im.help:im.notifications}</h2>{panel==="settings"?preferencePanel:<><p>{panel==="help"?im.helpText:im.notificationHint}</p>{panel==="notifications"&&<p>{im.review}: {pending}</p>}<ul><li><a href="/assets">{im.assets}</a></li><li><a href="/pipeline">{im.tasks}</a></li><li><a href="/evaluation/queue">{im.review}</a></li></ul></>}</section>}
     <ShellHeader
       height="md"
       // Translucent over the product backdrop (owner 2026-08-24): the wash
@@ -299,11 +309,12 @@ export function AppHeader({
             query={query}
             onQueryChange={setQuery}
             groups={searchGroups}
-            labels={{ placeholder: m.searchPlaceholder, empty: m.searchEmpty, resultsLabel: m.searchResults }}
+            labels={{ placeholder: m.searchPlaceholder, empty: searchError ? im.searchUnavailable : m.searchEmpty, resultsLabel: m.searchResults }}
           />
         </div>
       }
       trailing={trailing}
     />
+    </>
   );
 }

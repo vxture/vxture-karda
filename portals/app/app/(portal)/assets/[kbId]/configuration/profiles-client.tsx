@@ -1,4 +1,5 @@
 "use client";
+import {integration} from "../../../../_i18n/messages/integration";
 import {useEffect,useRef,useState} from "react";
 import Link from "next/link";
 import {Banner,Button} from "@vxture/design-system";
@@ -10,6 +11,7 @@ import {validateCompileProfile,type CompileProfile,type ProfileCommand} from "..
 import type {ProfileResult,ProfileVersion} from "../../../../kb/semantic/profile-store";
 
 export function ProfilesClient({kbId}:{kbId:string}){
+  const im=useMessages(integration);
   const m=useMessages(profiles),[value,setValue]=useState<ProfileResult|null>(null),[selected,setSelected]=useState<ProfileVersion|null>(null),
     [busy,setBusy]=useState(false),[error,setError]=useState(0),[invalid,setInvalid]=useState(false),[saved,setSaved]=useState(false),[confirm,setConfirm]=useState(false);
   const [title,setTitle]=useState(""),[schemaId,setSchemaId]=useState("domain-relations"),[version,setVersion]=useState("1"),[types,setTypes]=useState(""),[relations,setRelations]=useState(""),[mapping,setMapping]=useState(""),[note,setNote]=useState("");
@@ -57,7 +59,7 @@ export function ProfilesClient({kbId}:{kbId:string}){
   }
   if(error===401)return <SignInGate from={`/assets/${kbId}/configuration`}/>;
   return <div className="flex min-w-0 flex-col gap-md" aria-busy={busy}>
-    <PageHead title={m.title}/><p>{m.hint}</p><p>{m.localOnly}</p>
+    <PageHead title={m.title}/><p>{m.hint}</p><p>{im.semanticHint}</p>
     <div className="flex flex-wrap gap-sm"><Button variant="outline" disabled={busy} onClick={()=>void load()}>{m.refresh}</Button>
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/semantic`}>{m.compile}</Link></Button>
       <Button variant="outline" asChild><Link href={`/assets/${kbId}/graph`}>{m.graph}</Link></Button></div>
