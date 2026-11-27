@@ -349,3 +349,8 @@ REVOKE UPDATE, DELETE ON karda_kb.knowledge_delivery_event FROM karda_svc;
 GRANT SELECT, INSERT ON karda_kb.knowledge_delivery_event TO karda_svc;
 GRANT UPDATE (delivery_revision,delivery_sequence,delivery_attempt,delivery_status,delivery_worker,lease_id,lease_until,retry_after) ON karda_kb.knowledge_subscription TO karda_svc;
 -- END KNOWLEDGE DELIVERY LOCKS
+
+-- BEGIN LIBRARY SHARING LOCKS
+REVOKE UPDATE, DELETE ON karda_kb.library_sharing_event FROM karda_svc;
+GRANT SELECT, INSERT ON karda_kb.library_sharing_event TO karda_svc;
+-- END LIBRARY SHARING LOCKS

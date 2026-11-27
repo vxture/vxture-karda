@@ -1126,3 +1126,22 @@ list新增可选deliveryStatus过滤，20条分页，返回交付元数据但不
 交付页具备服务端状态筛选/分页、手动刷新、诊断标签、当前领取/事实与精确证据、勾选后完成/失败、重试时间与尝试次数、死信手动恢复原因/CAS/历史分页。租约令牌仅在本页内存，刷新或离开丢失后需等到期恢复，不落localStorage。领取期间保留上下文，导航入口不冒充跨产品管理权限；外部OBO消费者使用自身调用产品上下文。按钮时间就绪需手动刷新，无后台轮询。当前来源/权限变化后无法用旧窗口确认，consumer仍需每次使用前重核验。
 
 开发只做必要协议/生命周期/DDL定向与类型守卫，阶段CI统一真实PostgreSQL租约恢复、确认围栏/死信恢复/变化/取消/撤权/不可变授权及新旧迁移重放。不启动本地开发服务、浏览器或CMD窗口；文件操作在进程内，必要命令用Node REPL直接隐藏可执行文件，不经shell。不操作客户权限或知识内容，不发送他人消息。S5本批消费交付恢复子项完成不代替真实Agent联调或外部主动推送，S3 Ontos未开发后置、S4正式权威与S6业务切换继续独立验收；17主验收维持7完成/6进行中/4待门槛。
+
+
+## 68. 库共享预览、撤回与不可变历史（2026-11-27）
+
+S4先落实已有user库访问治理，不把tenant/platform/product枚举当真实权威契约。现有平台product-access/roster只提供产品准入与成员授权，没有正式库级机构权威；本批不扩大这些库、跨工作空间或预设库的读取范围。新增 /assets/[kbId]/sharing，将设置页直接切换改为明确管理入口，RP GET/POST /api/kb/[id]/publish替换旧仅target写入；请求严格preview或apply，不保留无预览的HTTP绕过路径，不新增OBO共享管理工具。
+
+每次平台当前准入、product.enter/data.read/service.publish，角色锁→库semantic锁→成员行→同工作空间当前user库行FOR UPDATE复核。只有个人属主或本地明确owner/administrator可读管理元数据；变更仍复用canPublish与actorForKb同语义：个人属主优先（即便兼任管理员），可自private升ws_published或从任何共享级撤回；非属主产品管理员可org_published提升或撤回，但不能冒名代属主执行private→ws_published。token中的workspace治理角色不作产品管理员权威；tenant/platform/product库拒绝。
+
+preview给当前状态/目标/最新共享revision及影响汇总：本空间本库挂载总数、产品种类、除当前操作者外用户数，当前启用订阅中window_request明确kb_id或kb_ids引用本库的数量及leased/retry/dead数。不返回其他用户sub、订阅ID或正文；计数只是事务读取时的元数据，非活跃消费者/成功投递统计，也不能枚举尚未挂载的潜在读者。previewHash绑定当前主体/空间/库属主/状态/updated_at/共享revision/目标/影响；没有授权能力或离线凭据。
+
+apply仅target/eventId/expectedRevision/previewHash/必填note，当前权限和影响重新计算后CAS/hash一致才同事务更新现有knowledge_base.publish_state、updated_at并追加事件。库任意配置更新时间/共享状态/属主/影响统计变化均要求重新预览；哈希是当次影响快照，不对并发挂载/订阅变化提供分布式冻结。重复同eventId同命令回原收据，不重新改状态；同eventId改内容409。目标等于当前状态为无写幂等，无伪造变更事件；历史只覆盖本流程，旧状态作为基线revision0。
+
+0038新增library_sharing_event，69→70表；kb_id/revision复合主键、同kb/event_id唯一，保存before/after/impact/原因/操作者/时间/命令fingerprint，服务只SELECT/INSERT，无UPDATE/DELETE。baseline/增量/Prisma/98/旧41表夹具锁步。库删除随现有FK级联，不宣称永久不可删审计；没有后台保留期清理。共享字段仍是同一权威，不新增第二份ACL或缓存。
+
+撤回不删除挂载、订阅、消费任务或知识发布；现有共享知识包、主题、检索、图谱和订阅/交付在下一次当前快照读取时按库publish_state核验，其他用户不再具备visibility的范围拒绝或按原接口空集规则过滤。既有交付complete精确scope检查拒绝已撤回库，属主自身仍按其角色/挂载核验。已交付正文和外部副作用不能远程收回。org_published保留已有产品阶梯名称，当前正式消费仍同工作空间，不能以名称暗示已实现跨空间读取。
+
+页面可加载当前范围/允许目标/真实影响、选择目标预览、必填原因与勾选后提交、20条不可变历史/整数before续页；提供回资产入口。范围编辑/新请求/异常清空旧预览和确认，401引导登录、403/409清空、未知网络结果保留原命令重试；收据不是当前状态，成功后重新读取。设置页即时segmented toggle撤下，避免无意扩大可见性。没有本地服务/浏览器/CMD启动；必要命令继续Node REPL direct windowsHide，无shell。
+
+开发仅2项协议/DDL定向、类型及守卫；阶段CI统一真实DB影响变化冲突/并发CAS/原子历史/属主与管理员阶梯/撤回后当前交付拒绝/保留挂载/撤权及新旧迁移。不操作真实客户权限或资料。S4本地user共享治理子项交付不等于机构库权威已适配；S3未开发Ontos/S5外部主动推送和真实Agent/S6业务试点切换保持独立，17主验收7完成/6进行中/4待门槛。

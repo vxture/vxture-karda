@@ -148,15 +148,6 @@ export async function createKb(input: {
   return need(body, "knowledgeBase", "/api/kb");
 }
 
-export async function setSharing(id: string, target: PublishState): Promise<Kb> {
-  const body = await req<{ knowledgeBase: Kb }>(`/api/kb/${id}/publish`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ target }),
-  });
-  return need(body, "knowledgeBase", `/api/kb/${id}/publish`);
-}
-
 /** 名称与描述。此前设置页根本没有改名入口——服务端一直支持,缺的只是出口。 */
 export async function updateKbMeta(
   id: string,

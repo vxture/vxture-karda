@@ -1,4 +1,5 @@
 "use client";
+import {sharing} from "../../../_i18n/messages/sharing";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -852,41 +853,9 @@ function GovernanceSection({
 
 // --- 共享(唯一对外的一节,倒数第二;最后是危险区) ------------------------------------
 
-function SharingSection({
-  kb,
-  busy,
-  onShare,
-}: {
-  kb: Kb;
-  busy: boolean;
-  onShare: (target: PublishState) => void | Promise<void>;
-}) {
-  const m = useMessages(assets);
-  const f = useFormat();
-  const share = f.sharing(kb.publishState);
-  return (
-    <>
-      <SectionHeader level={2} icon="share" title={m.shareCardTitle} description={share.help} />
-      <FieldGroup className="pt-md">
-        <Field>
-          {/* Every rung is offered, including ones this caller may not climb.
-              Authorization is server-side; surfacing the refusal tells the user
-              WHY - a hidden control cannot distinguish "not permitted" from
-              "does not exist". */}
-          <div className="w-[24rem] max-w-full">
-            <SegmentedControl
-              items={PUBLISH_ORDER.map((s) => ({ value: s, label: f.sharing(s).label }))}
-              value={kb.publishState}
-              onChange={(v) => onShare(v as PublishState)}
-              fill
-              ariaLabel={m.shareCardTitle}
-            />
-          </div>
-          <FieldDescription>{m.shareCardHint}</FieldDescription>
-        </Field>
-      </FieldGroup>
-    </>
-  );
+function SharingSection({kb}:{kb:Kb;busy:boolean;onShare:(target:PublishState)=>void|Promise<void>}) {
+ const m=useMessages(assets),labels=useMessages(sharing),f=useFormat();
+ return <><SectionHeader level={2} icon="share" title={m.shareCardTitle} description={f.sharing(kb.publishState).help}/><div className="pt-md"><Button variant="outline" asChild><a href={"/assets/"+encodeURIComponent(kb.id)+"/sharing"}>{labels.manage}</a></Button></div></>;
 }
 
 // --- 危险区 -------------------------------------------------------------------------

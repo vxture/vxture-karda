@@ -358,3 +358,6 @@ baseline/0020/Prisma/98锁步，新旧库重复演练；生产通过db-init审�
 
 
 2026-11-27 0037新增knowledge_delivery_event（69表），为knowledge_subscription增加delivery_revision/sequence/attempt/status/worker、lease_id/until、retry_after。交付事件同subscription/revision主键和request_id唯一、仅SELECT/INSERT，无正文或租约令牌。数据库CHECK保护成对租约/重试时间/尝试上限及未决交付ack围栏；0034新表声明前向兼容，老表由0037幂等添加，baseline/Prisma/98/旧41表重放锁步，见170§67。
+
+
+2026-11-27 0038新增library_sharing_event（70表），同kb/revision主键、kb/event_id唯一，追加式保存共享before/after、影响元数据、操作者/原因与请求fingerprint；98仅SELECT/INSERT无UPDATE/DELETE。现有publish_state仍唯一权威，未新增机构库ACL；baseline/增量/Prisma/旧41表升级锁步，见170§68。
