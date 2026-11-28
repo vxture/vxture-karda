@@ -109,7 +109,8 @@ export class ReservedObjectStore implements ObjectStore {
           if (current.state === "deleted" || current.state === "pending" || current.retainUntil >= new Date()) return false;
           // Includes soft-deleted documents and deleted libraries: preserve all
           // retained references until a separately reviewed retention purge.
-          if (await tx.document.count({ where: { storageRef: row.objectKey } })) {
+          const visualRefs=await tx.$queryRawUnsafe<{n:number}[]>("SELECT count(*)::integer AS n FROM karda_kb.visual_asset WHERE image_ref=$1",row.objectKey);
+          if (await tx.document.count({ where: { storageRef: row.objectKey } }) || visualRefs[0].n>0) {
             await tx.storedObject.update({ where: { id: row.id }, data: { retryAt: new Date(Date.now() + GRACE_MS) } });
             return false;
           }

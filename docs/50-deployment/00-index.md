@@ -1,6 +1,8 @@
 # 50-deployment - Infra, CI/CD, environments, bootstrap
 
-[Agent task context release](580-agent-task-context-release-20261128.md): approved C1-C6 plus R1/R2; implementation awaiting stage gates and deployment.
+[Multimodal knowledge services release](590-multimodal-knowledge-services-release-20261128.md): approved M1-M6 plus R1/R2, awaiting stage gates and release.
+
+[Agent task context release](580-agent-task-context-release-20261128.md): C1-C6 plus R1/R2 delivered v0.12.57; final gates,0047 migration and deployment succeeded.
 
 Deployment and bootstrap material for this repo.
 

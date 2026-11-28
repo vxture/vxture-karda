@@ -1,3 +1,4 @@
+import {visualDocumentCurrent} from '../visual/current';
 import {activeConfigs} from '../identity/store';
 import {inventory as identityInventory} from '../identity/inventory';
 import {applyIdentity,effectiveEntities,conflicts as identityConflicts} from '../identity/engine';
@@ -30,6 +31,7 @@ export interface PublishedRelationInput {
 }
 export type SemanticReadResult = GraphProjection & { sourceStatus: "complete" | "partial" };
 export type KnowledgePackage = SemanticReadResult & {
+  visualEvidence?:{evidenceId:string;assetId:string;versionId:string;href:string}[];
   identity?:{kbId:string;versionId:string;profiles:{id:string;name:string;kind:string;aliases:string[];external:{namespace:string;value:string}[]}[];mappings:{from:string;to:string}[];decisions:{relationIds:string[];outcome:string;scope:string;from:string|null;until:string|null}[];unresolved:number;staleDecisions:number}[];
   semanticEngine?:{engine:"apache-jena";version:"6.3.0";fingerprint:string};
   format:"karda.knowledge-package.v1";
@@ -178,6 +180,7 @@ export class PostgresSemanticReader {
             if(text!==null){textBudget-=text.length;if(textBudget<0)throw new Error("semantic_source_budget");}
             if(text!==null&&normalized)normalizedSources.set(row.document_id,normalized);
           }
+          if(!await visualDocumentCurrent(db,row.document_id))text=null;
           texts.set(row.document_id, text);
           if (text !== null) snapshot.sources.push({ kbId: row.kb_id, documentId: row.document_id,
             version: row.document_version, current: true, withdrawn: false, textLength: text.length });
@@ -225,7 +228,9 @@ export class PostgresSemanticReader {
         WHERE kb_id=ANY($1::uuid[]) AND id=ANY($2::uuid[]) ORDER BY id`,[visible,ids])).rows:[];
       const passages=result.evidence.map(e=>({evidenceId:e.id,excerpt:grounds.find(g=>g.id===e.id)!.excerpt}));
       const servedNodes=new Set(result.nodes.map(n=>n.id)),servedEdges=new Set(result.edges.map(e=>e.id));
-      const response:KnowledgePackage={ ...result,...(identityInfo.length?{identity:identityInfo.map(g=>({...g,profiles:g.profiles.filter(p=>servedNodes.has(p.id)||g.mappings.some(m=>m.from===p.id&&servedNodes.has(m.to))),mappings:g.mappings.filter(m=>servedNodes.has(m.to)),decisions:g.decisions.filter(d=>d.relationIds.some(id=>servedEdges.has(id)))}))}:{}),...(semanticEngine?{semanticEngine}:{}), sourceStatus: incomplete ? "partial" : "complete",format:"karda.knowledge-package.v1",statements,passages,
+      const visualEvidence:NonNullable<KnowledgePackage['visualEvidence']>=[];
+      for(const e of result.evidence){const doc=(await db.query('SELECT source_ref FROM karda_kb.document WHERE id=$1',[e.documentId])).rows[0];if(doc?.source_ref?.visualAssetId&&doc.source_ref.visualVersionId){const asset=(await db.query('SELECT run_id FROM karda_kb.visual_asset WHERE id=$1',[doc.source_ref.visualAssetId])).rows[0];if(asset)visualEvidence.push({evidenceId:e.id,assetId:doc.source_ref.visualAssetId,versionId:doc.source_ref.visualVersionId,href:'/channels/visual?kbId='+e.kbId+'&assetId='+doc.source_ref.visualAssetId+'&versionId='+doc.source_ref.visualVersionId});}}
+      const response:KnowledgePackage={ ...result,...(visualEvidence.length?{visualEvidence}:{}),...(identityInfo.length?{identity:identityInfo.map(g=>({...g,profiles:g.profiles.filter(p=>servedNodes.has(p.id)||g.mappings.some(m=>m.from===p.id&&servedNodes.has(m.to))),mappings:g.mappings.filter(m=>servedNodes.has(m.to)),decisions:g.decisions.filter(d=>d.relationIds.some(id=>servedEdges.has(id)))}))}:{}),...(semanticEngine?{semanticEngine}:{}), sourceStatus: incomplete ? "partial" : "complete",format:"karda.knowledge-package.v1",statements,passages,
         gaps:[...(identityInfo.some(g=>g.unresolved)?["identity_unresolved_conflict"]:[]),...(identityInfo.some(g=>g.staleDecisions)?["identity_stale_decision"]:[]),...(result.edges.length?[]:["no_published_support"]),...(incomplete?["source_support_unavailable"]:[]),
           ...(result.truncated?["neighborhood_truncated"]:[])] };
       if(search&&Buffer.byteLength(JSON.stringify(response))>2*1024*1024)throw new Error("published_search_budget");

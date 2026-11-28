@@ -91,7 +91,7 @@ export class PostgresKnowledgeServices{
  async contextStamp(who:SemanticReadIdentity,c:ServiceConfig){return this.scope(who,async(db,access)=>{
   const libraries=await this.libraries(db,who,c);const stamps:unknown[]=[access,libraries];
   // Trusted fixed table list. Hash in PostgreSQL: no knowledge body in traces.
-  for(const table of ['document','assertion','evidence','span','entity','semantic_release_head','semantic_review','topic_summary','identity_head','graph_asset']){
+  for(const table of ['document','assertion','evidence','span','entity','semantic_release_head','semantic_review','topic_summary','identity_head','graph_asset','visual_asset','visual_revision','visual_run']){
    const extra=table==='assertion'?', (expires_at IS NOT NULL AND expires_at<=statement_timestamp()) AS verification_expired,(valid_until IS NOT NULL AND valid_until<=statement_timestamp()) AS validity_expired':table==='document'?', (expires_at IS NOT NULL AND expires_at<=statement_timestamp()) AS verification_expired':'';
    const source=table==='span'?'SELECT s.* FROM karda_kb.span s JOIN karda_kb.document d ON d.id=s.document_id WHERE d.kb_id=ANY($1::uuid[])':table==='evidence'?'SELECT e.* FROM karda_kb.evidence e JOIN karda_kb.assertion a ON a.id=e.assertion_id WHERE a.kb_id=ANY($1::uuid[])':'SELECT *'+extra+' FROM karda_kb.'+table+' WHERE kb_id=ANY($1::uuid[])';
    const sql="SELECT count(*)::integer AS n,md5(COALESCE(string_agg(h,',' ORDER BY h),'')) AS hash FROM (SELECT md5(t::text) AS h FROM ("+source+' LIMIT 5001) t) s';

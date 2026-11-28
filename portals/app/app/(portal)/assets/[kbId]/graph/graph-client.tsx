@@ -1,4 +1,5 @@
 "use client";
+import {visualMessages} from '../../../../_i18n/messages/visual';
 import {useEffect,useMemo,useRef,useState} from "react";
 import Link from "next/link";
 import {Banner,Button,Card,CardContent} from "@vxture/design-system";
@@ -12,7 +13,7 @@ import {GraphCanvas} from "./graph-canvas";
 import type {KnowledgePackage} from "../../../../kb/semantic/read-postgres";
 
 export function GraphClient({kbId,initialEntity=""}:{kbId:string;initialEntity?:string}){
-  const m=useMessages(semantic),[data,setData]=useState<KnowledgePackage|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(0);
+  const vm=useMessages(visualMessages),m=useMessages(semantic),[data,setData]=useState<KnowledgePackage|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(0);
   const [selected,setSelected]=useState(""),[edgeId,setEdgeId]=useState(""),[filter,setFilter]=useState(""),[from,setFrom]=useState(""),[to,setTo]=useState("");
   const [search,setSearch]=useState(""),[wide,setWide]=useState(false);
   const [entityType,setEntityType]=useState(""),[groupId,setGroupId]=useState(""),[layoutMode,setLayoutMode]=useState("structural");
@@ -118,6 +119,7 @@ export function GraphClient({kbId,initialEntity=""}:{kbId:string;initialEntity?:
             <p className="break-words text-body-sm">{data.statements.find(s=>s.id===id)?.statement}</p>
             {data.evidence.filter(e=>data.assertions.find(a=>a.id===id)?.evidenceIds.includes(e.id)).map(e=><blockquote key={e.id} className="border-l-2 border-border pl-sm text-body-sm">
               <p className="break-words">{data.passages.find(p=>p.evidenceId===e.id)?.excerpt}</p><p className="break-all font-mono text-code-sm">{e.documentId} / v{e.documentVersion} / {e.start}:{e.end}{e.pages?.length?` / ${m.sourcePages} ${e.pages.join(", ")}`:""}</p>
+              {data.visualEvidence?.filter(v=>v.evidenceId===e.id).map(v=><a key={v.assetId} className="underline" href={v.href}>{vm.review}</a>)}
             </blockquote>)}
           </div>)}</CardContent></Card>}
         </aside>

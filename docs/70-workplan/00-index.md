@@ -1,8 +1,12 @@
 # 70-workplan - Build plan and batch tracker
 
+## Proposed next module - 2026-11-28: multimodal knowledge services
+
+[Multimodal knowledge processing and evidence service center](211-multimodal-knowledge-service-center-20261128.md): M1-M6 plus R1/R2; documents/images/charts, long-PDF page jobs, visual provenance, structured review and Agent context delivery. Owner approved M1-M6 plus both closeouts; implementation awaiting stage validation. Audio/video and unverified automatic chart interpretation are explicitly outside this first stage.
+
 ## Proposed next module - 2026-11-28
 
-[Agent task context assembly and delivery center](210-agent-task-context-center-20261128.md): C1-C6 plus stage release and itemized confirmation. Owner approved C1-C6 plus both closeouts; implementation awaiting stage verification and release. Karda consumes knowledge and models; Ontos owns ontology authoring. No Ontos implementation in this batch.
+[Agent task context assembly and delivery center](210-agent-task-context-center-20261128.md): C1-C6 plus stage release and itemized confirmation. C1-C6 plus both closeouts delivered v0.12.57/0bfc27f2, PR400. Karda consumes knowledge and models; Ontos owns ontology authoring. No Ontos implementation in this batch.
 
 ## Active knowledge platform reconstruction - 2026-11-24
 

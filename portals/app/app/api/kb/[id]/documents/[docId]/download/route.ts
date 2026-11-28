@@ -1,3 +1,5 @@
+import {getPrismaClient} from '../../../../../../lib/db';
+import {visualDocumentCurrentQuery} from '../../../../../../kb/visual/current';
 import { NextResponse } from "next/server";
 // The allow-list and the disposition decision live in kb/lib/preview so the
 // VIEWER reads the same one - a viewer that frames a type we send as
@@ -45,6 +47,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string; doc
   const doc = await content.getDocument(docId);
   if (!doc.ok || doc.value.kbId !== id) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
+  if(doc.value.sourceRef?.visualVersionId){const db=await getPrismaClient();if(!await visualDocumentCurrentQuery((sql,values)=>db.$queryRawUnsafe(sql,...values),docId))return NextResponse.json({error:'source_changed'},{status:409,headers:{'Cache-Control':'private, no-store'}});}
   const dl = await downloadDocument(docId, content, getObjectStore());
   if (!dl) return NextResponse.json({ error: "object_missing" }, { status: 404 });
 

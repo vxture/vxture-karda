@@ -1,3 +1,4 @@
+import {visualMessages} from './visual';
 import type { Catalog } from "../catalog";
 import {integration} from "./integration";
 import { shell } from "./shell";
@@ -19,6 +20,6 @@ import { semantic } from "./semantic";
  * namespace is covered the moment it is imported, and the i18n guard has one
  * authority for what "the catalog" is.
  */
-export const NAMESPACES = { integration, shell, common, states, assets, evaluation, channels, pipeline, home, semantic } satisfies Record<string, Catalog>;
+export const NAMESPACES = { visualMessages, integration, shell, common, states, assets, evaluation, channels, pipeline, home, semantic } satisfies Record<string, Catalog>;
 
 export type NamespaceName = keyof typeof NAMESPACES;

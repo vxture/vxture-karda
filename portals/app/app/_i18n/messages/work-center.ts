@@ -1,5 +1,6 @@
 import type {Catalog} from "../catalog";
 export const workCenter={
+ visual:{"zh-CN":"\u591a\u6a21\u6001\u52a0\u5de5","en-US":"Multimodal processing"},
   title:{"zh-CN":"\u771f\u5b9e\u4f5c\u4e1a\u4e2d\u5fc3","en-US":"Work center"},
   hint:{"zh-CN":"\u7edf\u4e00\u67e5\u770b\u771f\u5b9e\u52a0\u5de5\u3001\u77e5\u8bc6\u7f16\u8bd1\u3001\u8bc6\u522b\u548c\u7ef4\u62a4\u4f5c\u4e1a\uff0c\u7b5b\u9009\u9700\u8981\u5904\u7406\u7684\u4e8b\u9879\u5e76\u8fdb\u5165\u5bf9\u5e94\u5de5\u4f5c\u53f0\u3002","en-US":"Inspect real processing, compilation, OCR and maintenance jobs, filter work and open the relevant workspace."},
   scope:{"zh-CN":"\u8303\u56f4\u4e3a\u5f53\u524d\u5de5\u4f5c\u7a7a\u95f4\u5185\u4f60\u62e5\u6709\u7684\u4e2a\u4eba\u77e5\u8bc6\u5e93\u3002\u77e5\u8bc6\u7f16\u8bd1\u548c\u8bc6\u522b\u4ec5\u663e\u793a\u4f60\u521b\u5efa\u4e14\u5f53\u524d\u6709\u6743\u7ba1\u7406\u7684\u4efb\u52a1\uff1b\u672c\u9875\u4e0d\u4f1a\u81ea\u52a8\u6267\u884c\u6a21\u578b\u3001\u6279\u51c6\u77e5\u8bc6\u6216\u91cd\u8bd5\u4efb\u52a1\u3002","en-US":"Current user-owned libraries in this workspace. Compilation and OCR include only your currently manageable jobs. This page never executes models, approves knowledge or retries jobs automatically."},

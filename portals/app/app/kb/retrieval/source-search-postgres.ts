@@ -1,3 +1,4 @@
+import {visualDocumentCurrent} from '../visual/current';
 import {Pool,type PoolClient} from "pg";
 import {randomUUID} from "node:crypto";
 import {permits} from "../../authz/policy";
@@ -48,6 +49,7 @@ export class PostgresSourceSearch {
       let bytesBudget=32*1024*1024,textBudget=SOURCE_SEARCH_TEXT_LIMIT,partial=false,searchedDocuments=0;
       const passages:SourcePassage[]=[];
       for(const row of rows){
+        if(!await visualDocumentCurrent(db,row.id)){partial=true;continue;}
         if(!passesVerificationFilter(input.verificationFilter,row.verification_state))continue;
         const size=row.size_bytes===null?NaN:Number(row.size_bytes);
         if(!row.storage_ref||!Number.isSafeInteger(size)||size<0||size>MAX_SEMANTIC_SOURCE_BYTES){partial=true;continue;}
