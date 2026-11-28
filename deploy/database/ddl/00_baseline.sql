@@ -1673,10 +1673,10 @@ CREATE TABLE IF NOT EXISTS karda_kb.knowledge_service_event (
 CREATE TABLE IF NOT EXISTS karda_kb.knowledge_service_call (
  request_id UUID PRIMARY KEY, service_id UUID NOT NULL REFERENCES karda_kb.knowledge_service(id) ON DELETE CASCADE,
  version_id UUID, config_hash VARCHAR(64) NOT NULL, caller_sub VARCHAR(128) NOT NULL, caller_product VARCHAR(32) NOT NULL,
- capability VARCHAR(16) NOT NULL CHECK(capability IN ('facts','topics','source','package')), draft BOOLEAN NOT NULL,
+ capability VARCHAR(16) NOT NULL CHECK(capability IN ('facts','topics','source','package','context')), draft BOOLEAN NOT NULL,
  state VARCHAR(16) NOT NULL DEFAULT 'running' CHECK(state IN ('running','succeeded','failed')),
  status INTEGER, error_code VARCHAR(80), latency_ms INTEGER, output_bytes INTEGER,
- steps JSONB NOT NULL DEFAULT '[]', usage JSONB NOT NULL DEFAULT '[]', started_at TIMESTAMPTZ NOT NULL DEFAULT now(), finished_at TIMESTAMPTZ,
+ steps JSONB NOT NULL DEFAULT '[]', usage JSONB NOT NULL DEFAULT '[]', context_metadata JSONB, started_at TIMESTAMPTZ NOT NULL DEFAULT now(), finished_at TIMESTAMPTZ,
  CHECK((state='running')=(finished_at IS NULL))
 );
 CREATE INDEX IF NOT EXISTS knowledge_service_call_page ON karda_kb.knowledge_service_call(service_id,request_id);

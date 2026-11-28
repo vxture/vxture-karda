@@ -1428,6 +1428,7 @@ model KnowledgeServiceCall {
  outputBytes Int? @map("output_bytes")
  steps Json @default("[]")
  usage Json @default("[]")
+ contextMetadata Json? @map("context_metadata")
  startedAt DateTime @default(now()) @map("started_at") @db.Timestamptz()
  finishedAt DateTime? @map("finished_at") @db.Timestamptz()
  @@map("knowledge_service_call")

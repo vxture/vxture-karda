@@ -1,4 +1,5 @@
 export const knowledgeServices = {
+ context:{"zh-CN":"\u4efb\u52a1\u4e0a\u4e0b\u6587\u7ec4\u88c5","en-US":"Task context assembly"},
   "title": {
     "zh-CN": "\u667a\u80fd\u4f53\u77e5\u8bc6\u670d\u52a1\u4e2d\u5fc3",
     "en-US": "Agent knowledge services"
