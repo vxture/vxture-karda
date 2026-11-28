@@ -1,6 +1,6 @@
 # 多模态知识加工与证据服务
 
-日期：2026-11-28。状态：批准范围M1–M6＋R1/R2已编码，待阶段CI与上线。正本：[211计划](../70-workplan/211-multimodal-knowledge-service-center-20261128.md)。
+日期：2026-11-28。状态：批准范围M1–M6＋R1/R2已完成并上线v0.12.58。正本：[211计划](../70-workplan/211-multimodal-knowledge-service-center-20261128.md)。
 
 ## 1. 组件选型与范围
 

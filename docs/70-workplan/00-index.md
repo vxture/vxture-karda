@@ -1,8 +1,16 @@
 # 70-workplan - Build plan and batch tracker
 
+## Product operations and public knowledge plan - 2026-11-28
+
+[Product operations, public distribution and business rollout](213-product-operations-public-knowledge-plan-20261128.md): proposed A1-A6 plus R1/R2 workforce product operations and public knowledge center; proposed D1-D6 plus R1/R2 customer distribution and Agent services; previously approved contract/trade content B1 resumes after those prerequisites. Plans pending approval; workforce identity never implies product authorization.
+
+## Approved SME knowledge construction - 2026-11-28
+
+[SME knowledge taxonomy, governance and staged construction](212-sme-knowledge-system-construction-20261128.md): eight-domain classification, public versus enterprise authority, source/interpretation/template layers; proposed B1 contract/trade knowledge and three Agent task services, K1-K6 plus R1/R2. B1 K1-K6 plus R1/R2 is owner-approved; content construction is pending the product public-knowledge operations prerequisite. Professional review remains a publication condition.
+
 ## Proposed next module - 2026-11-28: multimodal knowledge services
 
-[Multimodal knowledge processing and evidence service center](211-multimodal-knowledge-service-center-20261128.md): M1-M6 plus R1/R2; documents/images/charts, long-PDF page jobs, visual provenance, structured review and Agent context delivery. Owner approved M1-M6 plus both closeouts; implementation awaiting stage validation. Audio/video and unverified automatic chart interpretation are explicitly outside this first stage.
+[Multimodal knowledge processing and evidence service center](211-multimodal-knowledge-service-center-20261128.md): M1-M6 plus R1/R2; documents/images/charts, long-PDF page jobs, visual provenance, structured review and Agent context delivery. M1-M6 plus both closeouts delivered v0.12.58/235e3e08 PR401; final gates,0048 migration and deployment succeeded. Audio/video and unverified automatic chart interpretation are explicitly outside this first stage.
 
 ## Proposed next module - 2026-11-28
 

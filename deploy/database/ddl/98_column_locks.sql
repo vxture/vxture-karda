@@ -424,3 +424,12 @@ GRANT UPDATE(state,revision,coverage,updated_at) ON karda_kb.visual_run TO karda
 GRANT UPDATE(draft,revision,state,active_version,image_ref,image_hash,image_bytes,width,height,lease_id,lease_until,attempt,error_code,request_key,updated_at) ON karda_kb.visual_asset TO karda_svc;
 GRANT UPDATE(derived_document) ON karda_kb.visual_revision TO karda_svc;
 -- END VISUAL KNOWLEDGE LOCKS
+
+-- BEGIN PRODUCT OPERATIONS LOCKS
+REVOKE UPDATE,DELETE ON karda_kb.ops_member,karda_kb.ops_audit,karda_kb.public_library,karda_kb.public_artifact,karda_kb.public_release,karda_kb.public_job FROM karda_svc;
+GRANT SELECT,INSERT ON karda_kb.ops_member,karda_kb.ops_audit,karda_kb.public_library,karda_kb.public_artifact,karda_kb.public_release,karda_kb.public_job TO karda_svc;
+GRANT UPDATE(roles,status,revision,updated_at) ON karda_kb.ops_member TO karda_svc;
+GRANT UPDATE(title,domain,description,revision,state,reviewed_hash,reviewed_by,active_release,updated_at) ON karda_kb.public_library TO karda_svc;
+GRANT UPDATE(payload,revision,updated_at) ON karda_kb.public_artifact TO karda_svc;
+GRANT UPDATE(state,result,error_code,attempt,updated_at) ON karda_kb.public_job TO karda_svc;
+-- END PRODUCT OPERATIONS LOCKS
