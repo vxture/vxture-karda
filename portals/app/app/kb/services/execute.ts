@@ -1,3 +1,4 @@
+import {executeTaskContext} from './context-execute';
 import {Pool} from 'pg';
 import {permits} from '../../authz/policy';
 import {recordDeliveredUsage} from '../../usage/lib/buffer';
@@ -20,6 +21,7 @@ export async function runKnowledgeBackend(tool:string,args:Record<string,unknown
 }
 export async function executeKnowledgeService(store:PostgresKnowledgeServices,caller:CallerContext,value:unknown,runner:ServiceRunner=runKnowledgeBackend):Promise<DispatchResult>{
  let input:Invoke;try{input=invocation(value);}catch(e){const f=serviceError(e);return {status:f.status,body:{error:f.code}};}
+ if(input.capability==='context')return executeTaskContext(store,caller,input,runner);
  if(caller.mode!=='obo'||!caller.workspace||!caller.user||!permits(caller.productAccess,'product.enter')||!permits(caller.productAccess,'data.read')||(input.draft&&caller.callerProduct!=='karda'))return {status:403,body:{error:'service_denied',requestId:input.requestId}};
  const who={workspaceId:caller.workspace,sub:caller.user,roles:[],productCode:caller.callerProduct},started=Date.now();let traced=false;
  const steps:TraceEnd['steps']=[],usage:(TraceEnd['usage'][number]&{idempotencyKey:string})[]=[];let bytes=0;

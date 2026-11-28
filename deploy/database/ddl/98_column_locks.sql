@@ -414,3 +414,6 @@ GRANT UPDATE(config,config_version,credential_cipher,revision,state,confirmed,in
 GRANT UPDATE(state,revision,scan,apply_offset,current_batch,deletions,deletion_state,lease_id,lease_until,attempt,error_code,updated_at) ON karda_kb.automatic_connector_run TO karda_svc;
 GRANT UPDATE(url,title,content_hash,etag,modified,deleted,source_version,document_id,last_run) ON karda_kb.automatic_connector_head TO karda_svc;
 -- END AUTOMATIC CONNECTOR LOCKS
+
+-- Task context metadata contains fingerprints only, never task/knowledge bodies.
+GRANT UPDATE(context_metadata) ON karda_kb.knowledge_service_call TO karda_svc;

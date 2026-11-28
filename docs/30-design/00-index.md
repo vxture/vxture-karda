@@ -1,5 +1,7 @@
 # 30-design - Architecture, ADRs, domain design, DB schema
 
+[Task context assembly and delivery](320-agent-task-context-center.md): approved recipe/service extension, evidence units, whole-envelope budget, current-authority checks and integration guide.
+
 Design documents for this repo: architecture, architecture decision records
 (`decisions/`), karda's domain design, and database schema docs.
 

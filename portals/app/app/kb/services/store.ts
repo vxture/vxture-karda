@@ -1,3 +1,4 @@
+import type {ContextManifest} from './context-engine';
 import {Pool,type PoolClient} from 'pg';
 import {permits,type ProductAccess} from '../../authz/policy';
 import {readProductAccess,type RoleSql} from '../../authz/store';
@@ -6,7 +7,7 @@ import {profileHash} from '../semantic/profile-authority';
 import {command,config,uuid,type ServiceCommand,type ServiceConfig,type Invoke} from './contract';
 export interface ServiceRow {id:string;workspace_id:string;created_by:string;draft:ServiceConfig;revision:number;state:string;active_version:string|null;updated_at:Date}
 export interface Snapshot {id:string;revision:number;versionId:string|null;config:ServiceConfig;configHash:string;draft:boolean}
-export interface TraceEnd {status:number;errorCode:string|null;latencyMs:number;outputBytes:number;steps:{tool:string;status:number}[];usage:{metric:string;calls:number}[]}
+export interface TraceEnd {status:number;errorCode:string|null;latencyMs:number;outputBytes:number;steps:{tool:string;status:number;sectionId?:string}[];context?:ContextManifest;usage:{metric:string;calls:number}[]}
 export class PostgresKnowledgeServices{
  constructor(private pool:Pool,private admit:(who:SemanticReadIdentity)=>Promise<boolean>){}
  private async scope<T>(who:SemanticReadIdentity,work:(db:PoolClient,access:ProductAccess)=>Promise<T>){
@@ -78,11 +79,29 @@ export class PostgresKnowledgeServices{
  async snapshot(who:SemanticReadIdentity,input:Invoke){return this.scope(who,async(db,access)=>{
   const s=await this.service(db,who,input.serviceId);if(input.draft)this.manage(who,access,s);else if(s.state!=='active'||!s.active_version)throw Error('service_inactive');
   const c=input.draft?config(s.draft):await this.target(db,s,s.active_version!);if(!c)throw Error('service_inactive');if(!c.capabilities.includes(input.capability))throw Error('service_capability_denied');await this.libraries(db,who,c);
-  if((input.capability==='facts'||input.capability==='source')&&!permits(access,'ai.use'))throw Error('service_denied');
+  if((input.capability==='facts'||input.capability==='source'||input.capability==='context'&&c.context?.sections.some(s=>s.mode==='facts'||s.mode==='source'))&&!permits(access,'ai.use'))throw Error('service_denied');
+  if(input.export&&!permits(access,'data.export'))throw Error('service_denied');
   return {id:s.id,revision:s.revision,versionId:input.draft?null:s.active_version,config:c,configHash:profileHash(c),draft:input.draft} satisfies Snapshot;
  });}
  async begin(who:SemanticReadIdentity,input:Invoke,s:Snapshot){
   const db=await this.pool.connect();try{const row=await db.query('INSERT INTO karda_kb.knowledge_service_call(request_id,service_id,version_id,config_hash,caller_sub,caller_product,capability,draft) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(request_id) DO NOTHING',[input.requestId,s.id,s.versionId,s.configHash,who.sub,who.productCode,input.capability,input.draft]);if(!row.rowCount)throw Error('service_request_replay');}finally{db.release();}
  }
- async finish(who:SemanticReadIdentity,input:Invoke,end:TraceEnd){const result=await this.pool.query("UPDATE karda_kb.knowledge_service_call SET state=$4,status=$5,error_code=$6,latency_ms=$7,output_bytes=$8,steps=$9,usage=$10,finished_at=now() WHERE request_id=$1 AND caller_sub=$2 AND caller_product=$3 AND state='running'",[input.requestId,who.sub,who.productCode,end.status<400?'succeeded':'failed',end.status,end.errorCode,Math.min(2147483647,Math.max(0,end.latencyMs)),end.outputBytes,JSON.stringify(end.steps),JSON.stringify(end.usage)]);if(!result.rowCount)throw Error('service_trace_unavailable');}
+ async finish(who:SemanticReadIdentity,input:Invoke,end:TraceEnd){const result=await this.pool.query("UPDATE karda_kb.knowledge_service_call SET state=$4,status=$5,error_code=$6,latency_ms=$7,output_bytes=$8,steps=$9,usage=$10,context_metadata=$11,finished_at=now() WHERE request_id=$1 AND caller_sub=$2 AND caller_product=$3 AND state='running'",[input.requestId,who.sub,who.productCode,end.status<400?'succeeded':'failed',end.status,end.errorCode,Math.min(2147483647,Math.max(0,end.latencyMs)),end.outputBytes,JSON.stringify(end.steps),JSON.stringify(end.usage),end.context?JSON.stringify(end.context):null]);if(!result.rowCount)throw Error('service_trace_unavailable');}
+ async previousContext(who:SemanticReadIdentity,input:Invoke):Promise<ContextManifest|null>{if(!input.previousRequestId)return null;return this.scope(who,async db=>{const r=(await db.query("SELECT context_metadata FROM karda_kb.knowledge_service_call WHERE request_id=$1 AND service_id=$2 AND caller_sub=$3 AND caller_product=$4 AND state='succeeded' AND capability='context'",[input.previousRequestId,input.serviceId,who.sub,who.productCode])).rows[0];if(!r?.context_metadata)throw Error('service_context_previous_not_found');return r.context_metadata as ContextManifest;});}
+ async contextStamp(who:SemanticReadIdentity,c:ServiceConfig){return this.scope(who,async(db,access)=>{
+  const libraries=await this.libraries(db,who,c);const stamps:unknown[]=[access,libraries];
+  // Trusted fixed table list. Hash in PostgreSQL: no knowledge body in traces.
+  for(const table of ['document','assertion','evidence','span','entity','semantic_release_head','semantic_review','topic_summary','identity_head','graph_asset']){
+   const extra=table==='assertion'?', (expires_at IS NOT NULL AND expires_at<=statement_timestamp()) AS verification_expired,(valid_until IS NOT NULL AND valid_until<=statement_timestamp()) AS validity_expired':table==='document'?', (expires_at IS NOT NULL AND expires_at<=statement_timestamp()) AS verification_expired':'';
+   const source=table==='span'?'SELECT s.* FROM karda_kb.span s JOIN karda_kb.document d ON d.id=s.document_id WHERE d.kb_id=ANY($1::uuid[])':table==='evidence'?'SELECT e.* FROM karda_kb.evidence e JOIN karda_kb.assertion a ON a.id=e.assertion_id WHERE a.kb_id=ANY($1::uuid[])':'SELECT *'+extra+' FROM karda_kb.'+table+' WHERE kb_id=ANY($1::uuid[])';
+   const sql="SELECT count(*)::integer AS n,md5(COALESCE(string_agg(h,',' ORDER BY h),'')) AS hash FROM (SELECT md5(t::text) AS h FROM ("+source+' LIMIT 5001) t) s';
+   const r=(await db.query(sql,[c.kbIds])).rows[0];if(r.n>5000)throw Error('service_context_snapshot_budget');stamps.push([table,r]);
+  }
+  stamps.push((await db.query('SELECT revision,enabled FROM karda_kb.knowledge_rollout_event WHERE workspace_id=$1 ORDER BY revision DESC LIMIT 1',[who.workspaceId])).rows);
+  const windows=(await db.query("SELECT v.config->'decisions' AS decisions,statement_timestamp() AS now FROM karda_kb.identity_head h JOIN karda_kb.identity_version v ON v.id=h.active_version AND v.kb_id=h.kb_id WHERE h.kb_id=ANY($1::uuid[]) ORDER BY h.kb_id",[c.kbIds])).rows;
+  stamps.push(windows.map(w=>(w.decisions??[]).map((d:{key:string;from:string|null;until:string|null})=>[d.key,(!d.from||Date.parse(d.from)<=w.now.getTime())&&(!d.until||Date.parse(d.until)>w.now.getTime())])));
+  const docs=(await db.query('SELECT kb_id,id,content_hash FROM karda_kb.document WHERE kb_id=ANY($1::uuid[])',[c.kbIds])).rows;
+  return {hash:profileHash(stamps),sourceHashes:Object.fromEntries(docs.map(d=>[d.kb_id+':'+d.id,d.content_hash])) as Record<string,string>};
+ });}
+
 }

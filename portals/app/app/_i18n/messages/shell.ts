@@ -8,6 +8,7 @@ import type { Catalog, MessageFn } from "../catalog";
 // they are translated here rather than in nav.ts itself - keeping nav.ts a pure
 // structure declaration means it stays readable as an IA document.
 export const shell = {
+ subTaskContext:{"zh-CN":"\u4efb\u52a1\u4e0a\u4e0b\u6587","en-US":"Task context"},
  subPush: {"zh-CN":"\u77e5\u8bc6\u4e8b\u4ef6\u4e0e\u63a8\u9001","en-US":"Events and push"},
   subProduction: {"zh-CN":"\u77e5\u8bc6\u751f\u4ea7\u4e0e\u53d1\u5e03","en-US":"Knowledge production"},
   subKnowledgeServices: {"zh-CN":"\u667a\u80fd\u4f53\u77e5\u8bc6\u670d\u52a1","en-US":"Knowledge services"},

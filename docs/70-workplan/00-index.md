@@ -1,5 +1,9 @@
 # 70-workplan - Build plan and batch tracker
 
+## Proposed next module - 2026-11-28
+
+[Agent task context assembly and delivery center](210-agent-task-context-center-20261128.md): C1-C6 plus stage release and itemized confirmation. Owner approved C1-C6 plus both closeouts; implementation awaiting stage verification and release. Karda consumes knowledge and models; Ontos owns ontology authoring. No Ontos implementation in this batch.
+
 ## Active knowledge platform reconstruction - 2026-11-24
 
 [Proposed semantic graph index and query center](203-semantic-graph-index-query-plan-20261127.md): G1-G6 persistent Jena/TDB2, versioned builds, current authority queries, real graph/Agent integration, operations and migration. Pending owner approval; no implementation.
@@ -1137,4 +1141,4 @@ No new application release yet. Full evidence and ordered continuation:
 
 - [208 平台页面走查与问题清单](208-platform-page-walkthrough-20261127.md)：页面观察完成41/41，36项问题/改进/待复核现象；含本体建模能力结论和后续整板块建议，未实施修复。
 
-- [209 平台功能贯通与真实状态修复](209-platform-functional-integration-20261127.md)：T1–T6及两项收尾完整计划，用户已批准，T1–T6实施中，尚未阶段上线。
+- [209 平台功能贯通与真实状态修复](209-platform-functional-integration-20261127.md)：T1–T6及两项收尾完整计划，核心贯通已上线v0.12.56/PR399，T1–T6与两项收尾逐项确认；接口与业务验收保留项见文末。

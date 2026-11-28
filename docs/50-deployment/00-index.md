@@ -1,5 +1,7 @@
 # 50-deployment - Infra, CI/CD, environments, bootstrap
 
+[Agent task context release](580-agent-task-context-release-20261128.md): approved C1-C6 plus R1/R2; implementation awaiting stage gates and deployment.
+
 Deployment and bootstrap material for this repo.
 
 | File / dir | Purpose |
