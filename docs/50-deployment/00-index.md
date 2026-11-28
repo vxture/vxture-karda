@@ -1,6 +1,6 @@
 # 50-deployment - Infra, CI/CD, environments, bootstrap
 
-[Multimodal knowledge services release](590-multimodal-knowledge-services-release-20261128.md): approved M1-M6 plus R1/R2, awaiting stage gates and release.
+[Multimodal knowledge services release](590-multimodal-knowledge-services-release-20261128.md): M1-M6 plus R1/R2 delivered v0.12.58; all final stage/main gates,0048 migration and deployment succeeded.
 
 [Agent task context release](580-agent-task-context-release-20261128.md): C1-C6 plus R1/R2 delivered v0.12.57; final gates,0047 migration and deployment succeeded.
 

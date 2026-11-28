@@ -36,6 +36,7 @@ export function middleware(req: NextRequest): NextResponse {
   // normal state, and on a misconfigured deployment a gate would lock everyone
   // out of a product that is otherwise serving - `/api/access` reports the
   // misconfiguration instead, where an operator can see it.
+  if (req.nextUrl.pathname === "/operations" || req.nextUrl.pathname.startsWith("/operations/")) return NextResponse.next();
   if (process.env.OIDC_RP_ENABLED !== "on") return NextResponse.next();
 
   // These exact information pages enforce their own access, if any.

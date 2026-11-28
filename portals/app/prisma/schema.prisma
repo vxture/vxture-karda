@@ -1910,3 +1910,77 @@ model VisualEvent {
  @@map("visual_event")
  @@schema("karda_kb")
 }
+
+model OpsMember {
+ sub String @id @db.VarChar(128)
+ roles Json
+ status String @default("active") @db.VarChar(16)
+ revision Int @default(1)
+ updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+ @@map("ops_member")
+ @@schema("karda_kb")
+}
+model OpsAudit {
+ id String @id @db.Uuid
+ actorSub String @map("actor_sub") @db.VarChar(128)
+ action String @db.VarChar(64)
+ target String @db.VarChar(128)
+ note String
+ payload Json
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+ @@map("ops_audit")
+ @@schema("karda_kb")
+}
+model PublicLibrary {
+ id String @id @db.Uuid
+ productCode String @default("karda") @map("product_code") @db.VarChar(32)
+ title String @db.VarChar(255)
+ domain String @db.VarChar(64)
+ description String @default("")
+ revision Int @default(1)
+ state String @default("draft") @db.VarChar(16)
+ reviewedHash String? @map("reviewed_hash") @db.VarChar(64)
+ reviewedBy String? @map("reviewed_by") @db.VarChar(128)
+ activeRelease String? @map("active_release") @db.Uuid
+ createdBy String @map("created_by") @db.VarChar(128)
+ updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+ @@map("public_library")
+ @@schema("karda_kb")
+}
+model PublicArtifact {
+ id String @id @db.Uuid
+ libraryId String @map("library_id") @db.Uuid
+ kind String @db.VarChar(16)
+ payload Json
+ revision Int @default(1)
+ createdBy String @map("created_by") @db.VarChar(128)
+ updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+ @@map("public_artifact")
+ @@schema("karda_kb")
+}
+model PublicRelease {
+ id String @id @db.Uuid
+ libraryId String @map("library_id") @db.Uuid
+ contentHash String @map("content_hash") @db.VarChar(64)
+ snapshot Json
+ reviewedBy String @map("reviewed_by") @db.VarChar(128)
+ createdBy String @map("created_by") @db.VarChar(128)
+ restoredFrom String? @map("restored_from") @db.Uuid
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+ @@map("public_release")
+ @@schema("karda_kb")
+}
+model PublicJob {
+ id String @id @db.Uuid
+ libraryId String @map("library_id") @db.Uuid
+ sourceId String @map("source_id") @db.Uuid
+ sourceRevision Int @map("source_revision")
+ state String @default("queued") @db.VarChar(16)
+ result Json @default("{}")
+ errorCode String? @map("error_code") @db.VarChar(80)
+ attempt Int @default(0)
+ createdBy String @map("created_by") @db.VarChar(128)
+ updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+ @@map("public_job")
+ @@schema("karda_kb")
+}

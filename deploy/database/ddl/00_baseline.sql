@@ -1930,3 +1930,24 @@ CREATE TABLE IF NOT EXISTS karda_kb.visual_event (
  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),PRIMARY KEY(run_id,revision),UNIQUE(run_id,request_id)
 );
 -- END VISUAL KNOWLEDGE
+
+-- BEGIN PRODUCT OPERATIONS
+CREATE TABLE IF NOT EXISTS karda_kb.ops_member (
+ sub VARCHAR(128) PRIMARY KEY CHECK(sub ~ '^opr_[a-fA-F0-9-]{36}$'),roles JSONB NOT NULL,status VARCHAR(16) NOT NULL DEFAULT 'active' CHECK(status IN ('active','disabled')),revision INTEGER NOT NULL DEFAULT 1,updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS karda_kb.ops_audit (
+ id UUID PRIMARY KEY,actor_sub VARCHAR(128) NOT NULL,action VARCHAR(64) NOT NULL,target VARCHAR(128) NOT NULL,note TEXT NOT NULL,payload JSONB NOT NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS karda_kb.public_library (
+ id UUID PRIMARY KEY,product_code VARCHAR(32) NOT NULL DEFAULT 'karda' CHECK(product_code='karda'),title VARCHAR(255) NOT NULL,domain VARCHAR(64) NOT NULL,description TEXT NOT NULL DEFAULT '',revision INTEGER NOT NULL DEFAULT 1,state VARCHAR(16) NOT NULL DEFAULT 'draft' CHECK(state IN ('draft','review','approved','published','withdrawn')),reviewed_hash VARCHAR(64),reviewed_by VARCHAR(128),active_release UUID,created_by VARCHAR(128) NOT NULL,updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS karda_kb.public_artifact (
+ id UUID PRIMARY KEY,library_id UUID NOT NULL REFERENCES karda_kb.public_library(id),kind VARCHAR(16) NOT NULL CHECK(kind IN ('source','item','relation')),payload JSONB NOT NULL,revision INTEGER NOT NULL DEFAULT 1,created_by VARCHAR(128) NOT NULL,updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS karda_kb.public_release (
+ id UUID PRIMARY KEY,library_id UUID NOT NULL REFERENCES karda_kb.public_library(id),content_hash VARCHAR(64) NOT NULL,snapshot JSONB NOT NULL,reviewed_by VARCHAR(128) NOT NULL,created_by VARCHAR(128) NOT NULL,restored_from UUID,created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS karda_kb.public_job (
+ id UUID PRIMARY KEY,library_id UUID NOT NULL REFERENCES karda_kb.public_library(id),source_id UUID NOT NULL REFERENCES karda_kb.public_artifact(id),source_revision INTEGER NOT NULL,state VARCHAR(16) NOT NULL DEFAULT 'queued' CHECK(state IN ('queued','done','failed','cancelled')),result JSONB NOT NULL DEFAULT '{}',error_code VARCHAR(80),attempt INTEGER NOT NULL DEFAULT 0,created_by VARCHAR(128) NOT NULL,updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- END PRODUCT OPERATIONS
