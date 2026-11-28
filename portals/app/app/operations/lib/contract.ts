@@ -8,7 +8,8 @@
  */
 import {createHash} from 'node:crypto';
 import {OPS_ROLES,type OpsRole} from './identity';
-export const hash=(value:unknown)=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
+function canonical(value:unknown):unknown{if(value===undefined)return null;if(Array.isArray(value))return value.map(canonical);if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).sort(([a],[b])=>a.localeCompare(b)).map(([key,v])=>[key,canonical(v)]));return value;}
+export const hash=(value:unknown)=>createHash('sha256').update(JSON.stringify(canonical(value))).digest('hex');
 export function text(value:unknown,max=10000):string{if(typeof value!=='string'||!value.trim()||value.length>max)throw Error('operations_invalid_input');return value.trim();}
 export function uuid(value:unknown){const s=text(value,36);if(!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(s))throw Error('operations_invalid_id');return s;}
 export function record(value:unknown):Record<string,unknown>{if(!value||typeof value!=='object'||Array.isArray(value))throw Error('operations_invalid_input');return value as Record<string,unknown>;}

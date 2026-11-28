@@ -21,3 +21,5 @@ test('item reference cannot exceed original source',()=>{const a=fixture();a[1].
 test('relations require local item endpoints and source evidence',()=>{const a=fixture();a.push({id:randomUUID(),kind:'relation',payload:{title:'Relation',sourceId:itemId,targetId:randomUUID(),evidenceId:sourceId,type:'requires'},revision:1,created_by:'opr_'+randomUUID()});assert.throws(()=>validateSnapshot(a),/invalid_relation/);});
 test('graph derives real evidence links and release hash changes with source',()=>{const a=fixture();assert.equal(projection(a).edges[0].target,sourceId);const before=hash(a);a[0].payload.edition='2027';assert.notEqual(hash(a),before);});
 test('source URL and provenance validation rejects insecure origin and invalid ranges',()=>{assert.throws(()=>artifact('source',{title:'x',url:'http://example.com'}));assert.throws(()=>artifact('item',{title:'x',start:-1,end:0}));});
+
+test('release diff hash handles absent old entries and JSONB key order',()=>{assert.equal(hash(undefined),hash(null));assert.equal(hash({b:2,a:1}),hash({a:1,b:2}));});
