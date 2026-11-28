@@ -8,6 +8,7 @@ import type { Catalog, MessageFn } from "../catalog";
 // they are translated here rather than in nav.ts itself - keeping nav.ts a pure
 // structure declaration means it stays readable as an IA document.
 export const shell = {
+  subPublicKnowledge:{"zh-CN":"公共知识与服务","en-US":"Public knowledge"},
  subVisualKnowledge:{"zh-CN":"\u89c6\u89c9\u77e5\u8bc6\u68c0\u7d22","en-US":"Visual knowledge"},
  subMultimodal:{"zh-CN":"\u591a\u6a21\u6001\u52a0\u5de5","en-US":"Multimodal processing"},
  subTaskContext:{"zh-CN":"\u4efb\u52a1\u4e0a\u4e0b\u6587","en-US":"Task context"},

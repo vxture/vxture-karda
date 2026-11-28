@@ -443,3 +443,12 @@ GRANT UPDATE(platform_role,active,display_name,authority_version,environment,obs
 GRANT UPDATE(name,description,state,revision,permissions,updated_at) ON karda_kb.ops_role TO karda_svc;
 GRANT UPDATE(scope,state,revision,created_by,updated_at) ON karda_kb.ops_role_assignment TO karda_svc;
 -- END PRODUCT MEMBER ROLE LOCKS
+
+-- BEGIN PUBLIC DISTRIBUTION LOCKS
+GRANT SELECT,INSERT ON karda_kb.public_binding,karda_kb.public_binding_event,karda_kb.public_delivery,karda_kb.public_feedback TO karda_svc;
+REVOKE UPDATE,DELETE ON karda_kb.public_binding,karda_kb.public_binding_event,karda_kb.public_delivery,karda_kb.public_feedback FROM karda_svc;
+GRANT UPDATE(enabled,mode,release_id,member_rule,revision,updated_by,updated_at) ON karda_kb.public_binding TO karda_svc;
+GRANT UPDATE(state,status,result_count,error_code,finished_at) ON karda_kb.public_delivery TO karda_svc;
+GRANT UPDATE(state,resolution,revision,updated_by,updated_at) ON karda_kb.public_feedback TO karda_svc;
+GRANT UPDATE(distribution) ON karda_kb.public_library TO karda_svc;
+-- END PUBLIC DISTRIBUTION LOCKS

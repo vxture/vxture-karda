@@ -1,0 +1,3 @@
+import type {ServiceConfig} from '../services/contract';
+import type {Catalog} from './contract';
+export function publicServiceTemplate(libraryId:string,c:Catalog,kind:'facts'|'source'|'context'):ServiceConfig{if(!c.templates.includes(kind))throw Error('public_invalid_template');return{name:c.title+' · '+kind,description:c.description+'\n'+c.boundaries,kbIds:[],publicLibraryIds:[libraryId],capabilities:[kind],sourceFallback:false,verificationFilter:'verified_only',topK:10,contextBytes:65536,...(kind==='context'?{context:{goal:c.description,allowPartial:false,maxItems:20,sections:[{id:'public-evidence',name:c.title,mode:'source' as const,required:true,priority:100,query:'',entityIds:[],relationTypes:[],maxHops:1,maxNodes:20,maxEdges:20}]}}:{})};}

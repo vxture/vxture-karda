@@ -1,3 +1,4 @@
+import {publicKnowledgeTool,publicTraceId} from '../public/read';
 import {visualKnowledgeTool} from '../visual/read';
 import {executeTaskContext} from './context-execute';
 import {Pool} from 'pg';
@@ -13,6 +14,7 @@ import {invocation,serviceError,type Invoke} from './contract';
 import {PostgresKnowledgeServices,type TraceEnd} from './store';
 export type ServiceRunner=(tool:string,args:Record<string,unknown>,caller:CallerContext,requestId:string)=>Promise<DispatchResult>;
 export async function runKnowledgeBackend(tool:string,args:Record<string,unknown>,caller:CallerContext,requestId:string):Promise<DispatchResult>{
+ if(tool==='public_knowledge')return publicKnowledgeTool(caller,args,requestId);
  const meter=async(workspaceId:string)=>recordDeliveredUsage({workspaceId,metric:'karda.search',amount:1,idempotencyKey:'knowledge-service:'+requestId+':'+tool});
  if(tool==='published_search')return publishedSearchTool(caller,args,undefined,meter);
  if(tool==='source_search')return sourceSearchTool(caller,args,undefined,meter);
@@ -30,8 +32,9 @@ export async function executeKnowledgeService(store:PostgresKnowledgeServices,ca
  const finish=async(status:number,errorCode:string|null)=>store.finish(who,input,{status,errorCode,latencyMs:Date.now()-started,outputBytes:status<400?bytes:0,steps,usage});
  try{
   const s=await store.snapshot(who,input);await store.begin(who,input,s);traced=true;const c=s.config;
-  const run=async(tool:string,args:Record<string,unknown>)=>{const r=await runner(tool,args,caller,input.requestId);steps.push({tool,status:r.status});if(r.status<400&&['published_search','source_search'].includes(tool))usage.push({metric:'karda.search',calls:1,idempotencyKey:'knowledge-service:'+input.requestId+':'+tool});return r;};
-  let r:DispatchResult,fallback=false;
+  const run=async(tool:string,args:Record<string,unknown>)=>{const r=await runner(tool,args,caller,input.requestId);steps.push({tool,status:r.status});if(r.status<400&&(['published_search','source_search'].includes(tool)||tool==='public_knowledge'&&['facts','source'].includes(input.capability)))usage.push({metric:'karda.search',calls:1,idempotencyKey:tool==='public_knowledge'?'public-knowledge:'+publicTraceId(input.requestId):'knowledge-service:'+input.requestId+':'+tool});return r;};
+  let r:DispatchResult={status:200,body:{result:{}}},fallback=false;const publicIds=c.publicLibraryIds??[],initialPublic=publicIds.length?await store.contextStamp(who,c):null;
+  if(c.kbIds.length){
   if(input.capability==='visual')r=await run('visual_knowledge',{kb_ids:c.kbIds,query:input.query??'',top_k:Math.min(10,c.topK),...(input.assetId?{asset_id:input.assetId,version_id:input.versionId}:{}),...(input.documentId?{document_id:input.documentId}:{}),...(input.visualKind?{kind:input.visualKind}:{}),...(input.page?{page:input.page}:{})});
   else if(input.capability==='facts'){
    r=await run('published_search',{kb_ids:c.kbIds,query:input.query,top_k:c.topK,...(input.pageCursor!==undefined?{page_cursor:input.pageCursor}:{})});
@@ -39,10 +42,13 @@ export async function executeKnowledgeService(store:PostgresKnowledgeServices,ca
    if(r.status<400&&c.sourceFallback&&knowledge?.search?.items.length===0&&!input.pageCursor){fallback=true;r=await run('source_search',{kb_ids:c.kbIds,query:input.query,top_k:c.topK,verification_filter:c.verificationFilter});}
   }else if(input.capability==='source')r=await run('source_search',{kb_ids:c.kbIds,query:input.query,top_k:c.topK,verification_filter:c.verificationFilter});
   else if(input.capability==='topics'){
-   const kbId=input.kbId??(c.kbIds.length===1?c.kbIds[0]:null);if(!kbId||!c.kbIds.includes(kbId))throw Error('service_invalid_topic_scope');
-   r=await run('topic_knowledge',{kb_id:kbId,action:input.relationType?'read':'list',...(input.relationType?{relation_type:input.relationType}:{}),...(input.summaryId?{summary_id:input.summaryId}:{}),...(input.before?{before:input.before}:{})});
+   const kbId=input.kbId??(c.kbIds.length===1&&!publicIds.length?c.kbIds[0]:null);if(kbId&&publicIds.includes(kbId)){r={status:200,body:{result:{}}};}else {if(!kbId||!c.kbIds.includes(kbId))throw Error('service_invalid_topic_scope');
+   r=await run('topic_knowledge',{kb_id:kbId,action:input.relationType?'read':'list',...(input.relationType?{relation_type:input.relationType}:{}),...(input.summaryId?{summary_id:input.summaryId}:{}),...(input.before?{before:input.before}:{})});}
   }else r=await run('knowledge_package',{kb_ids:c.kbIds,entity_ids:input.entityIds,max_hops:1,max_nodes:Math.max(2,c.topK*2),max_edges:c.topK,...(input.pageCursor!==undefined?{page_cursor:input.pageCursor}:{})});
+  }
+  if(publicIds.length&&r.status<400){if(input.pageCursor||input.summaryId||input.before||input.assetId||input.versionId||input.visualKind||input.page||input.documentId)throw Error('service_invalid_public_filter');const selected=input.kbId?publicIds.filter(id=>id===input.kbId):publicIds;if(input.kbId&&!c.kbIds.includes(input.kbId)&&!selected.length)throw Error('service_scope_denied');if(selected.length){const p=await run('public_knowledge',{libraryIds:selected,mode:input.capability,query:input.query??'',topK:c.topK,...(input.entityIds?{entityIds:input.entityIds}:{}),...(input.relationType?{relationType:input.relationType}:{})});if(p.status>=400)r=p;else r={status:200,body:{result:{...(r.body.result as Record<string,unknown>??{}),publicKnowledge:p.body.result}}};}}
   if(r.status>=400){const raw=r.body.error;const code=typeof raw==='string'&&/^[a-z][a-z0-9_]{0,79}$/.test(raw)?raw:'service_backend_unavailable';await finish(r.status,code);return {status:r.status,body:{error:code,requestId:input.requestId,serviceId:s.id,versionId:s.versionId}};}
+  if(initialPublic&&(await store.contextStamp(who,c)).hash!==initialPublic.hash)throw Error('service_changed');
   const current=await store.snapshot(who,input);if(current.revision!==s.revision||current.configHash!==s.configHash||current.versionId!==s.versionId)throw Error('service_changed');
   const body={format:'karda.knowledge-service-result.v1',requestId:input.requestId,serviceId:s.id,versionId:s.versionId,configHash:s.configHash,draft:s.draft,capability:input.capability,sourceFallback:fallback,steps,result:r.body.result,usage};
   bytes=Buffer.byteLength(JSON.stringify(body));if(bytes>c.contextBytes)throw Error('service_context_budget');await finish(200,null);return {status:200,body};

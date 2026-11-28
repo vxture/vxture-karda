@@ -1,3 +1,4 @@
+<!-- 2026-11-29：用户已批准 B D1–D6＋R1/R2 整体实施，当前以215清单为准；下文待批准为历史。 -->
 # Karda 产品运营、公共知识分发与业务落地批次计划
 
 > 2026-11-28新决定：平台负责关联Karda的多位owner及member，产品自定义角色并向member授权。原本地首任口令/任意主体授权方案由[340设计](../30-design/340-product-operations-members-owner-rbac.md)和[214整板块计划](214-product-members-owner-role-plan-20261128.md)替代；旧实现记录保留作历史，新方案尚未实施。
