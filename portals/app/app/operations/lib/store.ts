@@ -21,7 +21,7 @@ export async function overview(sub:string){return transaction(sub,'operations.en
  const access=await (await import('./access')).authorize(db,sub,'operations.enter');
  const all=(await db.query('SELECT * FROM karda_kb.public_library ORDER BY updated_at DESC LIMIT 1000')).rows;
  const libraries=all.filter(k=>permits(access,'content.read',k.id)).slice(0,100);
- return{subject:sub,platformRole:access.association.role,authorityVersion:access.association.authorizationVersion,permissions:access.permissions,libraries,members:[],grants:access.grants,contractState:'draft_not_integrated'};
+ return{subject:sub,platformRole:access.association.role,authorityVersion:access.association.authorizationVersion,permissions:access.permissions,libraries,members:[],grants:access.grants,contractState:'accounts_live_authority'};
  });}
 export async function detail(sub:string,id:string){return transaction(sub,'operations.enter',async(db,access)=>{requirePermission(access,'content.read',uuid(id));
  const library=(await db.query('SELECT * FROM karda_kb.public_library WHERE id=$1',[uuid(id)])).rows[0];if(!library)throw Error('operations_not_found');const artifacts=await snapshot(db,id);

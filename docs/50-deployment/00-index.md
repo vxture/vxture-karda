@@ -1,4 +1,4 @@
-[Public distribution customer/operations/Agent guide](630-public-distribution-agent-service-guide-20261129.md): approved B module, stage validation pending.
+[Public distribution customer/operations/Agent guide](630-public-distribution-agent-service-guide-20261129.md): v0.12.62/94ea9ab7 PR405,1235app+7Java,0052migration121tables andproductiondeployment succeeded; realexternalacceptance remains.
 
 [Product membership and scoped business roles release](620-product-members-owner-roles-release-20261129.md): v0.12.61/523c9b73 PR404;1231app+7Java,117tables. Product software delivered;formalplatformintegration/liveacceptance remains external.
 
