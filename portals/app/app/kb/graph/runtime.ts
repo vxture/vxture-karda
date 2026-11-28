@@ -52,7 +52,7 @@ export async function graphPass(){if(busy||!process.env.DATABASE_URL||!process.e
 
   }
   const listed=await jenaCommand({operation:'list',after:gcCursor});
-  if(Array.isArray(listed.keys)){for(const key of listed.keys){if(typeof key!=='string'||!/^[a-f0-9]{64}$/.test(key))throw Error('graph_unavailable');const refs=await pool.query("SELECT id FROM karda_kb.graph_index WHERE active_hash=$1 OR target_hash=$1 UNION ALL SELECT a.id FROM karda_kb.ops_audit a JOIN karda_kb.public_library l ON l.id::text=a.target WHERE a.action='index' AND a.payload->>'key'=$1 AND a.payload->>'release'=l.active_release::text LIMIT 1",[key]);if(!refs.rowCount)await jenaCommand({operation:'delete',key});}gcCursor=listed.keys.length===100?String(listed.keys.at(-1)):'';}
+  if(Array.isArray(listed.keys)){for(const key of listed.keys){if(typeof key!=='string'||!/^[a-f0-9]{64}$/.test(key))throw Error('graph_unavailable');const refs=await pool.query("SELECT id FROM karda_kb.graph_index WHERE active_hash=$1 OR target_hash=$1 UNION ALL SELECT a.id FROM karda_kb.ops_audit a JOIN karda_kb.public_library l ON l.id::text=a.target WHERE a.action IN ('index','index_pending') AND a.payload->>'key'=$1 AND a.payload->>'release'=l.active_release::text LIMIT 1",[key]);if(!refs.rowCount)await jenaCommand({operation:'delete',key});}gcCursor=listed.keys.length===100?String(listed.keys.at(-1)):'';}
  }finally{if(mutex){await mutex.query('SELECT pg_advisory_unlock(1903240,43)').catch(()=>{});mutex.release();}await pool.end();busy=false;}
 }
 export function startGraphDispatch(){if(started)return;started=true;setTimeout(()=>void graphPass().catch(()=>{}),8000).unref();setInterval(()=>void graphPass().catch(()=>{}),15000).unref();}
