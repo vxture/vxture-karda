@@ -1,3 +1,4 @@
+import {digest} from './hash';
 import type {PoolClient} from 'pg';
 import {randomUUID,createHash} from 'node:crypto';
 import {permits} from '../../authz/policy';
@@ -7,7 +8,7 @@ import {tenantForWorkspace} from '../processing/atlas-embedder';
 import {AtlasApiError} from '../atlas/client';
 import {visualSource,recognizeVisual} from './source';
 import {VisualStore,type VisualRun,type VisualAsset} from './store';
-import {payload,digest,type VisualPayload} from './contract';
+import {payload,type VisualPayload} from './contract';
 export class VisualWorker{
  constructor(readonly store:VisualStore,readonly render=visualSource,readonly recognize=recognizeVisual){}
  async claim(who:SemanticReadIdentity,kbId:string,runId:string){return this.store.tx(who,kbId,true,async(db,access)=>{const r=await this.store.run(db,kbId,runId);if(r.state!=='active')return null;if(r.config.mode==='ocr'&&!permits(access,'ai.use'))throw Error('visual_denied');await this.store.current(db,r);

@@ -66,9 +66,9 @@ export const visualMessages = {
     "en-US": "Start processing"
   },
   "pause": {
-    "zh-CN": "\u6682\u505c",
-    "en-US": "Pause"
-  },
+  "zh-CN": "\u6682\u505c\u52a0\u5de5\u8ba1\u5212",
+  "en-US": "Pause processing plan"
+},
   "resume": {
     "zh-CN": "\u7ee7\u7eed\u52a0\u5de5",
     "en-US": "Resume processing"
@@ -170,9 +170,9 @@ export const visualMessages = {
     "en-US": "Text/formula"
   },
   "blockTitle": {
-    "zh-CN": "\u6807\u9898",
-    "en-US": "Title"
-  },
+  "zh-CN": "\u5185\u5bb9\u5757\u6807\u9898",
+  "en-US": "Content block title"
+},
   "unit": {
     "zh-CN": "\u5355\u4f4d/\u56fe\u4f8b\u8865\u5145",
     "en-US": "Units/legend"
@@ -242,9 +242,9 @@ export const visualMessages = {
     "en-US": "No processing plans or visual assets"
   },
   "processing": {
-    "zh-CN": "\u52a0\u5de5\u4e2d",
-    "en-US": "Processing"
-  },
+  "zh-CN": "\u89c6\u89c9\u5185\u5bb9\u52a0\u5de5\u4e2d",
+  "en-US": "Processing visual content"
+},
   "planned": {
     "zh-CN": "\u5f85\u542f\u52a8",
     "en-US": "Planned"
@@ -254,9 +254,9 @@ export const visualMessages = {
     "en-US": "Active"
   },
   "paused": {
-    "zh-CN": "\u5df2\u6682\u505c",
-    "en-US": "Paused"
-  },
+  "zh-CN": "\u52a0\u5de5\u8ba1\u5212\u5df2\u6682\u505c",
+  "en-US": "Processing plan paused"
+},
   "cancelled": {
     "zh-CN": "\u5df2\u53d6\u6d88",
     "en-US": "Cancelled"

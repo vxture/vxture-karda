@@ -1,6 +1,4 @@
-import {createHash} from 'node:crypto';
 export const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
-export const digest=(v:unknown)=>createHash('sha256').update(JSON.stringify(v)).digest('hex');
 export type Box=[number,number,number,number];
 export type BlockKind='transcript'|'table'|'chart'|'diagram'|'formula';
 export interface Cell {row:number;col:number;rowSpan:number;colSpan:number;text:string;header:boolean;locator:string}

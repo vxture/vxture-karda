@@ -1,8 +1,9 @@
+import {digest} from './hash';
 import {createHash} from 'node:crypto';
 import type {SemanticReadIdentity} from '../semantic/read-postgres';
 import {ContentService} from '../lib/content-service';
 import {getContentStore} from '../lib/content-store';
-import {command,digest,payload} from './contract';
+import {command,payload} from './contract';
 import {VisualStore} from './store';
 /** Create an owned derivative source; formal facts still require production review. */
 export async function visualHandoff(store:VisualStore,who:SemanticReadIdentity,kbId:string,value:unknown,content=new ContentService(getContentStore())){

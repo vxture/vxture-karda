@@ -1,3 +1,4 @@
+import {digest} from './hash';
 import {Pool} from 'pg';
 import {createHash} from 'node:crypto';
 import {permits} from '../../authz/policy';
@@ -7,7 +8,7 @@ import type {DispatchResult} from '../tools/dispatch';
 import {getObjectStore} from '../storage/objectstore';
 import {requireKnowledgeRollout} from '../semantic/rollout-postgres';
 import {bm25Rank} from '../retrieval/bm25';
-import {object,id,text,integer,payload,digest,box,failure,type Box,type VisualPayload,type SourceLocator} from './contract';
+import {object,id,text,integer,payload,box,failure,type Box,type VisualPayload,type SourceLocator} from './contract';
 import {VisualStore,type VisualAsset} from './store';
 import {visualSource} from './source';
 export interface VisualRead {kbIds:string[];query:string;assetId?:string;versionId?:string;topK:number;kind?:string;documentId?:string;page?:number;image:boolean;region?:Box;export:boolean}

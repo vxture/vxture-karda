@@ -1,10 +1,11 @@
+import {digest} from './hash';
 import {randomUUID,createHash} from 'node:crypto';
 import {Pool,type PoolClient} from 'pg';
 import {permits,type ProductAccess} from '../../authz/policy';
 import {readProductAccess,type RoleSql} from '../../authz/store';
 import type {SemanticReadIdentity} from '../semantic/read-postgres';
 import type {ObjectStore,StoredObject} from '../storage/objectstore';
-import {command,digest,id,payload,type Command,type SourceLocator,type VisualPayload} from './contract';
+import {command,id,payload,type Command,type SourceLocator,type VisualPayload} from './contract';
 export interface VisualRun {id:string;kb_id:string;workspace_id:string;document_id:string;source_hash:string;source_version:number;created_by:string;config:{mode:'native'|'ocr';modelCode:string;selection:number[];region?:import('./contract').Box};manifest:SourceLocator[];state:string;revision:number;coverage:unknown;created_at:Date;updated_at:Date}
 export interface VisualAsset {id:string;run_id:string;kb_id:string;ordinal:number;locator:SourceLocator;draft:VisualPayload;revision:number;state:string;active_version:string|null;image_ref:string|null;image_hash:string|null;image_bytes:number|null;width:number|null;height:number|null;lease_id:string|null;lease_until:Date|null;attempt:number;error_code:string|null;request_key:string|null;updated_at:Date}
 export interface VisualDocument {id:string;kb_id:string;content_hash:string;active_chunk_version:number|null;storage_ref:string;size_bytes:string;mime:string;title:string;content_state:string}
