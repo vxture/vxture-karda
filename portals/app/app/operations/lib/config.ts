@@ -15,4 +15,4 @@ export function operationsConfig():OidcConfig {
  redirectUri:origin+'/operations/auth/callback',postLogoutRedirectUri:origin+'/operations',
  scopes:'openid profile email',cookieName:process.env.NODE_ENV==='production'?'__Host-karda_ops':'karda_ops'};
 }
-export function operationsReturn(value:string|null){return value?.startsWith('/operations')&&!value.startsWith('//')&&!value.includes('\\')?value:'/operations';}
+export function operationsReturn(value:string|null){return (value==='/operations'||value?.startsWith('/operations/'))&&!value.startsWith('//')&&!value.includes('\\')?value:'/operations';}
