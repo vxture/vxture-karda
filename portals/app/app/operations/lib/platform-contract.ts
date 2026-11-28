@@ -1,14 +1,23 @@
-/**
- * Draft OPS-07/08 decoding with injected transport; never enabled in production.
- * @package @karda/app
- * @layer Application
- * @category ProductOperations
- * @author AI-Generated
- * @date 2026-11-29
- */
-import {record,text} from './contract';
-import {validateAssociation,type PlatformAuthority,type ProductAssociation,type MemberPage} from './authority';
+/** Accounts ProductDelegation contract, pinned to platform14b8c4c (v0.33.19). */
+import type {PlatformAuthority,ProductAssociation,MemberPage} from './authority';
+export const PLATFORM_OPERATIONS_CONTRACT='API-OPS-001 / platform14b8c4c / Accounts oidc operations';
 export type AuthorityResponse={status:number;body:unknown};
-export interface DraftTransport {self():Promise<AuthorityResponse>;members(cursor:string|null):Promise<AuthorityResponse>}
+export interface AuthorityTransport {self():Promise<AuthorityResponse>;members(cursor:string|null):Promise<AuthorityResponse>}
+const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+export function revision(v:unknown):string{if(typeof v!=='string'||!/^(0|[1-9][0-9]{0,18})$/.test(v)||BigInt(v)>9223372036854775807n)throw Error('operations_authority_invalid');return v;}
+function record(v:unknown):Record<string,unknown>{if(!v||typeof v!=='object'||Array.isArray(v))throw Error('operations_authority_invalid');return v as Record<string,unknown>;}
 function response(r:AuthorityResponse){if(r.status===401)throw Error('operations_unauthenticated');if(r.status===403)throw Error('operations_forbidden');if(r.status===409)throw Error('operations_directory_changed');if(r.status!==200)throw Error('operations_authority_unavailable');return record(r.body);}
-export function draftAuthority(actor:string,environment:string,transport:DraftTransport):PlatformAuthority{return{environment,access:async()=>{const p=response(await transport.self());const a:ProductAssociation={product:p.product as 'karda',subject:p.subject as string,authorized:p.authorized as boolean,role:p.role as ProductAssociation['role'],authorizationVersion:p.authorization_version as string,environment};return validateAssociation(a,actor,environment);},members:async cursor=>{const p=response(await transport.members(cursor));if(!Array.isArray(p.items)||typeof p.authorization_version!=='string'||!/^\d{1,40}$/.test(p.authorization_version)||p.next_cursor!==null&&typeof p.next_cursor!=='string')throw Error('operations_authority_invalid');const value:MemberPage={items:p.items.map(v=>{const m=record(v);if(typeof m.employee_active!=='boolean'||!['owner','member'].includes(String(m.role)))throw Error('operations_authority_invalid');return{subject:text(m.subject,128),displayName:text(m.display_name,255),role:m.role as 'owner'|'member',employeeActive:m.employee_active};}),nextCursor:p.next_cursor as string|null,authorizationVersion:p.authorization_version};return value;}};}
+export function accountsAuthority(actor:string,environment:string,productId:string,transport:AuthorityTransport):PlatformAuthority{
+ if(!UUID.test(productId)||!/^opr_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(actor))throw Error('operations_authority_invalid');
+ const binding=(p:Record<string,unknown>)=>{if(p.product_id!==productId)throw Error('operations_authority_invalid');return revision(p.revision);};
+ return{environment,access:async()=>{const p=response(await transport.self()),version=binding(p);if(p.subject!==actor||typeof p.authorized!=='boolean'||typeof p.owner_missing!=='boolean'||p.authorized&&(p.owner_missing||!['owner','member'].includes(String(p.role)))||!p.authorized&&p.role!==null)throw Error('operations_authority_invalid');return{product:'karda',subject:actor,authorized:p.authorized,role:p.role as ProductAssociation['role'],authorizationVersion:version,environment};},members:async cursor=>{
+ const p=response(await transport.members(cursor)),version=binding(p);if(typeof p.enabled!=='boolean'||typeof p.owner_missing!=='boolean'||!Number.isSafeInteger(p.owner_count)||Number(p.owner_count)<0||p.recommended_owner_count!==2||!Array.isArray(p.items)||p.items.length>100||p.nextCursor!==null&&(typeof p.nextCursor!=='string'||!p.nextCursor.length||p.nextCursor.length>512))throw Error('operations_authority_invalid');if(!p.enabled||p.owner_missing||Number(p.owner_count)===0)throw Error('operations_not_associated');
+ const items=p.items.map(v=>{const m=record(v);if(typeof m.subject!=='string'||!/^opr_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(m.subject)||!['owner','member'].includes(String(m.role))||typeof m.effective!=='boolean'||m.display_name!==null&&(typeof m.display_name!=='string'||m.display_name.length>255))throw Error('operations_authority_invalid');return{subject:m.subject,displayName:typeof m.display_name==='string'?m.display_name:'',role:m.role as 'owner'|'member',employeeActive:m.effective};});
+ return{items,nextCursor:p.nextCursor as string|null,authorizationVersion:version} satisfies MemberPage;}};
+}
+export function oauthBasic(clientId:string,secret:string){const form=(s:string)=>new URLSearchParams({v:s}).toString().slice(2);return 'Basic '+Buffer.from(form(clientId)+':'+form(secret)).toString('base64');}
+export function accountsTransport(cfg:{issuer:string;clientId:string;clientSecret:string},token:()=>Promise<string>,send:typeof fetch=fetch):AuthorityTransport{
+ const issuer=new URL(cfg.issuer);if(issuer.username||issuer.password||issuer.search||issuer.hash||issuer.pathname!=='/'||issuer.protocol!=='https:'&&!(issuer.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(issuer.hostname)))throw Error('operations_not_configured');
+ const post=async(path:'access'|'members',fields:Record<string,unknown>):Promise<AuthorityResponse>=>{try{const subjectToken=await token();if(!subjectToken||subjectToken.length>16384)throw Error('operations_unauthenticated');const r=await send(new URL('/oidc/operations/'+path,issuer),{method:'POST',headers:{Authorization:oauthBasic(cfg.clientId,cfg.clientSecret),'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({subject_token:subjectToken,...fields}),cache:'no-store',redirect:'error',signal:AbortSignal.timeout(8000)});if(r.status!==200)return{status:r.status,body:null};const reader=r.body?.getReader();if(!reader)throw Error();let size=0;const chunks:Uint8Array[]=[];while(true){const next=await reader.read();if(next.done)break;size+=next.value.byteLength;if(size>131072){await reader.cancel();throw Error();}chunks.push(next.value);}return{status:200,body:JSON.parse(Buffer.concat(chunks).toString('utf8'))};}catch(e){if(e instanceof Error&&['operations_unauthenticated','operations_session_renewal_required'].includes(e.message))throw e;throw Error('operations_authority_unavailable');}};
+ return{self:()=>post('access',{}),members:cursor=>{if(cursor!==null&&(!cursor.length||cursor.length>512))throw Error('operations_authority_invalid');return post('members',{limit:100,...(cursor!==null?{cursor}:{})});}};
+}

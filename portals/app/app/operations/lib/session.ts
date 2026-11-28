@@ -100,3 +100,10 @@ export async function resolveSessionUser(cfg: OidcConfig, rpsid: string | undefi
   try { return { available: true, user: await resolve(cfg, rpsid) }; }
   catch { return { available: false, user: null }; }
 }
+
+/** Server-only delegated token. The opaque RP handle never comes from a token body field. */
+export async function operationsSubjectToken(cfg:OidcConfig,actor:{sub:string;rpsid:string},deps:SessionDeps={...defaults,refresh:async()=>{throw Error('operations_session_renewal_required');}}):Promise<string>{
+ const sub=await getAuthUser(cfg,actor.rpsid,deps);if(sub!==actor.sub)throw Error('operations_unauthenticated');const session=await deps.read(cfg.clientId,actor.rpsid);if(!session||session.sub!==sub)throw Error('operations_unauthenticated');const claims=validate(await deps.verify(session.accessToken,cfg),session,deps.now());
+ if(workforce(claims)!==sub||claims.aud!==cfg.clientId||typeof claims.scope!=='string'||!claims.scope.split(' ').includes('openid')||typeof claims.sid!=='string'||!claims.sid||typeof claims.jti!=='string'||!claims.jti||!Array.isArray(claims.roles)||claims.roles.some(r=>typeof r!=='string')||['active_org','active_workspace','act','mode'].some(k=>claims[k]!==undefined))throw Error('operations_unauthenticated');
+ const current=await deps.read(cfg.clientId,actor.rpsid);if(!current||current.accessToken!==session.accessToken)throw Error('operations_unauthenticated');return session.accessToken;
+}

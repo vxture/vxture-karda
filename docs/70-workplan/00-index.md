@@ -1,4 +1,6 @@
-[Approved public distribution and Agent service batch](215-public-distribution-agent-service-plan-20261129.md): D1-D6 plus R1/R2 implementation complete, integrated verification pending. Supersedes historical B-pending statements below.
+[Accounts live operations authority integration](216-accounts-operations-interface-integration-20261129.md): user-authorized first step, platform14b8c4c/v0.33.19 fixed POST delegation; software checks and real employee/client configuration acceptance tracked separately.
+
+[Approved public distribution and Agent service batch](215-public-distribution-agent-service-plan-20261129.md): D1-D6 plus R1/R2 Karda software delivered v0.12.62/94ea9ab7 PR405;1235app+7Java,0052migration121tables anddeployment passed. Real external acceptance and approved B1 content remain separate. Supersedes historical B-pending statements below.
 
 # 70-workplan - Build plan and batch tracker
 
