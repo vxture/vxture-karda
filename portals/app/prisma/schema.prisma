@@ -1976,6 +1976,11 @@ model PublicJob {
  sourceId String @map("source_id") @db.Uuid
  sourceRevision Int @map("source_revision")
  state String @default("queued") @db.VarChar(16)
+ mode String @default("manual") @db.VarChar(16)
+ delegationCipher String? @map("delegation_cipher")
+ nextAttemptAt DateTime @default(now()) @map("next_attempt_at") @db.Timestamptz()
+ revision Int @default(1)
+ dispatchAttempt Int @default(0) @map("dispatch_attempt")
  result Json @default("{}")
  errorCode String? @map("error_code") @db.VarChar(80)
  attempt Int @default(0)

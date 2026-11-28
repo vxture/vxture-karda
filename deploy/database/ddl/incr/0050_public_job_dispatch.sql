@@ -1,0 +1,12 @@
+BEGIN;
+ALTER TABLE karda_kb.public_job ADD COLUMN IF NOT EXISTS mode VARCHAR(16) NOT NULL DEFAULT 'manual';
+ALTER TABLE karda_kb.public_job ADD COLUMN IF NOT EXISTS delegation_cipher TEXT;
+ALTER TABLE karda_kb.public_job ADD COLUMN IF NOT EXISTS next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT now();
+ALTER TABLE karda_kb.public_job ADD COLUMN IF NOT EXISTS revision INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE karda_kb.public_job ADD COLUMN IF NOT EXISTS dispatch_attempt INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE karda_kb.public_job DROP CONSTRAINT IF EXISTS public_job_state_check;
+ALTER TABLE karda_kb.public_job ADD CONSTRAINT public_job_state_check CHECK(state IN ('queued','paused','done','failed','cancelled'));
+ALTER TABLE karda_kb.public_job DROP CONSTRAINT IF EXISTS public_job_mode_check;
+ALTER TABLE karda_kb.public_job ADD CONSTRAINT public_job_mode_check CHECK(mode IN ('manual','automatic'));
+GRANT UPDATE(mode,delegation_cipher,next_attempt_at,revision,dispatch_attempt) ON karda_kb.public_job TO karda_svc;
+COMMIT;

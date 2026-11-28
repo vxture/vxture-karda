@@ -1,3 +1,5 @@
+[Product operations public knowledge release and itemized gaps](600-product-operations-public-knowledge-release-20261128.md): v0.12.59/cc829c17,PR402; software deployed,external workforce setup and explicitly listed A gaps remain open.
+
 # 50-deployment - Infra, CI/CD, environments, bootstrap
 
 [Multimodal knowledge services release](590-multimodal-knowledge-services-release-20261128.md): M1-M6 plus R1/R2 delivered v0.12.58; all final stage/main gates,0048 migration and deployment succeeded.

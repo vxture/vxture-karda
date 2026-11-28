@@ -13,7 +13,8 @@ import {getAuthUser} from './session';
 import {OPS_ROLES,type OpsPermission,type OpsRole} from './identity';
 let pool:Pool|undefined;
 export function operationsPool(){return pool??=new Pool({connectionString:process.env.DATABASE_URL,max:5,connectionTimeoutMillis:5000,statement_timeout:15000});}
-export async function operator(){const cfg=operationsConfig();if(!cfg.enabled)throw Error('operations_not_configured');const sid=(await cookies()).get(cfg.cookieName)?.value;if(!sid)throw Error('operations_unauthenticated');const sub=await getAuthUser(cfg,sid);if(!sub)throw Error('operations_unauthenticated');return sub;}
+export async function operatorContext(){const cfg=operationsConfig();if(!cfg.enabled)throw Error('operations_not_configured');const sid=(await cookies()).get(cfg.cookieName)?.value;if(!sid)throw Error('operations_unauthenticated');const sub=await getAuthUser(cfg,sid);if(!sub)throw Error('operations_unauthenticated');return{sub,rpsid:sid};}
+export async function operator(){return(await operatorContext()).sub;}
 export async function authorize(db:PoolClient,sub:string,permission:OpsPermission){
  const row=(await db.query<{roles:OpsRole[];status:string}>('SELECT roles,status FROM karda_kb.ops_member WHERE sub=$1 FOR SHARE',[sub])).rows[0];
  if(row?.status!=='active'||!row.roles.some(r=>Object.hasOwn(OPS_ROLES,r)&&(OPS_ROLES[r] as readonly string[]).includes(permission)))throw Error('operations_forbidden');return row.roles;
