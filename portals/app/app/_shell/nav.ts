@@ -80,6 +80,7 @@ export const NAV_ITEMS = [
     sub: [
       { key: "channels", href: "/channels", labelKey: "subChannelsOverview" },
       { key: "tools", href: "/tools", labelKey: "subTools" },
+      { key: "public", href: "/channels/public", labelKey: "subPublicKnowledge" },
       { key: "services", href: "/channels/services", labelKey: "subKnowledgeServices" },
       { key: "context", href: "/channels/context", labelKey: "subTaskContext" },
       { key: "visual", href: "/channels/visual", labelKey: "subVisualKnowledge" },
@@ -159,6 +160,7 @@ export const NAV_SECTIONS = [
     items: [
       { key: "channels", href: "/channels", icon: "plugs-connected", labelKey: "subChannelsOverview", subLabel: "Channels" },
       { key: "tools", href: "/tools", icon: "api", labelKey: "subTools", subLabel: "Tools" },
+      { key: "public", href: "/channels/public", icon: "plugs-connected", labelKey: "subPublicKnowledge", subLabel: "Public knowledge" },
       { key: "services", href: "/channels/services", icon: "plugs-connected", labelKey: "subKnowledgeServices", subLabel: "Knowledge services" },
       { key: "context", href: "/channels/context", icon: "plugs-connected", labelKey: "subTaskContext", subLabel: "Task context" },
       { key: "visual", href: "/channels/visual", icon: "plugs-connected", labelKey: "subVisualKnowledge", subLabel: "Visual knowledge" },

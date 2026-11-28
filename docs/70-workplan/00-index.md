@@ -1,8 +1,10 @@
+[Approved public distribution and Agent service batch](215-public-distribution-agent-service-plan-20261129.md): D1-D6 plus R1/R2 implementation complete, integrated verification pending. Supersedes historical B-pending statements below.
+
 # 70-workplan - Build plan and batch tracker
 
 ## Proposed product membership and roles alignment - 2026-11-28
 
-[Platform product membership and Karda roles center](214-product-members-owner-role-plan-20261128.md): O1-O6 plus R1/R2. Multiple platform-assigned owners, platform member eligibility, product-defined roles/scopes and migration from local bootstrap. Design only, pending approval; supersedes the old A2 bootstrap/grant-source proposal.
+[Platform product membership and Karda roles center](214-product-members-owner-role-plan-20261128.md): O1-O6 plus R1/R2. Multiple platform-assigned owners, platform member eligibility, product-defined roles/scopes and migration from local bootstrap. Approved product-side software delivered v0.12.61/523c9b73 PR404;1231app+7Java,0051migration117tables and deployment passed. O1 formal platform integration/live acceptance remains open; no draft endpoint calls. Supersedes old A2 bootstrap/grant source.
 
 ## Product operations and public knowledge plan - 2026-11-28
 

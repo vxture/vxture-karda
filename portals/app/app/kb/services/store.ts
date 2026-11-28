@@ -1,3 +1,4 @@
+import {publicSelection} from '../public/store';
 import type {ContextManifest} from './context-engine';
 import {Pool,type PoolClient} from 'pg';
 import {permits,type ProductAccess} from '../../authz/policy';
@@ -17,15 +18,16 @@ export class PostgresKnowledgeServices{
    await db.query('SELECT id FROM local_authz.member WHERE workspace_id=$1 AND sub=$2 FOR SHARE',[who.workspaceId,who.sub]);
    const sql:RoleSql={$queryRawUnsafe:async<T>(s:string,...v:unknown[])=>(await db.query(s,v)).rows as T,$executeRawUnsafe:async()=>{throw Error('service_denied');}};
    const access=await readProductAccess(who,sql);if(!permits(access,'product.enter')||!permits(access,'data.read'))throw Error('service_denied');
-   const value=await work(db,access);await db.query('COMMIT');return value;
+   const value=await work(db,access);if(await this.admit(who)!==true)throw Error('service_denied');await db.query('COMMIT');return value;
   }catch(e){await db.query('ROLLBACK');throw e;}finally{db.release();}
  }
  private admin(access:ProductAccess){return access.roles.some(r=>r==='owner'||r==='administrator');}
  private manage(who:SemanticReadIdentity,access:ProductAccess,s?:ServiceRow){if(who.productCode!=='karda'||!permits(access,'data.write')||(s&&s.created_by!==who.sub&&!this.admin(access)))throw Error('service_denied');}
  private async service(db:PoolClient,who:SemanticReadIdentity,id:string){uuid(id);const s=(await db.query<ServiceRow>('SELECT * FROM karda_kb.knowledge_service WHERE id=$1 AND workspace_id=$2 FOR UPDATE',[id,who.workspaceId])).rows[0];if(!s)throw Error('service_not_found');return s;}
  private async libraries(db:PoolClient,who:SemanticReadIdentity,c:ServiceConfig){
+  const roleSql:RoleSql={$queryRawUnsafe:async<T>(s:string,...v:unknown[])=>(await db.query(s,v)).rows as T,$executeRawUnsafe:async()=>{throw Error('service_denied');}};const publicVersions=await publicSelection(db,who,await readProductAccess(who,roleSql),c.publicLibraryIds??[]);
   const rows=(await db.query("SELECT k.id,k.name,k.owner_sub,k.publish_state,k.updated_at FROM karda_kb.knowledge_base k WHERE k.id=ANY($1::uuid[]) AND k.workspace_id=$2 AND k.owner_type='user' AND k.deleted_at IS NULL AND (k.owner_sub=$3 OR k.publish_state IN ('ws_published','org_published')) AND EXISTS(SELECT 1 FROM karda_kb.kb_attachment a WHERE a.kb_id=k.id AND a.workspace_id=k.workspace_id AND a.user_sub=$3 AND a.product_code=$4) ORDER BY k.id FOR SHARE",[c.kbIds,who.workspaceId,who.sub,who.productCode])).rows;
-  if(rows.length!==c.kbIds.length)throw Error('service_scope_denied');return rows.map(r=>({...r,updated_at:r.updated_at instanceof Date?r.updated_at.toISOString():r.updated_at}));
+  if(rows.length!==c.kbIds.length)throw Error('service_scope_denied');return [...rows.map(r=>({...r,updated_at:r.updated_at instanceof Date?r.updated_at.toISOString():r.updated_at})),...publicVersions.map(v=>({id:v.libraryId,name:v.catalog.title,updated_at:v.stamp,public:true,releaseId:v.releaseId}))];
  }
  private async target(db:PoolClient,s:ServiceRow,target:string):Promise<ServiceConfig|null>{
   if(target==='stop')return null;if(target==='draft')return config(s.draft);
@@ -67,7 +69,8 @@ export class PostgresKnowledgeServices{
    this.manage(who,access);const services=(await db.query<ServiceRow>('SELECT * FROM karda_kb.knowledge_service WHERE workspace_id=$1 AND (created_by=$2 OR $3::boolean) AND ($4::uuid IS NULL OR id<$4) ORDER BY id DESC LIMIT 21',[who.workspaceId,who.sub,this.admin(access),q.before??null])).rows;
    const libraries=(await db.query("SELECT k.id,k.name FROM karda_kb.knowledge_base k WHERE workspace_id=$1 AND owner_type='user' AND deleted_at IS NULL AND (owner_sub=$2 OR publish_state IN ('ws_published','org_published')) AND EXISTS(SELECT 1 FROM karda_kb.kb_attachment a WHERE a.kb_id=k.id AND a.workspace_id=k.workspace_id AND a.user_sub=$2 AND a.product_code='karda') ORDER BY k.name,k.id LIMIT 201",[who.workspaceId,who.sub])).rows;
    if(libraries.length>200)throw Error('service_library_budget');
-   const base={format:'karda.knowledge-services.v1',services:services.slice(0,20),nextBefore:services.length>20?services[19].id:null,libraries,canPublish:permits(access,'service.publish')};if(!q.id)return {...base,detail:null};
+   const enabled=(await db.query('SELECT library_id FROM karda_kb.public_binding WHERE workspace_id=$1 AND enabled=true ORDER BY library_id LIMIT 201',[who.workspaceId])).rows;if(enabled.length>200)throw Error('service_library_budget');const publicLibraries:{id:string;name:string;releaseId:string}[]=[];for(const row of enabled){try{const v=(await publicSelection(db,who,access,[row.library_id]))[0];publicLibraries.push({id:v.libraryId,name:v.catalog.title,releaseId:v.releaseId});}catch(e){if(!(e instanceof Error)||!/^public_(scope_denied|inactive|source_changed)$/.test(e.message))throw e;}}
+   const base={format:'karda.knowledge-services.v1',publicLibraries,services:services.slice(0,20),nextBefore:services.length>20?services[19].id:null,libraries,canPublish:permits(access,'service.publish')};if(!q.id)return {...base,detail:null};
    const s=await this.service(db,who,q.id);this.manage(who,access,s);
    const versions=(await db.query('SELECT id,config,config_hash,created_by,created_at FROM karda_kb.knowledge_service_version WHERE service_id=$1 AND ($2::uuid IS NULL OR id<$2) ORDER BY id DESC LIMIT 21',[s.id,q.versionBefore??null])).rows;
    const history=(await db.query('SELECT revision,action,note,result,created_by,created_at FROM karda_kb.knowledge_service_event WHERE service_id=$1 AND ($2::integer IS NULL OR revision<$2) ORDER BY revision DESC LIMIT 21',[s.id,q.eventBefore??null])).rows;

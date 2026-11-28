@@ -4,7 +4,7 @@ export const contextHash=(v:unknown):string=>createHash('sha256').update(JSON.st
 type Row=Record<string,unknown>;
 const row=(v:unknown):Row=>v&&typeof v==='object'&&!Array.isArray(v)?v as Row:{};
 const rows=(v:unknown):Row[]=>Array.isArray(v)?v.map(row):[];
-export interface ContextEvidence {id:string;kbId:string;documentId:string;documentVersion:number;contentHash:string;start:number;end:number;pages:number[];text:string}
+export interface ContextEvidence {id:string;kbId:string;documentId:string;documentVersion:number;contentHash:string;start:number;end:number;pages:number[];text:string;publicProvenance?:Record<string,unknown>}
 export interface ContextUnit {id:string;kind:'published_fact'|'source_passage'|'accepted_summary'|'deterministic_inference'|'visual_source';data:Row;evidence:ContextEvidence[]}
 export interface SectionInput {section:ContextSection;units:ContextUnit[];gaps:string[]}
 export interface ContextManifest {queryHash:string;revision:string;items:string[];evidence:string[];state:string}
@@ -13,7 +13,8 @@ export function normalizeContext(section:ContextSection,result:unknown,sourceHas
  const r=row(result),pack=row(r.knowledge??result),units:ContextUnit[]=[],gaps=(Array.isArray(r.gaps)?r.gaps:[]).filter((g):g is string=>typeof g==='string');
  function proof(v:Row,kb?:string):ContextEvidence{const kbId=String(v.kbId??kb??''),documentId=String(v.documentId??''),documentVersion=Number(v.documentVersion??v.version),start=Number(v.start),end=Number(v.end),text=String(v.text??v.excerpt??''),contentHash=String(v.contentHash??sourceHashes[kbId+':'+documentId]??'');
   if(!kbId||!documentId||!Number.isSafeInteger(documentVersion)||!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start<0||end<=start||text.length!==end-start||!/^[a-f0-9]{64}$/.test(contentHash))throw Error('service_context_corrupt');
-  const value={kbId,documentId,documentVersion,contentHash,start,end,pages:(Array.isArray(v.pages)?v.pages:[]).filter((x):x is number=>Number.isSafeInteger(x)),text};return {id:contextHash([kbId,documentId,documentVersion,contentHash,start,end]),...value};
+  const publicProvenance=v.publicProvenance===undefined?undefined:row(v.publicProvenance);if(publicProvenance&&(!publicProvenance.releaseId||publicProvenance.libraryId!==kbId||publicProvenance.sourceId!==documentId||publicProvenance.sourceHash!==contentHash))throw Error('service_context_corrupt');
+  const value={kbId,documentId,documentVersion,contentHash,start,end,...(publicProvenance?{publicProvenance}:{}),pages:(Array.isArray(v.pages)?v.pages:[]).filter((x):x is number=>Number.isSafeInteger(x)),text};return {id:contextHash([kbId,documentId,documentVersion,contentHash,start,end,...(publicProvenance?[publicProvenance.releaseId]:[])]),...value};
  }
  function unit(kind:ContextUnit['kind'],data:Row,evidence:ContextEvidence[]){if(!evidence.length)throw Error('service_context_corrupt');const unique=[...new Map(evidence.map(e=>[e.id,e])).values()].sort((a,b)=>a.id.localeCompare(b.id));const id=contextHash([kind,data,unique.map(e=>e.id)]);units.push({id,kind,data,evidence:unique});}
  if(section.mode==='visual'){for(const item of rows(r.items)){units.push({id:contextHash(['visual_source',item]),kind:'visual_source',data:item,evidence:[]});for(const g of Array.isArray(item.gaps)?item.gaps:[])if(typeof g==='string')gaps.push(g);}}
@@ -32,6 +33,7 @@ export function normalizeContext(section:ContextSection,result:unknown,sourceHas
   if(rows(pack.identity).some(i=>Number(i.unresolved)>0))gaps.push('known_identity_conflicts');
   if(row(r.inference).truncated===true)gaps.push('inference_window_truncated');
  }
+ const publicKnowledge=row(r.publicKnowledge);for(const item of rows(publicKnowledge.items)){const refs=rows(item.evidence).map(e=>proof(e));if(refs.length)unit(item.kind==='source'?'source_passage':'published_fact',item,refs);else if(item.kind==='original'){units.push({id:contextHash(['public_original',item]),kind:'visual_source',data:item,evidence:[]});gaps.push('original_only_no_reviewed_visual_extraction');}}if(publicKnowledge.truncated===true)gaps.push('public_candidate_window_truncated');for(const g of Array.isArray(publicKnowledge.gaps)?publicKnowledge.gaps:[])if(typeof g==='string')gaps.push(g);
  if(pack.sourceStatus==='partial'||r.partial===true)gaps.push('source_unavailable');if(pack.truncated===true||r.truncated===true)gaps.push('candidate_window_truncated');
  if(Array.isArray(pack.gaps))for(const g of pack.gaps)if(typeof g==='string')gaps.push(g);
  if(!units.length)gaps.push('no_match');

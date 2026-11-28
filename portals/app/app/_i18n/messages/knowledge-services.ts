@@ -1,4 +1,5 @@
 export const knowledgeServices = {
+ publicScope:{"zh-CN":"已启用的公共知识（每次核验当前权限）","en-US":"Enabled public knowledge (current authorization required)"},
  visual:{"zh-CN":"\u591a\u6a21\u6001\u6765\u6e90\u4e0e\u89c6\u89c9\u8bc1\u636e","en-US":"Visual source knowledge"},
  context:{"zh-CN":"\u4efb\u52a1\u4e0a\u4e0b\u6587\u7ec4\u88c5","en-US":"Task context assembly"},
   "title": {

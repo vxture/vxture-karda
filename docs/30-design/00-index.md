@@ -1,5 +1,7 @@
 # 30-design - Architecture, ADRs, domain design, DB schema
 
+[Public distribution and Agent services](350-public-distribution-agent-services.md): approved B architecture, tenant opt-in and immutable release authorization.
+
 [Product workforce membership, multiple owners and product RBAC](340-product-operations-members-owner-rbac.md): platform owns product owner/member association; Karda owns business roles and scopes. Design pending implementation approval.
 
 [Multimodal knowledge services](330-multimodal-knowledge-services.md): approved visual source/job/review/service center architecture, component selection and usage.

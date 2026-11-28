@@ -1,3 +1,4 @@
+import {publicTraceId} from '../public/read';
 import {permits} from '../../authz/policy';
 import type {CallerContext} from '../tools/s2s';
 import type {DispatchResult} from '../tools/dispatch';
@@ -15,16 +16,17 @@ export async function executeTaskContext(store:PostgresKnowledgeServices,caller:
   await store.begin(who,input,snapshot);traced=true;
   const initial=await store.contextStamp(who,c),previous=await store.previousContext(who,input),sections:SectionInput[]=[];
   for(const section of recipe.sections){
-   const kbIds=section.kbId?[section.kbId]:c.kbIds,query=[section.query,input.query].filter(Boolean).join(' '),key=input.requestId+':'+section.id;
+   const kbIds=section.kbId?c.kbIds.filter(id=>id===section.kbId):c.kbIds,publicIds=section.kbId?(c.publicLibraryIds??[]).filter(id=>id===section.kbId):(c.publicLibraryIds??[]),query=[section.query,input.query].filter(Boolean).join(' '),key=input.requestId+':'+section.id;
    let tool:string,args:Record<string,unknown>;
    if(section.mode==='facts'){tool='published_search';args={kb_ids:kbIds,query,top_k:c.topK};}
    else if(section.mode==='visual'){tool='visual_knowledge';args={kb_ids:kbIds,query,top_k:Math.min(10,c.topK),...(section.visualKind?{kind:section.visualKind}:{})};}
    else if(section.mode==='source'){tool='source_search';args={kb_ids:kbIds,query,top_k:c.topK,verification_filter:c.verificationFilter};}
    else if(section.mode==='topics'){tool='topic_knowledge';args={kb_id:section.kbId,action:'read',relation_type:section.relationType};}
    else{tool='knowledge_package';args={...(section.ruleAssetId?{kb_id:section.kbId,rule_asset_id:section.ruleAssetId}:{kb_ids:kbIds}),entity_ids:section.entityIds,relation_types:section.relationTypes,max_hops:section.maxHops,max_nodes:section.maxNodes,max_edges:section.maxEdges};}
-   let r:DispatchResult;try{r=await runner(tool,args,caller,key);}catch{r={status:503,body:{error:'service_backend_unavailable'}};}
-   steps.push({tool,status:r.status,sectionId:section.id});
-   if(r.status<400&&['published_search','source_search'].includes(tool))usage.push({metric:'karda.search',calls:1,idempotencyKey:'knowledge-service:'+key+':'+tool});
+   let r:DispatchResult;try{r=kbIds.length?await runner(tool,args,caller,key):{status:200,body:{result:{}}};}catch{r={status:503,body:{error:'service_backend_unavailable'}};}
+   if(kbIds.length)steps.push({tool,status:r.status,sectionId:section.id});
+   if(kbIds.length&&r.status<400&&['published_search','source_search'].includes(tool))usage.push({metric:'karda.search',calls:1,idempotencyKey:'knowledge-service:'+key+':'+tool});
+   if(publicIds.length&&r.status<400){if(section.ruleAssetId||section.visualKind)throw Error('service_invalid_public_filter');const p=await runner('public_knowledge',{libraryIds:publicIds,mode:section.mode,query,topK:c.topK,entityIds:section.entityIds,...(section.relationType?{relationType:section.relationType}:{})},caller,key);steps.push({tool:'public_knowledge',status:p.status,sectionId:section.id});if(p.status<400){r={status:200,body:{result:{...(r.body.result as Record<string,unknown>??{}),publicKnowledge:p.body.result}}};if(['facts','source'].includes(section.mode))usage.push({metric:'karda.search',calls:1,idempotencyKey:'public-knowledge:'+publicTraceId(key)});}else r=p;}
    if(r.status>=400){if(r.body.error==='knowledge_rollout_paused')throw Error('service_inactive');if([401,403].includes(r.status))throw Error('service_scope_denied');if(r.status===409)throw Error('service_changed');if(!recipe.allowPartial||section.required)throw Error('service_context_backend_unavailable');sections.push({section,units:[],gaps:['backend_failed']});continue;}
    sections.push(normalizeContext(section,r.body.result,initial.sourceHashes));
   }
