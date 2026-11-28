@@ -1909,3 +1909,4 @@ model VisualEvent {
  @@unique([runId,requestId])
  @@map("visual_event")
  @@schema("karda_kb")
+}
