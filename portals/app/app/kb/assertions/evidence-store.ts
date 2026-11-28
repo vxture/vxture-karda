@@ -1,3 +1,4 @@
+import {visualDocumentCurrentQuery} from '../visual/current';
 // The database side of `karda.get_evidence`.
 //
 // Split from `evidence-read.ts` so the shaping rules - which statuses are
@@ -38,6 +39,7 @@ export async function readEvidence(citationId: string, visibleKbIds: string[]): 
     },
   });
   if (!chunk) return evidenceNotFound(citationId);
+  if(!await visualDocumentCurrentQuery((sql,values)=>p.$queryRawUnsafe(sql,...values),chunk.documentId))return evidenceNotFound(citationId);
 
   // Every assertion grounded in THIS document version. The version filter is
   // load-bearing: a span from version 3 describes text version 4 may no longer

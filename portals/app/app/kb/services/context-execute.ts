@@ -18,6 +18,7 @@ export async function executeTaskContext(store:PostgresKnowledgeServices,caller:
    const kbIds=section.kbId?[section.kbId]:c.kbIds,query=[section.query,input.query].filter(Boolean).join(' '),key=input.requestId+':'+section.id;
    let tool:string,args:Record<string,unknown>;
    if(section.mode==='facts'){tool='published_search';args={kb_ids:kbIds,query,top_k:c.topK};}
+   else if(section.mode==='visual'){tool='visual_knowledge';args={kb_ids:kbIds,query,top_k:Math.min(10,c.topK),...(section.visualKind?{kind:section.visualKind}:{})};}
    else if(section.mode==='source'){tool='source_search';args={kb_ids:kbIds,query,top_k:c.topK,verification_filter:c.verificationFilter};}
    else if(section.mode==='topics'){tool='topic_knowledge';args={kb_id:section.kbId,action:'read',relation_type:section.relationType};}
    else{tool='knowledge_package';args={...(section.ruleAssetId?{kb_id:section.kbId,rule_asset_id:section.ruleAssetId}:{kb_ids:kbIds}),entity_ids:section.entityIds,relation_types:section.relationTypes,max_hops:section.maxHops,max_nodes:section.maxNodes,max_edges:section.maxEdges};}

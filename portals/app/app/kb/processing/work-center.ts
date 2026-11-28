@@ -1,4 +1,4 @@
-export const WORK_KINDS=["processing","compilation","ocr","maintenance"] as const;
+export const WORK_KINDS=["processing","compilation","ocr","maintenance","visual"] as const;
 export const WORK_STATES=["queued","running","attention","completed","closed"] as const;
 export type WorkKind=typeof WORK_KINDS[number];
 export type WorkState=typeof WORK_STATES[number];
@@ -20,6 +20,7 @@ export function parseWorkQuery(params:URLSearchParams):WorkQuery{
 }
 export function workHref(item:Pick<WorkItem,"id"|"kind"|"kbId"|"documentId">):string{
   if(!WORK_UUID.test(item.id)||!WORK_UUID.test(item.kbId)||!(WORK_KINDS as readonly string[]).includes(item.kind))throw Error("work_invalid_item");
+  if(item.kind==="visual")return `/pipeline/multimodal?kbId=${item.kbId}&runId=${item.id}`;
   const kb=`/assets/${item.kbId}`;
   if(item.kind==="processing")return `/pipeline/tasks/${item.id}`;
   if(item.kind==="compilation")return `${kb}/semantic?taskId=${item.id}`;

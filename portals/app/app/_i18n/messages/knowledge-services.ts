@@ -1,4 +1,5 @@
 export const knowledgeServices = {
+ visual:{"zh-CN":"\u591a\u6a21\u6001\u6765\u6e90\u4e0e\u89c6\u89c9\u8bc1\u636e","en-US":"Visual source knowledge"},
  context:{"zh-CN":"\u4efb\u52a1\u4e0a\u4e0b\u6587\u7ec4\u88c5","en-US":"Task context assembly"},
   "title": {
     "zh-CN": "\u667a\u80fd\u4f53\u77e5\u8bc6\u670d\u52a1\u4e2d\u5fc3",

@@ -1,3 +1,4 @@
+import {visualKnowledgeTool} from '../visual/read';
 import {executeTaskContext} from './context-execute';
 import {Pool} from 'pg';
 import {permits} from '../../authz/policy';
@@ -16,6 +17,7 @@ export async function runKnowledgeBackend(tool:string,args:Record<string,unknown
  if(tool==='published_search')return publishedSearchTool(caller,args,undefined,meter);
  if(tool==='source_search')return sourceSearchTool(caller,args,undefined,meter);
  if(tool==='topic_knowledge')return topicKnowledgeTool(caller,args);
+ if(tool==='visual_knowledge')return visualKnowledgeTool(caller,args);
  if(tool==='knowledge_package')return knowledgePackageTool(caller,args);
  throw Error('service_invalid_request');
 }
@@ -30,7 +32,8 @@ export async function executeKnowledgeService(store:PostgresKnowledgeServices,ca
   const s=await store.snapshot(who,input);await store.begin(who,input,s);traced=true;const c=s.config;
   const run=async(tool:string,args:Record<string,unknown>)=>{const r=await runner(tool,args,caller,input.requestId);steps.push({tool,status:r.status});if(r.status<400&&['published_search','source_search'].includes(tool))usage.push({metric:'karda.search',calls:1,idempotencyKey:'knowledge-service:'+input.requestId+':'+tool});return r;};
   let r:DispatchResult,fallback=false;
-  if(input.capability==='facts'){
+  if(input.capability==='visual')r=await run('visual_knowledge',{kb_ids:c.kbIds,query:input.query??'',top_k:Math.min(10,c.topK),...(input.assetId?{asset_id:input.assetId,version_id:input.versionId}:{}),...(input.documentId?{document_id:input.documentId}:{}),...(input.visualKind?{kind:input.visualKind}:{}),...(input.page?{page:input.page}:{})});
+  else if(input.capability==='facts'){
    r=await run('published_search',{kb_ids:c.kbIds,query:input.query,top_k:c.topK,...(input.pageCursor!==undefined?{page_cursor:input.pageCursor}:{})});
    const knowledge=(r.body.result as {knowledge?:{search?:{items:unknown[]}}}|undefined)?.knowledge;
    if(r.status<400&&c.sourceFallback&&knowledge?.search?.items.length===0&&!input.pageCursor){fallback=true;r=await run('source_search',{kb_ids:c.kbIds,query:input.query,top_k:c.topK,verification_filter:c.verificationFilter});}

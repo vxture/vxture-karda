@@ -1,5 +1,7 @@
 # 30-design - Architecture, ADRs, domain design, DB schema
 
+[Multimodal knowledge services](330-multimodal-knowledge-services.md): approved visual source/job/review/service center architecture, component selection and usage.
+
 [Task context assembly and delivery](320-agent-task-context-center.md): approved recipe/service extension, evidence units, whole-envelope budget, current-authority checks and integration guide.
 
 Design documents for this repo: architecture, architecture decision records

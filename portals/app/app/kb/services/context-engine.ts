@@ -5,7 +5,7 @@ type Row=Record<string,unknown>;
 const row=(v:unknown):Row=>v&&typeof v==='object'&&!Array.isArray(v)?v as Row:{};
 const rows=(v:unknown):Row[]=>Array.isArray(v)?v.map(row):[];
 export interface ContextEvidence {id:string;kbId:string;documentId:string;documentVersion:number;contentHash:string;start:number;end:number;pages:number[];text:string}
-export interface ContextUnit {id:string;kind:'published_fact'|'source_passage'|'accepted_summary'|'deterministic_inference';data:Row;evidence:ContextEvidence[]}
+export interface ContextUnit {id:string;kind:'published_fact'|'source_passage'|'accepted_summary'|'deterministic_inference'|'visual_source';data:Row;evidence:ContextEvidence[]}
 export interface SectionInput {section:ContextSection;units:ContextUnit[];gaps:string[]}
 export interface ContextManifest {queryHash:string;revision:string;items:string[];evidence:string[];state:string}
 export interface ContextResult {format:string;goal:string;status:string;sections:{id:string;name:string;required:boolean;items:string[];gaps:string[]}[];items:Omit<ContextUnit,'evidence'>[];evidence:ContextEvidence[];selection:{sectionId:string;candidateCount:number;selectedCount:number;excludedByBudget:number;excludedByLimit:number}[];revision:string;fingerprint:string;diff:{comparable:boolean;added:number;removed:number;unchanged:number;addedEvidence:number;removedEvidence:number}|null;budget:{limitBytes:number;usedBytes:number;maxItems:number};untrustedContent:true}
@@ -16,7 +16,8 @@ export function normalizeContext(section:ContextSection,result:unknown,sourceHas
   const value={kbId,documentId,documentVersion,contentHash,start,end,pages:(Array.isArray(v.pages)?v.pages:[]).filter((x):x is number=>Number.isSafeInteger(x)),text};return {id:contextHash([kbId,documentId,documentVersion,contentHash,start,end]),...value};
  }
  function unit(kind:ContextUnit['kind'],data:Row,evidence:ContextEvidence[]){if(!evidence.length)throw Error('service_context_corrupt');const unique=[...new Map(evidence.map(e=>[e.id,e])).values()].sort((a,b)=>a.id.localeCompare(b.id));const id=contextHash([kind,data,unique.map(e=>e.id)]);units.push({id,kind,data,evidence:unique});}
- if(section.mode==='source'){for(const p of rows(r.items)){const e=proof(p);unit('source_passage',{title:p.title,verificationState:p.verificationState,evidenceIds:[e.id]},[e]);}}
+ if(section.mode==='visual'){for(const item of rows(r.items)){units.push({id:contextHash(['visual_source',item]),kind:'visual_source',data:item,evidence:[]});for(const g of Array.isArray(item.gaps)?item.gaps:[])if(typeof g==='string')gaps.push(g);}}
+ else if(section.mode==='source'){for(const p of rows(r.items)){const e=proof(p);unit('source_passage',{title:p.title,verificationState:p.verificationState,evidenceIds:[e.id]},[e]);}}
  else if(section.mode==='topics'){
   const dossier=row(r.dossier),known=new Map<string,ContextEvidence>();
   for(const s of rows(dossier.sections)){const statements=rows(s.statements),evidence=statements.flatMap(a=>rows(a.evidence).map(e=>{const p=proof(e,section.kbId);known.set(String(e.id),p);return p;}));unit('published_fact',{kbId:section.kbId,relationId:s.relationId,source:s.source,target:s.target,relationType:section.relationType,statements:statements.map(a=>({id:a.id,text:a.text,evidenceIds:rows(a.evidence).map(e=>known.get(String(e.id))!.id)}))},evidence);}

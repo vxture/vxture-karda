@@ -1,3 +1,4 @@
+import {visualDocumentCurrentQuery} from '../visual/current';
 // The database and object-store side of `karda.get_context`.
 //
 // Split from `context-read.ts` on the same line as the other two: the window
@@ -38,6 +39,7 @@ export async function readContext(
     },
   });
   if (!chunk) return contextNotFound(citationId);
+  if(!await visualDocumentCurrentQuery((sql,values)=>p.$queryRawUnsafe(sql,...values),chunk.documentId))return contextNotFound(citationId);
 
   const doc = chunk.document;
   const at = (s: Parameters<typeof contextRefusal>[1]) => contextRefusal(citationId, s, chunk.documentId, chunk.version);

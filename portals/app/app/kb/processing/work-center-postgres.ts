@@ -57,6 +57,9 @@ export class PostgresWorkCenter{
         UNION ALL
         SELECT task_id,'maintenance',kb_id,name,payload->>'title',CASE payload->>'state' WHEN 'open' THEN 'queued' WHEN 'in_progress' THEN 'running'
           WHEN 'blocked' THEN 'attention' WHEN 'resolved' THEN 'completed' ELSE 'closed' END,payload->>'state',NULL,NULL,NULL,created_at,created_at FROM maintenance
+        UNION ALL
+        SELECT v.id,'visual',v.kb_id,k.name,d.title,CASE v.state WHEN 'planned' THEN 'queued' WHEN 'active' THEN 'running' WHEN 'completed' THEN 'completed' WHEN 'cancelled' THEN 'closed' ELSE 'attention' END,v.state,NULL,NULL,v.document_id,v.created_at,v.updated_at
+        FROM karda_kb.visual_run v JOIN libraries k ON k.id=v.kb_id JOIN karda_kb.document d ON d.id=v.document_id WHERE d.content_state NOT IN ('deleted','archived')
       ) , jobs AS (SELECT id,kind,"kbId","libraryName",title,state,"rawState",stage,attempt,"documentId",
         date_trunc('milliseconds',"createdAt") AS "createdAt",date_trunc('milliseconds',"updatedAt") AS "updatedAt" FROM raw_jobs),
       filtered AS (SELECT * FROM jobs WHERE ($6::text IS NULL OR kind=$6) AND ($7::text IS NULL OR state=$7))`;

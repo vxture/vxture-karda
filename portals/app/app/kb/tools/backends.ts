@@ -1,3 +1,4 @@
+import {visualKnowledgeTool} from '../visual/read';
 import {resolveFileReference,writeAuthority} from './file-reference';
 import {contributionTool} from '../contributions/runtime';
 import {knowledgeServiceTool} from "../services/execute";
@@ -48,7 +49,7 @@ export function buildToolBackends(): ToolBackends {
   const generation = getGenerationClient();
   return {
     knowledgeContribution:contributionTool,
-    knowledgeService:knowledgeServiceTool,
+    visualKnowledge:visualKnowledgeTool,knowledgeService:knowledgeServiceTool,
     topicKnowledge:topicKnowledgeTool,
     publishedSearch:publishedSearchTool,
     knowledgeSync:knowledgeSyncTool,

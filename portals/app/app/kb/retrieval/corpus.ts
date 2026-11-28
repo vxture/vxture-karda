@@ -1,3 +1,4 @@
+import {visualDocumentCurrentQuery} from '../visual/current';
 // The recallable corpus behind BM25 (TD-008): the text units a lexical query
 // ranks over. A unit is a chunk (for a document) or an entry, and ONLY `indexed`
 // content is a unit - the hard recall filter (100-kb-model 6). Until Atlas A1
@@ -69,7 +70,8 @@ export class PrismaRecallCorpus implements RecallCorpus {
         where: { kbId: { in: kbIds }, contentState: "indexed" },
         select: { id: true, kbId: true, verificationState: true, activeChunkVersion: true },
       });
-    const docById = new Map(docs.map((d) => [d.id, d]));
+    const currentDocs=[];for(const d of docs)if(await visualDocumentCurrentQuery((sql,values)=>p.$queryRawUnsafe(sql,...values),d.id))currentDocs.push(d);
+    const docById = new Map(currentDocs.map((d) => [d.id, d]));
     if (docs.length > 0) {
       const chunks: { id: string; documentId: string; text: string; version: number }[] = await p.chunk.findMany({
         where: { documentId: { in: docs.map((d) => d.id) } },
@@ -105,11 +107,11 @@ export class PrismaRecallTextResolver implements RecallTextResolver {
     if (ids.length === 0) return [];
     const p = await getPrismaClient();
     const out: { id: string; kbId: string; text: string }[] = [];
-    const chunks: { id: string; text: string; document: { kbId: string } | null }[] = await p.chunk.findMany({
+    const chunks: { id: string; text: string; document: { kbId: string;id:string } | null }[] = await p.chunk.findMany({
       where: { id: { in: ids } },
-      select: { id: true, text: true, document: { select: { kbId: true } } },
+      select: { id: true, text: true, document: { select: { kbId: true,id:true } } },
     });
-    for (const c of chunks) if (c.document) out.push({ id: c.id, kbId: c.document.kbId, text: c.text });
+    for (const c of chunks) if (c.document&&await visualDocumentCurrentQuery((sql,values)=>p.$queryRawUnsafe(sql,...values),c.document.id)) out.push({ id: c.id, kbId: c.document.kbId, text: c.text });
     const entries: { id: string; kbId: string; fields: unknown }[] = await p.entry.findMany({
       where: { id: { in: ids } },
       select: { id: true, kbId: true, fields: true },

@@ -416,3 +416,11 @@ GRANT UPDATE(state,revision,scan,apply_offset,current_batch,deletions,deletion_s
 GRANT UPDATE(url,title,content_hash,etag,modified,deleted,source_version,document_id,last_run) ON karda_kb.automatic_connector_head TO karda_svc;
 -- END AUTOMATIC CONNECTOR LOCKS
 
+
+-- BEGIN VISUAL KNOWLEDGE LOCKS
+REVOKE UPDATE,DELETE ON karda_kb.visual_run,karda_kb.visual_asset,karda_kb.visual_revision,karda_kb.visual_event FROM karda_svc;
+GRANT SELECT,INSERT ON karda_kb.visual_run,karda_kb.visual_asset,karda_kb.visual_revision,karda_kb.visual_event TO karda_svc;
+GRANT UPDATE(state,revision,coverage,updated_at) ON karda_kb.visual_run TO karda_svc;
+GRANT UPDATE(draft,revision,state,active_version,image_ref,image_hash,image_bytes,width,height,lease_id,lease_until,attempt,error_code,request_key,updated_at) ON karda_kb.visual_asset TO karda_svc;
+GRANT UPDATE(derived_document) ON karda_kb.visual_revision TO karda_svc;
+-- END VISUAL KNOWLEDGE LOCKS

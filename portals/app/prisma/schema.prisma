@@ -1835,3 +1835,78 @@ model AutomaticConnectorEvent {
  @@map("automatic_connector_event")
  @@schema("karda_kb")
 }
+
+model VisualRun {
+ id String @id @db.Uuid
+ kbId String @map("kb_id") @db.Uuid
+ workspaceId String @map("workspace_id") @db.Uuid
+ documentId String @map("document_id") @db.Uuid
+ sourceHash String @map("source_hash") @db.VarChar(64)
+ sourceVersion Int @map("source_version")
+ createdBy String @map("created_by") @db.VarChar(128)
+ config Json
+ manifest Json
+ state String @default("planned") @db.VarChar(16)
+ revision Int @default(1)
+ coverage Json @default("{}")
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+ updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+ @@map("visual_run")
+ @@schema("karda_kb")
+}
+model VisualAsset {
+ id String @id @db.Uuid
+ runId String @map("run_id") @db.Uuid
+ kbId String @map("kb_id") @db.Uuid
+ ordinal Int
+ locator Json
+ draft Json
+ revision Int @default(1)
+ state String @default("queued") @db.VarChar(16)
+ activeVersion String? @map("active_version") @db.Uuid
+ imageRef String? @map("image_ref")
+ imageHash String? @map("image_hash") @db.VarChar(64)
+ imageBytes Int? @map("image_bytes")
+ width Int?
+ height Int?
+ leaseId String? @map("lease_id") @db.Uuid
+ leaseUntil DateTime? @map("lease_until") @db.Timestamptz()
+ attempt Int @default(0)
+ errorCode String? @map("error_code") @db.VarChar(80)
+ requestKey String? @map("request_key") @db.VarChar(200)
+ updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+ @@unique([runId,ordinal])
+ @@map("visual_asset")
+ @@schema("karda_kb")
+}
+model VisualRevision {
+ id String @id @db.Uuid
+ assetId String @map("asset_id") @db.Uuid
+ kbId String @map("kb_id") @db.Uuid
+ revision Int
+ payload Json
+ payloadHash String @map("payload_hash") @db.VarChar(64)
+ decision String @db.VarChar(16)
+ createdBy String @map("created_by") @db.VarChar(128)
+ note String
+ derivedDocument String? @map("derived_document") @db.Uuid
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+ @@unique([assetId,revision])
+ @@map("visual_revision")
+ @@schema("karda_kb")
+}
+model VisualEvent {
+ runId String @map("run_id") @db.Uuid
+ revision Int
+ requestId String @map("request_id") @db.Uuid
+ fingerprint String @db.VarChar(64)
+ action String @db.VarChar(32)
+ note String
+ result Json
+ createdBy String @map("created_by") @db.VarChar(128)
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+ @@id([runId,revision])
+ @@unique([runId,requestId])
+ @@map("visual_event")
+ @@schema("karda_kb")
+}

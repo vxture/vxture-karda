@@ -21,5 +21,7 @@ export async function register(): Promise<void> {
     startGraphDispatch();
     const {startAutomaticDispatch}=await import("./app/kb/connectors/automatic/runtime");
     startAutomaticDispatch();
+    const {startVisualDispatch}=await import("./app/kb/visual/runtime");
+    startVisualDispatch();
   }
 }

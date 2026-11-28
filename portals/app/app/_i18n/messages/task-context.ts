@@ -1,4 +1,5 @@
 export const taskContext = {
+ visual_source:{"zh-CN":"\u5df2\u786e\u8ba4\u89c6\u89c9\u6765\u6e90","en-US":"Confirmed visual source"},
   "title": {
     "zh-CN": "\u4efb\u52a1\u4e0a\u4e0b\u6587\u4e2d\u5fc3",
     "en-US": "Task context center"
