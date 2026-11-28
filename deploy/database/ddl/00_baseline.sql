@@ -1951,3 +1951,21 @@ CREATE TABLE IF NOT EXISTS karda_kb.public_job (
  id UUID PRIMARY KEY,library_id UUID NOT NULL REFERENCES karda_kb.public_library(id),source_id UUID NOT NULL REFERENCES karda_kb.public_artifact(id),source_revision INTEGER NOT NULL,state VARCHAR(16) NOT NULL DEFAULT 'queued' CHECK(state IN ('queued','paused','done','failed','cancelled')),result JSONB NOT NULL DEFAULT '{}',error_code VARCHAR(80),attempt INTEGER NOT NULL DEFAULT 0,created_by VARCHAR(128) NOT NULL,updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),mode VARCHAR(16) NOT NULL DEFAULT 'manual' CHECK(mode IN ('manual','automatic')),delegation_cipher TEXT,next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT now(),revision INTEGER NOT NULL DEFAULT 1,dispatch_attempt INTEGER NOT NULL DEFAULT 0
 );
 -- END PRODUCT OPERATIONS
+
+-- BEGIN PRODUCT MEMBER ROLES
+CREATE TABLE IF NOT EXISTS karda_kb.ops_platform_member (
+ sub VARCHAR(128) PRIMARY KEY,platform_role VARCHAR(16) NOT NULL CHECK(platform_role IN ('owner','member')),active BOOLEAN NOT NULL,display_name VARCHAR(255) NOT NULL DEFAULT '',authority_version VARCHAR(40) NOT NULL,environment VARCHAR(32) NOT NULL,observed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS karda_kb.ops_role (
+ id UUID PRIMARY KEY,code VARCHAR(64) NOT NULL UNIQUE,name VARCHAR(128) NOT NULL,description TEXT NOT NULL DEFAULT '',system BOOLEAN NOT NULL DEFAULT false,state VARCHAR(16) NOT NULL DEFAULT 'active' CHECK(state IN ('active','disabled','archived')),revision INTEGER NOT NULL DEFAULT 1,permissions JSONB NOT NULL,updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS karda_kb.ops_role_version (
+ role_id UUID NOT NULL REFERENCES karda_kb.ops_role(id),revision INTEGER NOT NULL,definition JSONB NOT NULL,created_by VARCHAR(128) NOT NULL,note TEXT NOT NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT now(),PRIMARY KEY(role_id,revision)
+);
+CREATE TABLE IF NOT EXISTS karda_kb.ops_role_assignment (
+ id UUID PRIMARY KEY,sub VARCHAR(128) NOT NULL,role_id UUID NOT NULL REFERENCES karda_kb.ops_role(id),scope JSONB NOT NULL,state VARCHAR(16) NOT NULL DEFAULT 'active' CHECK(state IN ('active','suspended','legacy')),revision INTEGER NOT NULL DEFAULT 1,created_by VARCHAR(128) NOT NULL,updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),UNIQUE(sub,role_id)
+);
+CREATE TABLE IF NOT EXISTS karda_kb.ops_authorization_receipt (
+ request_id UUID PRIMARY KEY,created_by VARCHAR(128) NOT NULL,fingerprint VARCHAR(64) NOT NULL,result JSONB NOT NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- END PRODUCT MEMBER ROLES

@@ -8,8 +8,8 @@
  */
 import {randomUUID} from 'node:crypto';
 import type {PoolClient} from 'pg';
-import {transaction} from './access';
-import {artifact,hash,projection,record,roles,text,uuid,validateSnapshot,type Artifact} from './contract';
+import {transaction,requirePermission,permits} from './access';
+import {artifact,hash,projection,record,text,uuid,validateSnapshot,type Artifact} from './contract';
 import type {OpsPermission} from './identity';
 import {operationsConfig} from './config';
 import {sealDelegation} from './delegation';
@@ -17,37 +17,31 @@ import {parseFastPath} from '../../kb/processing/ir';
 export async function audit(db:PoolClient,sub:string,action:string,target:string,note:string,payload:unknown){await db.query('INSERT INTO karda_kb.ops_audit(id,actor_sub,action,target,note,payload) VALUES($1,$2,$3,$4,$5,$6)',[randomUUID(),sub,action,target,note,JSON.stringify(payload)]);}
 export async function snapshot(db:PoolClient,id:string){return (await db.query<Artifact>("SELECT id,kind,payload,revision,created_by FROM karda_kb.public_artifact WHERE library_id=$1 AND payload->>'archived' IS DISTINCT FROM 'true' ORDER BY id",[id])).rows;}
 export async function overview(sub:string){return transaction(sub,'operations.enter',async db=>{
- const own=(await db.query('SELECT sub,roles,status,revision FROM karda_kb.ops_member WHERE sub=$1',[sub])).rows[0];
- const permissions=new Set<string>();const {OPS_ROLES}=await import('./identity');for(const r of own.roles as (keyof typeof OPS_ROLES)[])for(const p of OPS_ROLES[r]??[])permissions.add(p);
- const libraries=permissions.has('content.read')?(await db.query('SELECT * FROM karda_kb.public_library ORDER BY updated_at DESC LIMIT 100')).rows:[];
- const members=permissions.has('members.manage')?(await db.query('SELECT * FROM karda_kb.ops_member ORDER BY sub LIMIT 200')).rows:[];
- return{subject:sub,permissions:[...permissions],libraries,members};
+ const access=await (await import('./access')).authorize(db,sub,'operations.enter');
+ const all=(await db.query('SELECT * FROM karda_kb.public_library ORDER BY updated_at DESC LIMIT 1000')).rows;
+ const libraries=all.filter(k=>permits(access,'content.read',k.id)).slice(0,100);
+ return{subject:sub,platformRole:access.association.role,authorityVersion:access.association.authorizationVersion,permissions:access.permissions,libraries,members:[],grants:access.grants,contractState:'draft_not_integrated'};
  });}
-export async function detail(sub:string,id:string){return transaction(sub,'content.read',async db=>{
+export async function detail(sub:string,id:string){return transaction(sub,'operations.enter',async(db,access)=>{requirePermission(access,'content.read',uuid(id));
  const library=(await db.query('SELECT * FROM karda_kb.public_library WHERE id=$1',[uuid(id)])).rows[0];if(!library)throw Error('operations_not_found');const artifacts=await snapshot(db,id);
  const releases=(await db.query('SELECT id,content_hash,reviewed_by,created_by,restored_from,created_at FROM karda_kb.public_release WHERE library_id=$1 ORDER BY created_at DESC LIMIT 100',[id])).rows;
  const jobs=(await db.query('SELECT id,library_id,source_id,source_revision,state,result,error_code,attempt,created_by,updated_at,mode,next_attempt_at,revision,dispatch_attempt FROM karda_kb.public_job WHERE library_id=$1 ORDER BY updated_at DESC LIMIT 100',[id])).rows;
  const archived=(await db.query("SELECT id,kind,payload,revision FROM karda_kb.public_artifact WHERE library_id=$1 AND payload->>'archived'='true' ORDER BY updated_at DESC LIMIT 100",[id])).rows;
- const history=(await db.query('SELECT * FROM karda_kb.ops_audit WHERE target=$1 ORDER BY created_at DESC LIMIT 200',[id])).rows;
+ const history=permits(access,'audit.read',id)?(await db.query('SELECT * FROM karda_kb.ops_audit WHERE target=$1 ORDER BY created_at DESC LIMIT 200',[id])).rows:[];
  let published:Artifact[]=[];if(library.active_release){const r=(await db.query('SELECT snapshot FROM karda_kb.public_release WHERE id=$1 AND library_id=$2',[library.active_release,id])).rows[0];published=r?.snapshot??[];}
  const old=new Map(published.map(a=>[a.id,a]));const changes=artifacts.filter(a=>hash(a)!==hash(old.get(a.id))).map(a=>({id:a.id,title:a.payload.title,change:old.has(a.id)?'changed':'added'}));
- return{library,artifacts,archived,releases,jobs,history,graph:projection(artifacts),publishedGraph:projection(published),changes,impact:{changed:changes.length,releasedVersion:library.active_release,customerDistribution:'not_enabled'}};
+ return{permissions:access.permissions.filter(p=>permits(access,p,id)),library,artifacts,archived,releases,jobs,history,graph:projection(artifacts),publishedGraph:projection(published),changes,impact:{changed:changes.length,releasedVersion:library.active_release,customerDistribution:'not_enabled'}};
  });}
 export async function execute(sub:string,input:unknown,retained?:{key:string;hash:string;bytes:number;mime:string},actorSession?:{sub:string;rpsid:string}){const c=record(input),action=text(c.action,32),note=text(c.note,2000);
- const permission:OpsPermission=action==='member'?'members.manage':action==='approve'||action==='reject'?'content.review':['publish','withdraw','restore'].includes(action)?'content.publish':'content.edit';
- return transaction(sub,permission,async db=>{
- if(action==='member'){
- const target=text(c.sub,128);if(!/^opr_[a-f0-9-]{36}$/i.test(target))throw Error('operations_invalid_subject');const grants=roles(c.roles),status=c.status==='disabled'?'disabled':'active';
- const previous=(await db.query('SELECT * FROM karda_kb.ops_member WHERE sub=$1 FOR UPDATE',[target])).rows[0];if((previous?.revision??0)!==c.expectedRevision)throw Error('operations_conflict');
- if(previous?.roles.includes('authorization')&&(status==='disabled'||!grants.includes('authorization'))){const admins=await db.query("SELECT sub FROM karda_kb.ops_member WHERE status='active' AND roles ? 'authorization'");if(admins.rowCount===1)throw Error('operations_last_authorizer');}
- await db.query("INSERT INTO karda_kb.ops_member(sub,roles,status) VALUES($1,$2,$3) ON CONFLICT(sub) DO UPDATE SET roles=EXCLUDED.roles,status=EXCLUDED.status,revision=ops_member.revision+1,updated_at=now()",[target,JSON.stringify(grants),status]);await audit(db,sub,action,target,note,{before:previous??null,roles:grants,status});return{target};
- }
+ const permission:OpsPermission=action==='approve'||action==='reject'?'content.review':['publish','withdraw','restore'].includes(action)?'content.publish':action==='create'||action==='settings'?'library.manage':action==='process'?'production.manage':action==='save'&&c.kind==='source'?'source.manage':action==='save'&&c.kind==='relation'?'graph.manage':'content.edit';
+ return transaction(sub,'operations.enter',async(db,access)=>{
+ requirePermission(access,permission,action==='create'?undefined:uuid(c.id));
  if(action==='create'){
  const id=uuid(c.id);await db.query('INSERT INTO karda_kb.public_library(id,title,domain,description,created_by) VALUES($1,$2,$3,$4,$5)',[id,text(c.title,255),text(c.domain,64),typeof c.description==='string'?c.description.slice(0,4000):'',sub]);await audit(db,sub,action,id,note,{});return{id};
  }
  const id=uuid(c.id),library=(await db.query('SELECT * FROM karda_kb.public_library WHERE id=$1 FOR UPDATE',[id])).rows[0];if(!library)throw Error('operations_not_found');if(library.revision!==c.expectedRevision)throw Error('operations_conflict');
  if(action==='archive'||action==='restoreArtifact'){
- const artifactId=uuid(c.artifactId);const changed=await db.query("UPDATE karda_kb.public_artifact SET payload=jsonb_set(payload,'{archived}',$3::jsonb),revision=revision+1,updated_at=now() WHERE id=$1 AND library_id=$2 RETURNING kind",[artifactId,id,JSON.stringify(action==='archive')]);if(!changed.rowCount)throw Error('operations_not_found');
+ const artifactId=uuid(c.artifactId);const existing=(await db.query('SELECT kind FROM karda_kb.public_artifact WHERE id=$1 AND library_id=$2',[artifactId,id])).rows[0];if(!existing)throw Error('operations_not_found');requirePermission(access,existing.kind==='source'?'source.manage':existing.kind==='relation'?'graph.manage':'content.edit',id);const changed=await db.query("UPDATE karda_kb.public_artifact SET payload=jsonb_set(payload,'{archived}',$3::jsonb),revision=revision+1,updated_at=now() WHERE id=$1 AND library_id=$2 RETURNING kind",[artifactId,id,JSON.stringify(action==='archive')]);if(!changed.rowCount)throw Error('operations_not_found');
  await db.query("UPDATE karda_kb.public_library SET state='draft',revision=revision+1,reviewed_hash=NULL,reviewed_by=NULL,active_release=CASE WHEN $2 THEN NULL ELSE active_release END,updated_at=now() WHERE id=$1",[id,action==='archive'&&changed.rows[0].kind==='source']);await audit(db,sub,action,id,note,{artifactId});return{id};
  }
  if(action==='settings'){await db.query("UPDATE karda_kb.public_library SET title=$2,domain=$3,description=$4,state='draft',reviewed_hash=NULL,reviewed_by=NULL,revision=revision+1,updated_at=now() WHERE id=$1",[id,text(c.title,255),text(c.domain,64),text(c.description,4000)]);await audit(db,sub,action,id,note,{});return{id};}
@@ -81,8 +75,8 @@ export async function execute(sub:string,input:unknown,retained?:{key:string;has
  });
 }
 /** Deterministic native-text production; no workforce impersonation of tenant AI. */
-export async function processJob(sub:string,jobId:string,fence?:{delegationCipher:string}){return transaction(sub,'content.edit',async db=>{
- const job=(await db.query('SELECT * FROM karda_kb.public_job WHERE id=$1 FOR UPDATE',[uuid(jobId)])).rows[0];if(!job)throw Error('operations_not_found');if(job.state==='done')return{duplicate:true};if(fence&&(job.mode!=='automatic'||job.delegation_cipher!==fence.delegationCipher))throw Error('operations_job_changed');if(!['queued','failed'].includes(job.state)||job.attempt>=3)throw Error('operations_invalid_state');
+export async function processJob(sub:string,jobId:string,fence?:{delegationCipher:string}){return transaction(sub,'operations.enter',async(db,access)=>{
+ const job=(await db.query('SELECT * FROM karda_kb.public_job WHERE id=$1 FOR UPDATE',[uuid(jobId)])).rows[0];if(!job)throw Error('operations_not_found');requirePermission(access,'production.manage',job.library_id);if(job.state==='done')return{duplicate:true};if(fence&&(job.mode!=='automatic'||job.delegation_cipher!==fence.delegationCipher))throw Error('operations_job_changed');if(!['queued','failed'].includes(job.state)||job.attempt>=3)throw Error('operations_invalid_state');
  await db.query('SELECT id FROM karda_kb.public_library WHERE id=$1 FOR UPDATE',[job.library_id]);
  const source=(await db.query("SELECT * FROM karda_kb.public_artifact WHERE id=$1 AND library_id=$2 AND kind='source' FOR SHARE",[job.source_id,job.library_id])).rows[0];
  await db.query('SAVEPOINT production');
@@ -92,3 +86,5 @@ export async function processJob(sub:string,jobId:string,fence?:{delegationCiphe
  await db.query("UPDATE karda_kb.public_job SET state='done',result=$2,attempt=attempt+1,error_code=NULL,revision=revision+1,delegation_cipher=NULL,updated_at=now() WHERE id=$1",[job.id,JSON.stringify({parser:ir.parserVersion,elements:ir.elements.length})]);await db.query("UPDATE karda_kb.public_library SET state='draft',revision=revision+1,reviewed_hash=NULL,reviewed_by=NULL,updated_at=now() WHERE id=$1",[job.library_id]);await audit(db,sub,'process',job.library_id,'Native text candidate production',{jobId:job.id,source:source.id});return{done:true};
  }catch(e){await db.query('ROLLBACK TO SAVEPOINT production');const code=e instanceof Error?e.message:'operations_processing_failed';await db.query("UPDATE karda_kb.public_job SET state='failed',attempt=attempt+1,error_code=$2,revision=revision+1,delegation_cipher=NULL,updated_at=now() WHERE id=$1",[job.id,code]);return{done:false,error:code};}
  });}
+
+export async function exportPublicLibrary(sub:string,id:string){await transaction(sub,'content.export',async()=>true,id);const result=await detail(sub,id);await transaction(sub,'content.export',async()=>true,id);return result;}

@@ -435,3 +435,11 @@ GRANT UPDATE(state,result,error_code,attempt,updated_at) ON karda_kb.public_job 
 GRANT UPDATE(mode,delegation_cipher,next_attempt_at,revision,dispatch_attempt) ON karda_kb.public_job TO karda_svc;
 -- END PRODUCT OPERATIONS LOCKS
 
+
+-- BEGIN PRODUCT MEMBER ROLE LOCKS
+REVOKE UPDATE,DELETE ON karda_kb.ops_platform_member,karda_kb.ops_role,karda_kb.ops_role_version,karda_kb.ops_role_assignment,karda_kb.ops_authorization_receipt FROM karda_svc;
+GRANT SELECT,INSERT ON karda_kb.ops_platform_member,karda_kb.ops_role,karda_kb.ops_role_version,karda_kb.ops_role_assignment,karda_kb.ops_authorization_receipt TO karda_svc;
+GRANT UPDATE(platform_role,active,display_name,authority_version,environment,observed_at) ON karda_kb.ops_platform_member TO karda_svc;
+GRANT UPDATE(name,description,state,revision,permissions,updated_at) ON karda_kb.ops_role TO karda_svc;
+GRANT UPDATE(scope,state,revision,created_by,updated_at) ON karda_kb.ops_role_assignment TO karda_svc;
+-- END PRODUCT MEMBER ROLE LOCKS
