@@ -369,6 +369,7 @@ REVOKE UPDATE,DELETE ON karda_kb.knowledge_service,karda_kb.knowledge_service_ve
 GRANT SELECT,INSERT ON karda_kb.knowledge_service,karda_kb.knowledge_service_version,karda_kb.knowledge_service_event,karda_kb.knowledge_service_call TO karda_svc;
 GRANT UPDATE(draft,revision,state,active_version,updated_at) ON karda_kb.knowledge_service TO karda_svc;
 GRANT UPDATE(state,status,error_code,latency_ms,output_bytes,steps,usage,finished_at) ON karda_kb.knowledge_service_call TO karda_svc;
+GRANT UPDATE(context_metadata) ON karda_kb.knowledge_service_call TO karda_svc;
 -- END KNOWLEDGE SERVICES LOCKS
 
 
@@ -415,5 +416,3 @@ GRANT UPDATE(state,revision,scan,apply_offset,current_batch,deletions,deletion_s
 GRANT UPDATE(url,title,content_hash,etag,modified,deleted,source_version,document_id,last_run) ON karda_kb.automatic_connector_head TO karda_svc;
 -- END AUTOMATIC CONNECTOR LOCKS
 
--- Task context metadata contains fingerprints only, never task/knowledge bodies.
-GRANT UPDATE(context_metadata) ON karda_kb.knowledge_service_call TO karda_svc;
