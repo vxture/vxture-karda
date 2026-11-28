@@ -1,0 +1,29 @@
+/**
+ * Actual native public-job dispatch, revoked authority and late-worker fences.
+ * @package @karda/app
+ * @layer Application
+ * @category ProductOperations
+ * @author AI-Generated
+ * @date 2026-11-28
+ */
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {Pool} from 'pg';
+import {execute,detail,processJob} from './store';
+import {controlJob} from './job-control';
+import {dispatchPublicJobs} from './worker';
+import {closeOperationsPool} from './access';
+const endpoint=process.env.KARDA_PROVISION_TEST_DATABASE_URL;
+test('public jobs PostgreSQL: automatic native processing, revocation, explicit rebind, cancellation, outage budget and late-worker fencing',{skip:!endpoint,timeout:120000},async()=>{
+ const url=new URL(endpoint!);assert.ok(['localhost','127.0.0.1','[::1]'].includes(url.hostname));assert.equal(url.pathname,'/karda_p3_test');const admin=new Pool({connectionString:url.toString()});url.username='karda_svc';const service=new Pool({connectionString:url.toString(),max:5});const saved=Object.fromEntries(['DATABASE_URL','KARDA_OPS_ENABLED','KARDA_OPS_CLIENT_ID','KARDA_OPS_CLIENT_SECRET'].map(k=>[k,process.env[k]]));const secret='fixture-only-product-operations-secret';Object.assign(process.env,{DATABASE_URL:url.toString(),KARDA_OPS_ENABLED:'on',KARDA_OPS_CLIENT_ID:'karda-operations-fixture',KARDA_OPS_CLIENT_SECRET:secret});const sub='opr_'+randomUUID(),id=randomUUID(),sourceId=randomUUID(),session='fixture-opaque-session-'+randomUUID();let edition=0;const actor={sub,rpsid:session};const deps={pool:service,secret,resolve:async(_session:string):Promise<string|null>=>sub,now:()=>Math.floor(Date.now()/1000),run:processJob};
+ async function prepare(){edition++;let d=await detail(sub,id);await execute(sub,{action:'save',id,expectedRevision:d.library.revision,artifactId:sourceId,kind:'source',note:'Update fixture source',payload:{title:'Native fixture',url:'https://example.gov/native',issuer:'Fixture',edition:String(edition),rights:'Fixture only',validity:'current',text:'Source edition '+edition+'\n\nDelivery evidence'}});d=await detail(sub,id);await execute(sub,{action:'process',id,expectedRevision:d.library.revision,sourceId,mode:'automatic',note:'Authorize background native job'},undefined,actor);return(await admin.query('SELECT * FROM karda_kb.public_job WHERE library_id=$1 AND source_revision=(SELECT revision FROM karda_kb.public_artifact WHERE id=$2)',[id,sourceId])).rows[0];}
+ async function control(jobId:string,operation:string){const d=await detail(sub,id),job=d.jobs.find(j=>j.id===jobId)!;return controlJob(actor,{action:'jobControl',id,expectedRevision:d.library.revision,jobId,expectedJobRevision:job.revision,operation,note:'Explicit fixture recovery'});}
+ try{
+ await admin.query('INSERT INTO karda_kb.ops_member(sub,roles) VALUES($1,$2)',[sub,JSON.stringify(['editor'])]);await execute(sub,{action:'create',id,title:'Dispatch fixture',domain:'LEG',note:'Create fixture'});
+ const first=await prepare();assert.ok(first.delegation_cipher);const visible=JSON.stringify(await detail(sub,id));assert.ok(!visible.includes(first.delegation_cipher));assert.ok(!visible.includes(session));assert.equal((await dispatchPublicJobs(deps)).completed,1);assert.equal((await detail(sub,id)).jobs.find(j=>j.id===first.id)!.state,'done');const count=(await detail(sub,id)).artifacts.length;await dispatchPublicJobs(deps);assert.equal((await detail(sub,id)).artifacts.length,count);
+ const second=await prepare();assert.equal((await dispatchPublicJobs({...deps,resolve:async()=>null})).paused,1);assert.equal((await detail(sub,id)).jobs.find(j=>j.id===second.id)!.error_code,'operations_session_revoked');await control(second.id,'resume');await admin.query("UPDATE karda_kb.ops_member SET status='disabled' WHERE sub=$1",[sub]);assert.equal((await dispatchPublicJobs(deps)).paused,1);await admin.query("UPDATE karda_kb.ops_member SET status='active' WHERE sub=$1",[sub]);assert.equal((await detail(sub,id)).jobs.find(j=>j.id===second.id)!.error_code,'operations_permission_revoked');await control(second.id,'resume');const prior=(await admin.query('SELECT delegation_cipher FROM karda_kb.public_job WHERE id=$1',[second.id])).rows[0].delegation_cipher;await control(second.id,'cancel');await assert.rejects(processJob(sub,second.id,{delegationCipher:prior}),/operations_job_changed|operations_invalid_state/);
+ const third=await prepare();for(let i=0;i<3;i++){await admin.query("UPDATE karda_kb.public_job SET next_attempt_at=now()-interval '1 minute' WHERE id=$1",[third.id]);await dispatchPublicJobs({...deps,resolve:async()=>{throw Error('Fixture accounts transport outage');}});}let d=await detail(sub,id);assert.equal(d.jobs.find(j=>j.id===third.id)!.state,'paused');assert.equal(d.jobs.find(j=>j.id===third.id)!.dispatch_attempt,3);await control(third.id,'manual');assert.equal((await detail(sub,id)).jobs.find(j=>j.id===third.id)!.mode,'manual');
+ const fourth=await prepare();const before=(await detail(sub,id)).artifacts.length;await dispatchPublicJobs({...deps,resolve:async()=>{await control(fourth.id,'pause');return sub;}});d=await detail(sub,id);assert.equal(d.jobs.find(j=>j.id===fourth.id)!.state,'paused');assert.equal(d.artifacts.length,before);await control(fourth.id,'resume');assert.equal((await dispatchPublicJobs(deps)).completed,1);
+ }finally{await closeOperationsPool();for(const [k,v]of Object.entries(saved)){if(v===undefined)delete process.env[k];else process.env[k]=v;}await admin.query('DELETE FROM karda_kb.public_job WHERE library_id=$1',[id]);await admin.query('DELETE FROM karda_kb.public_artifact WHERE library_id=$1',[id]);await admin.query('DELETE FROM karda_kb.public_library WHERE id=$1',[id]);await admin.query('DELETE FROM karda_kb.ops_audit WHERE target=$1',[id]);await admin.query('DELETE FROM karda_kb.ops_member WHERE sub=$1',[sub]);await service.end();await admin.end();}
+});

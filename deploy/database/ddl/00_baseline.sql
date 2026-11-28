@@ -1948,6 +1948,6 @@ CREATE TABLE IF NOT EXISTS karda_kb.public_release (
  id UUID PRIMARY KEY,library_id UUID NOT NULL REFERENCES karda_kb.public_library(id),content_hash VARCHAR(64) NOT NULL,snapshot JSONB NOT NULL,reviewed_by VARCHAR(128) NOT NULL,created_by VARCHAR(128) NOT NULL,restored_from UUID,created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE TABLE IF NOT EXISTS karda_kb.public_job (
- id UUID PRIMARY KEY,library_id UUID NOT NULL REFERENCES karda_kb.public_library(id),source_id UUID NOT NULL REFERENCES karda_kb.public_artifact(id),source_revision INTEGER NOT NULL,state VARCHAR(16) NOT NULL DEFAULT 'queued' CHECK(state IN ('queued','done','failed','cancelled')),result JSONB NOT NULL DEFAULT '{}',error_code VARCHAR(80),attempt INTEGER NOT NULL DEFAULT 0,created_by VARCHAR(128) NOT NULL,updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+ id UUID PRIMARY KEY,library_id UUID NOT NULL REFERENCES karda_kb.public_library(id),source_id UUID NOT NULL REFERENCES karda_kb.public_artifact(id),source_revision INTEGER NOT NULL,state VARCHAR(16) NOT NULL DEFAULT 'queued' CHECK(state IN ('queued','paused','done','failed','cancelled')),result JSONB NOT NULL DEFAULT '{}',error_code VARCHAR(80),attempt INTEGER NOT NULL DEFAULT 0,created_by VARCHAR(128) NOT NULL,updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),mode VARCHAR(16) NOT NULL DEFAULT 'manual' CHECK(mode IN ('manual','automatic')),delegation_cipher TEXT,next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT now(),revision INTEGER NOT NULL DEFAULT 1,dispatch_attempt INTEGER NOT NULL DEFAULT 0
 );
 -- END PRODUCT OPERATIONS

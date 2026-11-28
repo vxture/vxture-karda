@@ -432,4 +432,6 @@ GRANT UPDATE(roles,status,revision,updated_at) ON karda_kb.ops_member TO karda_s
 GRANT UPDATE(title,domain,description,revision,state,reviewed_hash,reviewed_by,active_release,updated_at) ON karda_kb.public_library TO karda_svc;
 GRANT UPDATE(payload,revision,updated_at) ON karda_kb.public_artifact TO karda_svc;
 GRANT UPDATE(state,result,error_code,attempt,updated_at) ON karda_kb.public_job TO karda_svc;
+GRANT UPDATE(mode,delegation_cipher,next_attempt_at,revision,dispatch_attempt) ON karda_kb.public_job TO karda_svc;
 -- END PRODUCT OPERATIONS LOCKS
+
