@@ -1982,7 +1982,9 @@ CREATE TABLE IF NOT EXISTS karda_kb.public_binding_event (
 CREATE TABLE IF NOT EXISTS karda_kb.public_delivery (
  request_id UUID PRIMARY KEY,workspace_id UUID NOT NULL,caller_sub VARCHAR(128) NOT NULL,caller_product VARCHAR(32) NOT NULL,mode VARCHAR(16) NOT NULL,versions JSONB NOT NULL,state VARCHAR(16) NOT NULL DEFAULT 'running',status INTEGER,result_count INTEGER,error_code VARCHAR(80),created_at TIMESTAMPTZ NOT NULL DEFAULT now(),finished_at TIMESTAMPTZ
 );
-CREATE INDEX IF NOT EXISTS public_delivery_workspace ON karda_kb.public_delivery(workspace_id,created_at DESC);
+DO $ BEGIN IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='karda_kb' AND table_name='public_delivery' AND column_name='created_at') THEN
+ CREATE INDEX IF NOT EXISTS public_delivery_workspace ON karda_kb.public_delivery(workspace_id,created_at DESC);
+END IF; END $;
 CREATE TABLE IF NOT EXISTS karda_kb.public_feedback (
  id UUID PRIMARY KEY,workspace_id UUID NOT NULL,library_id UUID NOT NULL REFERENCES karda_kb.public_library(id),release_id UUID NOT NULL REFERENCES karda_kb.public_release(id),artifact_id UUID,request_id UUID,kind VARCHAR(24) NOT NULL CHECK(kind IN ('correction','no_evidence','outdated','delivery_error')),message TEXT NOT NULL,created_by VARCHAR(128) NOT NULL,state VARCHAR(16) NOT NULL DEFAULT 'open' CHECK(state IN ('open','triaged','resolved','dismissed')),resolution TEXT NOT NULL DEFAULT '',revision INTEGER NOT NULL DEFAULT 1,updated_by VARCHAR(128),updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
