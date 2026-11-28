@@ -1,8 +1,12 @@
 # 70-workplan - Build plan and batch tracker
 
+## Proposed product membership and roles alignment - 2026-11-28
+
+[Platform product membership and Karda roles center](214-product-members-owner-role-plan-20261128.md): O1-O6 plus R1/R2. Multiple platform-assigned owners, platform member eligibility, product-defined roles/scopes and migration from local bootstrap. Design only, pending approval; supersedes the old A2 bootstrap/grant-source proposal.
+
 ## Product operations and public knowledge plan - 2026-11-28
 
-[Product operations, public distribution and business rollout](213-product-operations-public-knowledge-plan-20261128.md): proposed A1-A6 plus R1/R2 workforce product operations and public knowledge center; proposed D1-D6 plus R1/R2 customer distribution and Agent services; previously approved contract/trade content B1 resumes after those prerequisites. A Karda-side software released v0.12.59/cc829c17 via PR402; stage/main gates,0049 migration112tables and deployment succeeded. Workforce setup/live acceptance, model/OCR operations cost contract and automatic background dispatch follow-up is in implementation; A is not fully accepted. B remains pending approval. Workforce identity never implies product authorization. Platform source/configuration/registration is outside scope; platform issues #757/#758 track the external contracts.
+[Product operations, public distribution and business rollout](213-product-operations-public-knowledge-plan-20261128.md): proposed A1-A6 plus R1/R2 workforce product operations and public knowledge center; proposed D1-D6 plus R1/R2 customer distribution and Agent services; previously approved contract/trade content B1 resumes after those prerequisites. A Karda-side software released v0.12.59/cc829c17 via PR402; stage/main gates,0049 migration112tables and deployment succeeded. Workforce setup/live acceptance, model/OCR operations cost contract and automatic background dispatch follow-up delivered v0.12.60/bfda1925 PR403 (1225app+7Java,0050migration112tables,deploy46128120506 passed); external workforce/model-cost acceptance remains open; A is not fully accepted. B remains pending approval. Workforce identity never implies product authorization. Platform source/configuration/registration is outside scope; platform issues #757/#758 track the external contracts.
 
 ## Approved SME knowledge construction - 2026-11-28
 

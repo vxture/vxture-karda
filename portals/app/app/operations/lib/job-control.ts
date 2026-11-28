@@ -12,7 +12,7 @@ import {audit} from './store';
 import {record,text,uuid} from './contract';
 import {sealDelegation} from './delegation';
 export async function controlJob(actor:{sub:string;rpsid:string},value:unknown){const c=record(value),id=uuid(c.id),jobId=uuid(c.jobId),operation=text(c.operation,16),note=text(c.note,2000);
- return transaction(actor.sub,'content.edit',async db=>{
+ return transaction(actor.sub,'production.manage',async db=>{
  const library=(await db.query('SELECT revision FROM karda_kb.public_library WHERE id=$1 FOR UPDATE',[id])).rows[0];if(!library)throw Error('operations_not_found');if(library.revision!==c.expectedRevision)throw Error('operations_conflict');
  const job=(await db.query('SELECT * FROM karda_kb.public_job WHERE id=$1 AND library_id=$2 FOR UPDATE',[jobId,id])).rows[0];if(!job)throw Error('operations_not_found');if(job.revision!==c.expectedJobRevision)throw Error('operations_conflict');if(['done','cancelled'].includes(job.state))throw Error('operations_invalid_state');
  let state=job.state,mode=job.mode,cipher:string|null=null;
@@ -27,4 +27,4 @@ export async function controlJob(actor:{sub:string;rpsid:string},value:unknown){
  }else if(operation==='manual'){mode='manual';if(job.state==='paused')state='queued';}else throw Error('operations_invalid_action');
  await db.query('UPDATE karda_kb.public_job SET state=$2,mode=$3,delegation_cipher=$4,revision=revision+1,dispatch_attempt=0,next_attempt_at=now(),error_code=NULL,updated_at=now() WHERE id=$1',[jobId,state,mode,cipher]);
  await db.query('UPDATE karda_kb.public_library SET revision=revision+1,updated_at=now() WHERE id=$1',[id]);await audit(db,actor.sub,'job_'+operation,id,note,{jobId,before:{state:job.state,mode:job.mode},after:{state,mode}});return{id,jobId};
- });}
+ },id);}

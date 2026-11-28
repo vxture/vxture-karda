@@ -1989,3 +1989,61 @@ model PublicJob {
  @@map("public_job")
  @@schema("karda_kb")
 }
+
+model OpsPlatformMember {
+ sub String @id @db.VarChar(128)
+ platformRole String @map("platform_role") @db.VarChar(16)
+ active Boolean
+ displayName String @default("") @map("display_name") @db.VarChar(255)
+ authorityVersion String @map("authority_version") @db.VarChar(40)
+ environment String @db.VarChar(32)
+ observedAt DateTime @default(now()) @map("observed_at") @db.Timestamptz()
+ @@map("ops_platform_member")
+ @@schema("karda_kb")
+}
+model OpsRole {
+ id String @id @db.Uuid
+ code String @unique @db.VarChar(64)
+ name String @db.VarChar(128)
+ description String @default("")
+ system Boolean @default(false)
+ state String @default("active") @db.VarChar(16)
+ revision Int @default(1)
+ permissions Json
+ updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+ @@map("ops_role")
+ @@schema("karda_kb")
+}
+model OpsRoleVersion {
+ roleId String @map("role_id") @db.Uuid
+ revision Int
+ definition Json
+ createdBy String @map("created_by") @db.VarChar(128)
+ note String
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+ @@id([roleId,revision])
+ @@map("ops_role_version")
+ @@schema("karda_kb")
+}
+model OpsRoleAssignment {
+ id String @id @db.Uuid
+ sub String @db.VarChar(128)
+ roleId String @map("role_id") @db.Uuid
+ scope Json
+ state String @default("active") @db.VarChar(16)
+ revision Int @default(1)
+ createdBy String @map("created_by") @db.VarChar(128)
+ updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+ @@unique([sub,roleId])
+ @@map("ops_role_assignment")
+ @@schema("karda_kb")
+}
+model OpsAuthorizationReceipt {
+ requestId String @id @map("request_id") @db.Uuid
+ createdBy String @map("created_by") @db.VarChar(128)
+ fingerprint String @db.VarChar(64)
+ result Json
+ createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+ @@map("ops_authorization_receipt")
+ @@schema("karda_kb")
+}

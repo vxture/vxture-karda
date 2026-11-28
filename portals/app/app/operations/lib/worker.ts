@@ -7,7 +7,7 @@
  * @date 2026-11-28
  */
 import type {Pool} from 'pg';
-import {operationsPool} from './access';
+import {operationsPool,withOperatorAuthority} from './access';
 import {operationsConfig} from './config';
 import {openDelegation} from './delegation';
 import {getAuthUser,type SessionDeps} from './session';
@@ -27,11 +27,11 @@ export async function dispatchPublicJobs(deps:DispatchDeps){const mutex=await de
  let sub:string|null;try{sub=await deps.resolve(delegation.rpsid);}catch(e){const renewal=e instanceof Error&&e.message==='operations_session_renewal_required';await postpone(deps,job,renewal?'operations_session_renewal_required':'operations_session_unavailable',!renewal);if(renewal)counts.paused++;else counts.deferred++;continue;}
  if(sub!==delegation.sub){await postpone(deps,job,'operations_session_revoked');counts.paused++;continue;}
  try{const result=await deps.run(sub,job.id,{delegationCipher:job.delegation_cipher});if('done'in result&&result.done)counts.completed++;else counts.skipped++;}
- catch(e){const code=e instanceof Error?e.message:'';if(['operations_job_changed','operations_invalid_state'].includes(code)){counts.skipped++;continue;}const denied=code==='operations_forbidden';await postpone(deps,job,denied?'operations_permission_revoked':'operations_dispatch_unavailable',!denied);if(denied)counts.paused++;else counts.deferred++;}
+ catch(e){const code=e instanceof Error?e.message:'';if(['operations_job_changed','operations_invalid_state'].includes(code)){counts.skipped++;continue;}const denied=['operations_forbidden','operations_not_associated'].includes(code);await postpone(deps,job,denied?'operations_permission_revoked':'operations_dispatch_unavailable',!denied);if(denied)counts.paused++;else counts.deferred++;}
  }return counts;
  }finally{if(locked)await mutex.query('SELECT pg_advisory_unlock(1903240,50)').catch(()=>{});mutex.release();}}
 /** Background work must not refresh a person's RP session or simulate activity. */
 export const jobSessionDeps:SessionDeps={read:getSession,rotate:rotateSession,lock:withSessionLock,central:checkCentralSession,revoke:deleteSessionsBySid,verify:verifyToken,refresh:async()=>{throw Error('operations_session_renewal_required');},now:()=>Math.floor(Date.now()/1000)};
 let started=false,busy=false;
-export async function publicJobPass(){const cfg=operationsConfig();if(busy||!cfg.enabled||!process.env.DATABASE_URL||process.env.KARDA_OPS_WORKER_ENABLED==='off')return;busy=true;try{return await dispatchPublicJobs({pool:operationsPool(),secret:cfg.clientSecret,resolve:rpsid=>getAuthUser(cfg,rpsid,jobSessionDeps),now:()=>Math.floor(Date.now()/1000),run:processJob});}finally{busy=false;}}
+export async function publicJobPass(){const cfg=operationsConfig();if(busy||!cfg.enabled||!process.env.DATABASE_URL||process.env.KARDA_OPS_WORKER_ENABLED==='off')return;busy=true;const activeSessions=new Map<string,string>();try{return await dispatchPublicJobs({pool:operationsPool(),secret:cfg.clientSecret,resolve:async rpsid=>{const sub=await getAuthUser(cfg,rpsid,jobSessionDeps);if(sub)activeSessions.set(sub,rpsid);return sub;},now:()=>Math.floor(Date.now()/1000),run:(sub,id,fence)=>withOperatorAuthority({sub,rpsid:activeSessions.get(sub)??''},()=>processJob(sub,id,fence))});}finally{busy=false;}}
 export function startPublicJobDispatch(){if(started)return;started=true;setTimeout(()=>void publicJobPass().catch(()=>{}),8000).unref();setInterval(()=>void publicJobPass().catch(()=>{}),15000).unref();}

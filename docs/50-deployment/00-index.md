@@ -1,3 +1,5 @@
+[Public production background dispatch and platform handoff](610-public-production-background-release-20261128.md): v0.12.60/bfda1925 PR403,0050migration,1225app+7Java,platform757/758. Native background dispatch delivered;externalworkforce/modelcost acceptance remains.
+
 [Product operations public knowledge release and itemized gaps](600-product-operations-public-knowledge-release-20261128.md): v0.12.59/cc829c17,PR402; software deployed,external workforce setup and explicitly listed A gaps remain open.
 
 # 50-deployment - Infra, CI/CD, environments, bootstrap
